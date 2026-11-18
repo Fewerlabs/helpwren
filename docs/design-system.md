@@ -155,7 +155,12 @@ with personality.
 2. In `src/components/base/icon/registry.ts`, add one import (`HeartIcon`) and one registry entry
    (`heart: HeartIcon`), both in alphabetical order.
 
-That is all. `IconName` is derived from the registry, so the new name autocompletes and a typo is
+One icon is our own and not from the library: `chat-wren`, the wren inside a speech bubble, which
+is also the widget's `wren` launcher. It is built in the registry on the library's base component,
+so it takes the same props. It has a single line weight, and `weight="fill"` is the solid bubble
+with the wren cut out, which is the form that reads best under about 24px.
+
+`IconName` is derived from the registry, so the new name autocompletes and a typo is
 a type error. A test renders every registered icon, and the **Base / Icon / All Icons** story
 lists them with a search box. Only registered icons end up in the bundle.
 
@@ -408,8 +413,10 @@ center. Each is shown under **Shared** in Storybook.
 first run. It shows a wren scene, a `title`, an optional `description` and an `action`. Pick the
 `scene` to suit (`all-caught-up` by default), pass `scene={false}` for none, or supply your own
 `illustration`. `size="sm"` fits a panel or a popover; `headingLevel` fits the title into the page
-outline. It is the default empty state of `QueryList` and `QueryDetail`. For an error, write what
-went wrong and offer a retry instead; the wren is for calm moments.
+outline. It is the default empty state of `QueryList` and `QueryDetail`. For a list or a panel
+that failed to load, write what went wrong and offer a retry with no drawing (`scene={false}`);
+the wren is for calm moments. A whole page that failed or does not exist is the exception, and
+has the `error` and `not-found` scenes.
 
 **SearchField** is an `Input` set up for search: a magnifying glass, a clear button once there is
 text (Escape clears too), an optional `shortcut` hint while empty, and a `loading` spinner. Enter
@@ -449,19 +456,39 @@ do not belong in the product interface, which stays calm.
 
 ## Illustrations
 
-**Wren** draws the wren in one of seven scenes. Six are converted from the brand boards; `flying`
-was drawn for the product in the same line and is not on the boards.
+**Wren** draws the wren in one of its scenes. The first six are converted from the brand boards;
+the rest were drawn for the product in the same line and are not on the boards.
 
-| `scene`              | Shows                                       | Use for                                           |
-| -------------------- | ------------------------------------------- | ------------------------------------------------- |
-| `all-caught-up`      | On a branch, with a ticked box              | Empty inbox, nothing waiting                      |
-| `conversations`      | Standing on a speech bubble                 | First message, the chat section of the site       |
-| `help-articles`      | On a stack of books                         | Knowledge base, no search results                 |
-| `help-for-this-page` | On a browser window, pointing at part of it | Contextual help                                   |
-| `self-hosted`        | On the roof of a birdhouse                  | Setup screens, the hosting section                |
-| `plugs-in`           | On a cable about to be plugged in           | Install steps, the developer section              |
-| `flying`             | In flight, carrying a letter                | A message sent, an invitation or email on its way |
+| `scene`              | Shows                                          | Use for                                              |
+| -------------------- | ---------------------------------------------- | ---------------------------------------------------- |
+| `all-caught-up`      | On a branch, with a ticked box                 | Empty inbox, nothing waiting                         |
+| `conversations`      | Standing on a speech bubble                    | First message, the chat section of the site          |
+| `help-articles`      | On a stack of books                            | Knowledge base, the help center section of the site  |
+| `help-for-this-page` | On a browser window, pointing at part of it    | Contextual help                                      |
+| `self-hosted`        | On the roof of a birdhouse                     | Setup screens, the hosting section                   |
+| `plugs-in`           | On a cable about to be plugged in              | Install steps, the developer section                 |
+| `flying`             | In flight, carrying a letter                   | A message sent, an invitation or email on its way    |
+| `no-results`         | Looking through a magnifying glass             | A search or a filter that matched nothing            |
+| `nothing-here`       | On the flap of an empty box                    | A view with nothing in it yet, when no other fits    |
+| `error`              | On a tipped ink bottle, beside the spill       | A whole page that failed to load                     |
+| `not-found`          | On a signpost pointing two ways                | A page or a record that does not exist               |
+| `ticket`             | On a twig, holding a ticket in its beak        | No tickets yet, the tickets section of the site      |
+| `resolved`           | Beside a rosette with a tick                   | A conversation resolved or rated                     |
+| `team`               | Three wrens together on a wire                 | The team list, inviting the first colleague          |
+| `settings`           | On the handle of a toolbox                     | Settings with nothing set up yet                     |
+| `branding`           | On a paint pot, with a brush and a colour card | Brand and appearance settings                        |
+| `notifications`      | On top of a ringing bell                       | Notification settings, asking to allow notifications |
+| `attachments`        | Beside a sheet of paper with a large paperclip | No files yet, a place to drop files                  |
+| `visitors`           | On a crate, looking through a telescope        | Nobody here yet: live visitors, no contacts          |
+| `offline`            | On a pole, beside a wire snapped in two        | No connection, live updates lost                     |
+| `welcome`            | Under a string of flags                        | First run, a new account                             |
+| `sign-in`            | Holding a key, in front of a padlock           | Signing in, a page that needs permission             |
+| `first-article`      | On an open book with blank pages, by a pencil  | A help center with no articles                       |
+| `open-source`        | On angle brackets with a heart between them    | The open source section of the site                  |
 
+- **Without the wren:** `bird={false}` leaves the wren out and keeps the things around it. Use it
+  on a screen that carries someone else's brand, such as the visitor's chat. `EmptyState` takes
+  the same prop. Every scene's wren group has the class `hw-bird`; a new scene needs it too.
 - **Colour:** ink lines take the text colour (`currentColor`), so they turn to paper in dark mode.
   Moss, red pen and highlighter come from the tokens.
 - **Motion:** with `animate` (the default) a scene draws itself in once, then stays mostly still.

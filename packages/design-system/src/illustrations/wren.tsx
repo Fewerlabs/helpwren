@@ -5,7 +5,7 @@ import { cn } from "#lib/cn";
 import { scenes, type WrenScene } from "./scenes";
 
 export interface WrenProps extends Omit<ComponentProps<"svg">, "children"> {
-  /** Which of the six scenes to show. */
+  /** Which scene to show. */
   scene: WrenScene;
   /** Draws the scene in when it appears. People who prefer reduced motion see it still. Default true. */
   animate?: boolean;
@@ -14,14 +14,14 @@ export interface WrenProps extends Omit<ComponentProps<"svg">, "children"> {
   /** Hides the illustration from screen readers, when the text beside it says it all. */
   decorative?: boolean;
   /**
-   * Leaves the wren out of the `conversations` scene, so only the speech bubbles show. For a
-   * place that carries someone else's brand, where our mark would sit beside their logo.
+   * Leaves the wren out, so only the things around it show. For a place that carries someone
+   * else's brand, where our mark would sit beside their logo.
    */
   bird?: boolean;
 }
 
 /**
- * The wren, in one of its six scenes. It turns up wherever the product would
+ * The wren, in one of its scenes. It turns up wherever the product would
  * otherwise be empty. Lines take the text colour, so it follows the theme.
  */
 export function Wren({

@@ -55,6 +55,17 @@ describe("parseSettings", () => {
     });
   });
 
+  it("takes each launcher icon, and refuses one it does not know", () => {
+    for (const launcher of ["chat", "logo", "wren"]) {
+      expect(parseSettings([{ key: "widget", value: { launcher } }]).widget.launcher).toBe(
+        launcher,
+      );
+    }
+    expect(() => parseSettings([{ key: "widget", value: { launcher: "robin" } }])).toThrow(
+      HelpwrenError,
+    );
+  });
+
   it("falls back to defaults when rows are missing", () => {
     expect(parseSettings([])).toEqual(defaults);
   });

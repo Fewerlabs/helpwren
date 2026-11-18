@@ -36,6 +36,8 @@ export function MessagesScreen({ conversations, teamName, onClose }: MessagesScr
         {groups.length === 0 ? (
           <EmptyState
             scene="conversations"
+            // The speech bubbles alone: the wren is our mark, and this screen wears theirs.
+            bird={false}
             size="sm"
             className="pt-10"
             title="No messages yet"

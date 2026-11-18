@@ -57,10 +57,29 @@ describe("Wren", () => {
       expect(container.querySelector(`g[filter="url(#${id})"]`)).not.toBeNull();
     }
   });
-  it("can leave the wren out of the conversations scene", () => {
-    const { container } = render(<Wren scene="conversations" decorative bird={false} />);
+
+  it.each(wrenScenes)("can leave the wren out of the %s scene", (scene) => {
+    const { container } = render(<Wren scene={scene} decorative bird={false} />);
     expect(container.querySelector("[data-slot='wren']")).toHaveAttribute("data-bird", "off");
-    expect(container.querySelector(".hw-bird")).toBeInTheDocument();
+    // The stylesheet hides this group; what is left must still be a drawing.
+    const birds = container.querySelectorAll(".hw-bird");
+    expect(birds.length).toBeGreaterThan(0);
+    const inBird = [...birds].reduce((sum, bird) => sum + bird.querySelectorAll("path").length, 0);
+    expect(container.querySelectorAll("path").length).toBeGreaterThan(inBird);
+  });
+
+  it("gives every scene its own description", () => {
+    const { container } = render(
+      <>
+        {wrenScenes.map((scene) => (
+          <Wren key={scene} scene={scene} />
+        ))}
+      </>,
+    );
+    const labels = [...container.querySelectorAll("svg")].map((svg) =>
+      svg.getAttribute("aria-label"),
+    );
+    expect(new Set(labels).size).toBe(wrenScenes.length);
   });
 });
 

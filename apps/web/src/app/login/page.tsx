@@ -1,4 +1,4 @@
-import { Card, Logo } from "@helpwren/design-system";
+import { Card, Logo, Wren } from "@helpwren/design-system";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -13,6 +13,8 @@ export default async function LoginPage() {
     <main className="grid min-h-dvh place-items-center p-6">
       <div className="grid w-full max-w-sm gap-6">
         <Logo variant="lockup" size={32} />
+        {/* The form's own heading says what this page is, so the drawing is decorative. */}
+        <Wren scene="sign-in" decorative className="mx-auto max-w-44" />
         <Card className="p-6">
           <LoginForm />
         </Card>
