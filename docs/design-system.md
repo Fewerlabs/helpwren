@@ -360,6 +360,84 @@ with `label`. `Button` has one built in through `loading`.
 **Skeleton** stands in for content that is loading, in its shape. It is hidden from assistive
 technology, so announce loading once on the container (`role="status"`).
 
+## Shared components
+
+Composed pieces built only from base components and the illustrations. They hold no business
+logic, fetch nothing and keep no store, so they work anywhere: the inbox, the widget, the help
+center. Each is shown under **Shared** in Storybook.
+
+**EmptyState** fills a place that would otherwise be blank: an empty list, no search results, a
+first run. It shows a wren scene, a `title`, an optional `description` and an `action`. Pick the
+`scene` to suit (`all-caught-up` by default), pass `scene={false}` for none, or supply your own
+`illustration`. `size="sm"` fits a panel or a popover; `headingLevel` fits the title into the page
+outline. It is the default empty state of `QueryList` and `QueryDetail`. For an error, write what
+went wrong and offer a retry instead; the wren is for calm moments.
+
+**SearchField** is an `Input` set up for search: a magnifying glass, a clear button once there is
+text (Escape clears too), an optional `shortcut` hint while empty, and a `loading` spinner. Enter
+calls `onSearch`. Give it an `aria-label` or wrap it in a `Field`. For choosing from results in a
+dropdown, use `Combobox`.
+
+**PageHeader** is the top of a page or a major section: an optional mono `eyebrow`, the `title`,
+a `description`, and `actions` on the right. `headingLevel` defaults to 1; use 2 for a section. It
+is not a landmark, so a page may have several.
+
+**CodeSnippet** shows a block of code with a copy button, for install snippets and API examples.
+`language` labels it, `wrap` wraps long lines instead of scrolling, and `onCopied` tells you when
+it was copied. Use `Kbd` for a single key and plain `<code>` for a word inside a sentence.
+
+**MessageBubble** is one message in a conversation. `from="self"` is filled and sits on the right;
+`from="other"` is outlined and sits on the left, so the two are told apart by shape and position,
+not colour, and screen readers hear who is speaking. `author` and `time` label it, `footer` holds
+a delivery status or attachments, and `note` marks an internal note the contact cannot see. Lay
+bubbles out in a flex column.
+
+**ConversationListItem** is one row in a conversation list: avatar, name, the latest message,
+`time`, a `status` chip and an `unread` count. It is a link when given `href` and a button
+otherwise, and `selected` marks the conversation that is open. Use `DataTable` when the list needs
+columns and sorting.
+
+**ArticleCard** is a help article in a list or grid: `category`, `title`, `summary` and `meta`.
+The whole card is one link. Use a plain `Link` for an article mentioned in running text.
+
+**Highlight** marks a word or short phrase with the yellow highlighter, or with a wavy red-pen
+underline (`variant="pen"`). It sits behind a word, never a paragraph.
+
+**MarginNote** is a handwritten note in red pen with one arrow (`down-right`, `up-left` or
+`none`).
+
+`Highlight` and `MarginNote` are for the marketing site, the docs and beside illustrations. They
+do not belong in the product interface, which stays calm.
+
+## Illustrations
+
+**Wren** draws the wren in one of six scenes, converted from the brand boards:
+
+| `scene`              | Shows                                       | Use for                                     |
+| -------------------- | ------------------------------------------- | ------------------------------------------- |
+| `all-caught-up`      | On a branch, with a ticked box              | Empty inbox, nothing waiting                |
+| `conversations`      | Standing on a speech bubble                 | First message, the chat section of the site |
+| `help-articles`      | On a stack of books                         | Knowledge base, no search results           |
+| `help-for-this-page` | On a browser window, pointing at part of it | Contextual help                             |
+| `self-hosted`        | On the roof of a birdhouse                  | Setup screens, the hosting section          |
+| `plugs-in`           | On a cable about to be plugged in           | Install steps, the developer section        |
+
+- **Colour:** ink lines take the text colour (`currentColor`), so they turn to paper in dark mode.
+  Moss, red pen and highlighter come from the tokens.
+- **Motion:** with `animate` (the default) a scene draws itself in once, then stays mostly still.
+  `animate={false}` shows it finished. People who prefer reduced motion always see it still.
+- **Accessibility:** each scene has a built-in description; override it with `label`, or pass
+  `decorative` when the text beside it already says everything (as `EmptyState` does).
+
+Size it with a width class; it keeps its proportions.
+
+**Logo** is the Helpwren mark, a wren drawn in one line. `variant="lockup"` adds the wordmark.
+`size` is the height of the mark in pixels: as it shrinks, detail drops in the order the brand
+board sets (brow, then wing, then eye) and the line thickens so it stays legible at 16px. It takes
+the text colour.
+
+Use an illustration for moments with personality, and an `Icon` for interface controls.
+
 ## Data components
 
 `QueryList` and `QueryDetail` fetch through [TanStack Query](https://tanstack.com/query) and draw
@@ -403,7 +481,7 @@ States it draws for you, each replaceable:
 | State                                 | Default                                    | Replace with       |
 | ------------------------------------- | ------------------------------------------ | ------------------ |
 | First load                            | Skeleton rows (`loadingRows`)              | `renderLoading`    |
-| No items                              | An empty state with `messages.empty`       | `renderEmpty`      |
+| No items                              | `EmptyState` with `messages.empty`         | `renderEmpty`      |
 | Failed with nothing to show           | A message and a "Try again" button         | `renderError`      |
 | Failed with items showing (load more) | A compact message and retry under the list | `renderError`      |
 | Refreshing with items showing         | `LinearProgress` pinned to the top         |                    |

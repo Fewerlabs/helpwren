@@ -6,6 +6,7 @@ import { Button } from "../base/button/button";
 import { Icon } from "../base/icon/icon";
 import { LinearProgress } from "../base/linear-progress/linear-progress";
 import { Skeleton } from "../base/skeleton/skeleton";
+import { EmptyState } from "../shared/empty-state/empty-state";
 
 /** The options of TanStack Query that these components pass through. */
 export interface QueryBehaviour {
@@ -64,9 +65,9 @@ export function DefaultEmpty({
   description?: ReactNode;
 }) {
   return (
-    <StateBlock
+    <EmptyState
       role="status"
-      icon={<Icon name="tray" className="size-8" weight="light" />}
+      size="sm"
       title={title}
       {...(description === undefined ? {} : { description })}
     />

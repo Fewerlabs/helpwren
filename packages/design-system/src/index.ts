@@ -2,7 +2,9 @@
 // Components in `components/ui` are internal and are never exported from here.
 export * from "./components/base";
 export * from "./components/data";
+export * from "./components/shared";
 export * from "./components/form";
+export * from "./illustrations";
 export { cn } from "./lib/cn";
 export {
   statusNames,
