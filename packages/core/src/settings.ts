@@ -89,6 +89,10 @@ const ticketsSchema = z.object({
 const emailSchema = z.object({
   fromName: z.string().min(1).optional(),
   fromAddress: z.email().optional(),
+  /** Email a contact an agent's reply they have not read after a few minutes. */
+  replies: z.boolean().default(true),
+  /** Email a contact when the team changes their ticket's status. */
+  status: z.boolean().default(true),
 });
 
 export type EmailSettings = z.infer<typeof emailSchema>;
@@ -100,7 +104,7 @@ const storedSettingsSchema = z.object({
   chat_page: pageTextSchema.default({}),
   tickets: ticketsSchema.default({ fromChat: true }),
   /** Who the install's emails are from. Without an address it sends none. */
-  email: emailSchema.default({}),
+  email: emailSchema.default(() => emailSchema.parse({})),
   help_center: pageTextSchema.default({}),
   guest_details: guestDetailsSchema.default("email"),
   /**
@@ -198,6 +202,8 @@ export const settingsPatchSchema = z
     email: z.object({
       fromName: z.string().trim().min(1).max(60).optional(),
       fromAddress: z.string().trim().toLowerCase().pipe(z.email()).optional(),
+      replies: z.boolean(),
+      status: z.boolean(),
     }),
     helpCenter: pageTextPatchSchema,
     guestDetails: guestDetailsSchema,

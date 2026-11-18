@@ -112,11 +112,13 @@ export async function changeMember(id: string, change: MemberChange): Promise<Ch
 export async function saveEmail(values: EmailValues): Promise<SaveResult> {
   const parsed = emailSchema.safeParse(values);
   if (!parsed.success) return { ok: false, reason: "invalid" };
-  const { fromName, fromAddress } = parsed.data;
+  const { fromName, fromAddress, replies, status } = parsed.data;
 
   const helpwren = await getHelpwren();
   const result = await helpwren.settings.update({
     email: {
+      replies,
+      status,
       ...(fromName ? { fromName } : {}),
       ...(fromAddress ? { fromAddress } : {}),
     },

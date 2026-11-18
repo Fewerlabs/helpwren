@@ -31,6 +31,8 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
     defaultValues: {
       fromName: settings.email.fromName ?? "",
       fromAddress: settings.email.fromAddress ?? "",
+      replies: settings.email.replies,
+      status: settings.email.status,
     },
   });
   const disabled = !canEdit || form.formState.isSubmitting;
@@ -49,6 +51,21 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
       type: "input",
       hint: "Leave empty to use your brand's name.",
       props: { placeholder: settings.brand.name },
+    },
+  ];
+
+  const contactFields: FieldItem<EmailValues>[] = [
+    {
+      name: "replies",
+      label: "Replies they have not read",
+      type: "switch",
+      hint: "Sent five minutes after your team replies, if the contact has not read it in the chat.",
+    },
+    {
+      name: "status",
+      label: "Changes to a ticket's status",
+      type: "switch",
+      hint: "Sent when your team resolves, reopens or parks their ticket.",
     },
   ];
 
@@ -114,6 +131,12 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
         description="Who emails to your contacts and your team are from."
       >
         <FieldList control={form.control} fields={fields} disabled={disabled} />
+      </SettingsSection>
+      <SettingsSection
+        title="To your contacts"
+        description="When a contact who gave an email address hears from you by email as well as in the chat."
+      >
+        <FieldList control={form.control} fields={contactFields} disabled={disabled} />
       </SettingsSection>
       {canEdit ? (
         <SettingsSection

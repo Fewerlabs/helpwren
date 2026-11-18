@@ -15,6 +15,11 @@ const serverEnvSchema = z.object({
   SMTP_URL: z.string().min(1).optional(),
   /** For `resend`: an API key that may send. */
   RESEND_API_KEY: z.string().min(1).optional(),
+  /**
+   * What a scheduler must present to run the install's timed work, such as sending emails
+   * that are due. Long and random. Unset means there is no scheduled work.
+   */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 function parseServerEnv(source: Record<string, string | undefined>) {
@@ -33,4 +38,5 @@ export const serverEnv = parseServerEnv({
   EMAIL_PROVIDER: set(process.env.EMAIL_PROVIDER),
   SMTP_URL: set(process.env.SMTP_URL),
   RESEND_API_KEY: set(process.env.RESEND_API_KEY),
+  CRON_SECRET: set(process.env.CRON_SECRET),
 });

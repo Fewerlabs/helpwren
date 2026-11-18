@@ -120,6 +120,10 @@ export const teamGroupSchema = z.object({
 export type TeamGroupValues = z.infer<typeof teamGroupSchema>;
 
 export const emailSchema = z.object({
+  /** Email a contact a reply they have not read after a few minutes. */
+  replies: z.boolean(),
+  /** Email a contact when the team changes their ticket's status. */
+  status: z.boolean(),
   /** Empty for the brand's own name. */
   fromName: z.string().trim().max(60, "Keep the name under 60 characters."),
   /** Empty while no address has been chosen; nothing is sent until one is. */

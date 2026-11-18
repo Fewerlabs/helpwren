@@ -34,3 +34,18 @@ assume a mail provider.
 - Each provider's deliverability rules (verified domains, SPF, DKIM) are the adopter's to set
   up. A rejection is passed on in the provider's words.
 - Reply by email and the emails themselves build on this in the next steps.
+
+## Later changes
+
+- 2026-11-19: emails to contacts. The database queues an email as its cause happens: an agent's
+  reply, to be sent five minutes later if the contact has still not read it, and a change to a
+  ticket's status by the team. `processEmailQueue` sends what is due, one email for every
+  waiting reply in a conversation and one for where a ticket now stands. It claims its work
+  with `for update skip locked`, so two runs never send the same email, tries again when the
+  provider cannot be reached, and gives up after three tries or on a refusal.
+- The sender is run by a scheduler calling `POST /api/jobs/email` with the install's
+  `CRON_SECRET`, every minute. The app does not schedule itself: where it runs decides what can
+  call it on time, and the setup guide gives the common ways, including a database job.
+- An email links back to the page the contact wrote from, where the widget still has their
+  session, and falls back to the chat page. It does not sign them in. Answering by email is the
+  next step.
