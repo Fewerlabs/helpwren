@@ -253,6 +253,9 @@ export function RichTextEditor({
     latest.current = { onChange, uploadImage, choices, slash, slashIndex };
   });
   const insertImages = useRef<(files: File[]) => void>(() => undefined);
+  // The editor tidies a document as it loads it, which is a change nobody made. Changes are
+  // reported from the first time the person does something.
+  const touched = useRef(false);
 
   const editor = useEditor({
     // Drawn after the page has loaded in the browser, so the server's page and the browser's
@@ -318,8 +321,11 @@ export function RichTextEditor({
         return true;
       },
     },
+    onFocus: () => {
+      touched.current = true;
+    },
     onUpdate: ({ editor: current }) => {
-      latest.current.onChange?.(current.getJSON() as RichTextNode);
+      if (touched.current) latest.current.onChange?.(current.getJSON() as RichTextNode);
     },
     onSelectionUpdate: () => {
       setField(null);
@@ -330,6 +336,7 @@ export function RichTextEditor({
     insertImages.current = (files) => {
       const upload = latest.current.uploadImage;
       if (!editor || !upload) return;
+      touched.current = true;
       setUploading(true);
       void Promise.all(files.map((file) => upload(file)))
         .then((addresses) => {
@@ -519,6 +526,7 @@ export function RichTextEditor({
               <BlockList
                 items={choices}
                 onChoose={(choice) => {
+                  touched.current = true;
                   setAdding(false);
                   choice.run(editor);
                 }}

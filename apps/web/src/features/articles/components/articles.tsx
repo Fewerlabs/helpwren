@@ -1,0 +1,429 @@
+"use client";
+
+import { type ArticleStatus, type ArticleSummary } from "@helpwren/core";
+import {
+  Button,
+  DataTable,
+  EmptyState,
+  FilterBar,
+  Icon,
+  QueryList,
+  SearchField,
+  toast,
+  Tooltip,
+  type DataTableColumn,
+  type FilterDefinition,
+  type FilterValue,
+} from "@helpwren/design-system";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+
+import { DashboardPage, Panel, PanelHeader, type PageNavItem } from "@/features/dashboard";
+import { formatTimeAgo } from "@/lib/format-time";
+import { useHelpwren } from "@/lib/helpwren-context";
+import { useDebounced } from "@/lib/use-debounced";
+
+import { collectionIcon } from "../collection-icons";
+import {
+  ARTICLES_QUERY_KEY,
+  collectionHref,
+  HELP_PATH,
+  NO_COLLECTION,
+  useArticleCounts,
+  useArticlesChanged,
+  useCollections,
+  useShown,
+} from "../hooks/use-articles";
+import { ArticleStatusChip } from "./article-status";
+import { CollectionDialog } from "./collection-dialog";
+import { NewArticleDialog } from "./new-article-dialog";
+
+const PAGE_SIZE = 25;
+
+const filters: readonly FilterDefinition[] = [
+  {
+    id: "status",
+    label: "Status",
+    icon: "funnel",
+    options: [
+      { value: "published", label: "Published" },
+      { value: "draft", label: "Draft" },
+    ],
+  },
+];
+
+/** One status when exactly one is ticked; both ticked is the same as neither. */
+function chosenStatus(value: FilterValue): ArticleStatus | undefined {
+  const chosen = value.status ?? [];
+  return chosen.length === 1 ? (chosen[0] as ArticleStatus) : undefined;
+}
+
+/**
+ * The dashboard's Help center: collections down the side, and the articles of the one chosen
+ * in a table to search, filter and put in order. An article opens in the editor.
+ */
+export function Articles() {
+  const getClient = useHelpwren();
+  const collections = useCollections();
+  const counts = useArticleCounts();
+  const shown = useShown(collections.data);
+  const changed = useArticlesChanged();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterValue>({});
+  const [page, setPage] = useState(1);
+  const [editing, setEditing] = useState<"new" | "current" | null>(null);
+  const [starting, setStarting] = useState(false);
+  const searchText = useDebounced(search).trim();
+  const status = chosenStatus(filter);
+
+  // What readers answered, shared by every row. A hook, because no one row owns it.
+  const feedback = useQuery({
+    queryKey: [...ARTICLES_QUERY_KEY, "feedback"],
+    queryFn: () => getClient().articles.feedbackTotals(),
+  }).data;
+
+  const collection = shown.kind === "collection" ? shown.collection : undefined;
+  const collectionId = shown.kind === "none" ? null : collection?.id;
+  const shownKey = shown.kind === "collection" ? shown.collection.id : shown.kind;
+  const title = shown.kind === "all" ? "All articles" : (collection?.name ?? "Not in a collection");
+
+  // A new search, filter or collection starts from its first page.
+  const listKey = `${shownKey}:${searchText}:${status ?? ""}`;
+  const [lastListKey, setLastListKey] = useState(listKey);
+  if (lastListKey !== listKey) {
+    setLastListKey(listKey);
+    setPage(1);
+  }
+
+  // Order is a collection's own, so it can only be changed while all of it is in view.
+  const canReorder = Boolean(collection) && !searchText && !status;
+
+  const nav = useMemo<PageNavItem[]>(
+    () => [
+      {
+        href: HELP_PATH,
+        label: "All articles",
+        icon: "file-text",
+        count: counts?.total,
+        active: shown.kind === "all",
+      },
+      ...(collections.data ?? []).map((item) => ({
+        href: collectionHref(item.slug),
+        label: item.name,
+        icon: collectionIcon(item.icon),
+        count: item.articleCount,
+        active: collection?.id === item.id,
+        group: "Collections",
+      })),
+      ...(counts && counts.uncategorised > 0
+        ? [
+            {
+              href: collectionHref(NO_COLLECTION),
+              label: "Not in a collection",
+              icon: "folder" as const,
+              count: counts.uncategorised,
+              active: shown.kind === "none",
+              group: "Collections",
+            },
+          ]
+        : []),
+    ],
+    [collection?.id, collections.data, counts, shown.kind],
+  );
+
+  return (
+    <DashboardPage
+      title="Help center"
+      navLabel="Collections"
+      nav={nav}
+      navAction={
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground w-full justify-start px-2"
+          onClick={() => {
+            setEditing("new");
+          }}
+        >
+          <Icon name="plus" />
+          New collection
+        </Button>
+      }
+    >
+      <QueryList
+        queryKey={[...ARTICLES_QUERY_KEY, "list", shownKey, searchText, status ?? "any"]}
+        queryFn={({ page: number, pageSize }) =>
+          getClient().articles.list({
+            collectionId,
+            status,
+            search: searchText,
+            page: number,
+            // A collection is reordered as a whole, so all of it is loaded at once.
+            pageSize: collection ? 200 : pageSize,
+          })
+        }
+        pagination="pages"
+        pageSize={PAGE_SIZE}
+        page={page}
+        onPageChange={setPage}
+      >
+        {(list) => {
+          async function move(index: number, by: -1 | 1) {
+            const ids = list.items.map((article) => article.id);
+            const [moved] = ids.splice(index, 1);
+            if (!moved) return;
+            ids.splice(index + by, 0, moved);
+            try {
+              await getClient().articles.reorder(ids);
+              await changed();
+            } catch {
+              toast.error("The articles could not be reordered. Try again.");
+            }
+          }
+
+          const columns: DataTableColumn<ArticleSummary>[] = [
+            {
+              id: "title",
+              header: "Title",
+              rowHeader: true,
+              cell: (article) => (
+                <Link
+                  href={`${HELP_PATH}/${article.id}`}
+                  className="focus-visible:outline-ring block max-w-full rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <span className="block truncate font-medium">{article.title}</span>
+                  {article.summary ? (
+                    <span className="text-muted-foreground block truncate text-xs font-normal">
+                      {article.summary}
+                    </span>
+                  ) : null}
+                </Link>
+              ),
+            },
+            {
+              id: "collection",
+              header: "Collection",
+              hidden: shown.kind !== "all",
+              className: "text-muted-foreground max-lg:hidden",
+              headerClassName: "max-lg:hidden",
+              cell: (article) => article.collection?.name ?? "None yet",
+            },
+            {
+              id: "status",
+              header: "Status",
+              cell: (article) => <ArticleStatusChip status={article.status} />,
+            },
+            {
+              id: "helpful",
+              header: "Found helpful",
+              align: "end",
+              className: "text-muted-foreground tabular-nums max-md:hidden",
+              headerClassName: "max-md:hidden",
+              cell: (article) => {
+                const totals = feedback?.[article.id];
+                if (!totals) return "No answers yet";
+                return `${totals.helpful} of ${totals.helpful + totals.unhelpful}`;
+              },
+            },
+            {
+              id: "updated",
+              header: "Updated",
+              align: "end",
+              className: "text-muted-foreground tabular-nums max-sm:hidden",
+              headerClassName: "max-sm:hidden",
+              cell: (article) => formatTimeAgo(article.updatedAt),
+            },
+            {
+              id: "order",
+              header: <span className="sr-only">Order</span>,
+              align: "end",
+              hidden: !canReorder,
+              width: "5rem",
+              cell: (article, index) => (
+                <span className="flex justify-end">
+                  <Tooltip content="Move up">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Move ${article.title} up`}
+                      disabled={index === 0}
+                      onClick={() => void move(index, -1)}
+                    >
+                      <Icon name="arrow-up" />
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content="Move down">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Move ${article.title} down`}
+                      disabled={index === list.items.length - 1}
+                      onClick={() => void move(index, 1)}
+                    >
+                      <Icon name="arrow-down" />
+                    </Button>
+                  </Tooltip>
+                </span>
+              ),
+            },
+          ];
+
+          return (
+            <Panel aria-label={title} className="h-full">
+              <PanelHeader className="justify-between">
+                <h2 className="flex min-w-0 items-baseline gap-1.5 font-semibold">
+                  <span className="truncate">{title}</span>
+                  {list.total === undefined ? null : (
+                    <span className="text-muted-foreground text-xs font-normal tabular-nums">
+                      {list.total}
+                    </span>
+                  )}
+                </h2>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <SearchField
+                    aria-label="Search articles"
+                    placeholder="Search articles"
+                    // Quiet, like the inbox search: a tint with no edge.
+                    className="bg-muted dark:bg-muted min-h-8 w-64 border-transparent max-lg:w-44 max-sm:hidden"
+                    value={search}
+                    onValueChange={setSearch}
+                    loading={list.isFetching && searchText !== ""}
+                  />
+                  {collection ? (
+                    <Tooltip content="Edit collection">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Edit the ${collection.name} collection`}
+                        onClick={() => {
+                          setEditing("current");
+                        }}
+                      >
+                        <Icon name="pencil-simple" />
+                      </Button>
+                    </Tooltip>
+                  ) : null}
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setStarting(true);
+                    }}
+                  >
+                    <Icon name="plus" />
+                    New article
+                  </Button>
+                </div>
+              </PanelHeader>
+              <div className="border-rule flex min-h-11 shrink-0 items-center border-b px-3 py-1.5">
+                <FilterBar filters={filters} value={filter} onValueChange={setFilter} />
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {list.status === "error" ? (
+                  <EmptyState
+                    scene={false}
+                    size="sm"
+                    className="pt-10"
+                    title="Articles could not be loaded."
+                    action={
+                      <Button variant="secondary" size="sm" onClick={list.retry}>
+                        Try again
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <DataTable
+                    caption={title}
+                    density="compact"
+                    columns={columns}
+                    rows={list.items}
+                    getRowKey={(article) => article.id}
+                    loading={list.isFetching}
+                    empty={
+                      searchText || status ? (
+                        <EmptyState
+                          scene="no-results"
+                          size="sm"
+                          className="py-10"
+                          title="No articles found"
+                          description="Try other words, or clear the filter."
+                        />
+                      ) : (
+                        <EmptyState
+                          scene="first-article"
+                          size="sm"
+                          className="py-10"
+                          title={collection ? "Nothing in this collection yet" : "No articles yet"}
+                          description="Write the answers to the questions you are asked most. Visitors find them on your help center and in the chat."
+                          action={
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setStarting(true);
+                              }}
+                            >
+                              Write an article
+                            </Button>
+                          }
+                        />
+                      )
+                    }
+                  />
+                )}
+              </div>
+
+              {!collection &&
+              list.pagination &&
+              (list.pagination.hasPrevious || list.pagination.hasNext) ? (
+                <footer className="border-rule flex h-11 shrink-0 items-center justify-between border-t px-3">
+                  <p className="text-muted-foreground text-xs tabular-nums" aria-live="polite">
+                    Page {list.pagination.page}
+                    {list.pagination.pageCount ? ` of ${list.pagination.pageCount}` : ""}
+                  </p>
+                  <div className="flex gap-1.5">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={!list.pagination.hasPrevious}
+                      onClick={() => {
+                        setPage(page - 1);
+                      }}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={!list.pagination.hasNext}
+                      onClick={() => {
+                        setPage(page + 1);
+                      }}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </footer>
+              ) : null}
+            </Panel>
+          );
+        }}
+      </QueryList>
+
+      <CollectionDialog
+        collection={editing === "current" ? (collection ?? null) : null}
+        collections={collections.data ?? []}
+        open={editing !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditing(null);
+        }}
+      />
+      <NewArticleDialog
+        collections={collections.data ?? []}
+        collectionId={collection?.id}
+        open={starting}
+        onOpenChange={setStarting}
+      />
+    </DashboardPage>
+  );
+}
