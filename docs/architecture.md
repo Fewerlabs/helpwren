@@ -14,7 +14,7 @@ pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 | `packages/core`          | Headless client library                                           |
 | `packages/widget`        | The script a site loads to show the chat, published as `helpwren` |
 | `packages/react-native`  | React Native support screen (stub)                                |
-| `packages/adapters`      | Identity, push, email and storage adapters (stub)                 |
+| `packages/adapters`      | Identity adapters, so far; push, email and storage to come        |
 | `packages/cli`           | Installer and upgrader (stub)                                     |
 | `packages/config`        | Shared TypeScript, ESLint and Prettier configuration              |
 
@@ -176,6 +176,16 @@ it from browser code fails the build. Route tests live in `apps/web/tests` and c
 directly against the local database: `pnpm test:db`. See
 [ADR 0008](decisions/0008-guest-chat-server.md).
 
+### Identified users
+
+A product's own logged-in users are confirmed by an identity adapter from `@helpwren/adapters`
+(`src/lib/identity.ts` picks the one the install is set up for) and then signed in by
+`sessionForUser` (`src/lib/supabase/user-session.ts`), which gives the same person the same
+Supabase Auth user on every device. `identify_contact` in the database records them as a
+verified contact. Signing keys and other credentials live in the `secrets` table, which only the
+server can read. See [ADR 0013](decisions/0013-sessions-for-identified-users.md) and
+[ADR 0014](decisions/0014-identity-adapters.md).
+
 ### Features
 
 Each folder in `src/features` is one feature. `features/example` is a complete, working one
@@ -251,6 +261,7 @@ between screens does not refetch what was loaded a moment ago.
 | `GET /api/widget`                   | How the widget looks on a host site: position, colour, launcher icon. Readable from any origin                           |
 | `POST /api/conversations`           | Starts a conversation with its first message                                                                             |
 | `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                       |
+| `POST /api/identify`                | Signs the chat in as one of the host product's users, from a token the install's identity adapter confirms               |
 
 ## The design system
 

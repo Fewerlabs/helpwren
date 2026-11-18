@@ -341,6 +341,25 @@ export type Database = {
           },
         ];
       };
+      secrets: {
+        Row: {
+          key: string;
+          updated_at: string;
+          value: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          key: string;
+          updated_at?: string;
+          value: NonNullable<Json>;
+        };
+        Update: {
+          key?: string;
+          updated_at?: string;
+          value?: NonNullable<Json>;
+        };
+        Relationships: [];
+      };
       settings: {
         Row: {
           is_public: boolean;
@@ -433,6 +452,38 @@ export type Database = {
       };
     };
     Functions: {
+      identify_contact: {
+        Args: {
+          attributes?: Json;
+          audience?: string;
+          contact_id: string;
+          email?: string;
+          external_id: string;
+          name?: string;
+          org_id?: string;
+          org_name?: string;
+        };
+        Returns: {
+          attributes: NonNullable<Json>;
+          audience: string | null;
+          created_at: string;
+          email: string | null;
+          external_id: string | null;
+          id: string;
+          kind: string;
+          name: string | null;
+          org_id: string | null;
+          org_name: string | null;
+          phone: string | null;
+          verified: boolean;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "contacts";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       search_conversations: {
         Args: { query: string };
         Returns: {

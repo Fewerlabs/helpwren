@@ -1,9 +1,14 @@
 # @helpwren/adapters
 
-> **Status: stub.** Nothing is implemented yet. This package exists so the workspace layout,
-> naming and tooling are settled before product work starts.
+> **Status: early.** Identity adapters have begun; the rest is still to come.
 
 Identity, push, email and storage adapters that connect Helpwren to a host product.
+
+## What it contains
+
+- **Identity, so far:** the `IdentityAdapter` interface and the signed token adapter (a
+  short-lived HS256 token from the product's backend). See
+  [ADR 0014](../../docs/decisions/0014-identity-adapters.md).
 
 ## What it will contain
 

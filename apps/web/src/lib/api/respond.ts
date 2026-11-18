@@ -7,6 +7,8 @@ const statuses: Record<ApiErrorCode, number> = {
   not_found: 404,
   details_required: 422,
   rate_limited: 429,
+  token_expired: 401,
+  token_rejected: 401,
 };
 
 /** A failed API response, in the one shape every route uses. */

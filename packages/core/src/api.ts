@@ -13,6 +13,8 @@ export const apiErrorSchema = z.object({
       "not_found",
       "details_required",
       "rate_limited",
+      "token_expired",
+      "token_rejected",
     ]),
     message: z.string(),
   }),

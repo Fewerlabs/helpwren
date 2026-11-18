@@ -18,3 +18,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0011 | [Tickets, assignment and internal notes](0011-tickets-and-notes.md)            |
 | 0012 | [File attachments](0012-attachments.md)                                        |
 | 0013 | [Sessions for the host product's users](0013-sessions-for-identified-users.md) |
+| 0014 | [Identity adapters and the signed token](0014-identity-adapters.md)            |
