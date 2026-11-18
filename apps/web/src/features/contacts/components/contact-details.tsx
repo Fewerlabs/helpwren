@@ -120,7 +120,6 @@ export function ContactDetails({ contactId, onClose, className }: ContactDetails
                   }
                   pageSize={20}
                   loadMoreOn="button"
-                  loadingRows={1}
                   getItemKey={(conversation) => conversation.id}
                   renderItem={(conversation) => (
                     <NextLink

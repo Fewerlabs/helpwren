@@ -5,7 +5,7 @@ import { cn } from "#lib/cn";
 import { Button } from "../base/button/button";
 import { Icon } from "../base/icon/icon";
 import { LinearProgress } from "../base/linear-progress/linear-progress";
-import { Skeleton } from "../base/skeleton/skeleton";
+import { AppLoader } from "../shared/app-loader/app-loader";
 import { EmptyState } from "../shared/empty-state/empty-state";
 
 /** The options of TanStack Query that these components pass through. */
@@ -134,29 +134,10 @@ export function StickyProgress({ active, label }: { active: boolean; label: stri
   );
 }
 
-export function DefaultListLoading({ label, rows }: { label: string; rows: number }) {
-  return (
-    <div role="status" aria-label={label} className="grid gap-3 py-2">
-      {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="flex items-center gap-3">
-          <Skeleton className="size-10 rounded-full" />
-          <div className="grid flex-1 gap-2">
-            <Skeleton className="h-3.5 w-1/3" />
-            <Skeleton className="h-3.5 w-3/4" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function DefaultDetailLoading({ label }: { label: string }) {
-  return (
-    <div role="status" aria-label={label} className="grid gap-3 py-2">
-      <Skeleton className="h-6 w-1/2" />
-      <Skeleton className="h-3.5 w-full" />
-      <Skeleton className="h-3.5 w-5/6" />
-      <Skeleton className="h-3.5 w-2/3" />
-    </div>
-  );
+/**
+ * The first load of a list or a record: the app's loader, in the middle of wherever the
+ * content will be. Nothing is guessed about the shape of what is coming.
+ */
+export function DefaultLoading({ label }: { label: string }) {
+  return <AppLoader label={label} size="sm" />;
 }

@@ -17,6 +17,7 @@ import { Input } from "../../base/input/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../base/popover/popover";
 import { Tooltip } from "../../base/tooltip/tooltip";
 import { type RichTextNode } from "../rich-text/rich-text";
+import { BlockHandle } from "./block-handle";
 import { blockChoices, type BlockChoice } from "./blocks";
 import { Callout } from "./callout";
 import { Slash, type SlashMenuState } from "./slash";
@@ -204,8 +205,10 @@ const menuShadow = "shadow-[0_8px_24px_rgb(38_35_30/0.12)]";
 /**
  * A rich-text editor for long writing, such as a help article, that works the way Notion does:
  * the page is only the writing. Typing `/` opens a menu of blocks (headings, lists, quotes,
- * code, callouts, pictures), selecting text brings up a small bar for bold, italic, code and
- * links, and Markdown shortcuts such as `## ` and `- ` work as typed.
+ * code, callouts, pictures). Beside the block under the pointer are a plus, which adds a block
+ * below, and a grip, which drags the block to a new place or opens what can be done to it.
+ * Selecting text brings up a small bar for bold, italic, code and links, and Markdown
+ * shortcuts such as `## ` and `- ` work as typed.
  *
  * It gives back a document tree, which `RichText` draws on the server with none of this code.
  */
@@ -485,6 +488,16 @@ export function RichTextEditor({
   return (
     <div data-slot="rich-text-editor" className={cn("relative flex flex-col", className)}>
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+
+      {editor && !disabled ? (
+        <BlockHandle
+          editor={editor}
+          choices={choices}
+          onUse={() => {
+            touched.current = true;
+          }}
+        />
+      ) : null}
 
       {editor && state && !disabled ? (
         <BubbleMenu

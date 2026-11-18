@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { cn } from "#lib/cn";
 
 import {
-  DefaultDetailLoading,
+  DefaultLoading,
   DefaultEmpty,
   DefaultError,
   StickyProgress,
@@ -100,7 +100,7 @@ export function QueryDetail<Data>({
       return children(data, { isFetching, refetch: retry });
     }
     if (query.isPending) {
-      return renderLoading?.() ?? <DefaultDetailLoading label={messages.loading} />;
+      return renderLoading?.() ?? <DefaultLoading label={messages.loading} />;
     }
     if (query.isError) {
       return (

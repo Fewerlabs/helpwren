@@ -1,4 +1,5 @@
 // The shared layer's public API: composed pieces built only from base components.
+export { AppLoader, type AppLoaderProps } from "./app-loader/app-loader";
 export { ArticleCard, type ArticleCardProps } from "./article-card/article-card";
 export {
   CodeSnippet,

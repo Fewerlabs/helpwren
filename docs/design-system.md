@@ -457,6 +457,16 @@ that failed to load, write what went wrong and offer a retry with no drawing (`s
 the wren is for calm moments. A whole page that failed or does not exist is the exception, and
 has the `error` and `not-found` scenes.
 
+**AppLoader** is the loading state for a page, a panel or anything else with nothing to show
+yet: the wren draws itself on its twig, gives a small hop, and is drawn again for as long as the
+wait lasts. `label` says what is loading ("Opening the article") and is announced; `size` is
+`sm`, `md` or `lg`; `bird={false}` draws a line of handwriting in place of the wren, for a
+screen that carries someone else's brand; `fill={false}` stops it filling its container. It is
+the default first-load state of `QueryList` and `QueryDetail`. People who prefer reduced motion
+see the drawing finished and still. Use `Skeleton` only where the shape of what is coming is
+known and helps, such as the rows of a table (`DataTable` does this itself), and `Spinner`
+inside a button or beside a line of text.
+
 **SearchField** is an `Input` set up for search: a magnifying glass, a clear button once there is
 text (Escape clears too), an optional `shortcut` hint while empty, and a `loading` spinner. Enter
 calls `onSearch`. Give it an `aria-label` or wrap it in a `Field`. For choosing from results in a
@@ -495,6 +505,7 @@ otherwise, and `selected` marks the conversation that is open. Use `DataTable` w
 columns and sorting.
 
 **ArticleCard** is a help article in a list or grid: `category`, `title`, `summary` and `meta`.
+With `icon` it stands for a whole collection of articles, with the icon in a tile above the name.
 The whole card is one link. Use a plain `Link` for an article mentioned in running text.
 
 **RichText** draws a rich-text document as a page: headings, paragraphs, lists, quotes, code,
@@ -638,7 +649,7 @@ States it draws for you, each replaceable:
 
 | State                                 | Default                                    | Replace with                |
 | ------------------------------------- | ------------------------------------------ | --------------------------- |
-| First load                            | Skeleton rows (`loadingRows`)              | `renderLoading`             |
+| First load                            | `AppLoader` with `messages.loading`        | `renderLoading`             |
 | No items                              | `EmptyState` with `messages.empty`         | `renderEmpty`               |
 | Failed with nothing to show           | A message and a "Try again" button         | `renderError`               |
 | Failed with items showing (load more) | A compact message and retry under the list | `renderError`               |
@@ -668,7 +679,7 @@ Also: `header` and `footer` around the items, `messages` for every piece of text
 </QueryDetail>
 ```
 
-It draws the first load (`renderLoading`), not found when `queryFn` returns `null` or `isEmpty`
+It draws the first load (`AppLoader` with `messages.loading`, or `renderLoading`), not found when `queryFn` returns `null` or `isEmpty`
 says so (`renderEmpty`), and failure with a retry (`renderError`). Once the item is showing, a
 refresh keeps it on screen under the progress bar. Two components with the same `queryKey` share
 one request and one cached result.

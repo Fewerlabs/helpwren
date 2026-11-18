@@ -35,6 +35,7 @@ export default defineConfig({
             "@hookform/resolvers/zod",
             "@tanstack/react-query",
             "@tiptap/core",
+            "@tiptap/extension-drag-handle-react",
             "@tiptap/extension-image",
             "@tiptap/extensions",
             "@tiptap/react",

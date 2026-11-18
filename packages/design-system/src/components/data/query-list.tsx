@@ -13,7 +13,7 @@ import { focusRing } from "../base/styles";
 import {
   DefaultEmpty,
   DefaultError,
-  DefaultListLoading,
+  DefaultLoading,
   InlineError,
   StickyProgress,
   type QueryBehaviour,
@@ -129,8 +129,6 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   /** Content above and below the items, shown once there are items. */
   header?: ReactNode;
   footer?: ReactNode;
-  /** How many placeholder rows the default loading state shows. */
-  loadingRows?: number;
   messages?: Partial<QueryListMessages>;
   /**
    * Classes for the outer box: border, background, radius, scrolling. Keep padding off it.
@@ -189,7 +187,6 @@ function ListView<Item, Cursor>({
   renderEnd,
   header,
   footer,
-  loadingRows = 3,
   messages: overrides,
   className,
   contentClassName,
@@ -233,9 +230,7 @@ function ListView<Item, Cursor>({
 
   function body(): ReactNode {
     if (status === "loading") {
-      return (
-        renderLoading?.() ?? <DefaultListLoading label={messages.loading} rows={loadingRows} />
-      );
+      return renderLoading?.() ?? <DefaultLoading label={messages.loading} />;
     }
     if (status === "error") {
       return (

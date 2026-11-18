@@ -3,6 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "#lib/cn";
 
 import { Icon } from "../../base/icon/icon";
+import { type IconName } from "../../base/icon/registry";
 import { focusRing } from "../../base/styles";
 
 export interface ArticleCardProps extends Omit<ComponentProps<"a">, "title" | "children"> {
@@ -14,15 +15,18 @@ export interface ArticleCardProps extends Omit<ComponentProps<"a">, "title" | "c
   category?: ReactNode;
   /** A line under the summary, such as "Updated 3 days ago". */
   meta?: ReactNode;
+  /** An icon in a tile above the title, for a card that stands for a whole collection. */
+  icon?: IconName;
 }
 
-/** A help article in a list or grid. The whole card is one link. */
+/** A help article, or a collection of them, in a list or grid. The whole card is one link. */
 export function ArticleCard({
   href,
   title,
   summary,
   category,
   meta,
+  icon,
   className,
   ...props
 }: ArticleCardProps) {
@@ -37,6 +41,11 @@ export function ArticleCard({
       )}
       {...props}
     >
+      {icon === undefined ? null : (
+        <span className="bg-primary/10 text-primary mb-2 grid size-10 place-items-center rounded-xl">
+          <Icon name={icon} weight="duotone" className="size-5" />
+        </span>
+      )}
       {category === undefined ? null : (
         <span className="text-muted-foreground text-2xs font-mono tracking-wide uppercase">
           {category}
