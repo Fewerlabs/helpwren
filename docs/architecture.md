@@ -180,8 +180,10 @@ feature can then trust its types. Errors a person can act on are their own class
 
 - _Server state_ (anything fetched) lives in TanStack Query's cache. Cache keys for a feature are
   defined once, in a `keys` object in `hooks/`, so reads and invalidations cannot drift apart.
-  Prefer `QueryList` and `QueryDetail` from the design system over calling `useQuery` yourself:
-  they draw the loading, empty and error states.
+  Render a fetched list with `QueryList` and a single record with `QueryDetail`, not with
+  `useQuery` and hand-written states: they draw the loading, empty and error states. The few
+  exceptions are listed in the
+  [conventions](contributing/conventions.md#use-the-component-that-already-does-it).
 - _Client state_ (what the person has typed, opened or selected) lives in the feature's Zustand
   store. There is no global store. The store itself is not exported; components use selector
   hooks (`useSearch`, `useSetSearch`), so each re-renders only for the value it reads.

@@ -47,7 +47,7 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   await expect(page.getByRole("log", { name: "Messages" })).toContainText("cracked screen");
 
   // Taking it moves it to My inbox.
-  await details.getByRole("combobox", { name: "Assignee" }).click();
+  await details.getByRole("button", { name: /^Assignee:/ }).click();
   await page.getByRole("option", { name: "Sam Rivera" }).click();
   await views.getByRole("link", { name: /My inbox/ }).click();
   await expect(list.getByRole("button", { name: new RegExp(CONTACT.name) })).toBeVisible();
@@ -83,9 +83,9 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
 
   // Opening one shows its conversation in the table's place. Priority is set from the details.
   await row.getByRole("button", { name: "Cracked screen on delivery" }).click();
-  await details.getByRole("combobox", { name: "Priority" }).click();
+  await details.getByRole("button", { name: /^Priority:/ }).click();
   await page.getByRole("option", { name: "High" }).click();
-  await expect(details.getByRole("combobox", { name: "Priority" })).toContainText("High");
+  await expect(details.getByRole("button", { name: /^Priority:/ })).toContainText("High");
   await expect(messages.getByText("Sam Rivera set the priority to high")).toBeVisible();
 
   // A note is for the team: it is shown as one, and is not a message to the contact.

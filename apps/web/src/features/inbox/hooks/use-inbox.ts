@@ -2,6 +2,7 @@ import {
   type ConversationChanges,
   type ConversationFilter,
   type ConversationStatus,
+  type ConversationWithContact,
 } from "@helpwren/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
@@ -69,33 +70,15 @@ const DEFAULT_VIEW = inboxViews[2];
 
 const inboxKey = ["inbox"] as const;
 
-export function useInboxConversations(view: InboxView, agentId: string) {
-  const getClient = useHelpwren();
-  return useQuery({
-    queryKey: [...inboxKey, "conversations", view.id, agentId],
-    queryFn: async () =>
-      (await getClient().conversations.list({ limit: 50, ...view.filter(agentId) })).items,
-  });
-}
-
 /** The fewest characters worth searching for. The database finds nothing below this. */
 export const MIN_SEARCH_LENGTH = 2;
-
-/** Conversations found by who they are with or what was said. Idle until there is enough to search for. */
-export function useConversationSearch(text: string) {
-  const getClient = useHelpwren();
-  const query = text.trim();
-  return useQuery({
-    queryKey: [...inboxKey, "search", query],
-    queryFn: () => getClient().conversations.search(query),
-    enabled: query.length >= MIN_SEARCH_LENGTH,
-  });
-}
 
 /**
  * The open conversation, loaded by its id and not looked up in the list on screen. It stays
  * open when a change, such as resolving it, takes it out of the current view, and it opens
  * from a link whichever view that link lands on.
+ *
+ * A hook and not `QueryDetail`, because two panels side by side draw from the one result.
  */
 export function useOpenConversation(id: string | null) {
   const getClient = useHelpwren();
@@ -171,6 +154,20 @@ export function useChangeConversation(conversationId: string) {
         : getClient().conversations.update(conversationId, change),
     onSettled: refresh,
   });
+}
+
+/**
+ * Puts a conversation the list already holds where `useOpenConversation` looks, so that
+ * choosing it opens it at once and the fresh copy arrives behind it.
+ */
+export function useShowConversation() {
+  const queryClient = useQueryClient();
+  return useCallback(
+    (conversation: ConversationWithContact) => {
+      queryClient.setQueryData([...inboxKey, "open", conversation.id], conversation);
+    },
+    [queryClient],
+  );
 }
 
 /** Reloads the inbox's conversations and counts, for when a conversation has changed. */

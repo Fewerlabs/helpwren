@@ -12,13 +12,12 @@ import {
   MIN_SEARCH_LENGTH,
   useChangeConversation,
   useChangeConversations,
-  useConversationSearch,
-  useInboxConversations,
   useInboxView,
   useOpenConversation,
   useLiveInbox,
   useRefreshInbox,
   useSelectedConversation,
+  useShowConversation,
   useTeam,
   useViewCounts,
   viewHref,
@@ -45,21 +44,15 @@ export function Inbox({ agent }: InboxProps) {
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [selectedId, select] = useSelectedConversation();
   const [search, setSearch] = useState("");
-  const searchText = useDebounced(search);
-  const searching = searchText.trim().length >= MIN_SEARCH_LENGTH;
-  const inView = useInboxConversations(view, agent.id);
-  const found = useConversationSearch(searchText);
-  const conversations = searching ? found : inView;
+  const typed = useDebounced(search).trim();
+  const searchText = typed.length >= MIN_SEARCH_LENGTH ? typed : "";
+  const searching = searchText !== "";
   const refresh = useRefreshInbox();
+  const show = useShowConversation();
   useLiveInbox();
 
-  // From the list while it is there, for an instant open; otherwise loaded by its id.
   const loaded = useOpenConversation(selectedId).data;
-  const selected =
-    selectedId === null
-      ? undefined
-      : (conversations.data?.find((item) => item.id === selectedId) ??
-        (loaded?.id === selectedId ? loaded : undefined));
+  const selected = loaded?.id === selectedId ? loaded : undefined;
   const change = useChangeConversation(selectedId ?? "");
   const changeAny = useChangeConversations();
 
@@ -132,18 +125,17 @@ export function Inbox({ agent }: InboxProps) {
         <ListPanel
           className="min-h-0 flex-1"
           view={view}
+          agentId={agent.id}
+          team={team}
+          count={counts[view.id]}
           search={search}
           onSearchChange={setSearch}
-          searching={searching}
-          loading={conversations.isFetching}
-          conversations={conversations.data}
-          team={team}
-          failed={conversations.isError}
-          onRetry={() => {
-            void conversations.refetch();
-          }}
+          searchText={searchText}
           selectedId={selectedId}
-          onSelect={select}
+          onSelect={(conversation) => {
+            show(conversation);
+            select(conversation.id);
+          }}
         />
       }
       className={columns}

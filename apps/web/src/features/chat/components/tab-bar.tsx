@@ -42,7 +42,7 @@ export function TabBar({ current, unread }: TabBarProps) {
               }}
             >
               <span className="relative">
-                <Icon name={tab.icon} weight={active ? "fill" : "regular"} className="size-5" />
+                <Icon name={tab.icon} weight={active ? "duotone" : "regular"} className="size-5" />
                 {hasUnread ? (
                   <span className="bg-primary ring-background absolute -top-0.5 -right-1 size-2 rounded-full ring-2" />
                 ) : null}

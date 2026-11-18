@@ -1,11 +1,12 @@
 import { type ContactKind } from "@helpwren/core";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
-export const PAGE_SIZE = 25;
+/** The start of every contacts query's key, so one refresh reaches them all. */
+export const CONTACTS_QUERY_KEY = ["contacts"] as const;
 
 /** The segments of the contact list, in the order the navigation shows them. */
 export const contactSegments = [
@@ -21,43 +22,15 @@ export const contactSegments = [
 
 export type ContactSegment = (typeof contactSegments)[number];
 
-export function useContacts(segment: ContactSegment, search: string, page: number) {
-  const getClient = useHelpwren();
-  return useQuery({
-    queryKey: ["contacts", "list", segment.id, search, page],
-    queryFn: () =>
-      getClient().contacts.list({ kind: segment.kind, search, page, pageSize: PAGE_SIZE }),
-    // The rows on screen stay while the next page or search loads.
-    placeholderData: keepPreviousData,
-  });
-}
-
 export function useSegmentCounts(): Partial<Record<ContactSegment["id"], number>> {
   const getClient = useHelpwren();
   const counts = useQuery({
-    queryKey: ["contacts", "counts"],
+    queryKey: [...CONTACTS_QUERY_KEY, "counts"],
     queryFn: () => getClient().contacts.countByKind(),
   });
   if (!counts.data) return {};
   const { guest, user } = counts.data;
   return { everyone: guest + user, users: user, guests: guest };
-}
-
-export function useContact(id: string | null) {
-  const getClient = useHelpwren();
-  return useQuery({
-    queryKey: ["contacts", "one", id],
-    queryFn: () => getClient().contacts.get(id ?? ""),
-    enabled: id !== null,
-  });
-}
-
-export function useContactConversations(id: string) {
-  const getClient = useHelpwren();
-  return useQuery({
-    queryKey: ["contacts", "conversations", id],
-    queryFn: async () => (await getClient().conversations.list({ contactId: id, limit: 20 })).items,
-  });
 }
 
 const SEGMENT = "show";

@@ -46,7 +46,11 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
-                <Icon name={section.icon} weight={active ? "fill" : "regular"} className="size-5" />
+                <Icon
+                  name={section.icon}
+                  weight={active ? "duotone" : "regular"}
+                  className="size-5"
+                />
                 {count > 0 ? (
                   <span
                     aria-hidden="true"

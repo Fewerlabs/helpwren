@@ -21,6 +21,34 @@ not write the type a second time.
 - Code outside a feature imports that feature only through its `index.ts`.
 - Icons come from the `Icon` component. Only its registry may import the icon library.
 
+## Use the component that already does it
+
+Before writing markup for something fetched, chosen or filtered, check the design system. If a
+component draws it, use that component. Do not rebuild its loading, empty and error states by
+hand.
+
+| For                                               | Use                                           |
+| ------------------------------------------------- | --------------------------------------------- |
+| A fetched list, with paging or infinite scrolling | `QueryList`                                   |
+| One fetched record                                | `QueryDetail`                                 |
+| A table driven by data                            | `DataTable`, inside `QueryList` when it pages |
+| Changing a value in place, in a row or a panel    | `InlineSelect`                                |
+| A choice in a form                                | `Select`                                      |
+| Narrowing a list                                  | `FilterBar`, with `SearchField` for text      |
+| Nothing to show, or a failure                     | `EmptyState`                                  |
+
+- A component should not call `useQuery` and then branch on `isPending` and `isError` to draw
+  skeletons and a retry button. That is what `QueryList` and `QueryDetail` are for.
+- `useQuery` in a hook is still right when no single component owns the result: a count shown in
+  the navigation, a team list several panels read, or one record that two sibling panels both
+  draw from (the open conversation in the inbox). Say why in a comment on the hook.
+- The message thread is another exception. It pages backwards and is patched by live updates,
+  so it keeps its own hook (`features/conversation/hooks/use-thread.ts`). So is the visitor's
+  chat, where the session and conversations decide which screen to show before any list exists.
+- Put a list's query key under its feature's key (`INBOX_QUERY_KEY`, `CONTACTS_QUERY_KEY`), so one
+  invalidation refreshes everything that might have changed.
+- If the component nearly fits, extend it in the design system. Do not write a one-off beside it.
+
 ## Styling
 
 - Tailwind utilities, with classes merged through `cn()`.

@@ -128,7 +128,7 @@ export function ConversationPanel({
             className="max-xl:hidden"
             onClick={onToggleDetails}
           >
-            <Icon name="sidebar-simple" mirrored weight={detailsOpen ? "fill" : "regular"} />
+            <Icon name="sidebar-simple" mirrored weight={detailsOpen ? "duotone" : "regular"} />
           </Button>
         </Tooltip>
       </PanelHeader>

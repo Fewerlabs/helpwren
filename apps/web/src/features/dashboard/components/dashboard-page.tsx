@@ -79,7 +79,7 @@ export function DashboardPage({
                 {item.icon ? (
                   <Icon
                     name={item.icon}
-                    weight={item.active ? "fill" : "regular"}
+                    weight={item.active ? "duotone" : "regular"}
                     className="size-4"
                   />
                 ) : null}

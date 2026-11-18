@@ -63,7 +63,7 @@ export function TableRow({ className, ...props }: ComponentProps<typeof UiTableR
   return (
     <UiTableRow
       className={cn(
-        "hover:bg-muted/60 data-[state=selected]:bg-muted border-b-0 [&:not(:last-child)>td]:border-b",
+        "hover:bg-muted/60 data-[state=selected]:bg-muted border-b-0 [&:not(:last-child)>:is(td,th)]:border-b",
         className,
       )}
       {...props}

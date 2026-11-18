@@ -3,22 +3,26 @@
 import { type ConversationWithContact, type TeamMember } from "@helpwren/core";
 import {
   Avatar,
-  Button,
   cn,
   EmptyState,
   Icon,
+  QueryList,
   SearchField,
-  Skeleton,
   StatusChip,
   Tooltip,
 } from "@helpwren/design-system";
+import { useIsFetching } from "@tanstack/react-query";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
 import { formatTimeAgo } from "@/lib/format-time";
+import { useHelpwren } from "@/lib/helpwren-context";
 
 import { contactName } from "../contact-name";
-import { type InboxView } from "../hooks/use-inbox";
+import { INBOX_QUERY_KEY, type InboxView } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
+
+/** How many conversations each request brings; scrolling to the end brings the next. */
+const PAGE_SIZE = 30;
 
 interface RowProps {
   conversation: ConversationWithContact;
@@ -105,46 +109,46 @@ function Row({ conversation, assignee, selected, showStatus, onSelect }: RowProp
 }
 
 export interface ListPanelProps {
-  conversations: readonly ConversationWithContact[] | undefined;
-  team: readonly TeamMember[];
-  failed: boolean;
-  onRetry: () => void;
   view: InboxView;
+  /** The signed-in team member, for the view of what is assigned to them. */
+  agentId: string;
+  team: readonly TeamMember[];
+  /** How many conversations the view holds, once that is known. */
+  count: number | undefined;
   /** What is typed in the search box. */
   search: string;
   onSearchChange: (search: string) => void;
-  /** True while showing search results in place of the view. */
-  searching: boolean;
-  loading: boolean;
+  /** The text to search for, once typing has paused. Empty shows the view. */
+  searchText: string;
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (conversation: ConversationWithContact) => void;
   className?: string;
 }
 
-/** The left panel: every conversation, most recently active first. */
+/** The left panel: a view's conversations, or what a search found, most recently active first. */
 export function ListPanel({
-  conversations,
-  team,
-  failed,
-  onRetry,
   view,
+  agentId,
+  team,
+  count,
   search,
   onSearchChange,
-  searching,
-  loading,
+  searchText,
   selectedId,
   onSelect,
   className,
 }: ListPanelProps) {
+  const getClient = useHelpwren();
+  const searching = searchText !== "";
+  const fetching = useIsFetching({ queryKey: [...INBOX_QUERY_KEY, "list"] }) > 0;
+
   return (
     <Panel aria-label="Conversations" className={className}>
       <PanelHeader>
         <h2 className="flex items-baseline gap-1.5 font-semibold">
           {searching ? "Results" : view.label}
-          {conversations ? (
-            <span className="text-muted-foreground text-xs font-normal tabular-nums">
-              {conversations.length}
-            </span>
+          {!searching && count !== undefined ? (
+            <span className="text-muted-foreground text-xs font-normal tabular-nums">{count}</span>
           ) : null}
         </h2>
       </PanelHeader>
@@ -156,29 +160,34 @@ export function ListPanel({
           className="bg-muted dark:bg-muted min-h-8 border-transparent"
           value={search}
           onValueChange={onSearchChange}
-          loading={searching && loading}
+          loading={searching && fetching}
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
-        {failed ? (
-          <EmptyState
-            scene={false}
-            size="sm"
-            title="The inbox could not be loaded."
-            action={
-              <Button variant="secondary" size="sm" onClick={onRetry}>
-                Try again
-              </Button>
-            }
+      <QueryList<ConversationWithContact, string>
+        aria-label="Conversations"
+        // Under the inbox's key, so a change or a new message refreshes it with everything else.
+        queryKey={[...INBOX_QUERY_KEY, "list", view.id, agentId, searchText]}
+        queryFn={async ({ cursor, pageSize }) =>
+          searching
+            ? { items: await getClient().conversations.search(searchText) }
+            : getClient().conversations.list({ ...view.filter(agentId), cursor, limit: pageSize })
+        }
+        pageSize={PAGE_SIZE}
+        getItemKey={(conversation) => conversation.id}
+        renderItem={(conversation) => (
+          <Row
+            conversation={conversation}
+            assignee={team.find((member) => member.id === conversation.assigneeId)?.name}
+            selected={conversation.id === selectedId}
+            // Only the view of everything mixes statuses; elsewhere it would be noise.
+            showStatus={searching || view.id === "all"}
+            onSelect={() => {
+              onSelect(conversation);
+            }}
           />
-        ) : !conversations ? (
-          <div className="grid gap-1.5 p-1" aria-busy="true" aria-label="Loading conversations">
-            <Skeleton className="h-12 rounded-lg" />
-            <Skeleton className="h-12 rounded-lg" />
-            <Skeleton className="h-12 rounded-lg" />
-          </div>
-        ) : conversations.length === 0 ? (
+        )}
+        renderEmpty={() => (
           <EmptyState
             size="sm"
             className="pt-8"
@@ -198,25 +207,17 @@ export function ListPanel({
                   : `Nothing is in ${view.label} right now.`
             }
           />
-        ) : (
-          <ul aria-label="Conversations" className="flex flex-col gap-px">
-            {conversations.map((conversation) => (
-              <li key={conversation.id}>
-                <Row
-                  conversation={conversation}
-                  assignee={team.find((member) => member.id === conversation.assigneeId)?.name}
-                  selected={conversation.id === selectedId}
-                  // Only the view of everything mixes statuses; elsewhere it would be noise.
-                  showStatus={searching || view.id === "all"}
-                  onSelect={() => {
-                    onSelect(conversation.id);
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
         )}
-      </div>
+        // The list is a narrow column; running out of rows says enough.
+        renderEnd={() => null}
+        messages={{
+          loading: "Loading conversations",
+          error: "The inbox could not be loaded.",
+        }}
+        className="min-h-0 flex-1 overflow-y-auto"
+        contentClassName="p-1.5"
+        listClassName="flex flex-col gap-px"
+      />
     </Panel>
   );
 }

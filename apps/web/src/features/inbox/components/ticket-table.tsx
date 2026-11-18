@@ -9,7 +9,6 @@ import {
   type TeamMember,
 } from "@helpwren/core";
 import {
-  Avatar,
   Button,
   DataTable,
   EmptyState,
@@ -33,34 +32,16 @@ import { useDebounced } from "@/lib/use-debounced";
 
 import { contactName } from "../contact-name";
 import { INBOX_QUERY_KEY, MIN_SEARCH_LENGTH } from "../hooks/use-inbox";
-import { priorities, statuses, ticketLabel } from "../labels";
-import { NOBODY } from "./picker";
+import { statuses, ticketLabel } from "../labels";
+import {
+  assigneeOptions,
+  NOBODY,
+  Person,
+  priorityOptions,
+  statusOptions,
+  unassigned,
+} from "../options";
 import { PriorityLabel } from "./priority-label";
-
-const tinyAvatar = "size-5 text-[0.5625rem]";
-
-const statusOptions = (Object.keys(statuses) as ConversationStatus[]).map((value) => ({
-  value,
-  label: statuses[value].label,
-  content: <StatusChip status={statuses[value].chip} size="sm" />,
-}));
-
-const priorityOptions = (Object.keys(priorities) as ConversationPriority[]).map((value) => ({
-  value,
-  label: priorities[value],
-  content: <PriorityLabel priority={value} />,
-}));
-
-function Person({ name }: { name: string }) {
-  return (
-    <>
-      <Avatar name={name} size="sm" className={tinyAvatar} />
-      <span className="truncate">{name}</span>
-    </>
-  );
-}
-
-const unassigned = <span className="text-muted-foreground">Unassigned</span>;
 
 /** Turns what the filter bar holds into what the database is asked for. No values means any. */
 function toFilter(value: FilterValue): ConversationFilter {
@@ -97,28 +78,14 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
   const narrowed = searching || Object.values(filters).some((values) => values.length > 0);
   const filter = useMemo(() => ({ ...toFilter(filters), type: "ticket" as const }), [filters]);
 
-  const people = useMemo(
-    () =>
-      team.map((member) => ({
-        value: member.id,
-        label: member.name,
-        content: <Person name={member.name} />,
-        // Someone deactivated cannot be given more work, but still shows on what they hold.
-        disabled: !member.active,
-      })),
-    [team],
-  );
-  const assigneeOptions = useMemo(
-    () => [{ value: NOBODY, label: "Unassigned", content: unassigned }, ...people],
-    [people],
-  );
+  const assignees = useMemo(() => assigneeOptions(team), [team]);
   const definitions = useMemo<FilterDefinition[]>(
     () => [
       { id: "status", label: "Status", icon: "check-circle", options: statusOptions },
       { id: "priority", label: "Priority", icon: "warning-circle", options: priorityOptions },
-      { id: "assignee", label: "Assignee", icon: "user", options: assigneeOptions },
+      { id: "assignee", label: "Assignee", icon: "user", options: assignees },
     ],
-    [assigneeOptions],
+    [assignees],
   );
 
   const columns = useMemo<DataTableColumn<ConversationWithContact>[]>(
@@ -199,7 +166,7 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
             <InlineSelect
               label={`Assignee of ${ticketLabel(ticket)}`}
               value={ticket.assigneeId ?? NOBODY}
-              options={assigneeOptions}
+              options={assignees}
               onValueChange={(value) => {
                 onChange(ticket.id, { assigneeId: value === NOBODY ? null : value });
               }}
@@ -217,7 +184,7 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
         cell: (ticket) => (ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""),
       },
     ],
-    [assigneeOptions, onChange, onOpen, team],
+    [assignees, onChange, onOpen, team],
   );
 
   return (

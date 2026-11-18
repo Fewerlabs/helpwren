@@ -41,14 +41,33 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
   };
 }
 
-// The details panel loads the conversation's rating; here there is none.
-const getClient = () =>
-  ({ ratings: { get: () => Promise.resolve(null) } }) as unknown as HelpwrenClient;
+interface Fake {
+  /** What listing the view's conversations gives, or an error to fail with. */
+  list?: ConversationWithContact[] | Error;
+}
 
-function withClient(ui: ReactElement) {
+function fakeClient({ list = [conversation()] }: Fake = {}) {
+  return {
+    // The details panel loads the conversation's rating; here there is none.
+    ratings: { get: () => Promise.resolve(null) },
+    conversations: {
+      list: vi.fn(() =>
+        list instanceof Error
+          ? Promise.reject(list)
+          : Promise.resolve({ items: list, nextCursor: undefined }),
+      ),
+      search: vi.fn(() => Promise.resolve([conversation({ lastMessagePreview: "Found it" })])),
+    },
+  };
+}
+
+function withClient(ui: ReactElement, client = fakeClient()) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return (
-    <QueryClientProvider client={new QueryClient()}>
-      <HelpwrenProvider getClient={getClient}>{ui}</HelpwrenProvider>
+    <QueryClientProvider client={queryClient}>
+      <HelpwrenProvider getClient={() => client as unknown as HelpwrenClient}>
+        {ui}
+      </HelpwrenProvider>
     </QueryClientProvider>
   );
 }
@@ -56,24 +75,27 @@ function withClient(ui: ReactElement) {
 const all = inboxViews[6];
 const open = inboxViews[2];
 
-function renderList(props: Partial<ListPanelProps> = {}) {
-  const handlers = { onRetry: vi.fn(), onSelect: vi.fn() };
+function renderList(props: Partial<ListPanelProps> = {}, fake: Fake = {}) {
+  const onSelect = vi.fn();
+  const client = fakeClient(fake);
   render(
-    <ListPanel
-      conversations={[conversation()]}
-      team={[]}
-      failed={false}
-      view={open}
-      search=""
-      onSearchChange={vi.fn()}
-      searching={false}
-      loading={false}
-      selectedId={null}
-      {...handlers}
-      {...props}
-    />,
+    withClient(
+      <ListPanel
+        view={open}
+        agentId="33333333-3333-4333-8333-333333333333"
+        team={[]}
+        count={1}
+        search=""
+        onSearchChange={vi.fn()}
+        searchText=""
+        selectedId={null}
+        onSelect={onSelect}
+        {...props}
+      />,
+      client,
+    ),
   );
-  return handlers;
+  return { onSelect, client };
 }
 
 describe("contactName", () => {
@@ -91,40 +113,49 @@ describe("contactName", () => {
 
 describe("ListPanel", () => {
   it("lists conversations with who, the latest message and the unread count", async () => {
-    const { onSelect } = renderList();
-    const row = within(screen.getByRole("list", { name: "Conversations" })).getByRole("button");
+    const { onSelect, client } = renderList();
+    const list = await screen.findByRole("list", { name: "Conversations" });
+    const row = within(list).getByRole("button");
 
+    expect(client.conversations.list).toHaveBeenCalledWith(
+      expect.objectContaining({ status: ["open"] }),
+    );
     expect(row).toHaveTextContent("Priya Nair");
     expect(row).toHaveTextContent("Do you ship abroad?");
     expect(row).toHaveTextContent("2 unread");
 
     await userEvent.click(row);
-    expect(onSelect).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111");
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: conversation().id }));
   });
 
-  it("is titled with the view it shows, and marks the open conversation", () => {
-    renderList({ selectedId: "11111111-1111-4111-8111-111111111111" });
-    expect(screen.getByRole("heading", { name: /Open/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { current: true })).toHaveTextContent("Priya Nair");
+  it("is titled with the view it shows and how much it holds, and marks the open conversation", async () => {
+    renderList({ selectedId: conversation().id });
+    expect(screen.getByRole("heading", { name: /^Open\s*1$/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { current: true })).toHaveTextContent("Priya Nair");
   });
 
-  it("shows each conversation's status only when listing all of them", () => {
-    renderList({
-      conversations: [conversation({ status: "resolved", unreadForAgents: 0 })],
-      view: all,
-    });
-    expect(screen.getByText("Resolved")).toBeInTheDocument();
+  it("shows each conversation's status only when listing all of them", async () => {
+    renderList({ view: all }, { list: [conversation({ status: "resolved", unreadForAgents: 0 })] });
+    expect(await screen.findByText("Resolved")).toBeInTheDocument();
   });
 
-  it("says the team is caught up when nothing is open", () => {
-    renderList({ conversations: [] });
-    expect(screen.getByRole("heading", { name: "All caught up" })).toBeInTheDocument();
+  it("shows what a search found in place of the view", async () => {
+    const { client } = renderList({ search: "ship", searchText: "ship" });
+    expect(await screen.findByText("Found it")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Results" })).toBeInTheDocument();
+    expect(client.conversations.search).toHaveBeenCalledWith("ship");
+    expect(client.conversations.list).not.toHaveBeenCalled();
   });
 
-  it("shows placeholders while loading, and a way to retry after a failure", async () => {
-    const { onRetry } = renderList({ conversations: undefined, failed: true });
-    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(onRetry).toHaveBeenCalled();
+  it("says the team is caught up when nothing is open", async () => {
+    renderList({}, { list: [] });
+    expect(await screen.findByRole("heading", { name: "All caught up" })).toBeInTheDocument();
+  });
+
+  it("offers a way to retry after a failure", async () => {
+    const { client } = renderList({}, { list: new Error("offline") });
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(client.conversations.list).toHaveBeenCalledTimes(2);
   });
 });
 

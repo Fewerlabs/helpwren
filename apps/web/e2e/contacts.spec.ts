@@ -10,25 +10,27 @@ test("a team member browses, filters and searches contacts, and opens one", asyn
   await expect(page).toHaveURL(/\/dashboard\/contacts$/);
 
   const table = page.getByRole("table", { name: "Contacts" });
-  await expect(table.getByRole("row")).toHaveCount(5);
+  // By name and not by count, so people added while trying the app locally do not matter.
+  await expect(table.getByText("Priya Nair")).toBeVisible();
+  await expect(table.getByText("Jonas Berg")).toBeVisible();
 
   // Segments narrow the list, and are part of the address.
   const segments = page.getByRole("navigation", { name: "Contact segments" });
   await segments.getByRole("link", { name: /Guests/ }).click();
   await expect(page).toHaveURL(/show=guests/);
-  await expect(table.getByRole("row")).toHaveCount(3);
   await expect(table.getByText("Priya Nair")).toBeVisible();
   await expect(table.getByText("Jonas Berg")).toHaveCount(0);
 
   await segments.getByRole("link", { name: /Everyone/ }).click();
   await page.getByRole("searchbox", { name: "Search contacts" }).fill("northwind");
-  await expect(table.getByRole("row")).toHaveCount(3);
   await expect(table.getByText("Jonas Berg")).toBeVisible();
+  await expect(table.getByText("Priya Nair")).toHaveCount(0);
 
   // Opening someone shows how to reach them and their conversations.
   await table.getByRole("button", { name: "Jonas Berg" }).click();
   await expect(page).toHaveURL(/contact=/);
-  const details = page.getByRole("region", { name: "Contact: Jonas Berg" });
+  const details = page.getByRole("region", { name: "Contact" });
+  await expect(details.getByText("Jonas Berg")).toBeVisible();
   await expect(details.getByText("Verified user")).toBeVisible();
   await expect(details.getByRole("link", { name: "jonas@northwind.example" })).toBeVisible();
   await expect(details.getByText("Northwind Studio")).toBeVisible();

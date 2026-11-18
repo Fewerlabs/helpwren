@@ -8,15 +8,32 @@ import {
   type ConversationWithContact,
   type TeamMember,
 } from "@helpwren/core";
-import { Avatar, Badge, Expandable, Icon, Link, type IconName } from "@helpwren/design-system";
+import {
+  Avatar,
+  Badge,
+  Expandable,
+  Icon,
+  InlineSelect,
+  Link,
+  StatusChip,
+  type IconName,
+} from "@helpwren/design-system";
 import { useId, useState, type ReactNode } from "react";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
 
 import { contactName } from "../contact-name";
 import { useRating } from "../hooks/use-inbox";
-import { priorities, statuses, ticketLabel } from "../labels";
-import { NOBODY, Picker } from "./picker";
+import { statuses, ticketLabel } from "../labels";
+import {
+  assigneeOptions,
+  NOBODY,
+  Person,
+  priorityOptions,
+  statusOptions,
+  unassigned,
+} from "../options";
+import { PriorityLabel } from "./priority-label";
 
 const startedFormat = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
@@ -101,8 +118,8 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
   const isTicket = conversation.type === "ticket";
   const rating = useRating(conversation.id).data;
 
-  // Someone who was deactivated while holding a conversation still shows as its assignee.
-  const assignees = team.filter((member) => member.active || member.id === conversation.assigneeId);
+  const assignees = assigneeOptions(team);
+  const assignee = team.find((member) => member.id === conversation.assigneeId);
 
   return (
     <Panel aria-label="Details" className={className}>
@@ -135,40 +152,40 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
             </Row>
           ) : null}
           <Row label="Assignee">
-            <Picker
+            <InlineSelect
               label="Assignee"
               value={conversation.assigneeId ?? NOBODY}
-              options={[
-                { value: NOBODY, label: "Unassigned" },
-                ...assignees.map((member) => ({ value: member.id, label: member.name })),
-              ]}
-              onChange={(value) => {
+              options={assignees}
+              onValueChange={(value) => {
                 onChange({ assigneeId: value === NOBODY ? null : value });
               }}
-            />
+            >
+              {assignee ? <Person name={assignee.name} /> : unassigned}
+            </InlineSelect>
           </Row>
           <Row label="Status">
-            <Picker
+            <InlineSelect
               label="Status"
               value={conversation.status}
-              options={Object.entries(statuses).map(([value, status]) => ({
-                value,
-                label: status.label,
-              }))}
-              onChange={(value) => {
+              options={statusOptions}
+              onValueChange={(value) => {
                 onChange({ status: value as ConversationStatus });
               }}
-            />
+            >
+              <StatusChip status={statuses[conversation.status].chip} size="sm" />
+            </InlineSelect>
           </Row>
           <Row label="Priority">
-            <Picker
+            <InlineSelect
               label="Priority"
               value={conversation.priority}
-              options={Object.entries(priorities).map(([value, label]) => ({ value, label }))}
-              onChange={(value) => {
+              options={priorityOptions}
+              onValueChange={(value) => {
                 onChange({ priority: value as ConversationPriority });
               }}
-            />
+            >
+              <PriorityLabel priority={conversation.priority} />
+            </InlineSelect>
           </Row>
           {rating ? (
             <Row label="Rating">
