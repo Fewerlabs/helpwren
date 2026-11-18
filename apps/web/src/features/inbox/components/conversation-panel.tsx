@@ -105,7 +105,9 @@ export function ConversationPanel({
               change.mutate({ assigneeId: agentId });
             }}
           >
-            Assign to me
+            {/* On a phone the header has room for icons only; the words are still read out. */}
+            <Icon name="user" className="md:hidden" />
+            <span className="max-md:sr-only">Assign to me</span>
           </Button>
         )}
         <Button
@@ -116,8 +118,11 @@ export function ConversationPanel({
             change.mutate({ status: done ? "open" : "resolved" });
           }}
         >
-          {done ? null : <Icon name="check-circle" />}
-          {done ? "Reopen" : "Resolve"}
+          <Icon
+            name={done ? "arrows-clockwise" : "check-circle"}
+            className={done ? "md:hidden" : undefined}
+          />
+          <span className="max-md:sr-only">{done ? "Reopen" : "Resolve"}</span>
         </Button>
         <Tooltip content={detailsOpen ? "Hide details" : "Show details"}>
           <Button
@@ -125,7 +130,6 @@ export function ConversationPanel({
             size="icon-sm"
             aria-label="Details"
             aria-pressed={detailsOpen}
-            className="max-xl:hidden"
             onClick={onToggleDetails}
           >
             <Icon name="sidebar-simple" mirrored weight={detailsOpen ? "duotone" : "regular"} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { type Agent } from "@helpwren/core";
-import { cn, EmptyState } from "@helpwren/design-system";
+import { cn, EmptyState, Sheet, SheetContent, SheetTitle } from "@helpwren/design-system";
 import { useState } from "react";
 
 import { DashboardPage, Panel } from "@/features/dashboard";
@@ -27,6 +27,9 @@ import { DetailsPanel } from "./details-panel";
 import { ListPanel } from "./list-panel";
 import { TicketTable } from "./ticket-table";
 
+/** From this width the details sit beside the conversation. Matches the `xl` breakpoint. */
+const WIDE = "(min-width: 80rem)";
+
 /**
  * The team's inbox: its views down the side, then the list of conversations, the open one, and
  * details about who it is with, as columns of one surface. Narrower screens drop the details,
@@ -42,6 +45,7 @@ export function Inbox({ agent }: InboxProps) {
   const counts = useViewCounts(agent.id);
   const team = useTeam().data ?? [];
   const [detailsOpen, setDetailsOpen] = useState(true);
+  const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
   const [selectedId, select] = useSelectedConversation();
   const [search, setSearch] = useState("");
   const typed = useDebounced(search).trim();
@@ -73,7 +77,9 @@ export function Inbox({ agent }: InboxProps) {
         }}
         detailsOpen={detailsOpen}
         onToggleDetails={() => {
-          setDetailsOpen((open) => !open);
+          // Beside the conversation where there is room; over it, as a sheet, where there is not.
+          if (window.matchMedia(WIDE).matches) setDetailsOpen((open) => !open);
+          else setDetailsSheetOpen(true);
         }}
       />
       {detailsOpen ? (
@@ -84,6 +90,12 @@ export function Inbox({ agent }: InboxProps) {
           className="max-xl:hidden"
         />
       ) : null}
+      <Sheet open={detailsSheetOpen} onOpenChange={setDetailsSheetOpen}>
+        <SheetContent className="w-80 max-w-[90vw] gap-0 p-0 text-[0.8125rem] xl:hidden">
+          <SheetTitle className="sr-only">Details</SheetTitle>
+          <DetailsPanel conversation={selected} team={team} onChange={change.mutate} />
+        </SheetContent>
+      </Sheet>
     </>
   ) : null;
 
