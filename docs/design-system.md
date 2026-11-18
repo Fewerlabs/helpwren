@@ -456,9 +456,22 @@ dropdown, use `Combobox`.
 a `description`, and `actions` on the right. `headingLevel` defaults to 1; use 2 for a section. It
 is not a landmark, so a page may have several.
 
-**CodeSnippet** shows a block of code with a copy button, for install snippets and API examples.
-`language` labels it, `wrap` wraps long lines instead of scrolling, and `onCopied` tells you when
-it was copied. Use `Kbd` for a single key and plain `<code>` for a word inside a sentence.
+**CodeSnippet** shows code to read and copy, for install snippets and API examples. It has a
+quiet edge and a tinted header with the copy button, which says "Copied" once pressed.
+
+- `code` and `language`, or `tabs` (`{ label, language, code }[]`) for several versions of one
+  snippet, such as the same step for HTML, React and Next.js. Copy takes the open tab.
+- `language` labels the block and decides the colouring. `html`, `js`, `jsx`, `ts`, `tsx` and
+  `shell` are coloured (tags, attributes, strings, comments, keywords) by a small tokenizer of
+  our own in the theme's colours; any other language shows plain. It is a light pass for short
+  snippets, not a parser.
+- Long lines scroll sideways; `wrap` wraps them instead. `lineNumbers` numbers the lines.
+- `onCopied` tells you when it was copied, and `copiedMessage` also says so in a `toast`.
+- `variant="inline"` is one line for a single value such as a link or a key: the value, a copy
+  button, and an "Open" link when given `openHref`. Give it an `aria-label` saying what the value
+  is, and a `copyLabel` such as "Copy link".
+
+Use `Kbd` for a single key and plain `<code>` for a word inside a sentence.
 
 **MessageBubble** is one message in a conversation. `from="self"` is filled and sits on the right;
 `from="other"` is outlined and sits on the left, so the two are told apart by shape and position,

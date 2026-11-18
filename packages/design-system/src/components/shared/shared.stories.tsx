@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { Button } from "../base/button/button";
 import { Icon } from "../base/icon/icon";
+import { Toaster } from "../base/toast/toast";
 import { ArticleCard } from "./article-card/article-card";
 import { CodeSnippet } from "./code-snippet/code-snippet";
 import { ConversationListItem } from "./conversation-list-item/conversation-list-item";
@@ -86,20 +87,77 @@ export const PageHeaders: Story = {
   ),
 };
 
-export const CodeSnippets: Story = {
-  render: () => (
+const widgetUrl = "https://support.acme.example/widget.js";
+
+const installTabs = [
+  {
+    label: "HTML",
+    language: "html",
+    code: `<!-- Before the closing body tag -->
+<script src="${widgetUrl}"></script>
+<script>
+  Helpwren.init({ source: "web" });
+</script>`,
+  },
+  {
+    label: "React",
+    language: "jsx",
+    code: `import { useEffect } from "react";
+
+export function HelpwrenChat() {
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "${widgetUrl}";
+    script.onload = () => window.Helpwren.init({ source: "web" });
+    document.body.append(script);
+    return () => script.remove();
+  }, []);
+
+  return null;
+}`,
+  },
+  {
+    label: "Shell",
+    language: "shell",
+    code: "# Or let the CLI add it\nnpx @helpwren/cli install --app-url https://support.acme.example",
+  },
+];
+
+function CodeSnippetShowcase() {
+  return (
     <div className="grid max-w-xl gap-4">
+      <CodeSnippet tabs={installTabs} tabsLabel="Ways to install" copiedMessage="Snippet copied" />
       <CodeSnippet
         language="HTML"
-        code={`<script src="https://support.acme.example/widget.js"></script>\n<script>\n  Helpwren.init({ source: "web" });\n</script>`}
+        code={`<script src="${widgetUrl}"></script>\n<script>\n  Helpwren.init({ source: "web" });\n</script>`}
       />
+      <CodeSnippet language="tsx" lineNumbers code={installTabs[1]?.code ?? ""} />
       <CodeSnippet
         language="Shell"
         wrap
         code="npx @helpwren/cli install --database-url postgres://user:password@db.example.com:5432/helpwren --app-url https://support.example.com"
       />
+      <CodeSnippet
+        language="Shell"
+        code="npx @helpwren/cli install --database-url postgres://user:password@db.example.com:5432/helpwren --app-url https://support.example.com"
+      />
+      <CodeSnippet
+        variant="inline"
+        aria-label="Chat page link"
+        code="https://support.acme.example/chat"
+        copyLabel="Copy link"
+        copiedLabel="Link copied"
+        openHref="https://support.acme.example/chat"
+      />
+      <Toaster />
     </div>
-  ),
+  );
+}
+
+export const CodeSnippets: Story = { render: () => <CodeSnippetShowcase /> };
+export const CodeSnippetsDark: Story = {
+  render: () => <CodeSnippetShowcase />,
+  globals: { theme: "dark" },
 };
 
 function Thread() {

@@ -1,6 +1,10 @@
 // The shared layer's public API: composed pieces built only from base components.
 export { ArticleCard, type ArticleCardProps } from "./article-card/article-card";
-export { CodeSnippet, type CodeSnippetProps } from "./code-snippet/code-snippet";
+export {
+  CodeSnippet,
+  type CodeSnippetProps,
+  type CodeSnippetTab,
+} from "./code-snippet/code-snippet";
 export {
   ConversationListItem,
   type ConversationListItemProps,
