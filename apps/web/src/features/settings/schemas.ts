@@ -114,3 +114,14 @@ export const teamGroupSchema = z.object({
   memberIds: z.array(z.uuid()),
 });
 export type TeamGroupValues = z.infer<typeof teamGroupSchema>;
+
+export const emailSchema = z.object({
+  /** Empty for the brand's own name. */
+  fromName: z.string().trim().max(60, "Keep the name under 60 characters."),
+  /** Empty while no address has been chosen; nothing is sent until one is. */
+  fromAddress: z.union([
+    z.literal(""),
+    z.string().trim().toLowerCase().pipe(z.email("Enter an email address.")),
+  ]),
+});
+export type EmailValues = z.infer<typeof emailSchema>;

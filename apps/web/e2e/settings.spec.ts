@@ -11,7 +11,7 @@ async function restore() {
   await database
     .from("settings")
     .delete()
-    .in("key", ["allowed_domains", "widget", "chat_page", "help_center"]);
+    .in("key", ["allowed_domains", "widget", "chat_page", "help_center", "email"]);
   await database
     .from("settings")
     .update({ value: { name: "Helpwren Demo" } })
@@ -235,6 +235,34 @@ test("an admin adds a team member, changes their role and deactivates them", asy
     .click();
   await expect(row).toContainText("Deactivated");
   await expect(page.getByRole("button", { name: `Reactivate ${NEW_MEMBER.name}` })).toBeVisible();
+});
+
+test("an admin sets who emails are from, and is told when no provider is set up", async ({
+  page,
+}) => {
+  await signInToInbox(page, "ada@example.com");
+  await page.goto("/dashboard/settings/email");
+
+  // The local setup has no email provider, and the page says so plainly.
+  await expect(page.getByText("Not set up")).toBeVisible();
+  const test = page.getByRole("button", { name: "Send a test email" });
+  await expect(test).toBeDisabled();
+
+  await page.getByLabel("From address").fill("not an address");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("Enter an email address.")).toBeVisible();
+
+  await page.getByLabel("From address").fill("Support@Acme.Example");
+  await page.getByLabel("From name").fill("Acme Support");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByLabel("From address")).toHaveValue("support@acme.example");
+  await expect(page.getByLabel("From name")).toHaveValue("Acme Support");
+  // Still nothing to send through, so the test stays off and says why.
+  await expect(test).toBeDisabled();
+  await expect(page.getByText("Set up a provider on the server first.")).toBeVisible();
 });
 
 test("an agent who is not an admin can read settings and change nothing", async ({ page }) => {

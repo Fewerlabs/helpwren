@@ -1,5 +1,6 @@
 // The public API of the dashboard's settings. Code outside this folder imports only from here.
 export { BrandingForm } from "./components/branding-form";
+export { EmailForm } from "./components/email-form";
 export { GeneralForm } from "./components/general-form";
 export { InstallationForm } from "./components/installation-form";
 export { InviteDialog } from "./components/invite-dialog";

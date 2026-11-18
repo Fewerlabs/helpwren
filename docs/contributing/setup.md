@@ -90,6 +90,21 @@ pnpm agent:invite you@example.com --name "Your Name" --admin
 database, and of Mailpit, which catches every email the local stack sends. Local settings live in
 `supabase/config.toml`.
 
+## Email
+
+Email is off until a provider is set. Add one of these to `apps/web/.env.local`, restart the
+app, then set a from address under Settings → Email and press "Send a test email".
+
+```bash
+# Any SMTP server
+EMAIL_PROVIDER=smtp
+SMTP_URL=smtps://user:password@smtp.example.com:465
+
+# Or Resend
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_...
+```
+
 ## Check your work
 
 ```bash
