@@ -97,6 +97,12 @@ calls `requireAgent()` itself, because a layout is not re-run on every navigatio
 is a folder under `src/app/dashboard`, a feature, and an entry in
 `src/features/dashboard/sections.ts`.
 
+Settings pages load their data in the Server Component and save through Server Actions
+(`src/features/settings/actions.ts`). Settings go through the client library, where the database
+lets only admins write. The team is changed with the secret key, after checking the caller is an
+admin (`src/features/settings/server/team.ts`). See
+[ADR 0010](decisions/0010-dashboard-and-settings.md).
+
 ### Three features, one thread
 
 | Feature        | Whose screen  | Its client                                                                           |
@@ -194,19 +200,20 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route                                    | What it is                                                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `/design`                                | The design system running in the app, with the example feature at the bottom                                  |
-| `/embed`                                 | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
-| `/help`                                  | The public help center (placeholder)                                                                          |
-| `/dashboard`                             | The team's screens, behind one sign-in check. Redirects to the inbox                                          |
-| `/dashboard/inbox`                       | The inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation          |
-| `/dashboard/help`, `/users`, `/settings` | Sections that are planned; each says what is coming                                                           |
-| `/login`                                 | Sign-in for team members                                                                                      |
-| `/widget.js`                             | The widget script, built from `packages/widget`                                                               |
-| `/api/health`                            | Returns `{ "status": "ok" }`                                                                                  |
-| `POST /api/conversations`                | Starts a conversation with its first message                                                                  |
-| `POST /api/conversations/{id}/read`      | Marks a conversation as read for the caller's side                                                            |
+| Route                                 | What it is                                                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/design`                             | The design system running in the app, with the example feature at the bottom                                  |
+| `/embed`                              | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
+| `/help`                               | The public help center (placeholder)                                                                          |
+| `/dashboard`                          | The team's screens, behind one sign-in check. Redirects to the inbox                                          |
+| `/dashboard/inbox`                    | The inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation          |
+| `/dashboard/settings`                 | Settings: General, Installation and Team. Admins change them; agents read                                     |
+| `/dashboard/help`, `/dashboard/users` | Sections that are planned; each says what is coming                                                           |
+| `/login`                              | Sign-in for team members                                                                                      |
+| `/widget.js`                          | The widget script, built from `packages/widget`                                                               |
+| `/api/health`                         | Returns `{ "status": "ok" }`                                                                                  |
+| `POST /api/conversations`             | Starts a conversation with its first message                                                                  |
+| `POST /api/conversations/{id}/read`   | Marks a conversation as read for the caller's side                                                            |
 
 ## The design system
 

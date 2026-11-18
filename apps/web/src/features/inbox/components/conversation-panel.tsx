@@ -4,9 +4,9 @@ import { type ConversationWithContact, type Message } from "@helpwren/core";
 import { Avatar, Button, Icon, StatusChip, type StatusName } from "@helpwren/design-system";
 
 import { Thread } from "@/features/conversation";
+import { Panel, PanelHeader } from "@/features/dashboard";
 
 import { contactName } from "../contact-name";
-import { Panel, PanelHeader } from "./panel";
 
 const chipFor = {
   open: "open",

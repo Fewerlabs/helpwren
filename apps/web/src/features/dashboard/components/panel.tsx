@@ -1,7 +1,7 @@
 import { cn } from "@helpwren/design-system";
 import { type ComponentProps } from "react";
 
-/** One of the inbox's three cards. Each scrolls on its own inside the fixed-height page. */
+/** A white card on the dashboard's canvas. Each one scrolls on its own inside the fixed-height page. */
 export function Panel({ className, ...props }: ComponentProps<"section">) {
   return (
     <section

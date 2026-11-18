@@ -21,7 +21,8 @@ export interface DashboardShellProps {
 export function DashboardShell({ agent, signOut, children }: DashboardShellProps) {
   return (
     <HelpwrenProvider getClient={getDashboardClient}>
-      <div className="bg-background flex h-dvh max-md:flex-col">
+      {/* A lighter canvas than the page colour, so the white panels sit on it quietly. */}
+      <div className="bg-card flex h-dvh max-md:flex-col">
         <Sidebar agent={agent} signOut={signOut} />
         <main className="min-h-0 min-w-0 flex-1">{children}</main>
       </div>

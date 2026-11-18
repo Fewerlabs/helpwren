@@ -1,6 +1,6 @@
-// Adds a team member, or updates one who already exists. They can then sign in at /inbox/login
-// with a code sent to their email. This is the way to invite people until the settings screen
-// exists.
+// Adds a team member, or updates one who already exists. They can then sign in at /login with a
+// code sent to their email. Use it for an install's first admin; after that, admins add people
+// under Settings, then Team.
 //
 // Usage: pnpm agent:invite <email> --name "Their Name" [--admin]
 import { parseArgs } from "node:util";

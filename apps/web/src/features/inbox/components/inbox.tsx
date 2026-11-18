@@ -3,6 +3,8 @@
 import { cn, EmptyState } from "@helpwren/design-system";
 import { useState } from "react";
 
+import { Panel } from "@/features/dashboard";
+
 import {
   useInboxConversations,
   useLiveInbox,
@@ -13,7 +15,6 @@ import {
 import { ConversationPanel } from "./conversation-panel";
 import { DetailsPanel } from "./details-panel";
 import { ListPanel } from "./list-panel";
-import { Panel } from "./panel";
 
 function Panels() {
   const [filter, setFilter] = useState<InboxFilter>("open");

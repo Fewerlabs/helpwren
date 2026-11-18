@@ -1,4 +1,11 @@
-export { agentRoleSchema, agentSchema, type Agent, type AgentRole } from "./agents";
+export {
+  agentRoleSchema,
+  agentSchema,
+  teamMemberSchema,
+  type Agent,
+  type AgentRole,
+  type TeamMember,
+} from "./agents";
 export {
   LOGIN_CODE_LENGTH,
   loginCodeSchema,
@@ -39,11 +46,15 @@ export { createHelpwrenClient, type HelpwrenClient, type HelpwrenClientOptions }
 export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
 export {
+  allowedDomainSchema,
   guestDetailsSchema,
   parseSettings,
+  settingsPatchSchema,
   settingsSchema,
   type GuestDetails,
   type PublicSettings,
   type Settings,
+  type SettingsPatch,
+  type UpdateSettingsResult,
 } from "./settings";
 export { type HelpwrenSupabaseClient } from "./supabase";

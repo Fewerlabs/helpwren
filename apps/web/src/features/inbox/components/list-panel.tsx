@@ -11,11 +11,11 @@ import {
   type StatusName,
 } from "@helpwren/design-system";
 
+import { Panel, PanelHeader } from "@/features/dashboard";
 import { formatTimeAgo } from "@/lib/format-time";
 
 import { contactName } from "../contact-name";
 import { type InboxFilter } from "../hooks/use-inbox";
-import { Panel, PanelHeader } from "./panel";
 
 const filters: readonly { value: InboxFilter; label: string }[] = [
   { value: "open", label: "Open" },

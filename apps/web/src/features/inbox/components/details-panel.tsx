@@ -4,7 +4,7 @@ import { type ConversationWithContact } from "@helpwren/core";
 import { Badge, Link } from "@helpwren/design-system";
 import { type ReactNode } from "react";
 
-import { Panel, PanelHeader } from "./panel";
+import { Panel, PanelHeader } from "@/features/dashboard";
 
 const startedFormat = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
