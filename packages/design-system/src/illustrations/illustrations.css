@@ -34,6 +34,12 @@
   animation: hw-bob 5s 2.6s infinite;
 }
 
+[data-slot="wren"][data-animate] .hw-flap {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: hw-flap 1.6s 2.4s ease-in-out infinite;
+}
+
 [data-slot="wren"][data-animate] .hw-leaf {
   transform-box: fill-box;
   transform-origin: 0% 100%;
@@ -139,6 +145,16 @@
   }
   86% {
     transform: translateY(-1px) rotate(-1deg);
+  }
+}
+
+@keyframes hw-flap {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.72) rotate(6deg);
   }
 }
 

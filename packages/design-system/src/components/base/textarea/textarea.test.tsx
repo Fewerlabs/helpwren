@@ -20,4 +20,23 @@ describe("Textarea", () => {
     expect(textarea).toHaveClass("min-h-40");
     expect(textarea).not.toHaveClass("min-h-24");
   });
+
+  it("shows its focus ring when reached with the keyboard, but not when clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Before</button>
+        <Textarea aria-label="Reply" />
+      </>,
+    );
+    const textarea = screen.getByRole("textbox", { name: "Reply" });
+
+    await user.click(textarea);
+    expect(textarea).not.toHaveAttribute("data-keyboard-focus");
+
+    await user.click(screen.getByRole("button", { name: "Before" }));
+    await user.tab();
+    expect(textarea).toHaveFocus();
+    expect(textarea).toHaveAttribute("data-keyboard-focus");
+  });
 });

@@ -31,6 +31,8 @@ export function SelectTrigger({ className, ...props }: SelectTriggerProps) {
       className={cn(
         "dark:hover:bg-card w-full px-3 data-[size=default]:h-10",
         controlSurface,
+        // A button only reports focus-visible for the keyboard, so the ring needs no help here.
+        "focus:border-ring data-[state=open]:border-ring aria-invalid:focus:border-destructive",
         focusRing,
         controlInvalid,
         className,

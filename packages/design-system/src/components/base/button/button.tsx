@@ -10,6 +10,9 @@ import { focusRing } from "../styles";
 const buttonVariants = cva(
   [
     "border-line relative gap-2 rounded-lg text-sm font-medium transition-colors",
+    // Fill right to the outer edge. shadcn clips the fill inside the border, which made a
+    // filled button look smaller than an outlined one of the same size.
+    "bg-clip-border",
     "disabled:opacity-50 aria-busy:cursor-progress",
     focusRing,
   ],

@@ -1,4 +1,4 @@
-// Generated from docs/brand/illustrations. Ink lines use currentColor; moss, red pen and
+// Converted from docs/brand/illustrations, plus one scene drawn for the product. Ink lines use currentColor; moss, red pen and
 // highlighter come from the design tokens, so every scene follows the theme.
 import type { ReactNode } from "react";
 
@@ -19,6 +19,27 @@ function Bird({ eye }: { eye: number }) {
   );
 }
 
+/**
+ * The wren in flight: the same body with a raised wing and tucked feet. This pose
+ * is not on the brand boards; it was drawn for the product in the same line.
+ */
+function FlyingBird({ eye }: { eye: number }) {
+  return (
+    <g className="hw-bob">
+      <path
+        pathLength={1}
+        d="M61.5 27.6 53.6 28.4C52 23 47.5 19.5 42 19.5 35.5 19.5 29 22.5 25 28.5 21.5 25 19 20 18 14.5L13.5 16.5C15 23 18.5 30 22 34.5 22 43.5 28.5 49.5 37.5 50 47 50.5 54.5 43 54.5 34 54.5 33 54.5 32.3 54.3 31.6Z"
+      />
+      <g className="hw-flap">
+        <path pathLength={1} d="M30 31C25 21 25 9 31 1 39 8 44 18 45 30" />
+        <path pathLength={1} d="M33 11C35 17 38 23 41 28" />
+      </g>
+      <path pathLength={1} d="M42 24.4C45 22.8 48.3 23 50.8 24.6M34.5 50 31 54.5M40.5 49.8 38 55" />
+      <circle cx="47.5" cy="28.2" r={eye} fill="currentColor" stroke="none" />
+    </g>
+  );
+}
+
 export const wrenScenes = [
   "all-caught-up",
   "conversations",
@@ -26,6 +47,7 @@ export const wrenScenes = [
   "help-for-this-page",
   "self-hosted",
   "plugs-in",
+  "flying",
 ] as const;
 
 export type WrenScene = (typeof wrenScenes)[number];
@@ -262,6 +284,47 @@ export const scenes: Record<WrenScene, { label: string; content: ReactNode }> = 
         />
         <g transform="translate(24,23)">
           <Bird eye={1.3} />
+        </g>
+      </>
+    ),
+  },
+  flying: {
+    label: "A wren in flight, carrying a letter",
+    content: (
+      <>
+        <path
+          className="hw-nodraw"
+          d="M12 138C40 150 58 118 84 112"
+          stroke="var(--pen)"
+          strokeWidth={1.8}
+          strokeDasharray="4 5"
+        />
+        <g stroke="var(--moss)">
+          <path pathLength={1} d="M22 62C22 53 35 51 38 58 42 51 55 54 53 62Z" />
+          <path pathLength={1} d="M166 44C166 37 177 35 180 41 183 36 194 38 193 44Z" />
+        </g>
+        <path pathLength={1} d="M74 78H88M66 90H84M76 102H88" />
+        <rect
+          className="hw-hl"
+          x="132"
+          y="103"
+          width="38"
+          height="25"
+          rx="3"
+          fill="var(--highlighter)"
+          stroke="none"
+        />
+        <rect pathLength={1} x="128" y="106" width="38" height="25" rx="3" />
+        <path pathLength={1} d="M128 108 147 121 166 108" />
+        <path
+          className="hw-pen"
+          pathLength={1}
+          d="M134 100 138 106M150 100 147 106"
+          stroke="var(--pen)"
+          strokeWidth={1.8}
+        />
+        <g transform="translate(88,32) rotate(-8 37 34) scale(1.2)" strokeWidth={1.33}>
+          <FlyingBird eye={1.2} />
         </g>
       </>
     ),

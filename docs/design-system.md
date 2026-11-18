@@ -167,11 +167,18 @@ Import them from the package entry point:
 import { Button, Field, Input } from "@helpwren/design-system";
 ```
 
-Every control shares the same rules: a 1.5px edge on a card surface, a 10px radius, a solid 2px
-outline in the accent colour when focused with the keyboard, and a red-pen edge when
-`aria-invalid` (the focus outline turns red pen too, so the ring always matches the state). Buttons and
-inputs are 40px tall so they line up in a row; buttons, checkboxes, radios and switches extend
-their hit area invisibly to 44px. Each has a story under
+Every control shares the same rules: a 1.5px edge on a card surface and a 10px radius. Focus is
+quiet for the mouse and clear for the keyboard:
+
+- **Text controls** (`Input`, `Textarea`, `TagsInput`, `Combobox`, `PhoneInput`, the `Select`
+  trigger): any focus turns the edge to the accent colour. The 2px focus ring appears only when
+  focus arrives from the keyboard, such as with Tab.
+- **Everything else** (buttons, checkboxes, switches, tabs, links): the ring appears for keyboard
+  focus only, which is the browser's own behaviour.
+- **Invalid controls** use red pen for both the edge and the ring.
+
+Buttons and inputs are 40px tall so they line up in a row; buttons, checkboxes, radios and
+switches extend their hit area invisibly to 44px. Each has a story under
 **Base** in Storybook and a test beside it.
 
 ### Actions and navigation
@@ -427,16 +434,18 @@ do not belong in the product interface, which stays calm.
 
 ## Illustrations
 
-**Wren** draws the wren in one of six scenes, converted from the brand boards:
+**Wren** draws the wren in one of seven scenes. Six are converted from the brand boards; `flying`
+was drawn for the product in the same line and is not on the boards.
 
-| `scene`              | Shows                                       | Use for                                     |
-| -------------------- | ------------------------------------------- | ------------------------------------------- |
-| `all-caught-up`      | On a branch, with a ticked box              | Empty inbox, nothing waiting                |
-| `conversations`      | Standing on a speech bubble                 | First message, the chat section of the site |
-| `help-articles`      | On a stack of books                         | Knowledge base, no search results           |
-| `help-for-this-page` | On a browser window, pointing at part of it | Contextual help                             |
-| `self-hosted`        | On the roof of a birdhouse                  | Setup screens, the hosting section          |
-| `plugs-in`           | On a cable about to be plugged in           | Install steps, the developer section        |
+| `scene`              | Shows                                       | Use for                                           |
+| -------------------- | ------------------------------------------- | ------------------------------------------------- |
+| `all-caught-up`      | On a branch, with a ticked box              | Empty inbox, nothing waiting                      |
+| `conversations`      | Standing on a speech bubble                 | First message, the chat section of the site       |
+| `help-articles`      | On a stack of books                         | Knowledge base, no search results                 |
+| `help-for-this-page` | On a browser window, pointing at part of it | Contextual help                                   |
+| `self-hosted`        | On the roof of a birdhouse                  | Setup screens, the hosting section                |
+| `plugs-in`           | On a cable about to be plugged in           | Install steps, the developer section              |
+| `flying`             | In flight, carrying a letter                | A message sent, an invitation or email on its way |
 
 - **Colour:** ink lines take the text colour (`currentColor`), so they turn to paper in dark mode.
   Moss, red pen and highlighter come from the tokens.

@@ -25,9 +25,22 @@ export const controlInvalid =
 export const controlShell = [
   "flex min-h-10 w-full min-w-0 items-center rounded-lg text-base transition-colors md:text-sm",
   controlSurface,
-  "has-[input:focus-visible]:outline-ring has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-solid",
-  "has-[input[aria-invalid=true]]:border-destructive has-[input[aria-invalid=true]:focus-visible]:outline-destructive",
+  // Focus changes the edge to the accent colour. The ring is added only when focus
+  // arrived from the keyboard (see ControlShell and lib/keyboard-focus).
+  "has-[input:focus]:border-ring",
+  "data-keyboard-focus:outline-ring data-keyboard-focus:outline-2 data-keyboard-focus:outline-offset-2 data-keyboard-focus:outline-solid",
+  "has-[input[aria-invalid=true]]:border-destructive has-[input[aria-invalid=true]]:data-keyboard-focus:outline-destructive",
   "has-[input:disabled]:bg-muted has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50",
+].join(" ");
+
+/**
+ * The same behaviour for a control that is its own box, such as a textarea or a
+ * select trigger: accent edge on focus, and a ring only for keyboard focus.
+ */
+export const textControlFocus = [
+  "outline-none focus:border-ring focus-visible:ring-0",
+  "data-keyboard-focus:outline-ring data-keyboard-focus:outline-2 data-keyboard-focus:outline-offset-2 data-keyboard-focus:outline-solid",
+  "aria-invalid:focus:border-destructive aria-invalid:data-keyboard-focus:outline-destructive",
 ].join(" ");
 
 /** An input stripped of its own box, for use inside a `controlShell`. */

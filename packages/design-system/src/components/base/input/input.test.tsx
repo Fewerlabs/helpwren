@@ -72,6 +72,41 @@ describe("Input", () => {
   });
 });
 
+describe("Input focus", () => {
+  it("shows its focus ring when reached with the keyboard, but not when clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <Input aria-label="First" />
+        <Input aria-label="Second" />
+      </>,
+    );
+    const first = screen.getByRole("textbox", { name: "First" });
+    const second = screen.getByRole("textbox", { name: "Second" });
+    const shell = (input: HTMLElement) => input.closest("[data-slot='input-shell']");
+
+    await user.click(first);
+    expect(first).toHaveFocus();
+    expect(shell(first)).not.toHaveAttribute("data-keyboard-focus");
+
+    await user.tab();
+    expect(second).toHaveFocus();
+    expect(shell(second)).toHaveAttribute("data-keyboard-focus");
+    expect(shell(first)).not.toHaveAttribute("data-keyboard-focus");
+
+    await user.click(first);
+    expect(shell(first)).not.toHaveAttribute("data-keyboard-focus");
+    expect(shell(second)).not.toHaveAttribute("data-keyboard-focus");
+  });
+
+  it("changes its edge colour on any focus", () => {
+    render(<Input aria-label="Email" />);
+    expect(screen.getByRole("textbox").closest("[data-slot='input-shell']")).toHaveClass(
+      "has-[input:focus]:border-ring",
+    );
+  });
+});
+
 describe("Input with currency", () => {
   it("groups digits while typing and reports the plain number", async () => {
     const onValueChange = vi.fn();

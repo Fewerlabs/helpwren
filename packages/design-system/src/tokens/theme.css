@@ -8,6 +8,9 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Set by text controls while they hold focus that arrived from the keyboard. */
+@custom-variant data-keyboard-focus (&[data-keyboard-focus]);
+
 @source "../components";
 @source "../illustrations";
 @source "../tokens";
