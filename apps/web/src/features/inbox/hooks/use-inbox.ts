@@ -4,8 +4,9 @@ import {
   type ConversationFilter,
   type ConversationStatus,
   type ConversationWithContact,
+  type Team,
 } from "@helpwren/core";
-import { toast } from "@helpwren/design-system";
+import { toast, type IconName } from "@helpwren/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
@@ -60,14 +61,25 @@ export const inboxViews = [
     filter: (): ConversationFilter => ({ status: ["resolved", "closed"] }),
   },
   { id: "all", label: "All", icon: "archive", filter: (): ConversationFilter => ({}) },
-] as const satisfies readonly {
+] as const satisfies readonly InboxView[];
+
+/** One way of looking at the inbox: a name, and the filter that decides what it holds. */
+export interface InboxView {
   id: string;
   label: string;
-  icon: string;
+  icon: IconName;
   filter: (agentId: string) => ConversationFilter;
-}[];
+}
 
-export type InboxView = (typeof inboxViews)[number];
+/** What still needs a team, as a view of its own in the navigation. */
+export function teamView(team: Team): InboxView {
+  return {
+    id: `team:${team.id}`,
+    label: team.name,
+    icon: "users",
+    filter: () => ({ teams: [team.id], status: ACTIVE }),
+  };
+}
 
 /** The view shown when the address names none. */
 const DEFAULT_VIEW = inboxViews[2];
@@ -95,20 +107,23 @@ export function useOpenConversation(id: string | null) {
   });
 }
 
-/** How many conversations each view holds. */
-export function useViewCounts(agentId: string): Partial<Record<InboxView["id"], number>> {
+/** How many conversations each of these views holds, by the view's id. */
+export function useViewCounts(
+  views: readonly InboxView[],
+  agentId: string,
+): Partial<Record<string, number>> {
   const getClient = useHelpwren();
   const counts = useQuery({
-    queryKey: [...inboxKey, "counts", agentId],
+    queryKey: [...inboxKey, "counts", agentId, views.map((view) => view.id)],
     queryFn: async () => {
       const client = getClient();
       const entries = await Promise.all(
-        inboxViews.map(
+        views.map(
           async (view) =>
             [view.id, await client.conversations.count(view.filter(agentId))] as const,
         ),
       );
-      return Object.fromEntries(entries) as Record<InboxView["id"], number>;
+      return Object.fromEntries(entries);
     },
   });
   return counts.data ?? {};
@@ -152,6 +167,16 @@ export function useChangeConversations() {
       toast.error(CHANGE_FAILED);
     },
     onSettled: refresh,
+  });
+}
+
+/** The install's teams, for giving a conversation to one and for a view of each. */
+export function useTeams() {
+  const getClient = useHelpwren();
+  return useQuery({
+    queryKey: ["teams"],
+    queryFn: () => getClient().teams.list(),
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -238,10 +263,13 @@ export function useLiveInbox() {
 const VIEW = "view";
 const SELECTED = "c";
 
-/** The view in the address (`/dashboard/inbox?view=waiting`). Open, unless it says otherwise. */
-export function useInboxView(): InboxView {
+/**
+ * The view in the address (`/dashboard/inbox?view=waiting`), from the ones given. Open, unless
+ * the address names another.
+ */
+export function useInboxView(views: readonly InboxView[]): InboxView {
   const id = useSearchParams().get(VIEW);
-  return inboxViews.find((view) => view.id === id) ?? DEFAULT_VIEW;
+  return views.find((view) => view.id === id) ?? DEFAULT_VIEW;
 }
 
 /** The address of a view, for its link in the navigation. */

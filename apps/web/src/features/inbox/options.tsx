@@ -1,9 +1,10 @@
 import {
   type ConversationPriority,
   type ConversationStatus,
+  type Team,
   type TeamMember,
 } from "@helpwren/core";
-import { Avatar, StatusChip, type OptionListOption } from "@helpwren/design-system";
+import { Avatar, Icon, StatusChip, type OptionListOption } from "@helpwren/design-system";
 
 import { PriorityLabel } from "./components/priority-label";
 import { priorities, statuses } from "./labels";
@@ -27,7 +28,7 @@ export const priorityOptions: OptionListOption[] = (
   content: <PriorityLabel priority={value} />,
 }));
 
-/** The value that stands for "assigned to nobody", which an option cannot express as null. */
+/** The value that stands for "nobody" or "no team", which an option cannot express as null. */
 export const NOBODY = "nobody";
 
 /** A team member as an avatar and their name. */
@@ -41,6 +42,30 @@ export function Person({ name, photo }: { name: string; photo?: string | undefin
 }
 
 export const unassigned = <span className="text-muted-foreground">Unassigned</span>;
+
+export const noTeam = <span className="text-muted-foreground">No team</span>;
+
+/** A team as its name beside the icon that stands for teams. */
+export function TeamName({ name }: { name: string }) {
+  return (
+    <>
+      <Icon name="users" className="text-muted-foreground size-4 shrink-0" />
+      <span className="truncate">{name}</span>
+    </>
+  );
+}
+
+/** No team, then every team. */
+export function teamOptions(teams: readonly Team[]): OptionListOption[] {
+  return [
+    { value: NOBODY, label: "No team", content: noTeam },
+    ...teams.map((team) => ({
+      value: team.id,
+      label: team.name,
+      content: <TeamName name={team.name} />,
+    })),
+  ];
+}
 
 /** Nobody, then everyone on the team. */
 export function assigneeOptions(team: readonly TeamMember[]): OptionListOption[] {

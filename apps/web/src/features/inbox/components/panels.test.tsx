@@ -163,7 +163,11 @@ describe("ListPanel", () => {
 
 describe("DetailsPanel", () => {
   it("shows how to reach the contact, and says what was not given", () => {
-    render(withClient(<DetailsPanel conversation={conversation()} team={[]} onChange={vi.fn()} />));
+    render(
+      withClient(
+        <DetailsPanel conversation={conversation()} team={[]} teams={[]} onChange={vi.fn()} />,
+      ),
+    );
     const details = screen.getByRole("region", { name: "Details" });
 
     expect(within(details).getByRole("link", { name: "priya@example.org" })).toHaveAttribute(
@@ -179,6 +183,7 @@ describe("DetailsPanel", () => {
       withClient(
         <DetailsPanel
           team={[]}
+          teams={[]}
           onChange={vi.fn()}
           conversation={conversation({
             context: { url: "https://example.com/pricing", title: "Pricing" },
@@ -198,6 +203,7 @@ describe("DetailsPanel", () => {
       withClient(
         <DetailsPanel
           team={[]}
+          teams={[]}
           onChange={vi.fn()}
           conversation={conversation({ contact: { ...contact, kind: "user", verified: true } })}
         />,
@@ -209,6 +215,7 @@ describe("DetailsPanel", () => {
       withClient(
         <DetailsPanel
           team={[]}
+          teams={[]}
           onChange={vi.fn()}
           conversation={conversation({ contact: { ...contact, kind: "user", verified: false } })}
         />,
@@ -221,7 +228,9 @@ describe("DetailsPanel", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
-      withClient(<DetailsPanel conversation={conversation()} team={[]} onChange={onChange} />),
+      withClient(
+        <DetailsPanel conversation={conversation()} team={[]} teams={[]} onChange={onChange} />,
+      ),
     );
 
     await user.click(screen.getByRole("button", { name: /^Status:/ }));
@@ -248,6 +257,7 @@ describe("DetailsPanel", () => {
       withClient(
         <DetailsPanel
           team={[]}
+          teams={[]}
           onChange={onChange}
           conversation={conversation({ type: "ticket", ticketNumber: 1042 })}
         />,
@@ -268,5 +278,18 @@ describe("DetailsPanel", () => {
     await vi.waitFor(() => {
       expect(onChange).toHaveBeenCalledWith({ status: "closed" });
     });
+  });
+
+  it("gives the conversation to a team", async () => {
+    const onChange = vi.fn();
+    const teams = [{ id: "44444444-4444-4444-8444-444444444444", name: "Billing", memberIds: [] }];
+    render(
+      withClient(
+        <DetailsPanel conversation={conversation()} team={[]} teams={teams} onChange={onChange} />,
+      ),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^Team:/ }));
+    await userEvent.click(screen.getByRole("option", { name: "Billing" }));
+    expect(onChange).toHaveBeenCalledWith({ teamId: teams[0]?.id });
   });
 });

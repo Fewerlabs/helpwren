@@ -222,6 +222,10 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   await expect(row).toContainText("Agent");
 
   await page.getByRole("button", { name: `Make ${NEW_MEMBER.name} an admin` }).click();
+  await page
+    .getByRole("alertdialog", { name: `Make ${NEW_MEMBER.name} an admin?` })
+    .getByRole("button", { name: "Make admin" })
+    .click();
   await expect(row).toContainText("Admin");
 
   await page.getByRole("button", { name: `Deactivate ${NEW_MEMBER.name}` }).click();

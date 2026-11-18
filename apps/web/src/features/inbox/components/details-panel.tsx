@@ -6,6 +6,7 @@ import {
   type ConversationPriority,
   type ConversationStatus,
   type ConversationWithContact,
+  type Team,
   type TeamMember,
 } from "@helpwren/core";
 import {
@@ -28,6 +29,9 @@ import { useRating } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
 import {
   assigneeOptions,
+  noTeam,
+  TeamName,
+  teamOptions,
   NOBODY,
   Person,
   priorityOptions,
@@ -106,12 +110,20 @@ function shortUrl(url: string): string {
 export interface DetailsPanelProps {
   conversation: ConversationWithContact;
   team: readonly TeamMember[];
+  /** The install's teams, for giving the conversation to one. */
+  teams: readonly Team[];
   onChange: (changes: ConversationChanges) => void;
   className?: string;
 }
 
 /** The side panel: who has the conversation and where it stands, then who it is with. */
-export function DetailsPanel({ conversation, team, onChange, className }: DetailsPanelProps) {
+export function DetailsPanel({
+  conversation,
+  team,
+  teams,
+  onChange,
+  className,
+}: DetailsPanelProps) {
   const { contact, context } = conversation;
   const name = contactName(contact);
   const page = typeof context.url === "string" ? context.url : undefined;
@@ -122,6 +134,7 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
 
   const assignees = assigneeOptions(team);
   const assignee = team.find((member) => member.id === conversation.assigneeId);
+  const ownTeam = teams.find((item) => item.id === conversation.teamId);
 
   return (
     <Panel aria-label="Details" className={className}>
@@ -165,6 +178,21 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
               {assignee ? <Person name={assignee.name} photo={assignee.photo} /> : unassigned}
             </InlineSelect>
           </Row>
+          {/* Only once there are teams: with none, the row would offer nothing to choose. */}
+          {teams.length > 0 ? (
+            <Row label="Team">
+              <InlineSelect
+                label="Team"
+                value={conversation.teamId ?? NOBODY}
+                options={teamOptions(teams)}
+                onValueChange={(value) => {
+                  onChange({ teamId: value === NOBODY ? null : value });
+                }}
+              >
+                {ownTeam ? <TeamName name={ownTeam.name} /> : noTeam}
+              </InlineSelect>
+            </Row>
+          ) : null}
           <Row label="Status">
             <InlineSelect
               label="Status"

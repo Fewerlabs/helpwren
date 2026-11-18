@@ -2,13 +2,14 @@
 
 import { type Agent } from "@helpwren/core";
 import { cn, EmptyState, Sheet, SheetContent, SheetTitle } from "@helpwren/design-system";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { DashboardPage, Panel } from "@/features/dashboard";
 import { useDebounced } from "@/lib/use-debounced";
 
 import {
   inboxViews,
+  teamView,
   MIN_SEARCH_LENGTH,
   useChangeConversation,
   useChangeConversations,
@@ -19,6 +20,7 @@ import {
   useSelectedConversation,
   useShowConversation,
   useTeam,
+  useTeams,
   useViewCounts,
   viewHref,
 } from "../hooks/use-inbox";
@@ -41,9 +43,12 @@ export interface InboxProps {
 }
 
 export function Inbox({ agent }: InboxProps) {
-  const view = useInboxView();
-  const counts = useViewCounts(agent.id);
   const team = useTeam().data ?? [];
+  const teams = useTeams().data;
+  // The built-in views, then one for each team.
+  const views = useMemo(() => [...inboxViews, ...(teams ?? []).map(teamView)], [teams]);
+  const view = useInboxView(views);
+  const counts = useViewCounts(views, agent.id);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
   const [selectedId, select] = useSelectedConversation();
@@ -86,6 +91,7 @@ export function Inbox({ agent }: InboxProps) {
         <DetailsPanel
           conversation={selected}
           team={team}
+          teams={teams ?? []}
           onChange={change.mutate}
           className="max-xl:hidden"
         />
@@ -93,18 +99,25 @@ export function Inbox({ agent }: InboxProps) {
       <Sheet open={detailsSheetOpen} onOpenChange={setDetailsSheetOpen}>
         <SheetContent className="w-80 max-w-[90vw] gap-0 p-0 text-[0.8125rem] xl:hidden">
           <SheetTitle className="sr-only">Details</SheetTitle>
-          <DetailsPanel conversation={selected} team={team} onChange={change.mutate} />
+          <DetailsPanel
+            conversation={selected}
+            team={team}
+            teams={teams ?? []}
+            onChange={change.mutate}
+          />
         </SheetContent>
       </Sheet>
     </>
   ) : null;
 
-  const nav = inboxViews.map((item) => ({
+  const nav = views.map((item) => ({
     href: viewHref(item),
     label: item.label,
     icon: item.icon,
     count: counts[item.id],
     active: item.id === view.id,
+    // Teams sit under their own heading, below the views everyone has.
+    ...(item.id.startsWith("team:") ? { group: "Teams" } : {}),
   }));
   const columns = cn(
     "divide-rule grid divide-x",
@@ -117,6 +130,7 @@ export function Inbox({ agent }: InboxProps) {
         {openConversation ?? (
           <TicketTable
             team={team}
+            teams={teams ?? []}
             onOpen={select}
             onChange={(id, changes) => {
               changeAny.mutate({ id, changes });

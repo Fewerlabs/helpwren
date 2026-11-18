@@ -6,6 +6,7 @@ import {
   type ConversationPriority,
   type ConversationStatus,
   type ConversationWithContact,
+  type Team,
   type TeamMember,
 } from "@helpwren/core";
 import {
@@ -36,6 +37,7 @@ import { INBOX_QUERY_KEY, MIN_SEARCH_LENGTH } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
 import {
   assigneeOptions,
+  teamOptions,
   NOBODY,
   Person,
   priorityOptions,
@@ -54,11 +56,14 @@ function toFilter(value: FilterValue): ConversationFilter {
     status: chosen("status") as ConversationStatus[] | undefined,
     priority: chosen("priority") as ConversationPriority[] | undefined,
     assignees: chosen("assignee")?.map((id) => (id === NOBODY ? null : id)),
+    teams: chosen("team")?.map((id) => (id === NOBODY ? null : id)),
   };
 }
 
 export interface TicketTableProps {
   team: readonly TeamMember[];
+  /** The install's teams, for filtering by one. */
+  teams: readonly Team[];
   onOpen: (id: string) => void;
   /** Changes one ticket in place, from its row. */
   onChange: (id: string, changes: ConversationChanges) => void;
@@ -69,7 +74,7 @@ export interface TicketTableProps {
  * number, status and owner more than by its latest message, so it is laid out as a row of
  * those and not as a chat.
  */
-export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
+export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps) {
   const getClient = useHelpwren();
   const confirmStatus = useConfirmStatus();
   const [filters, setFilters] = useState<FilterValue>({});
@@ -86,8 +91,12 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
       { id: "status", label: "Status", icon: "check-circle", options: statusOptions },
       { id: "priority", label: "Priority", icon: "warning-circle", options: priorityOptions },
       { id: "assignee", label: "Assignee", icon: "user", options: assignees },
+      // Offered only once there are teams to filter by.
+      ...(teams.length > 0
+        ? [{ id: "team", label: "Team", icon: "users" as const, options: teamOptions(teams) }]
+        : []),
     ],
-    [assignees],
+    [assignees, teams],
   );
 
   const columns = useMemo<DataTableColumn<ConversationWithContact>[]>(
