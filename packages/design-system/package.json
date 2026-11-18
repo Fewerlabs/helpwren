@@ -1,0 +1,57 @@
+{
+  "name": "@helpwren/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Helpwren design system: tokens, base and shared components, and the wren illustrations.",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles/globals.css"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "storybook": "storybook dev --port 6006",
+    "build": "storybook build"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "@storybook/addon-a11y": "^10.6.7",
+    "@storybook/addon-docs": "^10.6.7",
+    "@storybook/addon-vitest": "^10.6.7",
+    "@storybook/react-vite": "^10.6.7",
+    "@tailwindcss/vite": "^4.3.5",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@vitest/browser-playwright": "^5.1.1",
+    "eslint": "catalog:",
+    "eslint-plugin-storybook": "^10.6.7",
+    "jsdom": "^31.0.1",
+    "playwright": "^1.65.1",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "storybook": "^10.6.7",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "^8.3.8",
+    "vitest": "catalog:"
+  }
+}

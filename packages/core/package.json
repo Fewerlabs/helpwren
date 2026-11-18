@@ -1,0 +1,19 @@
+{
+  "name": "@helpwren/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Headless client library for Helpwren.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

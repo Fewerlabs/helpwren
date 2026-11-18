@@ -1,0 +1,19 @@
+{
+  "name": "helpwren",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The embeddable Helpwren widget script loaded by host sites.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

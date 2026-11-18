@@ -1,0 +1,19 @@
+{
+  "name": "@helpwren/react-native",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Support screen for React Native and Expo apps.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Helpwren colour palette</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;family=Caveat:wght@500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#2F5B85}a:hover{color:#26231E}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1320px; box-sizing: border-box; padding: 64px 72px; background: #F7F4ED; background-image: linear-gradient(#ECE7DC 1px, transparent 1px), linear-gradient(90deg, #ECE7DC 1px, transparent 1px); background-size: 24px 24px; color: #26231E; font-family: Figtree, 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 28px; position: relative">
+
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true"><defs><filter id="pal-rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3" result="n"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap></filter></defs></svg>
+
+  <div style="position: absolute; top: 0; bottom: 0; left: 48px; width: 1.5px; background: #B23520; opacity: 0.55"></div>
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6E675B">HELPWREN · COLOUR · V2</span>
+      <h1 style="margin: 0; font-size: 56px; line-height: 1.05; font-weight: 600; letter-spacing: -0.03em">A desk of <span style="position: relative; display: inline-block">stationery<svg viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: -16px; top: -10px; width: calc(100% + 32px); height: calc(100% + 20px); overflow: visible"><ellipse cx="150" cy="46" rx="145" ry="38" fill="none" stroke="#B23520" stroke-width="2.4" filter="url(#pal-rough)" transform="rotate(-2 150 46)"></ellipse></svg></span>, <span style="background: linear-gradient(transparent 52%, #F5D547 52%, #F5D547 92%, transparent 92%); padding: 0 4px">not a rainbow</span>.</h1>
+    </div>
+    <div style="font-family: Caveat, 'Comic Sans MS', cursive; font-size: 28px; color: #B23520; transform: rotate(-3deg); max-width: 300px; line-height: 1.05">paper and ink do the work. the rest are pens on the desk.</div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+    <div style="border: 1px solid #8F8778; border-radius: 16px; background: #FDFBF7; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 18px; font-weight: 600">Base, kept from Claude Design</h2><span style="font-size: 13px; color: #6E675B">Every screen</span></div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #F7F4ED; border: 1px solid #8F8778"></div><span style="font-size: 14px; font-weight: 600">Paper</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#F7F4ED</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #FDFBF7; border: 1px solid #8F8778"></div><span style="font-size: 14px; font-weight: 600">Card</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#FDFBF7</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #26231E"></div><span style="font-size: 14px; font-weight: 600">Ink</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#26231E · 14:1</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #6E675B"></div><span style="font-size: 14px; font-weight: 600">Pencil</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#6E675B · 5.1:1</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #E3DDD0"></div><span style="font-size: 14px; font-weight: 600">Rule</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#E3DDD0 · dividers</span></div>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #6E675B">Merged Claude Design's two greys (#6E675B and #5E584E) into one, Pencil. Fewer greys, same contrast.</p>
+    </div>
+
+    <div style="border: 1px solid #8F8778; border-radius: 16px; background: #FDFBF7; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 18px; font-weight: 600">Brand colours</h2><span style="font-size: 13px; color: #6E675B">Site, docs, illustrations</span></div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #3D6B57"></div><span style="font-size: 14px; font-weight: 600">Moss</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#3D6B57 · 5.6:1</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #B23520"></div><span style="font-size: 14px; font-weight: 600">Red pen</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#B23520 · 5.6:1</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #F5D547"></div><span style="font-size: 14px; font-weight: 600">Highlighter</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#F5D547 · ink 10.8:1</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 84px; border-radius: 10px; background: #F7F4ED; border: 1.5px solid #8F8778"></div><span style="font-size: 14px; font-weight: 600">Edge</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#8F8778 · 3.2:1</span></div>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #6E675B">Moss is Helpwren's own accent: primary buttons on the site and docs, and the widget's default when a product sets no accent (white text on it is 6.1:1). Red pen circles, underlines, arrows and margin notes. Highlighter sits behind a word, never behind a paragraph. Edge fixes Claude Design's input borders, which were too faint to see (1.2:1).</p>
+    </div>
+  </div>
+
+  <div style="border: 1px solid #8F8778; border-radius: 16px; background: #FDFBF7; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 18px; font-weight: 600">Status, for the inbox</h2><span style="font-size: 13px; color: #6E675B">Claude Design had two. A help desk needs five.</span></div>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E0E8F1; color: #2F5B85; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F5B85"></span>Open</span>
+        <span style="font-size: 14px; font-weight: 600">Biro blue</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#2F5B85 on #E0E8F1</span>
+        <span style="font-size: 13px; color: #6E675B">Open, links, internal notes</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #F4EBD6; color: #7D5A12; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #7D5A12"></span>Waiting</span>
+        <span style="font-size: 14px; font-weight: 600">Ochre</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#7D5A12 on #F4EBD6</span>
+        <span style="font-size: 13px; color: #6E675B">Waiting on the user</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E4EDE7; color: #3D6B57; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #3D6B57"></span>Resolved</span>
+        <span style="font-size: 14px; font-weight: 600">Moss</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#3D6B57 on #E4EDE7</span>
+        <span style="font-size: 13px; color: #6E675B">Resolved, online, verified</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #F7E1DB; color: #B23520; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; background: #B23520"></span>Urgent</span>
+        <span style="font-size: 14px; font-weight: 600">Red pen</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#B23520 on #F7E1DB</span>
+        <span style="font-size: 13px; color: #6E675B">High priority, errors</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #EDE9E0; color: #6E675B; font-size: 13px; font-weight: 600"><span style="width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid #6E675B; box-sizing: border-box"></span>Closed</span>
+        <span style="font-size: 14px; font-weight: 600">Pencil</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B">#6E675B on #EDE9E0</span>
+        <span style="font-size: 13px; color: #6E675B">Closed, archived, offline</span>
+      </div>
+    </div>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #6E675B">Every chip pairs colour with a word and a dot, so status never depends on colour alone. All pass 4.5:1.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px">
+    <div style="border-radius: 16px; background: #1C1A16; color: #EDE8DC; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 18px; font-weight: 600">Dark mode</h2><span style="font-size: 13px; color: #A39B8B">Warm, not blue-black</span></div>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 60px; border-radius: 10px; background: #24211C; border: 1px solid #827B6E"></div><span style="font-size: 13px; font-weight: 600">Card</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A39B8B">#24211C</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 60px; border-radius: 10px; background: #EDE8DC"></div><span style="font-size: 13px; font-weight: 600">Ink</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A39B8B">#EDE8DC</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 60px; border-radius: 10px; background: #A39B8B"></div><span style="font-size: 13px; font-weight: 600">Pencil</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A39B8B">#A39B8B</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 60px; border-radius: 10px; background: #F07A5A"></div><span style="font-size: 13px; font-weight: 600">Red pen</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A39B8B">#F07A5A</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 60px; border-radius: 10px; background: #E8C64A"></div><span style="font-size: 13px; font-weight: 600">Highlighter</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A39B8B">#E8C64A</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><div style="height: 60px; border-radius: 10px; background: #8DB3DB"></div><span style="font-size: 13px; font-weight: 600">Biro</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A39B8B">#8DB3DB</span></div>
+      </div>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #A39B8B">Paper #1C1A16, edge #827B6E, moss #7FB59A, ochre #D9A441. Every pair checked at 4.5:1 for text and 3:1 for edges.</p>
+    </div>
+
+    <div style="border: 1px solid #8F8778; border-radius: 16px; background: #FDFBF7; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 18px; font-weight: 600">Where each colour lives</h2>
+      <div style="display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid #E3DDD0"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B; min-width: 96px">Landing, docs</span><span style="font-size: 14px; line-height: 1.5">Paper with a grid, ink, headlines marked with red pen and highlighter marks, margin notes in Caveat.</span></div>
+      <div style="display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid #E3DDD0"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B; min-width: 96px">Inbox</span><span style="font-size: 14px; line-height: 1.5">Paper and ink, plus the five status colours. Red pen only for urgent.</span></div>
+      <div style="display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid #E3DDD0; border-bottom: 1px solid #E3DDD0"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E675B; min-width: 96px">Widget</span><span style="font-size: 14px; line-height: 1.5">Paper and ink by default, and the host product's accent on the send button. No red pen, no highlighter: it has to sit quietly in someone else's app.</span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

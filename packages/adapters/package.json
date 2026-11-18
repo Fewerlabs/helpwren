@@ -1,0 +1,19 @@
+{
+  "name": "@helpwren/adapters",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Identity, push, email and storage adapters that connect Helpwren to a host product.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

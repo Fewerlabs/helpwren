@@ -1,0 +1,7 @@
+{
+  "extends": "@helpwren/config/typescript/react-library.json",
+  "compilerOptions": {
+    "types": ["vite/client"]
+  },
+  "include": ["src", ".storybook/*.ts", "*.ts", "*.mjs"]
+}
