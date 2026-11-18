@@ -303,7 +303,7 @@ function ListView<Item, Cursor>({
           ) : (
             <div
               data-slot="query-list-end"
-              className="text-muted-foreground flex flex-col items-center gap-1 py-6 text-sm"
+              className="text-muted-foreground flex flex-col items-center gap-1 py-6 text-xs"
             >
               <Wren scene="all-caught-up" decorative className="max-w-28" />
               <p>{messages.end}</p>
