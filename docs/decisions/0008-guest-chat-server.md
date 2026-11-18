@@ -23,8 +23,7 @@ and slow down abuse, all with code that is public.
 - **What guests are asked for is a setting**, `guest_details`: `email` (the default), `phone`,
   `email_or_phone` or `none`. A name is asked for with any of the first three. The server
   enforces it, counting details the contact gave before, so the form cannot be bypassed and a
-  returning guest is not asked twice. Phone numbers are stored in international format. The phone
-  field starts on the country in the `default_country` setting, Nigeria (`NG`, +234) unless set.
+  returning guest is not asked twice. Phone numbers are stored in international format.
 - **API routes accept a session two ways:** a bearer token, which the chat frame sends because
   browsers block cookies in a frame on someone else's site, or the inbox's cookies. Failures use
   one body shape, `{ error: { code, message } }`, with the codes defined in `@helpwren/core`.

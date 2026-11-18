@@ -100,7 +100,7 @@ test("a visitor can give a phone number in place of an email", async ({ page }) 
   await page.getByRole("radio", { name: "Phone" }).check();
   await expect(page.getByRole("textbox", { name: "Email" })).toHaveCount(0);
 
-  // The field starts on the install's default country; a pasted number switches it.
+  // The field starts on +234; a pasted number switches it.
   await expect(page.getByRole("combobox", { name: /country/i })).toContainText("+234");
   await page.getByLabel("Phone number").fill("+44 7700 900123");
   await page.getByLabel("Your message").fill("Please call me back.");

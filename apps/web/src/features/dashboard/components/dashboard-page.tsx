@@ -73,10 +73,7 @@ export function DashboardPage({ title, nav, navLabel, className, children }: Das
       ) : null}
       <div className="min-h-0 min-w-0 flex-1 p-2">
         <div
-          className={cn(
-            "border-rule dark:bg-background h-full overflow-hidden rounded-xl border bg-white",
-            className,
-          )}
+          className={cn("border-rule bg-card h-full overflow-hidden rounded-xl border", className)}
         >
           {children}
         </div>

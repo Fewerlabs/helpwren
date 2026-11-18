@@ -1,10 +1,10 @@
 "use client";
 
 import { type Settings } from "@helpwren/core";
-import { FieldList, listCountries, type FieldItem } from "@helpwren/design-system";
+import { FieldList, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { saveGeneral } from "../actions";
@@ -24,7 +24,7 @@ export interface GeneralFormProps {
   canEdit: boolean;
 }
 
-/** Brand name, what guests are asked for, and the country phone fields start on. */
+/** Brand name, and what guests are asked for. */
 export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
@@ -33,18 +33,9 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
     defaultValues: {
       brandName: settings.brand.name,
       guestDetails: settings.guestDetails,
-      defaultCountry: settings.defaultCountry,
     },
   });
 
-  const countries = useMemo(
-    () =>
-      listCountries("en").map((country) => ({
-        value: country.code,
-        label: `${country.name} (+${country.callingCode})`,
-      })),
-    [],
-  );
   const brandFields: FieldItem<GeneralValues>[] = [
     { name: "brandName", label: "Brand name", type: "input", required: true },
   ];
@@ -54,13 +45,6 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
       label: "Ask guests for",
       type: "select",
       props: { options: guestDetailOptions },
-    },
-    {
-      name: "defaultCountry",
-      label: "Default country",
-      type: "combobox",
-      hint: "The country a phone number field starts on.",
-      props: { options: countries },
     },
   ];
   const disabled = !canEdit || form.formState.isSubmitting;

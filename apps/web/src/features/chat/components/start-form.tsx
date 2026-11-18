@@ -13,7 +13,6 @@ import {
   FieldList,
   Icon,
   Textarea,
-  toCountryCode,
   Wren,
   type FieldItem,
 } from "@helpwren/design-system";
@@ -72,13 +71,8 @@ function startSchema(ask: GuestDetails | "nothing") {
     });
 }
 
-function fieldsFor(
-  ask: GuestDetails | "nothing",
-  replyBy: StartValues["replyBy"],
-  defaultCountry: string,
-) {
+function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"]) {
   const fields: FieldItem<StartValues>[] = [];
-  const country = toCountryCode(defaultCountry);
   if (ask !== "nothing" && ask !== "none") {
     fields.push({
       name: "name",
@@ -121,11 +115,8 @@ function fieldsFor(
             label: "Phone number",
             type: "phone",
             required: true,
-            props: {
-              autoComplete: "tel",
-              // Pasting a number from another country still switches to it.
-              ...(country ? { defaultCountry: country } : {}),
-            },
+            // Starts on +234. Pasting a number from another country switches to it.
+            props: { autoComplete: "tel" },
           },
     );
   }
@@ -141,8 +132,6 @@ function fieldsFor(
 
 export interface StartFormProps {
   guestDetails: GuestDetails;
-  /** The country the phone field starts on, as a two-letter code from the install's settings. */
-  defaultCountry: string;
   source: string;
   /** Who the visitor is writing to. */
   teamName: string;
@@ -151,13 +140,7 @@ export interface StartFormProps {
 }
 
 /** Starts a conversation: who the visitor is, if the install asks, and their first message. */
-export function StartForm({
-  guestDetails,
-  defaultCountry,
-  source,
-  teamName,
-  returning,
-}: StartFormProps) {
+export function StartForm({ guestDetails, source, teamName, returning }: StartFormProps) {
   const getClient = useHelpwren();
   const queryClient = useQueryClient();
   const show = useShowScreen();
@@ -271,7 +254,7 @@ export function StartForm({
         </div>
         <FieldList
           control={form.control}
-          fields={fieldsFor(ask, replyBy, defaultCountry)}
+          fields={fieldsFor(ask, replyBy)}
           disabled={isSubmitting}
         />
       </div>

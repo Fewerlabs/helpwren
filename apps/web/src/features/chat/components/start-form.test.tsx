@@ -26,13 +26,7 @@ function renderForm(guestDetails: GuestDetails, returning = false) {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <HelpwrenProvider getClient={getClient}>
-        <StartForm
-          guestDetails={guestDetails}
-          defaultCountry="NG"
-          teamName="Acme"
-          source="web"
-          returning={returning}
-        />
+        <StartForm guestDetails={guestDetails} teamName="Acme" source="web" returning={returning} />
         <Screen />
       </HelpwrenProvider>
     </QueryClientProvider>,
@@ -72,7 +66,7 @@ describe("StartForm", () => {
     });
   });
 
-  it("asks for a phone number when the install wants one, starting on its default country", () => {
+  it("asks for a phone number when the install wants one, starting on +234", () => {
     renderForm("phone");
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /country/i })).toHaveTextContent("+234");

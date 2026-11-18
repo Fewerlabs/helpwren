@@ -39,7 +39,7 @@ export interface PhoneInputProps extends Omit<
   defaultValue?: string;
   /** Called with the number in international form, or an empty string when there are no digits. */
   onValueChange?: (value: string, details: PhoneDetails) => void;
-  /** The country to start with when the value does not say. Default `US`. */
+  /** The country to start with when the value does not say. Default `NG` (+234). */
   defaultCountry?: CountryCode;
   onCountryChange?: (country: CountryCode) => void;
   /** Limits the list to these countries. */
@@ -113,7 +113,7 @@ export function PhoneInput({
   value,
   defaultValue,
   onValueChange,
-  defaultCountry = "US",
+  defaultCountry = "NG",
   onCountryChange,
   countries: only,
   preferredCountries,

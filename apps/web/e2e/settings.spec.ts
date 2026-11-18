@@ -8,7 +8,7 @@ import { signInToInbox } from "./support/mailbox";
 const NEW_MEMBER = { name: "Kofi Mensah", email: "kofi.e2e@example.com" };
 
 async function restore() {
-  await database.from("settings").delete().in("key", ["allowed_domains", "default_country"]);
+  await database.from("settings").delete().eq("key", "allowed_domains");
   await database
     .from("settings")
     .update({ value: { name: "Helpwren Demo" } })

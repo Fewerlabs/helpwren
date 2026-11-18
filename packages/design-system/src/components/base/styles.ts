@@ -45,12 +45,12 @@ export const textControlFocus = [
 ].join(" ");
 
 /**
- * Put this on a container to make the text controls inside it smaller: 32px tall with 13px
+ * Put this on a container to make the text controls inside it smaller: 36px tall with 13px
  * text, in place of 40px and 14px. For dense screens such as a dashboard, where people use a
  * mouse and keyboard. Leave touch screens, such as the chat, at the default.
  */
 export const compactControls =
-  "[--hw-control-height:2rem] [--hw-control-text:0.8125rem] [--hw-control-pad:0px]";
+  "[--hw-control-height:2.25rem] [--hw-control-text:0.8125rem] [--hw-control-pad:0.125rem]";
 
 /** An input stripped of its own box, for use inside a `controlShell`. */
 export const bareInput =

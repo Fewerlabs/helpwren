@@ -10,15 +10,6 @@ export interface Country {
   flag: string;
 }
 
-/**
- * Checks a country code that came from outside the type system, such as a setting, and returns
- * it only if it is a country with a dialling code. Use the result as a `defaultCountry`.
- */
-export function toCountryCode(value: string): CountryCode | undefined {
-  const upper = value.toUpperCase();
-  return getCountries().find((code) => code === upper);
-}
-
 /** The flag emoji for an ISO country code, built from its two regional indicator letters. */
 export function flagOf(code: string): string {
   const letters = code.toUpperCase();

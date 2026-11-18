@@ -25,7 +25,7 @@ export function DashboardShell({ agent, signOut, children }: DashboardShellProps
       {/* A lighter canvas than the page colour, so the white panels sit on it quietly. */}
       <div
         className={cn(
-          "bg-card flex h-dvh text-[0.8125rem] leading-5 max-md:flex-col",
+          "bg-canvas flex h-dvh text-[0.8125rem] leading-5 max-md:flex-col",
           // A dashboard is used with a mouse and keyboard, all day: everything is a size down.
           compactControls,
         )}

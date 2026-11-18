@@ -8,7 +8,6 @@ export const generalSchema = z.object({
     .min(1, "Enter a name.")
     .max(60, "Keep the name under 60 characters."),
   guestDetails: guestDetailsSchema,
-  defaultCountry: z.string().regex(/^[A-Za-z]{2}$/, "Choose a country."),
 });
 export type GeneralValues = z.infer<typeof generalSchema>;
 

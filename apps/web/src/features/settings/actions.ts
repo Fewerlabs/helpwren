@@ -35,7 +35,6 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
   const result = await helpwren.settings.update({
     brand: { name: parsed.data.brandName },
     guestDetails: parsed.data.guestDetails,
-    defaultCountry: parsed.data.defaultCountry,
   });
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;

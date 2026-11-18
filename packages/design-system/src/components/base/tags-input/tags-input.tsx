@@ -174,7 +174,7 @@ export function TagsInput({
       // Tells assistive technology that the chips are part of a disabled control.
       role="group"
       aria-disabled={disabled || undefined}
-      className={cn("flex-wrap gap-1.5 px-2 py-1", className)}
+      className={cn("flex-wrap gap-1.5 px-2 py-(--hw-control-pad,0.25rem)", className)}
     >
       {prepend === undefined ? null : (
         <span className="text-muted-foreground flex shrink-0 items-center pl-1">{prepend}</span>

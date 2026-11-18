@@ -231,7 +231,7 @@ for its country as it is typed.
 
 - The value, and what a form submits, is always the full international number, such as
   `+442079460958`. `onValueChange` also receives `{ country, nationalNumber, isValid }`.
-- `defaultCountry` sets the starting country (default `US`), `countries` limits the list,
+- `defaultCountry` sets the starting country (default `NG`, +234), `countries` limits the list,
   `preferredCountries` puts some at the top, and `locale` sets the language of the country names.
 - In the country list, typing a country's name jumps to it.
 
@@ -483,7 +483,7 @@ padding on `contentClassName`; padding on `className` would push the bar down.
 ### Compact controls
 
 Text controls are 40px tall with 14px text, which suits touch. A dense screen used with a mouse
-and keyboard, such as the dashboard, can ask for 32px and 13px: put the exported
+and keyboard, such as the dashboard, can ask for 36px and 13px: put the exported
 `compactControls` classes on a container, and the `Input`, `Select`, `Combobox`, `TagsInput` and
 `PhoneInput` inside it follow. Use `size="sm"` buttons beside them. `MessageBubble` has its own
 `size="sm"`, and an `avatar` slot that replaces the name above the other person's messages.

@@ -9,7 +9,9 @@
 :root {
   /* Brand palette */
   --paper: #f7f4ed;
-  --card-surface: #fdfbf7;
+  /* A lighter paper, for the background of a dense screen that holds white surfaces. */
+  --canvas: #fdfbf7;
+  --card-surface: #ffffff;
   --ink: #26231e;
   --pencil: #6e675b;
   --edge: #8f8778;
@@ -65,6 +67,7 @@
 
 .dark {
   --paper: #1c1a16;
+  --canvas: #1c1a16;
   --card-surface: #24211c;
   --ink: #ede8dc;
   --pencil: #a39b8b;

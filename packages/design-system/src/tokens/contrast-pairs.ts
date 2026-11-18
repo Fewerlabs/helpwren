@@ -32,10 +32,15 @@ const statuses = ["open", "waiting", "resolved", "urgent", "closed"] as const;
  * card, never on a muted surface.
  */
 export const contrastPairs: readonly ContrastPair[] = [
-  ...pairs(TEXT, "Body text", ["foreground"], ["background", "card", "popover", "muted"]),
+  ...pairs(TEXT, "Body text", ["foreground"], ["background", "canvas", "card", "popover", "muted"]),
   ...pairs(TEXT, "Text on a card", ["card-foreground"], ["card"]),
   ...pairs(TEXT, "Text in a popover", ["popover-foreground"], ["popover"]),
-  ...pairs(TEXT, "Secondary text", ["pencil", "muted-foreground"], ["background", "card", "muted"]),
+  ...pairs(
+    TEXT,
+    "Secondary text",
+    ["pencil", "muted-foreground"],
+    ["background", "canvas", "card", "muted"],
+  ),
   ...pairs(TEXT, "Links", ["biro"], ["background", "card", "muted"]),
   ...pairs(TEXT, "Accent text", ["moss"], ["background", "card"]),
   ...pairs(TEXT, "Marks, errors and destructive text", ["pen"], ["background", "card"]),

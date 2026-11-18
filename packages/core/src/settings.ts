@@ -21,12 +21,6 @@ export const allowedDomainSchema = z
 const storedSettingsSchema = z.object({
   brand: z.object({ name: z.string().min(1) }).default({ name: "Helpwren" }),
   guest_details: guestDetailsSchema.default("email"),
-  /** The country a phone field starts on, as a two-letter code. Nigeria (+234) unless set. */
-  default_country: z
-    .string()
-    .regex(/^[A-Za-z]{2}$/)
-    .transform((code) => code.toUpperCase())
-    .default("NG"),
   /**
    * The sites that may show the chat in a frame, as hosts such as `example.com` or
    * `*.example.com`. Empty means any site, so a new install works before it is configured.
@@ -39,7 +33,6 @@ const storedSettingsSchema = z.object({
 export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
   guestDetails: stored.guest_details,
-  defaultCountry: stored.default_country,
   allowedDomains: stored.allowed_domains,
   sources: stored.sources,
 }));
@@ -47,7 +40,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
 export type Settings = z.infer<typeof settingsSchema>;
 
 /** The settings anyone may read, including a visitor with no session. */
-export type PublicSettings = Pick<Settings, "brand" | "guestDetails" | "defaultCountry">;
+export type PublicSettings = Pick<Settings, "brand" | "guestDetails">;
 
 interface SettingRow {
   key: string;
@@ -68,8 +61,8 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, guestDetails, defaultCountry } = parseSettings(rows);
-  return { brand, guestDetails, defaultCountry };
+  const { brand, guestDetails } = parseSettings(rows);
+  return { brand, guestDetails };
 }
 
 /** The settings an admin can change, with the same rules as when they are read. */
@@ -77,10 +70,6 @@ export const settingsPatchSchema = z
   .object({
     brand: z.object({ name: z.string().trim().min(1).max(60) }),
     guestDetails: guestDetailsSchema,
-    defaultCountry: z
-      .string()
-      .regex(/^[A-Za-z]{2}$/)
-      .transform((code) => code.toUpperCase()),
     allowedDomains: z.array(allowedDomainSchema).max(50),
   })
   .partial();
@@ -93,7 +82,6 @@ export type UpdateSettingsResult = { ok: true } | { ok: false; reason: "forbidde
 const storage = {
   brand: { key: "brand", isPublic: true },
   guestDetails: { key: "guest_details", isPublic: true },
-  defaultCountry: { key: "default_country", isPublic: true },
   allowedDomains: { key: "allowed_domains", isPublic: false },
 } as const satisfies Record<keyof SettingsPatch, { key: string; isPublic: boolean }>;
 

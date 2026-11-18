@@ -23,7 +23,7 @@ async function storedValue(key: string) {
 
 afterAll(async () => {
   const admin = serverClient();
-  await admin.from("settings").delete().in("key", ["allowed_domains", "default_country"]);
+  await admin.from("settings").delete().eq("key", "allowed_domains");
   await admin
     .from("settings")
     .update({ value: { name: "Helpwren Demo" } })
@@ -58,7 +58,6 @@ describe("settings.update", () => {
       client.settings.update({
         brand: { name: "  Acme Support " },
         guestDetails: "phone",
-        defaultCountry: "gb",
         allowedDomains: ["Example.com", "*.example.org"],
       }),
     ).resolves.toEqual({ ok: true });
@@ -66,7 +65,6 @@ describe("settings.update", () => {
     await expect(client.settings.getAll()).resolves.toMatchObject({
       brand: { name: "Acme Support" },
       guestDetails: "phone",
-      defaultCountry: "GB",
       allowedDomains: ["example.com", "*.example.org"],
     });
     expect(await storedValue("brand")).toMatchObject({ is_public: true });
@@ -106,7 +104,6 @@ describe("settings.update", () => {
   it.each([
     ["an empty brand name", { brand: { name: "  " } }],
     ["a domain with a path", { allowedDomains: ["example.com/page"] }],
-    ["a country that is not a code", { defaultCountry: "Nigeria" }],
   ])("rejects %s before it reaches the database", async (_, patch) => {
     const client = await signedIn("ada@example.com");
     await expect(client.settings.update(patch)).rejects.toThrow();

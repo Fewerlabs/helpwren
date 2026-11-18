@@ -6,7 +6,6 @@ import { parsePublicSettings, parseSettings } from "./settings";
 const defaults = {
   brand: { name: "Helpwren" },
   guestDetails: "email",
-  defaultCountry: "NG",
   allowedDomains: [],
   sources: ["web"],
 };
@@ -17,13 +16,11 @@ describe("parseSettings", () => {
       parseSettings([
         { key: "brand", value: { name: "Acme" } },
         { key: "guest_details", value: "phone" },
-        { key: "default_country", value: "gb" },
         { key: "sources", value: ["web", "ios"] },
       ]),
     ).toEqual({
       brand: { name: "Acme" },
       guestDetails: "phone",
-      defaultCountry: "GB",
       allowedDomains: [],
       sources: ["web", "ios"],
     });
@@ -48,7 +45,6 @@ describe("parsePublicSettings", () => {
     expect(parsePublicSettings([{ key: "sources", value: ["web", "ios"] }])).toEqual({
       brand: { name: "Helpwren" },
       guestDetails: "email",
-      defaultCountry: "NG",
     });
   });
 });

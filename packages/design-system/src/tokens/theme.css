@@ -39,6 +39,7 @@
 
   /* Brand colours */
   --color-paper: var(--paper);
+  --color-canvas: var(--canvas);
   --color-ink: var(--ink);
   --color-pencil: var(--pencil);
   --color-edge: var(--edge);
