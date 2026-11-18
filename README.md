@@ -3,8 +3,8 @@
 Open-source, self-hosted live chat, help desk and knowledge base that any product can plug in.
 Published by [Fewer Labs](https://helpwren.fewerlabs.dev).
 
-> **Status: pre-alpha.** The repository and the design system are being set up. There is no
-> working chat, inbox or help center yet, and nothing is published to npm.
+> **Status: pre-alpha.** The repository, the tooling and the design system are in place. There is
+> no working chat, inbox or help center yet, and nothing is published to npm.
 
 ## What it will be
 
@@ -36,6 +36,16 @@ pnpm check    # format check, lint, typecheck, tests and build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
+
+## What is here today
+
+- **A design system** (`packages/design-system`): design tokens for light and dark, more than
+  thirty components, the wren illustrations, and components for data fetching and forms. Browse it
+  with `pnpm storybook`.
+- **The app shell** (`apps/web`): a Next.js app with placeholder routes, and `/design`, which shows
+  the design system running in the app together with a worked example feature.
+- **Documented stubs** for the product packages: the client library, the widget, the React Native
+  screen, the adapters and the installer.
 
 ## Repository layout
 

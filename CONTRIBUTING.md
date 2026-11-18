@@ -51,6 +51,12 @@ The rules are short and enforced by lint where possible. See
 - Zod at every external boundary; types are inferred from schemas.
 - Feature code imports UI from `@helpwren/design-system` only.
 
+## Adding a feature
+
+Features live in `apps/web/src/features`, one folder each, with the same shape: `schemas`, `api`,
+`store`, `hooks`, `components` and an `index.ts`. `features/example` is a complete one to copy. The
+conventions and the reasons for them are in [docs/architecture.md](docs/architecture.md#features).
+
 ## Adding a component
 
 Components live in `packages/design-system` in three layers: `ui` (shadcn output), `base` (our

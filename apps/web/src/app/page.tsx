@@ -4,6 +4,7 @@ const sections = [
   { href: "/embed", label: "Embed" },
   { href: "/help", label: "Help center" },
   { href: "/inbox", label: "Inbox" },
+  { href: "/design", label: "Design system" },
 ] as const;
 
 export default function HomePage() {
