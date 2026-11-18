@@ -203,7 +203,14 @@ describe("branding", () => {
         quickReplies: ["Pricing", "Track my order"],
       },
       chatPage: { title: "Talk to Acme" },
-      helpCenter: {},
+      helpCenter: {
+        headerStyle: "plain",
+        headerLinks: [{ label: " Back to Acme ", url: "https://acme.example" }],
+        footerLinks: [{ label: "Privacy", url: "/privacy" }],
+        showChat: false,
+        searchPlaceholder: "Search Acme help",
+        url: "https://acme.example/help/",
+      },
     });
 
     // All of it is public: the chat reads it with no session.
@@ -217,7 +224,15 @@ describe("branding", () => {
         quickReplies: ["Pricing", "Track my order"],
       },
       chatPage: { title: "Talk to Acme" },
-      helpCenter: {},
+      helpCenter: {
+        headerStyle: "plain",
+        headerLinks: [{ label: "Back to Acme", url: "https://acme.example" }],
+        footerLinks: [{ label: "Privacy", url: "/privacy" }],
+        showChat: false,
+        searchPlaceholder: "Search Acme help",
+        // Paths are joined to it, so the slash at the end is dropped.
+        url: "https://acme.example/help",
+      },
     });
   });
 });

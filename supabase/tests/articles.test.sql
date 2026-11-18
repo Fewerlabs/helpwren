@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(27);
+select plan(33);
 
 -- Two collections and three articles, made by the server so the tests start from known rows.
 insert into public.collections (id, name, slug) values
@@ -160,6 +160,39 @@ select is(
   array['invite-teammates', 'install-the-widget'],
   'a guest''s attempt to reorder articles changes nothing'
 );
+
+-- What an article carries besides its words.
+select lives_ok(
+  $$ update public.articles
+     set tags = '{refunds,ios}', visibility = 'in_app', featured = true,
+         meta_title = 'Install the widget', meta_description = 'One snippet.',
+         author_id = tests.uid('admin')
+     where slug = 'install-the-widget' $$,
+  'an agent sets tags, where it shows, a title for search engines, and who wrote it'
+);
+select is(
+  (select author_id from public.articles where slug = 'install-the-widget'), tests.uid('admin'),
+  'the author can be changed after the article is made'
+);
+select is(
+  (select array_agg(slug) from public.search_articles('refund')), array['install-the-widget'],
+  'an article is found by its tags'
+);
+select throws_ok(
+  $$ update public.articles set visibility = 'secret' where slug = 'install-the-widget' $$,
+  '23514', null, 'an article is shown on the help center and in the chat, or in the chat only'
+);
+select throws_ok(
+  $$ update public.articles set tags = array_fill('x'::text, array[21])
+     where slug = 'install-the-widget' $$,
+  '23514', null, 'an article carries twenty tags at most'
+);
+select tests.act_as_visitor();
+select is(
+  (select visibility from public.articles where slug = 'install-the-widget'), 'in_app',
+  'an article shown only in the chat can still be read by a visitor, who may be in the chat'
+);
+select tests.act_as('agent');
 
 select lives_ok(
   $$ delete from public.articles where slug = 'reset-a-password' $$, 'an agent removes an article'

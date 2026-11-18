@@ -5,11 +5,13 @@ import { parsePublicSettings, parseSettings } from "./settings";
 
 const widget = { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] };
 
+const helpCenter = { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true };
+
 const defaults = {
   brand: { name: "Helpwren" },
   widget,
   chatPage: {},
-  helpCenter: {},
+  helpCenter,
   guestDetails: "email",
   allowedDomains: [],
   sources: ["web"],
@@ -27,7 +29,7 @@ describe("parseSettings", () => {
       brand: { name: "Acme" },
       widget,
       chatPage: {},
-      helpCenter: {},
+      helpCenter,
       guestDetails: "phone",
       allowedDomains: [],
       sources: ["web", "ios"],
@@ -86,8 +88,41 @@ describe("parsePublicSettings", () => {
       brand: { name: "Helpwren" },
       widget,
       chatPage: {},
-      helpCenter: {},
+      helpCenter,
       guestDetails: "email",
     });
+  });
+});
+
+describe("the help center's settings", () => {
+  it("keeps what an admin set and fills in the rest", () => {
+    const { helpCenter: parsed } = parseSettings([
+      {
+        key: "help_center",
+        value: {
+          title: "Acme help",
+          headerStyle: "image",
+          headerImage: "https://cdn.example.com/header.png",
+          headerLinks: [{ label: "Back to Acme", url: "https://acme.example" }],
+          showChat: false,
+        },
+      },
+    ]);
+    expect(parsed).toEqual({
+      title: "Acme help",
+      headerStyle: "image",
+      headerImage: "https://cdn.example.com/header.png",
+      headerLinks: [{ label: "Back to Acme", url: "https://acme.example" }],
+      footerLinks: [],
+      showChat: false,
+    });
+  });
+
+  it("refuses a link that is not a web address or a path on the site", () => {
+    for (const url of ["javascript:alert(1)", "//evil.example", "acme.example"]) {
+      expect(() =>
+        parseSettings([{ key: "help_center", value: { footerLinks: [{ label: "Terms", url }] } }]),
+      ).toThrow(HelpwrenError);
+    }
   });
 });

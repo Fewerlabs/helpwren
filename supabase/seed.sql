@@ -296,3 +296,11 @@ insert into public.article_feedback (article_id, helpful) values
   ('f1000000-0000-4000-8000-000000000001', true),
   ('f1000000-0000-4000-8000-000000000001', false),
   ('f1000000-0000-4000-8000-000000000006', true);
+
+-- Tags to find articles by, and two put forward on the help center's home page.
+update public.articles set tags = '{install,widget}', featured = true
+where slug in ('add-the-chat-to-your-website', 'the-chat-does-not-appear');
+update public.articles set tags = '{team,admins}'
+where slug in ('invite-your-team', 'change-who-can-sign-in');
+update public.articles set tags = '{branding}' where slug = 'make-the-chat-match-your-brand';
+update public.articles set tags = '{billing,invoices}' where slug = 'read-your-invoice';

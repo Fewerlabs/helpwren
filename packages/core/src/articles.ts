@@ -9,6 +9,16 @@ import { type HelpwrenSupabaseClient } from "./supabase";
 export const articleStatusSchema = z.enum(["draft", "published"]);
 export type ArticleStatus = z.infer<typeof articleStatusSchema>;
 
+/** Where a published article is listed: everywhere, or only inside the chat. */
+export const articleVisibilitySchema = z.enum(["public", "in_app"]);
+export type ArticleVisibility = z.infer<typeof articleVisibilitySchema>;
+
+/** The most tags one article carries. */
+export const ARTICLE_TAGS_MAX = 20;
+
+/** A free label on an article, such as `refunds`: lower case, so `iOS` and `ios` are one tag. */
+export const articleTagSchema = z.string().trim().toLowerCase().min(1).max(40);
+
 const summaryRowSchema = z.object({
   id: z.uuid(),
   collection_id: z.uuid().nullable(),
@@ -20,6 +30,11 @@ const summaryRowSchema = z.object({
   author_id: z.uuid().nullable(),
   published_at: z.string().nullable(),
   updated_at: z.string(),
+  tags: z.array(z.string()),
+  visibility: articleVisibilitySchema,
+  featured: z.boolean(),
+  meta_title: z.string().nullable(),
+  meta_description: z.string().nullable(),
   collection: z.object({ id: z.uuid(), name: z.string(), slug: z.string() }).nullable(),
 });
 
@@ -43,6 +58,15 @@ function toSummary(row: SummaryRow) {
     publishedAt: row.published_at,
     /** When its words last changed. */
     updatedAt: row.updated_at,
+    tags: row.tags,
+    /** `in_app` articles are left off the public help center and shown only in the chat. */
+    visibility: row.visibility,
+    /** Put forward on the help center's home page and in the chat's suggestions. */
+    featured: row.featured,
+    /** A title for search engines and shared links, when it should differ from the title. */
+    metaTitle: row.meta_title,
+    /** A description for search engines, when it should differ from the summary. */
+    metaDescription: row.meta_description,
   };
 }
 
@@ -68,6 +92,19 @@ export const articleInputSchema = z.object({
   collectionId: z.uuid().nullable().optional(),
   /** Made from the title when left out. */
   slug: slugSchema.optional(),
+  tags: z
+    .array(articleTagSchema)
+    .max(ARTICLE_TAGS_MAX)
+    .transform((tags) => [...new Set(tags)])
+    .optional(),
+  visibility: articleVisibilitySchema.optional(),
+  featured: z.boolean().optional(),
+  /** Empty for none. */
+  metaTitle: z.string().trim().max(70).optional(),
+  /** Empty for none. */
+  metaDescription: z.string().trim().max(200).optional(),
+  /** The team member credited with it. Whoever makes an article is its author to begin with. */
+  authorId: z.uuid().optional(),
 });
 export type ArticleInput = z.input<typeof articleInputSchema>;
 
@@ -78,6 +115,13 @@ export interface ListArticlesOptions {
   /** Only this collection's articles, in their order. `null` for those in no collection. */
   collectionId?: string | null | undefined;
   status?: ArticleStatus | undefined;
+  /** Only articles carrying at least one of these tags. */
+  tags?: readonly string[] | undefined;
+  /** Only articles credited to one of these team members. */
+  authorIds?: readonly string[] | undefined;
+  visibility?: ArticleVisibility | undefined;
+  /** Only the articles put forward, or only the rest. */
+  featured?: boolean | undefined;
   /** Words to find in the title, summary or body. Results come best match first. */
   search?: string | undefined;
   /** Which page, starting at 1. */
@@ -97,6 +141,8 @@ export interface SearchArticlesOptions {
   limit?: number | undefined;
   /** Also find drafts, which only the team can read anyway. Default: published only. */
   includeDrafts?: boolean | undefined;
+  /** Only articles listed here: `public` for the help center. Default: both. */
+  visibility?: ArticleVisibility | undefined;
 }
 
 export interface GetArticleOptions {
@@ -141,7 +187,7 @@ export type UploadArticleImageResult =
   { ok: true; url: string } | { ok: false; reason: "forbidden" | "too_large" | "unsupported" };
 
 const SUMMARY_COLUMNS =
-  "id, collection_id, title, slug, summary, status, position, author_id, published_at, updated_at, collection:collections(id, name, slug)";
+  "id, collection_id, title, slug, summary, status, position, author_id, published_at, updated_at, tags, visibility, featured, meta_title, meta_description, collection:collections(id, name, slug)";
 const COLUMNS = `${SUMMARY_COLUMNS}, body`;
 
 /** Postgres's codes for what the database refuses. `HW409` is our own, for a locked slug. */
@@ -156,6 +202,24 @@ function refusal(code: string | undefined) {
   if (code === LOCKED) return "slug_locked" as const;
   if (code === CHECK_FAILED) return "needs_collection" as const;
   return undefined;
+}
+
+type Metadata = Pick<
+  z.infer<typeof articleChangesSchema>,
+  "tags" | "visibility" | "featured" | "metaTitle" | "metaDescription"
+>;
+
+/** The parts of an article besides its words, as columns. Anything left out is left alone. */
+function metadata(input: Metadata) {
+  const values: Database["public"]["Tables"]["articles"]["Update"] = {};
+  if (input.tags !== undefined) values.tags = input.tags;
+  if (input.visibility !== undefined) values.visibility = input.visibility;
+  if (input.featured !== undefined) values.featured = input.featured;
+  if (input.metaTitle !== undefined) values.meta_title = input.metaTitle ? input.metaTitle : null;
+  if (input.metaDescription !== undefined) {
+    values.meta_description = input.metaDescription ? input.metaDescription : null;
+  }
+  return values;
 }
 
 export function createArticles(supabase: HelpwrenSupabaseClient) {
@@ -200,6 +264,10 @@ export function createArticles(supabase: HelpwrenSupabaseClient) {
       if (options.collectionId === null) query = query.is("collection_id", null);
       else if (options.collectionId) query = query.eq("collection_id", options.collectionId);
       if (options.status) query = query.eq("status", options.status);
+      if (options.tags?.length) query = query.overlaps("tags", [...options.tags]);
+      if (options.authorIds?.length) query = query.in("author_id", [...options.authorIds]);
+      if (options.visibility) query = query.eq("visibility", options.visibility);
+      if (options.featured !== undefined) query = query.eq("featured", options.featured);
       if (!search) {
         query = options.collectionId
           ? query.order("position").order("title")
@@ -217,6 +285,7 @@ export function createArticles(supabase: HelpwrenSupabaseClient) {
       if (!text) return [];
       let request = supabase.rpc("search_articles", { query: text }).select(SUMMARY_COLUMNS);
       if (!options.includeDrafts) request = request.eq("status", "published");
+      if (options.visibility) request = request.eq("visibility", options.visibility);
       const { data, error } = await request.limit(options.limit ?? 10);
       if (error) throw new HelpwrenError("Could not search the articles.", { cause: error });
       return z.array(articleSummarySchema).parse(data);
@@ -259,14 +328,25 @@ export function createArticles(supabase: HelpwrenSupabaseClient) {
       return { total: all.count ?? 0, uncategorised: loose.count ?? 0 };
     },
 
+    /** Every tag in use, in alphabetical order, for a filter or as suggestions. */
+    async tags(): Promise<string[]> {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("tags")
+        .not("tags", "eq", "{}");
+      if (error) throw new HelpwrenError("Could not load the tags.", { cause: error });
+      return [...new Set(data.flatMap((row) => row.tags))].sort((a, b) => a.localeCompare(b));
+    },
+
     /** Starts a draft, at the end of its collection. For the team. */
     async create(input: ArticleInput): Promise<CreateArticleResult> {
-      const { slug, summary, collectionId, body, title } = articleInputSchema.parse(input);
-      const row = {
+      const { slug, summary, collectionId, body, title, ...rest } = articleInputSchema.parse(input);
+      const row: Omit<Database["public"]["Tables"]["articles"]["Insert"], "slug"> = {
         title,
         summary: summary === undefined || summary === "" ? null : summary,
         body: body ?? EMPTY_RICH_TEXT,
         collection_id: collectionId ?? null,
+        ...metadata(rest),
       };
       const insert = (candidate: string) =>
         supabase
@@ -298,6 +378,8 @@ export function createArticles(supabase: HelpwrenSupabaseClient) {
       if (parsed.body !== undefined) values.body = parsed.body;
       if (parsed.collectionId !== undefined) values.collection_id = parsed.collectionId;
       if (parsed.slug !== undefined) values.slug = parsed.slug;
+      Object.assign(values, metadata(parsed));
+      if (parsed.authorId !== undefined) values.author_id = parsed.authorId;
       return change(id, values, "Could not save the article.");
     },
 

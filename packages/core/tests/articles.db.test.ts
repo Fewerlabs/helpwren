@@ -275,6 +275,70 @@ describe("the help center, for the team", () => {
     expect(all.find((collection) => collection.slug === "troubleshooting")?.articleCount).toBe(2);
   });
 
+  it("keeps an article's tags, where it shows, and what search engines are told", async () => {
+    const agent = await signedIn("sam@example.com");
+    const made = await agent.articles.create({
+      title: "Refund a booking (test)",
+      collectionId: GETTING_STARTED,
+      tags: ["Refunds", " ios ", "refunds"],
+    });
+    if (!made.ok) throw new Error(`The article was refused: ${made.reason}`);
+    // Lower case, trimmed, and each once.
+    expect(made.article).toMatchObject({
+      tags: ["refunds", "ios"],
+      visibility: "public",
+      featured: false,
+      metaTitle: null,
+    });
+
+    const changed = await agent.articles.update(made.article.id, {
+      visibility: "in_app",
+      featured: true,
+      metaTitle: "Refunds explained",
+      metaDescription: "How and when a booking is refunded.",
+      authorId: "a0000000-0000-4000-8000-000000000001",
+    });
+    expect(changed).toMatchObject({
+      ok: true,
+      article: {
+        visibility: "in_app",
+        featured: true,
+        metaTitle: "Refunds explained",
+        metaDescription: "How and when a booking is refunded.",
+        authorId: "a0000000-0000-4000-8000-000000000001",
+        tags: ["refunds", "ios"],
+      },
+    });
+    await expect(agent.articles.update(made.article.id, { metaTitle: "" })).resolves.toMatchObject({
+      ok: true,
+      article: { metaTitle: null },
+    });
+    await agent.articles.publish(made.article.id);
+
+    const tagged = await agent.articles.list({ tags: ["refunds", "no-such-tag"] });
+    expect(tagged.items.map((article) => article.id)).toEqual([made.article.id]);
+    const byAda = await agent.articles.list({
+      authorIds: ["a0000000-0000-4000-8000-000000000001"],
+      tags: ["ios"],
+    });
+    expect(byAda.items.map((article) => article.id)).toEqual([made.article.id]);
+    expect(await agent.articles.tags()).toEqual(
+      expect.arrayContaining(["ios", "refunds", "widget"]),
+    );
+    const featured = await visitor().articles.list({ featured: true, visibility: "public" });
+    expect(featured.items.map((article) => article.slug).sort()).toEqual([
+      "add-the-chat-to-your-website",
+      "the-chat-does-not-appear",
+    ]);
+
+    // Found by its tag. On the help center's own search it is left out, in the chat it is not.
+    const inChat = await visitor().articles.search("refunds");
+    expect(inChat.map((article) => article.id)).toEqual([made.article.id]);
+    await expect(visitor().articles.search("refunds", { visibility: "public" })).resolves.toEqual(
+      [],
+    );
+  });
+
   it("reads what readers answered", async () => {
     const agent = await signedIn("sam@example.com");
     const totals = await agent.articles.feedbackTotals();

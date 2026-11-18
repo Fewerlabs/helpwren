@@ -70,15 +70,20 @@ export type Database = {
           body: NonNullable<Json>;
           collection_id: string | null;
           created_at: string;
+          featured: boolean;
           id: string;
+          meta_description: string | null;
+          meta_title: string | null;
           position: number;
           published_at: string | null;
           search: unknown;
           slug: string;
           status: string;
           summary: string | null;
+          tags: string[];
           title: string;
           updated_at: string;
+          visibility: string;
         };
         ComputedFields: never;
         Insert: {
@@ -86,30 +91,40 @@ export type Database = {
           body?: NonNullable<Json>;
           collection_id?: string | null;
           created_at?: string;
+          featured?: boolean;
           id?: string;
+          meta_description?: string | null;
+          meta_title?: string | null;
           position?: number;
           published_at?: string | null;
           search?: never;
           slug: string;
           status?: string;
           summary?: string | null;
+          tags?: string[];
           title: string;
           updated_at?: string;
+          visibility?: string;
         };
         Update: {
           author_id?: string | null;
           body?: NonNullable<Json>;
           collection_id?: string | null;
           created_at?: string;
+          featured?: boolean;
           id?: string;
+          meta_description?: string | null;
+          meta_title?: string | null;
           position?: number;
           published_at?: string | null;
           search?: never;
           slug?: string;
           status?: string;
           summary?: string | null;
+          tags?: string[];
           title?: string;
           updated_at?: string;
+          visibility?: string;
         };
         Relationships: [
           {
