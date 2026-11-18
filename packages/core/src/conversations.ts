@@ -144,6 +144,10 @@ export interface ConversationFilter {
   type?: ConversationType | undefined;
   /** Only those assigned to this team member, or `null` for those assigned to nobody. */
   assigneeId?: string | null | undefined;
+  /** Only those assigned to one of these team members. `null` in the list means nobody. */
+  assignees?: readonly (string | null)[] | undefined;
+  /** Only conversations with one of these priorities. */
+  priority?: readonly ConversationPriority[] | undefined;
   /** Only one contact's conversations. */
   contactId?: string | undefined;
 }
@@ -177,6 +181,42 @@ export type StartConversationResult =
 
 /** Whose unread messages to count: the signed-in contact's, or the team's. */
 export type UnreadSide = "contact" | "agents";
+
+/** The parts of a query builder that filtering uses. Each returns the builder, to chain. */
+interface Filterable<Query> {
+  in: (column: string, values: readonly string[]) => Query;
+  eq: (column: string, value: string) => Query;
+  is: (column: string, value: null) => Query;
+  or: (filters: string) => Query;
+}
+
+/** Narrows a query of conversations to those that match every part of a filter. */
+function applyFilter<Query extends Filterable<Query>>(
+  query: Query,
+  filter: ConversationFilter,
+): Query {
+  let narrowed = query;
+  if (filter.status) narrowed = narrowed.in("status", filter.status);
+  if (filter.priority) narrowed = narrowed.in("priority", filter.priority);
+  if (filter.type) narrowed = narrowed.eq("type", filter.type);
+  if (filter.contactId) narrowed = narrowed.eq("contact_id", filter.contactId);
+  if (filter.assigneeId === null) narrowed = narrowed.is("assignee_id", null);
+  else if (filter.assigneeId) narrowed = narrowed.eq("assignee_id", filter.assigneeId);
+
+  if (filter.assignees) {
+    // Checked as ids before they are written into a filter expression.
+    const ids = z.array(z.uuid()).parse(filter.assignees.filter((id) => id !== null));
+    const nobody = filter.assignees.includes(null);
+    if (ids.length > 0 && nobody) {
+      narrowed = narrowed.or(`assignee_id.in.(${ids.join(",")}),assignee_id.is.null`);
+    } else if (ids.length > 0) {
+      narrowed = narrowed.in("assignee_id", ids);
+    } else if (nobody) {
+      narrowed = narrowed.is("assignee_id", null);
+    }
+  }
+  return narrowed;
+}
 
 function unexpected(what: string, cause: unknown): HelpwrenError {
   return new HelpwrenError(`Could not ${what}.`, { cause });
@@ -225,11 +265,7 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
         .order("last_message_at", { ascending: false })
         .limit(limit + 1);
       if (options.cursor) query = query.lt("last_message_at", options.cursor);
-      if (options.status) query = query.in("status", options.status);
-      if (options.type) query = query.eq("type", options.type);
-      if (options.contactId) query = query.eq("contact_id", options.contactId);
-      if (options.assigneeId === null) query = query.is("assignee_id", null);
-      else if (options.assigneeId) query = query.eq("assignee_id", options.assigneeId);
+      query = applyFilter(query, options);
 
       const { data, error } = await query;
       if (error) throw unexpected("load the conversations", error);
@@ -264,13 +300,18 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
     },
 
     /**
-     * Finds conversations by who they are with or by what was said in them, most recently
-     * active first. Searching starts at two characters; less than that finds nothing.
+     * Finds conversations by who they are with, by what was said in them, or by a ticket's
+     * number or subject, most recently active first, optionally within a filter. Searching by
+     * text starts at two characters; less than that finds nothing.
      */
-    async search(text: string): Promise<ConversationWithContact[]> {
-      const { data, error } = await supabase
-        .rpc("search_conversations", { query: text })
-        .select(WITH_CONTACT);
+    async search(
+      text: string,
+      filter: ConversationFilter = {},
+    ): Promise<ConversationWithContact[]> {
+      const { data, error } = await applyFilter(
+        supabase.rpc("search_conversations", { query: text }).select(WITH_CONTACT),
+        filter,
+      );
       if (error) throw unexpected("search the conversations", error);
       return z.array(conversationWithContactSchema).parse(data);
     },
@@ -278,11 +319,7 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
     /** How many conversations the caller may read match a filter. */
     async count(filter: ConversationFilter = {}): Promise<number> {
       let query = supabase.from("conversations").select("id", { count: "exact", head: true });
-      if (filter.status) query = query.in("status", filter.status);
-      if (filter.type) query = query.eq("type", filter.type);
-      if (filter.contactId) query = query.eq("contact_id", filter.contactId);
-      if (filter.assigneeId === null) query = query.is("assignee_id", null);
-      else if (filter.assigneeId) query = query.eq("assignee_id", filter.assigneeId);
+      query = applyFilter(query, filter);
 
       const { count, error } = await query;
       if (error) throw unexpected("count the conversations", error);

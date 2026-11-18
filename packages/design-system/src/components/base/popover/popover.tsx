@@ -19,7 +19,8 @@ export const PopoverAnchor = UiPopoverAnchor;
 export function PopoverContent({ className, ...props }: PopoverContentProps) {
   return (
     <UiPopoverContent
-      className={cn("border-line border-border rounded-xl p-4 ring-0", className)}
+      // A quiet edge: a popover is a surface over the page, not a control to find.
+      className={cn("border-rule rounded-xl border p-4 ring-0", className)}
       {...props}
     />
   );

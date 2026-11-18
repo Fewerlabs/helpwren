@@ -77,8 +77,8 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   const table = page.getByRole("table", { name: "Tickets" });
   const row = table.getByRole("row").filter({ hasText: "Cracked screen on delivery" });
   await expect(row).toContainText(/#\d{4}/);
-  await expect(row).toContainText("Open");
-  await expect(row.getByRole("combobox", { name: /^Assignee of/ })).toContainText("Sam Rivera");
+  await expect(row.getByRole("button", { name: /^Status of/ })).toContainText("Open");
+  await expect(row.getByRole("button", { name: /^Assignee of/ })).toContainText("Sam Rivera");
   const number = /#\d{4}/.exec(await row.innerText())?.[0] ?? "";
 
   // Opening one shows its conversation in the table's place. Priority is set from the details.
@@ -106,29 +106,62 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
 
   // Back in the table it shows as resolved, and it leaves the active views.
   await conversation.getByRole("button", { name: "Back to the list" }).click();
-  await expect(row).toContainText("Resolved");
-  await expect(row.getByRole("combobox", { name: /^Priority of/ })).toContainText("High");
+  await expect(row.getByRole("button", { name: /^Status of/ })).toContainText("Resolved");
+  await expect(row.getByRole("button", { name: /^Priority of/ })).toContainText("High");
   await views.getByRole("link", { name: /My inbox/ }).click();
   await expect(list.getByRole("button", { name: new RegExp(CONTACT.name) })).toHaveCount(0);
 
-  // Priority and assignee can be changed from the table, without opening the ticket.
+  // Status, priority and assignee can be changed from the table, without opening the ticket.
+  // Each shows as itself, a chip or a name, and opens a list when pressed.
   await views.getByRole("link", { name: /Tickets/ }).click();
-  await row.getByRole("combobox", { name: /^Priority of/ }).click();
+  await row.getByRole("button", { name: /^Priority of/ }).click();
   await page.getByRole("option", { name: "Low" }).click();
-  await expect(row.getByRole("combobox", { name: /^Priority of/ })).toContainText("Low");
-  await row.getByRole("combobox", { name: /^Assignee of/ }).click();
+  await expect(row.getByRole("button", { name: /^Priority of/ })).toContainText("Low");
+  await row.getByRole("button", { name: /^Assignee of/ }).click();
   await page.getByRole("option", { name: "Ada Okafor" }).click();
-  await expect(row.getByRole("combobox", { name: /^Assignee of/ })).toContainText("Ada Okafor");
+  await expect(row.getByRole("button", { name: /^Assignee of/ })).toContainText("Ada Okafor");
+  await row.getByRole("button", { name: /^Status of/ }).click();
+  await page.getByRole("option", { name: "Open" }).click();
+  await expect(row.getByRole("button", { name: /^Status of/ })).toContainText("Open");
+  await row.getByRole("button", { name: /^Status of/ }).click();
+  await page.getByRole("option", { name: "Resolved" }).click();
+  await expect(row.getByRole("button", { name: /^Status of/ })).toContainText("Resolved");
   await expect
     .poll(async () => {
       const { data: saved } = await database
         .from("conversations")
-        .select("priority, assignee:agents(name)")
+        .select("status, priority, assignee:agents(name)")
         .eq("id", conversationId)
         .single();
       return saved;
     })
-    .toEqual({ priority: "low", assignee: { name: "Ada Okafor" } });
+    .toEqual({ status: "resolved", priority: "low", assignee: { name: "Ada Okafor" } });
+
+  // The table is filtered and searched by the database.
+  const tickets = page.getByRole("region", { name: "Tickets" });
+  await tickets.getByRole("button", { name: "Filter" }).click();
+  await page.getByRole("option", { name: "Status" }).click();
+  await page.getByRole("option", { name: "Open" }).click();
+  await page.keyboard.press("Escape");
+  await expect(tickets.getByRole("button", { name: "Status: Open" })).toBeVisible();
+  await expect(row).toHaveCount(0);
+  await expect(table.getByRole("row").filter({ hasText: "Wrong billing address" })).toBeVisible();
+
+  await tickets.getByRole("button", { name: "Status: Open" }).click();
+  await page.getByRole("option", { name: "Resolved" }).click();
+  await page.keyboard.press("Escape");
+  await expect(row).toBeVisible();
+  await tickets.getByRole("button", { name: "Remove the Status filter" }).click();
+
+  const ticketSearch = tickets.getByRole("searchbox", { name: "Search tickets" });
+  await ticketSearch.fill("cracked");
+  await expect(table.getByRole("row")).toHaveCount(2);
+  await expect(row).toBeVisible();
+  await ticketSearch.fill(number);
+  await expect(table.getByRole("row")).toHaveCount(2);
+  await ticketSearch.fill("nothing like this");
+  await expect(tickets.getByText("No tickets match")).toBeVisible();
+  await ticketSearch.fill("");
   await views.getByRole("link", { name: /My inbox/ }).click();
 
   // The inbox search finds it by its number.

@@ -111,12 +111,7 @@ export function Inbox({ agent }: InboxProps) {
       <DashboardPage title="Inbox" navLabel="Inbox views" nav={nav} className={columns}>
         {openConversation ?? (
           <TicketTable
-            tickets={conversations.data}
             team={team}
-            failed={conversations.isError}
-            onRetry={() => {
-              void conversations.refetch();
-            }}
             onOpen={select}
             onChange={(id, changes) => {
               changeAny.mutate({ id, changes });

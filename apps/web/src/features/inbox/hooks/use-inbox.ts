@@ -127,6 +127,9 @@ export function useViewCounts(agentId: string): Partial<Record<InboxView["id"], 
   return counts.data ?? {};
 }
 
+/** The start of every inbox query's key, so one refresh reaches them all. */
+export const INBOX_QUERY_KEY = inboxKey;
+
 /** How the contact rated a conversation, if they have. Refreshed with the rest of the inbox. */
 export function useRating(conversationId: string) {
   const getClient = useHelpwren();

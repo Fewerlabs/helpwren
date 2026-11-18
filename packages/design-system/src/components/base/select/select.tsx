@@ -57,7 +57,7 @@ export function SelectContent({
       align={align}
       sideOffset={sideOffset}
       // No padding: options run edge to edge, and the list's own corners clip the first and last.
-      className={cn("border-line border-border rounded-lg p-0 ring-0", className)}
+      className={cn("border-rule rounded-lg border p-0 ring-0", className)}
       {...props}
     />
   );

@@ -136,6 +136,67 @@ describe("tickets", () => {
   });
 });
 
+describe("filtering and searching tickets", () => {
+  it("filters by priority and by several assignees, including nobody", async () => {
+    const { client, agent } = await signedInAgent();
+    const mine = await newGuestWithConversation();
+    const nobodys = await newGuestWithConversation();
+    await client.conversations.convertToTicket(mine.conversationId, "Mine and urgent");
+    await client.conversations.update(mine.conversationId, {
+      assigneeId: agent.id,
+      priority: "high",
+    });
+    await client.conversations.convertToTicket(nobodys.conversationId, "Nobody's yet");
+
+    const ids = async (filter: Parameters<typeof client.conversations.list>[0]) =>
+      (await client.conversations.list({ type: "ticket", limit: 100, ...filter })).items.map(
+        (item) => item.id,
+      );
+
+    expect(await ids({ priority: ["high"] })).toContain(mine.conversationId);
+    expect(await ids({ priority: ["high"] })).not.toContain(nobodys.conversationId);
+    expect(await ids({ assignees: [agent.id] })).toContain(mine.conversationId);
+    expect(await ids({ assignees: [agent.id] })).not.toContain(nobodys.conversationId);
+    expect(await ids({ assignees: [null] })).toContain(nobodys.conversationId);
+    expect(await ids({ assignees: [null] })).not.toContain(mine.conversationId);
+    const either = await ids({ assignees: [agent.id, null] });
+    expect(either).toContain(mine.conversationId);
+    expect(either).toContain(nobodys.conversationId);
+    await expect(
+      client.conversations.count({ type: "ticket", assignees: [agent.id], priority: ["high"] }),
+    ).resolves.toBeGreaterThan(0);
+  });
+
+  it("rejects an assignee that is not an id, before it reaches the database", async () => {
+    const { client } = await signedInAgent();
+    await expect(
+      client.conversations.list({ assignees: ["x),status.eq.closed,("] }),
+    ).rejects.toThrow();
+  });
+
+  it("searches within a filter, and finds a ticket by its number", async () => {
+    const { client } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    const ticket = await client.conversations.convertToTicket(guest.conversationId, "Lost parcel");
+    if (!ticket.ok) throw new Error("The conversation did not become a ticket.");
+    const number = String(ticket.conversation.ticketNumber);
+
+    const byNumber = await client.conversations.search(`#${number}`);
+    expect(byNumber.map((item) => item.id)).toEqual([guest.conversationId]);
+
+    const openTickets = await client.conversations.search("lost parcel", {
+      type: "ticket",
+      status: ["open"],
+    });
+    expect(openTickets.map((item) => item.id)).toContain(guest.conversationId);
+    const resolvedTickets = await client.conversations.search("lost parcel", {
+      type: "ticket",
+      status: ["resolved"],
+    });
+    expect(resolvedTickets).toEqual([]);
+  });
+});
+
 describe("activity", () => {
   it("records what the team did, and shows the contact only where their request stands", async () => {
     const { client, agent } = await signedInAgent();

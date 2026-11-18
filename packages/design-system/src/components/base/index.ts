@@ -42,8 +42,15 @@ export {
 export { Expandable, type ExpandableProps } from "./expandable/expandable";
 export { Field, type FieldProps } from "./field/field";
 export { FieldError, FieldHint } from "./field/field-message";
+export {
+  FilterBar,
+  type FilterBarProps,
+  type FilterDefinition,
+  type FilterValue,
+} from "./filter-bar/filter-bar";
 export { Icon, type IconProps, type IconWeight } from "./icon/icon";
 export { iconNames, type IconName } from "./icon/registry";
+export { InlineSelect, type InlineSelectProps } from "./inline-select/inline-select";
 export { Input, type InputProps } from "./input/input";
 export {
   createNumberFormatter,
@@ -54,6 +61,7 @@ export { Kbd, type KbdProps } from "./kbd/kbd";
 export { Label, type LabelProps } from "./label/label";
 export { LinearProgress, type LinearProgressProps } from "./linear-progress/linear-progress";
 export { Link, type LinkProps } from "./link/link";
+export { OptionList, type OptionListOption, type OptionListProps } from "./option-list/option-list";
 export {
   Popover,
   PopoverAnchor,
