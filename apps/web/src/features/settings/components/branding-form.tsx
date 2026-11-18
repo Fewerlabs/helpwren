@@ -374,7 +374,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
   );
 
   return (
-    <div className="grid items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
       <form
         noValidate
         onSubmit={(event) => {
@@ -383,7 +383,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       >
         <Tabs defaultValue="brand">
           {/* Stays in reach while a long tab is scrolled, as the preview beside it does. */}
-          <div className="bg-card sticky top-0 z-10 -mx-1 px-1 py-3">
+          <div className="bg-card sticky top-0 z-10 -mx-1 [scrollbar-width:none] overflow-x-auto px-1 py-3 [&::-webkit-scrollbar]:hidden">
             <TabsList aria-label="What to brand">
               <TabsTrigger value="brand">Brand</TabsTrigger>
               <TabsTrigger value="widget">Widget</TabsTrigger>

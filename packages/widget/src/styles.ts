@@ -206,8 +206,9 @@ export const styles = `
   max-height: calc(100% - var(--hw-y) - 84px);
 }
 
-/* On a phone the chat takes the whole screen, and its own close button closes it. */
-@media (max-width: 480px) {
+/* On a phone, upright or on its side, the chat takes the whole screen, and its own close
+   button closes it. */
+@media (max-width: 640px), (max-height: 480px) {
   :host(:not([data-contained])) .panel {
     inset: 0;
     width: 100%;

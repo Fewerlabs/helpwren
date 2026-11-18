@@ -1,2 +1,15 @@
 @import "tailwindcss";
 @import "@helpwren/design-system/styles.css";
+
+/*
+ * Switching theme: the new page is revealed by a growing circle (see lib/theme.ts), so the
+ * browser's own cross-fade is turned off and the new page sits on top of the old one.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}

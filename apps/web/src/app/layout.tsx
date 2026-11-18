@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { themeScript } from "@/lib/theme-script";
+
 import { fontVariables } from "./fonts";
 import { Providers } from "./providers";
 
@@ -13,7 +15,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={fontVariables}>
+    // The script below may add a class to this element before React starts, which is expected.
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

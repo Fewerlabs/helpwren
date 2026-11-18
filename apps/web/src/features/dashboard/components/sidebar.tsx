@@ -8,6 +8,7 @@ import { type ReactNode } from "react";
 
 import { useTeamUnread } from "../hooks/use-unread";
 import { sections } from "../sections";
+import { ThemeToggle } from "./theme-toggle";
 
 export interface SidebarProps {
   agent: Agent;
@@ -65,7 +66,8 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
           );
         })}
       </nav>
-      <div className="flex items-center gap-2 md:flex-col">
+      <div className="flex shrink-0 items-center gap-2 max-md:gap-0.5 md:flex-col">
+        <ThemeToggle />
         <Tooltip content={agent.name} side="right">
           <Link
             href="/dashboard/settings/profile"
