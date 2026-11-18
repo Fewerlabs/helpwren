@@ -104,3 +104,13 @@ export const profileSchema = z.object({
     .max(120, "Keep your name under 120 characters."),
 });
 export type ProfileValues = z.infer<typeof profileSchema>;
+
+export const teamGroupSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Give the team a name.")
+    .max(60, "Keep the name under 60 characters."),
+  memberIds: z.array(z.uuid()),
+});
+export type TeamGroupValues = z.infer<typeof teamGroupSchema>;

@@ -11,6 +11,7 @@ import { createRatings } from "./ratings";
 import { createSessions } from "./sessions";
 import { createSettings } from "./settings";
 import { type HelpwrenSupabaseClient } from "./supabase";
+import { createTeams } from "./teams";
 
 export interface HelpwrenClientOptions extends ApiOptions {
   /**
@@ -40,6 +41,7 @@ export function createHelpwrenClient({ supabase, ...apiOptions }: HelpwrenClient
     notes: createNotes(supabase),
     ratings: createRatings(supabase),
     settings: createSettings(supabase),
+    teams: createTeams(supabase),
   };
 }
 

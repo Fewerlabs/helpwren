@@ -37,6 +37,10 @@ export function describeEvent(
         : event.data.to === event.actorId
           ? `${actor} took this`
           : `${actor} assigned this to ${nameOf(event.data.to)}`;
+    case "team_changed":
+      return event.data.to === null
+        ? `${actor} took this away from its team`
+        : `${actor} gave this to ${event.data.name ?? "a team"}`;
     case "priority_changed":
       return `${actor} set the priority to ${priorityNames[event.data.to].toLowerCase()}`;
     case "rated":

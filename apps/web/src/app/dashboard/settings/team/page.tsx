@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { requireAgent } from "@/features/agent-auth";
-import { InviteDialog, SettingsPage, TeamList } from "@/features/settings";
+import { InviteDialog, SettingsPage, TeamGroups, TeamList } from "@/features/settings";
 import { getHelpwren } from "@/lib/helpwren";
 
 export const metadata: Metadata = { title: "Team" };
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Team" };
 export default async function TeamSettingsPage() {
   const agent = await requireAgent();
   const helpwren = await getHelpwren();
-  const members = await helpwren.agents.list();
+  const [members, teams] = await Promise.all([helpwren.agents.list(), helpwren.teams.list()]);
   const canEdit = agent.role === "admin";
 
   return (
@@ -20,6 +20,7 @@ export default async function TeamSettingsPage() {
       action={canEdit ? <InviteDialog /> : undefined}
     >
       <TeamList members={members} currentId={agent.id} canEdit={canEdit} />
+      <TeamGroups teams={teams} members={members} canEdit={canEdit} />
     </SettingsPage>
   );
 }

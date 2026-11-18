@@ -25,6 +25,7 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
     source: "web",
     context: {},
     assigneeId: null,
+    teamId: null,
     lastMessagePreview: "Do you ship abroad?",
     lastMessageAt: new Date().toISOString(),
     unreadForContact: 0,

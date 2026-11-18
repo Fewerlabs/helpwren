@@ -6,4 +6,5 @@ export { InviteDialog } from "./components/invite-dialog";
 export { NotificationForm } from "./components/notification-form";
 export { ProfileForm } from "./components/profile-form";
 export { SettingsFrame, SettingsPage, SettingsSection } from "./components/settings-frame";
+export { TeamGroups } from "./components/team-groups";
 export { TeamList } from "./components/team-list";

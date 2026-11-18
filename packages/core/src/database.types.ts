@@ -178,6 +178,7 @@ export type Database = {
           source: string;
           status: string;
           subject: string | null;
+          team_id: string | null;
           ticket_number: number | null;
           type: string;
           unread_for_agents: number;
@@ -199,6 +200,7 @@ export type Database = {
           source: string;
           status?: string;
           subject?: string | null;
+          team_id?: string | null;
           ticket_number?: number | null;
           type?: string;
           unread_for_agents?: number;
@@ -219,6 +221,7 @@ export type Database = {
           source?: string;
           status?: string;
           subject?: string | null;
+          team_id?: string | null;
           ticket_number?: number | null;
           type?: string;
           unread_for_agents?: number;
@@ -245,6 +248,13 @@ export type Database = {
             columns: ["contact_id"];
             isOneToOne: false;
             referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversations_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
             referencedColumns: ["id"];
           },
         ];
@@ -353,6 +363,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      team_members: {
+        Row: {
+          agent_id: string;
+          team_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_id: string;
+          team_id: string;
+        };
+        Update: {
+          agent_id?: string;
+          team_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_members_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "team_members_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      teams: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       contact_summaries: {
@@ -389,6 +449,7 @@ export type Database = {
           source: string;
           status: string;
           subject: string | null;
+          team_id: string | null;
           ticket_number: number | null;
           type: string;
           unread_for_agents: number;

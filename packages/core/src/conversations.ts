@@ -77,6 +77,8 @@ const conversationRowSchema = z.object({
   source: z.string(),
   context: z.record(z.string(), z.unknown()),
   assignee_id: z.uuid().nullable(),
+  // Missing from rows written before teams existed in a client's cache or a live message.
+  team_id: z.uuid().nullish(),
   last_message_preview: z.string().nullable(),
   last_message_at: z.string().nullable(),
   unread_for_contact: z.number().int(),
@@ -97,6 +99,8 @@ export const conversationSchema = conversationRowSchema.transform((row) => ({
   /** Where the chat was opened from: page URL, title, browser. */
   context: row.context,
   assigneeId: row.assignee_id,
+  /** The team it has been given to, if any. */
+  teamId: row.team_id ?? null,
   lastMessagePreview: row.last_message_preview,
   lastMessageAt: row.last_message_at,
   unreadForContact: row.unread_for_contact,
@@ -126,6 +130,7 @@ export type ConversationWithContact = z.infer<typeof conversationWithContactSche
 
 const CONVERSATION_COLUMNS =
   "id, contact_id, status, type, ticket_number, subject, priority, source, context, assignee_id, " +
+  "team_id, " +
   "last_message_preview, last_message_at, " +
   "unread_for_contact, unread_for_agents, created_at";
 const WITH_CONTACT = `${CONVERSATION_COLUMNS}, contact:contacts!inner(id, kind, verified, name, email, phone)`;
@@ -146,6 +151,8 @@ export interface ConversationFilter {
   assigneeId?: string | null | undefined;
   /** Only those assigned to one of these team members. `null` in the list means nobody. */
   assignees?: readonly (string | null)[] | undefined;
+  /** Only those given to one of these teams. `null` in the list means no team. */
+  teams?: readonly (string | null)[] | undefined;
   /** Only conversations with one of these priorities. */
   priority?: readonly ConversationPriority[] | undefined;
   /** Only one contact's conversations. */
@@ -166,6 +173,8 @@ export const conversationChangesSchema = z
     priority: conversationPrioritySchema,
     /** A team member's id, or `null` to leave it with nobody. */
     assigneeId: z.uuid().nullable(),
+    /** A team's id, or `null` to leave it with no team. */
+    teamId: z.uuid().nullable(),
     subject: ticketSubjectSchema,
   })
   .partial();
@@ -203,19 +212,25 @@ function applyFilter<Query extends Filterable<Query>>(
   if (filter.assigneeId === null) narrowed = narrowed.is("assignee_id", null);
   else if (filter.assigneeId) narrowed = narrowed.eq("assignee_id", filter.assigneeId);
 
-  if (filter.assignees) {
-    // Checked as ids before they are written into a filter expression.
-    const ids = z.array(z.uuid()).parse(filter.assignees.filter((id) => id !== null));
-    const nobody = filter.assignees.includes(null);
-    if (ids.length > 0 && nobody) {
-      narrowed = narrowed.or(`assignee_id.in.(${ids.join(",")}),assignee_id.is.null`);
-    } else if (ids.length > 0) {
-      narrowed = narrowed.in("assignee_id", ids);
-    } else if (nobody) {
-      narrowed = narrowed.is("assignee_id", null);
-    }
-  }
+  narrowed = oneOf(narrowed, "assignee_id", filter.assignees);
+  narrowed = oneOf(narrowed, "team_id", filter.teams);
   return narrowed;
+}
+
+/** Narrows to rows whose column is one of these ids, where `null` in the list means unset. */
+function oneOf<Query extends Filterable<Query>>(
+  query: Query,
+  column: string,
+  wanted: readonly (string | null)[] | undefined,
+): Query {
+  if (!wanted) return query;
+  // Checked as ids before they are written into a filter expression.
+  const ids = z.array(z.uuid()).parse(wanted.filter((id) => id !== null));
+  const unset = wanted.includes(null);
+  if (ids.length > 0 && unset) return query.or(`${column}.in.(${ids.join(",")}),${column}.is.null`);
+  if (ids.length > 0) return query.in(column, ids);
+  if (unset) return query.is(column, null);
+  return query;
 }
 
 function unexpected(what: string, cause: unknown): HelpwrenError {
@@ -331,11 +346,13 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
      * anyone else, and for a conversation that does not exist, nothing is found to change.
      */
     async update(id: string, changes: ConversationChanges): Promise<ChangeConversationResult> {
-      const { status, priority, assigneeId, subject } = conversationChangesSchema.parse(changes);
+      const { status, priority, assigneeId, teamId, subject } =
+        conversationChangesSchema.parse(changes);
       return change(id, {
         ...(status === undefined ? {} : { status }),
         ...(priority === undefined ? {} : { priority }),
         ...(assigneeId === undefined ? {} : { assignee_id: assigneeId }),
+        ...(teamId === undefined ? {} : { team_id: teamId }),
         ...(subject === undefined ? {} : { subject }),
       });
     },

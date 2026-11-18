@@ -56,3 +56,8 @@ that its contact must never see.
   their own conversation, only once, and cannot change it. The team sees the rating in the
   details and in the conversation's activity. The request is automatic on resolving; there is
   no separate "ask for a rating" action or setting to turn it off yet.
+- 2026-11-18: teams. A team is a named group of team members (`teams`, `team_members`), and a
+  conversation can be given to one with `conversations.team_id`, beside or in place of one
+  person. Every agent sees teams and may give a conversation to one; admins make and change
+  them. Giving a conversation to a team is in its history for the team only, with the team's
+  name kept on the event.

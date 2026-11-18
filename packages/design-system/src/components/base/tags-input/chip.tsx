@@ -20,7 +20,8 @@ export function Chip({ children, removeLabel, onRemove, disabled = false, classN
     <span
       data-slot="chip"
       className={cn(
-        "bg-muted text-foreground inline-flex h-7 max-w-full items-center gap-1 rounded-md pr-1 pl-2 text-sm",
+        // In dark mode the muted tint is close to the field behind it, so the chip is lifted and edged.
+        "bg-muted text-foreground dark:border-foreground/15 dark:bg-foreground/10 inline-flex h-7 max-w-full items-center gap-1 rounded-md border border-transparent pr-1 pl-2 text-sm",
         className,
       )}
     >

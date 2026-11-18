@@ -35,6 +35,12 @@ const eventRowSchema = z.discriminatedUnion("kind", [
   }),
   z.object({
     ...base,
+    kind: z.literal("team_changed"),
+    // The name is kept with the event, so it still reads right after a team is renamed.
+    data: z.object({ to: z.uuid().nullable(), name: z.string().nullable() }),
+  }),
+  z.object({
+    ...base,
     kind: z.literal("rated"),
     data: z.object({ score: z.number().int() }),
   }),
@@ -55,7 +61,9 @@ export const conversationEventSchema = eventRowSchema.transform((row) => ({
         ? { kind: row.kind, data: row.data }
         : row.kind === "priority_changed"
           ? { kind: row.kind, data: row.data }
-          : { kind: row.kind, data: row.data }),
+          : row.kind === "team_changed"
+            ? { kind: row.kind, data: row.data }
+            : { kind: row.kind, data: row.data }),
 }));
 
 /**

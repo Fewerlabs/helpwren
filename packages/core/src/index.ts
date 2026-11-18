@@ -107,3 +107,10 @@ export {
   type UpdateSettingsResult,
 } from "./settings";
 export { type HelpwrenSupabaseClient } from "./supabase";
+export {
+  teamNameSchema,
+  teamSchema,
+  type ChangeTeamResult,
+  type CreateTeamResult,
+  type Team,
+} from "./teams";
