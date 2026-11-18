@@ -23,3 +23,6 @@ __screenshots__/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Local assistant tooling
+.claude/

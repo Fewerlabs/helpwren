@@ -10,11 +10,11 @@ export default function HomePage() {
   return (
     <main className="p-8">
       <h1 className="text-2xl font-semibold">Helpwren</h1>
-      <p className="mt-2">Pre-alpha. These routes are placeholders.</p>
+      <p className="text-muted-foreground mt-2">Pre-alpha. These routes are placeholders.</p>
       <ul className="mt-4 list-disc pl-6">
         {sections.map((section) => (
           <li key={section.href}>
-            <Link className="underline" href={section.href}>
+            <Link className="text-biro underline" href={section.href}>
               {section.label}
             </Link>
           </li>

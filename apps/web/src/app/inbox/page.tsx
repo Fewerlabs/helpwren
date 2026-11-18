@@ -6,7 +6,7 @@ export default function InboxPage() {
   return (
     <main className="p-8">
       <h1 className="text-2xl font-semibold">Inbox</h1>
-      <p className="mt-2">The agent inbox. Not built yet.</p>
+      <p className="text-muted-foreground mt-2">The agent inbox. Not built yet.</p>
     </main>
   );
 }

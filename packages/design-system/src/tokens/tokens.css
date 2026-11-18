@@ -1,0 +1,95 @@
+/*
+ * Helpwren design tokens. This file is the single source of truth for colour.
+ * The contrast test (contrast.test.ts) reads it directly, so a change here is checked.
+ *
+ * Adopter overrides (see docs/design-system.md, "Theming for adopters"):
+ *   --helpwren-accent, --helpwren-accent-foreground, --helpwren-font, --helpwren-radius
+ */
+
+:root {
+  /* Brand palette */
+  --paper: #f7f4ed;
+  --card-surface: #fdfbf7;
+  --ink: #26231e;
+  --pencil: #6e675b;
+  --edge: #8f8778;
+  --rule: #e3ddd0;
+  --moss: #3d6b57;
+  --pen: #b23520;
+  --highlighter: #f5d547;
+  --highlighter-foreground: #26231e;
+  --biro: #2f5b85;
+  --ochre: #7d5a12;
+  --wash: #ede9e0;
+
+  /* Status chips: text colour on a tint. Always shown with a dot and a word. */
+  --status-open: #2f5b85;
+  --status-open-surface: #e0e8f1;
+  --status-waiting: #7d5a12;
+  --status-waiting-surface: #f4ebd6;
+  --status-resolved: #3d6b57;
+  --status-resolved-surface: #e4ede7;
+  --status-urgent: #b23520;
+  --status-urgent-surface: #f7e1db;
+  --status-closed: #6e675b;
+  --status-closed-surface: #ede9e0;
+
+  /* Semantic roles, in shadcn/ui's vocabulary */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--card-surface);
+  --card-foreground: var(--ink);
+  --popover: var(--card-surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--helpwren-accent, var(--moss));
+  --primary-foreground: var(--helpwren-accent-foreground, #ffffff);
+  --secondary: var(--wash);
+  --secondary-foreground: var(--ink);
+  --muted: var(--wash);
+  --muted-foreground: var(--pencil);
+  --accent: var(--wash);
+  --accent-foreground: var(--ink);
+  --destructive: var(--pen);
+  --destructive-foreground: #ffffff;
+  --border: var(--edge);
+  --input: var(--edge);
+  --ring: var(--biro);
+
+  /* Shape and line */
+  --radius: var(--helpwren-radius, 0.625rem);
+  --line: 1.5px;
+
+  color-scheme: light;
+}
+
+.dark {
+  --paper: #1c1a16;
+  --card-surface: #24211c;
+  --ink: #ede8dc;
+  --pencil: #a39b8b;
+  --edge: #827b6e;
+  --rule: #3a362f;
+  --moss: #7fb59a;
+  --pen: #f07a5a;
+  --highlighter: #e8c64a;
+  --highlighter-foreground: #1c1a16;
+  --biro: #8db3db;
+  --ochre: #d9a441;
+  --wash: #2e2a24;
+
+  --status-open: #8db3db;
+  --status-open-surface: #2e3236;
+  --status-waiting: #d9a441;
+  --status-waiting-surface: #3a301d;
+  --status-resolved: #7fb59a;
+  --status-resolved-surface: #2c332b;
+  --status-urgent: #f07a5a;
+  --status-urgent-surface: #3e2921;
+  --status-closed: #a39b8b;
+  --status-closed-surface: #322f29;
+
+  --primary-foreground: var(--helpwren-accent-foreground, #1c1a16);
+  --destructive-foreground: #1c1a16;
+
+  color-scheme: dark;
+}

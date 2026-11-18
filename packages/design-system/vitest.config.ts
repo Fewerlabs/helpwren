@@ -16,6 +16,8 @@ export default defineConfig({
         test: {
           name: "unit",
           environment: "jsdom",
+          // The contrast test reads tokens.css as text; without this Vitest stubs CSS out.
+          css: true,
           setupFiles: ["./vitest.setup.ts"],
           include: ["src/**/*.test.{ts,tsx}"],
         },

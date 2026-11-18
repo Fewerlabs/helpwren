@@ -27,6 +27,9 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@fontsource-variable/caveat": "^5.3.0",
+    "@fontsource-variable/figtree": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@helpwren/config": "workspace:*",
     "@storybook/addon-a11y": "^10.6.7",
     "@storybook/addon-docs": "^10.6.7",

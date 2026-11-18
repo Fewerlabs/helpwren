@@ -7,3 +7,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | ---- | -------------------------------------------- |
 | 0001 | [Tooling and versions](0001-tooling.md)      |
 | 0002 | [Component layers](0002-component-layers.md) |
+| 0003 | [Design tokens](0003-design-tokens.md)       |

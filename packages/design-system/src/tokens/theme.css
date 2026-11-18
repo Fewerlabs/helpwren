@@ -1,0 +1,119 @@
+/*
+ * Maps the tokens onto Tailwind CSS v4 utilities. Import after "tailwindcss".
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source "../components";
+@source "../illustrations";
+@source "../tokens";
+
+@theme inline {
+  /* Semantic colours (shadcn/ui) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Brand colours */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-pencil: var(--pencil);
+  --color-edge: var(--edge);
+  --color-rule: var(--rule);
+  --color-moss: var(--moss);
+  --color-pen: var(--pen);
+  --color-highlighter: var(--highlighter);
+  --color-highlighter-foreground: var(--highlighter-foreground);
+  --color-biro: var(--biro);
+  --color-ochre: var(--ochre);
+
+  /* Status */
+  --color-status-open: var(--status-open);
+  --color-status-open-surface: var(--status-open-surface);
+  --color-status-waiting: var(--status-waiting);
+  --color-status-waiting-surface: var(--status-waiting-surface);
+  --color-status-resolved: var(--status-resolved);
+  --color-status-resolved-surface: var(--status-resolved-surface);
+  --color-status-urgent: var(--status-urgent);
+  --color-status-urgent-surface: var(--status-urgent-surface);
+  --color-status-closed: var(--status-closed);
+  --color-status-closed-surface: var(--status-closed-surface);
+
+  /* Type. The --font-figtree style variables are set by the host app's font loader. */
+  --font-sans:
+    var(--helpwren-font, var(--font-figtree, "Figtree Variable")), "Figtree", "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono:
+    var(--font-jetbrains-mono, "JetBrains Mono Variable"), "JetBrains Mono", Menlo, monospace;
+  --font-hand: var(--font-caveat, "Caveat Variable"), "Caveat", "Comic Sans MS", cursive;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  /* Shape: 10px controls, 14 to 16px cards */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 6px);
+
+  /* Minimum touch target: min-h-target, size-target */
+  --spacing-target: 2.75rem;
+
+  /* Outlines instead of shadows. Focus rings use ring utilities and are unaffected. */
+  --shadow-2xs: 0 0 #0000;
+  --shadow-xs: 0 0 #0000;
+  --shadow-sm: 0 0 #0000;
+  --shadow-md: 0 0 #0000;
+  --shadow-lg: 0 0 #0000;
+  --shadow-xl: 0 0 #0000;
+  --shadow-2xl: 0 0 #0000;
+}
+
+/* The one line weight used for the edges of controls and cards. */
+@utility border-line {
+  border-width: var(--line);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

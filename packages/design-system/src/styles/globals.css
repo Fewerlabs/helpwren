@@ -1,1 +1,8 @@
-@import "tailwindcss";
+/*
+ * The design system's stylesheet. Import it after Tailwind:
+ *
+ *   @import "tailwindcss";
+ *   @import "@helpwren/design-system/styles.css";
+ */
+@import "../tokens/tokens.css";
+@import "../tokens/theme.css";
