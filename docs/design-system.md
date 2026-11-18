@@ -253,7 +253,8 @@ with `transform` (clean each value), `validate` (reject a value), `separators`, 
 - debounces typing (`debounceMs`) and aborts the previous request, so a slow early response never
   overwrites a later one
 - takes one value or, with `multiple`, several, shown as removable chips in a box that grows
-- shows loading, empty and error states, with a retry
+- shows a spinner in the box while options load, in place of the `prepend` icon (or of the caret
+  when there is none), and empty and error states with a retry
 
 Its value is the option's id, which is what a form stores. When a form is prefilled with an id
 whose option is not in the loaded page, the box needs the label from somewhere:
@@ -374,8 +375,8 @@ interactive content in one. Place one `TooltipProvider` near the root of the app
 ### Loading
 
 **LinearProgress** is a thin bar along the top edge of content. Use it when content is already on
-screen and is being refreshed or added to, so nothing jumps: `Combobox`, `DataTable`, `QueryList`
-and `QueryDetail` all do. Leave `value` out when the amount of work is unknown, or pass 0 to 100.
+screen and is being refreshed, so nothing jumps: `DataTable`, `QueryList` and `QueryDetail` all
+do. Leave `value` out when the amount of work is unknown, or pass 0 to 100.
 Use `Spinner` or `Skeleton` when there is nothing to show yet.
 
 **Spinner** shows that something short is in progress. It is announced as "Loading"; change that

@@ -389,6 +389,39 @@ describe("Combobox with options loaded from a server", () => {
     expect(screen.queryByRole("option", { name: "From the stale search" })).not.toBeInTheDocument();
   });
 
+  it("shows a spinner in the box while options load, in place of the leading icon or the caret", async () => {
+    let release: () => void = () => undefined;
+    const loadOptions: ComboboxLoader<Person, number> = () =>
+      new Promise((resolve) => {
+        release = () => {
+          resolve({ options: people.slice(0, 2) });
+        };
+      });
+    render(
+      <Combobox<Person, number, number>
+        aria-label="Person"
+        {...personProps}
+        loadOptions={loadOptions}
+        prepend={<span data-testid="leading">@</span>}
+      />,
+    );
+    expect(screen.getByTestId("leading")).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Loading" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("combobox", { name: "Person" }));
+
+    expect(await screen.findByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByTestId("leading")).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+    act(() => {
+      release();
+    });
+    await screen.findByRole("option", { name: "Person 1" });
+    expect(screen.queryByRole("status", { name: "Loading" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("leading")).toBeInTheDocument();
+  });
+
   it("shows an error with a way to try again", async () => {
     const loadOptions = vi
       .fn<ComboboxLoader<Person, number>>()

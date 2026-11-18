@@ -17,7 +17,6 @@ import { cn } from "#lib/cn";
 
 import { ControlShell } from "../control-shell/control-shell";
 import { Icon } from "../icon/icon";
-import { LinearProgress } from "../linear-progress/linear-progress";
 import { Popover, PopoverAnchor, PopoverContent } from "../popover/popover";
 import { Spinner } from "../spinner/spinner";
 import { bareInput, focusRing } from "../styles";
@@ -436,6 +435,7 @@ export function Combobox<
         : undefined;
   const showEmpty = list.length === 0 && async.status === "idle";
   const busy = async.status === "loading" || async.status === "loading-more";
+  const loadingLabel = async.status === "loading-more" ? messages.loadingMore : messages.loading;
 
   return (
     <Popover open={open} onOpenChange={changeOpen}>
@@ -448,8 +448,11 @@ export function Combobox<
           data-state={open ? "open" : "closed"}
           className={cn("gap-1.5 py-1 pr-1.5 pl-3", multiple && "pl-2", className)}
         >
+          {/* While options load, the spinner takes the place of the leading icon. */}
           {prepend === undefined ? null : (
-            <span className="text-muted-foreground flex shrink-0 items-center">{prepend}</span>
+            <span className="text-muted-foreground flex shrink-0 items-center">
+              {busy ? <Spinner label={loadingLabel} /> : prepend}
+            </span>
           )}
           {/* Chips and the input wrap together; the buttons after them stay on the first line. */}
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -541,10 +544,15 @@ export function Combobox<
             }}
             className="text-muted-foreground flex size-7 shrink-0 items-center justify-center"
           >
-            <Icon
-              name="caret-down"
-              className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
-            />
+            {/* With no leading icon, the spinner takes the caret's place instead. */}
+            {busy && prepend === undefined ? (
+              <Spinner label={loadingLabel} />
+            ) : (
+              <Icon
+                name="caret-down"
+                className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
+              />
+            )}
           </button>
           {name === undefined
             ? null
@@ -556,7 +564,7 @@ export function Combobox<
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="relative w-(--radix-popover-trigger-width) min-w-48 gap-0 overflow-hidden p-0"
+        className="w-(--radix-popover-trigger-width) min-w-48 gap-0 overflow-hidden p-0"
         onOpenAutoFocus={(event) => {
           // Focus stays in the input, which drives the list through aria-activedescendant.
           event.preventDefault();
@@ -570,13 +578,6 @@ export function Combobox<
           }
         }}
       >
-        {/* With options on screen, loading shows as a bar along the top so the list does not jump. */}
-        {busy && list.length > 0 ? (
-          <LinearProgress
-            label={async.status === "loading" ? messages.loading : messages.loadingMore}
-            className="absolute inset-x-0 top-0 z-10"
-          />
-        ) : null}
         <div ref={scrollRef} className={cn("max-h-64 overflow-y-auto p-1", listClassName)}>
           <div
             id={listId}
@@ -634,12 +635,7 @@ export function Combobox<
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-px" />
           <div aria-live="polite" className="text-muted-foreground text-sm">
-            {busy && list.length === 0 ? (
-              <p className="flex items-center gap-2 px-2 py-2">
-                <Spinner label="" aria-hidden="true" />
-                {messages.loading}
-              </p>
-            ) : null}
+            {busy && list.length === 0 ? <p className="px-2 py-2">{messages.loading}</p> : null}
             {async.status === "error" ? (
               <p className="flex flex-wrap items-center gap-2 px-2 py-2">
                 <span className="text-destructive">{messages.error}</span>
