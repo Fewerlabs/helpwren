@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "The Helpwren app: embed screens, public help center, agent inbox and API.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "next dev",

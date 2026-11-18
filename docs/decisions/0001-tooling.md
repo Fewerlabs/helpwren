@@ -80,7 +80,7 @@ class-variance-authority 0.7.1, `@phosphor-icons/react` 2.1.10.
   design system's stylesheet rather than in `packages/config`.
 - **Dependabot** for dependency updates, grouped by tool family. It needs no extra app installed
   on the repository.
-- **Every package is `private`** until the npm names are claimed and a licence is chosen.
+- **Every package is `private`** until the npm names are claimed.
 
 ## Consequences
 

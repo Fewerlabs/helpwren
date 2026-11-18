@@ -73,4 +73,4 @@ docs/
 
 ## Licence
 
-Not chosen yet. Until a `LICENSE` file is added, no licence is granted.
+[MIT](LICENSE).

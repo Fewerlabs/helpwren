@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "The embeddable Helpwren widget script loaded by host sites.",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

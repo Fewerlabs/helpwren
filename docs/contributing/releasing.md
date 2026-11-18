@@ -2,8 +2,7 @@
 
 Helpwren uses [Changesets](https://github.com/changesets/changesets) for versions and changelogs.
 
-> Nothing is published yet. Every package is marked `private` until the npm names are claimed and
-> a licence is chosen. The steps below already produce versions and changelogs; publishing will be
+> Nothing is published yet. Every package is marked `private` until the npm names are claimed. The steps below already produce versions and changelogs; publishing will be
 > added to them later.
 
 ## While you work
