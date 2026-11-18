@@ -31,6 +31,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
 import { contactName } from "../contact-name";
+import { useConfirmStatus } from "../hooks/use-confirm-status";
 import { INBOX_QUERY_KEY, MIN_SEARCH_LENGTH } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
 import {
@@ -70,6 +71,7 @@ export interface TicketTableProps {
  */
 export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
   const getClient = useHelpwren();
+  const confirmStatus = useConfirmStatus();
   const [filters, setFilters] = useState<FilterValue>({});
   const [search, setSearch] = useState("");
   const searchText = useDebounced(search).trim();
@@ -130,7 +132,10 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
             value={ticket.status}
             options={statusOptions}
             onValueChange={(value) => {
-              onChange(ticket.id, { status: value as ConversationStatus });
+              const status = value as ConversationStatus;
+              void confirmStatus(status, ticket).then((confirmed) => {
+                if (confirmed) onChange(ticket.id, { status });
+              });
             }}
           >
             <StatusChip status={statuses[ticket.status].chip} size="sm" />
@@ -184,7 +189,7 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
         cell: (ticket) => (ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""),
       },
     ],
-    [assignees, onChange, onOpen, team],
+    [assignees, confirmStatus, onChange, onOpen, team],
   );
 
   return (

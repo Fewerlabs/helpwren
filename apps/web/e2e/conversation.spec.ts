@@ -72,6 +72,10 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await expect(visitorMessages.getByText(/This became ticket #\d{4}/)).toBeVisible();
 
   await inbox.getByRole("button", { name: "Resolve" }).click();
+  await inbox
+    .getByRole("alertdialog", { name: "Resolve this ticket?" })
+    .getByRole("button", { name: "Resolve" })
+    .click();
   await expect(visitorMessages.getByText("Marked as resolved")).toBeVisible();
   await expect(chat.getByText("Resolved", { exact: true })).toBeVisible();
   // Once it is resolved, the visitor is asked how it went, and the team sees the answer.

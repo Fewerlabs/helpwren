@@ -8,6 +8,7 @@ import { Thread } from "@/features/conversation";
 import { Panel, PanelHeader } from "@/features/dashboard";
 
 import { contactName } from "../contact-name";
+import { useConfirmStatus } from "../hooks/use-confirm-status";
 import { useChangeConversation } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
 import { TicketDialog } from "./ticket-dialog";
@@ -44,6 +45,7 @@ export function ConversationPanel({
 }: ConversationPanelProps) {
   const name = contactName(conversation.contact);
   const change = useChangeConversation(conversation.id);
+  const confirmStatus = useConfirmStatus();
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const isTicket = conversation.type === "ticket";
   const done = conversation.status === "resolved" || conversation.status === "closed";
@@ -113,7 +115,13 @@ export function ConversationPanel({
           size="sm"
           loading={change.isPending}
           onClick={() => {
-            change.mutate({ status: done ? "open" : "resolved" });
+            if (done) {
+              change.mutate({ status: "open" });
+              return;
+            }
+            void confirmStatus("resolved", conversation).then((confirmed) => {
+              if (confirmed) change.mutate({ status: "resolved" });
+            });
           }}
         >
           {done ? null : <Icon name="check-circle" />}

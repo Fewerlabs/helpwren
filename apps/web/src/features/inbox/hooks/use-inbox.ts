@@ -1,14 +1,18 @@
 import {
+  type ChangeConversationResult,
   type ConversationChanges,
   type ConversationFilter,
   type ConversationStatus,
   type ConversationWithContact,
 } from "@helpwren/core";
+import { toast } from "@helpwren/design-system";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
+
+import { changeMessage, type InboxChange } from "../change-message";
 
 /** Statuses that still need the team: not yet resolved or closed. */
 const ACTIVE: readonly ConversationStatus[] = ["open", "pending"];
@@ -122,6 +126,18 @@ export function useRating(conversationId: string) {
   });
 }
 
+const CHANGE_FAILED = "The change could not be saved. Try again.";
+const CHANGE_NOT_FOUND = "This conversation is no longer there to change.";
+
+/** Tells the person how a change ended. Without it a change that failed would pass unnoticed. */
+function announceChange(change: InboxChange, result: ChangeConversationResult) {
+  if (result.ok) {
+    toast.success(changeMessage(change, result.conversation));
+  } else {
+    toast.error(CHANGE_NOT_FOUND);
+  }
+}
+
 /** Changes any conversation by its id, for a table where each row can be changed in place. */
 export function useChangeConversations() {
   const getClient = useHelpwren();
@@ -129,6 +145,12 @@ export function useChangeConversations() {
   return useMutation({
     mutationFn: ({ id, changes }: { id: string; changes: ConversationChanges }) =>
       getClient().conversations.update(id, changes),
+    onSuccess: (result, { changes }) => {
+      announceChange(changes, result);
+    },
+    onError: () => {
+      toast.error(CHANGE_FAILED);
+    },
     onSettled: refresh,
   });
 }
@@ -148,10 +170,17 @@ export function useChangeConversation(conversationId: string) {
   const getClient = useHelpwren();
   const refresh = useRefreshInbox();
   return useMutation({
-    mutationFn: (change: ConversationChanges | { ticketSubject: string }) =>
+    mutationFn: (change: InboxChange) =>
       "ticketSubject" in change
         ? getClient().conversations.convertToTicket(conversationId, change.ticketSubject)
         : getClient().conversations.update(conversationId, change),
+    onSuccess: (result, change) => {
+      // The ticket dialog says so itself, in place, when a conversation cannot become a ticket.
+      if (result.ok || !("ticketSubject" in change)) announceChange(change, result);
+    },
+    onError: (_error, change) => {
+      if (!("ticketSubject" in change)) toast.error(CHANGE_FAILED);
+    },
     onSettled: refresh,
   });
 }

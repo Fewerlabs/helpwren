@@ -205,6 +205,10 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   await expect(row).toContainText("Admin");
 
   await page.getByRole("button", { name: `Deactivate ${NEW_MEMBER.name}` }).click();
+  await page
+    .getByRole("alertdialog", { name: `Deactivate ${NEW_MEMBER.name}?` })
+    .getByRole("button", { name: "Deactivate" })
+    .click();
   await expect(row).toContainText("Deactivated");
   await expect(page.getByRole("button", { name: `Reactivate ${NEW_MEMBER.name}` })).toBeVisible();
 });
