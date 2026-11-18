@@ -14,6 +14,7 @@ import {
   useRefreshConversations,
   useSession,
 } from "../hooks/use-chat";
+import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { useScreen, useShowScreen, useTab } from "../store/chat-store";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
@@ -42,6 +43,8 @@ function Screens({ settings, source }: ChatProps) {
   const teamName = settings.brand.name;
   const earlier = conversations.data ?? [];
   const unread = earlier.reduce((total, item) => total + item.unreadForContact, 0);
+  const bridge = useEmbedBridge(unread);
+  const onClose = bridge.embedded ? bridge.close : undefined;
   const back = () => {
     show({ name: tab });
   };
@@ -61,6 +64,7 @@ function Screens({ settings, source }: ChatProps) {
       <>
         <ScreenHeader
           onBack={back}
+          onClose={onClose}
           title={
             <>
               <Avatar name={teamName} size="sm" className="text-2xs size-6" />
@@ -82,7 +86,7 @@ function Screens({ settings, source }: ChatProps) {
   if (screen.name === "start") {
     return (
       <>
-        <ScreenHeader onBack={back} title="New conversation" />
+        <ScreenHeader onBack={back} onClose={onClose} title="New conversation" />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <StartForm
             guestDetails={settings.guestDetails}
@@ -98,9 +102,9 @@ function Screens({ settings, source }: ChatProps) {
   return (
     <>
       {screen.name === "messages" ? (
-        <MessagesScreen conversations={earlier} teamName={teamName} />
+        <MessagesScreen conversations={earlier} teamName={teamName} onClose={onClose} />
       ) : (
-        <HomeScreen teamName={teamName} recent={earlier[0]} />
+        <HomeScreen teamName={teamName} recent={earlier[0]} onClose={onClose} />
       )}
       <TabBar current={screen.name === "messages" ? "messages" : "home"} unread={unread} />
     </>

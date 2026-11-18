@@ -17,7 +17,7 @@ import { z } from "zod";
 import { useHelpwren } from "@/lib/helpwren-context";
 
 import { chatKeys } from "../hooks/use-chat";
-import { useShowScreen } from "../store/chat-store";
+import { usePage, useShowScreen } from "../store/chat-store";
 
 interface StartValues {
   name: string;
@@ -146,6 +146,7 @@ export function StartForm({ guestDetails, defaultCountry, source, returning }: S
   const getClient = useHelpwren();
   const queryClient = useQueryClient();
   const show = useShowScreen();
+  const page = usePage();
   // The server has the last word on whether details are needed; see `start` below.
   const [askAnyway, setAskAnyway] = useState(false);
   const ask = returning && !askAnyway ? "nothing" : guestDetails;
@@ -171,7 +172,8 @@ export function StartForm({ guestDetails, defaultCountry, source, returning }: S
                 name: values.name,
                 ...(by === "email" ? { email: values.email } : { phone: values.phone }),
               },
-        ...(document.referrer ? { page: { url: document.referrer } } : {}),
+        // The page the chat is on, when the widget script reported one.
+        ...(page ? { page } : {}),
       });
 
       if (result.ok) {

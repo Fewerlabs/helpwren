@@ -12,10 +12,11 @@ import { ScreenHeader } from "./screen-header";
 export interface MessagesScreenProps {
   conversations: readonly ConversationWithContact[];
   teamName: string;
+  onClose?: (() => void) | undefined;
 }
 
 /** The Messages tab: the visitor's conversations, today's first, and a way to start another. */
-export function MessagesScreen({ conversations, teamName }: MessagesScreenProps) {
+export function MessagesScreen({ conversations, teamName, onClose }: MessagesScreenProps) {
   const show = useShowScreen();
   const groups = [
     {
@@ -30,7 +31,7 @@ export function MessagesScreen({ conversations, teamName }: MessagesScreenProps)
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <ScreenHeader title="Messages" />
+      <ScreenHeader title="Messages" onClose={onClose} />
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-20">
         {groups.length === 0 ? (
           <EmptyState

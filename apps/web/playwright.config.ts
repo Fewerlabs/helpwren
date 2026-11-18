@@ -15,10 +15,18 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  webServer: {
-    command: process.env.CI ? "pnpm build && pnpm start" : "pnpm dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: process.env.CI ? "pnpm build && pnpm start" : "pnpm dev",
+      url: "http://localhost:3000",
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    {
+      // A site on another origin that embeds the widget, as an adopter's would.
+      command: "node ../../examples/plain-html/serve.mjs",
+      url: "http://127.0.0.1:4100",
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 });

@@ -47,8 +47,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 - **The database** (`supabase/`): the first tables, the rules for who can read and write each
   row, and tests that prove them.
 - **The start of the client library** (`packages/core`): sign-in for team members and settings.
-- **Documented stubs** for the other product packages: the widget, the React Native screen, the
-  adapters and the installer.
+- **The widget** (`packages/widget`): the script a site loads to show the chat. Try it with
+  `examples/plain-html`.
+- **Documented stubs** for the other product packages: the React Native screen, the adapters and
+  the installer.
 
 ## Repository layout
 
@@ -58,12 +60,13 @@ apps/
 packages/
   design-system/       Tokens, components and illustrations
   core/                Headless client library
-  widget/              Embeddable script, published as `helpwren` (stub)
+  widget/              The script a site loads to show the chat, published as `helpwren`
   react-native/        React Native support screen (stub)
   adapters/            Identity, push, email and storage adapters (stub)
   cli/                 Installer and upgrader (stub)
   config/              Shared TypeScript, ESLint and Prettier configuration
 supabase/              Database migrations, access-rule tests, demo data and local configuration
+examples/              Small sites that use Helpwren the way an adopter would
 docs/
   brand/               Brand boards: logo, colour palette, illustrations
   decisions/           Architecture decision records

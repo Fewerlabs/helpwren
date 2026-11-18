@@ -14,6 +14,9 @@ next-env.d.ts
 .env.*
 !.env.example
 
+# Built from packages/widget when the app starts or builds
+apps/web/public/widget.js
+
 playwright-report/
 test-results/
 __screenshots__/

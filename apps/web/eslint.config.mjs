@@ -23,6 +23,8 @@ const featureInternals = {
 };
 
 export default [
+  // Built from packages/widget by scripts/build-widget.mjs.
+  { ignores: ["public/widget.js"] },
   ...next,
   {
     files: ["src/**/*.{ts,tsx}"],

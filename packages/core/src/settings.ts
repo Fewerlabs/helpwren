@@ -20,6 +20,11 @@ const storedSettingsSchema = z.object({
     .regex(/^[A-Za-z]{2}$/)
     .transform((code) => code.toUpperCase())
     .default("NG"),
+  /**
+   * The sites that may show the chat in a frame, as hosts such as `example.com` or
+   * `*.example.com`. Empty means any site, so a new install works before it is configured.
+   */
+  allowed_domains: z.array(z.string().min(1)).default([]),
   /** Where a conversation may come from, such as the website or a mobile app. */
   sources: z.array(z.string().min(1)).min(1).default(["web"]),
 });
@@ -28,6 +33,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
   guestDetails: stored.guest_details,
   defaultCountry: stored.default_country,
+  allowedDomains: stored.allowed_domains,
   sources: stored.sources,
 }));
 

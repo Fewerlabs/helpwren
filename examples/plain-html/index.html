@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Helpwren example: a plain HTML page</title>
+    <style>
+      body {
+        max-width: 40rem;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+        font:
+          1rem/1.6 system-ui,
+          sans-serif;
+        color: #26231e;
+        background: #fff;
+      }
+      code {
+        padding: 0.1em 0.3em;
+        border-radius: 4px;
+        background: #f1eee6;
+      }
+      button {
+        font: inherit;
+        padding: 0.4rem 0.9rem;
+        border: 1.5px solid #8f8778;
+        border-radius: 8px;
+        background: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>A site that uses Helpwren</h1>
+    <p>
+      This page stands in for your website. The chat button in the corner comes from the two script
+      tags at the bottom of this file, and nothing else.
+    </p>
+    <p>
+      A site can also open the chat from its own button, and show its own unread count:
+      <button type="button" id="help">Help <span id="unread"></span></button>
+    </p>
+
+    <!-- Replace localhost:3000 with the address of your Helpwren install. -->
+    <script src="http://localhost:3000/widget.js"></script>
+    <script>
+      Helpwren.init({ source: "web" });
+
+      document.getElementById("help").addEventListener("click", () => Helpwren.show());
+      Helpwren.on("unread", (count) => {
+        document.getElementById("unread").textContent = count > 0 ? `(${count})` : "";
+      });
+    </script>
+  </body>
+</html>

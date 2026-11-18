@@ -9,10 +9,27 @@ export interface ScreenHeaderProps {
   onBack?: () => void;
   /** What the back arrow returns to, for its accessible name. */
   backLabel?: string;
+  /** Shows a close button that calls this. Given when the chat is in a frame it can close. */
+  onClose?: (() => void) | undefined;
+}
+
+/** Closes the chat's frame. Needed on a phone, where the chat covers the page's own button. */
+export function CloseButton({ onClose, className }: { onClose: () => void; className?: string }) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label="Close chat"
+      className={className}
+      onClick={onClose}
+    >
+      <Icon name="x" />
+    </Button>
+  );
 }
 
 /** The bar at the top of every screen but Home: a centred title, and a way back on sub-screens. */
-export function ScreenHeader({ title, onBack, backLabel = "Back" }: ScreenHeaderProps) {
+export function ScreenHeader({ title, onBack, backLabel = "Back", onClose }: ScreenHeaderProps) {
   return (
     <header className="grid h-14 shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center px-2">
       {onBack ? (
@@ -25,6 +42,7 @@ export function ScreenHeader({ title, onBack, backLabel = "Back" }: ScreenHeader
       <h1 className="flex min-w-0 items-center justify-center gap-2 text-sm font-semibold">
         {title}
       </h1>
+      {onClose ? <CloseButton onClose={onClose} /> : null}
     </header>
   );
 }

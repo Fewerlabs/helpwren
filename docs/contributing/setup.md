@@ -68,6 +68,14 @@ frame. The demo data asks guests for a name and an email or phone number; change
 `guest_details` row in the `settings` table to `"email"`, `"phone"` or `"none"` to see the others.
 The phone field starts on +234; add a `default_country` row, such as `"GB"`, to change it.
 
+To see it as a site's visitor would, through the widget:
+
+```bash
+node examples/plain-html/serve.mjs
+```
+
+Then open http://127.0.0.1:4100.
+
 ### Signing in to the inbox
 
 Open http://localhost:3000/inbox and enter one of the demo emails. The six-digit code arrives in

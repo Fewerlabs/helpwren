@@ -1,0 +1,14 @@
+# Examples
+
+Small sites that use Helpwren the way an adopter would.
+
+## plain-html
+
+One HTML page with the widget's two script tags. Start the Helpwren app (`pnpm dev`), then:
+
+```bash
+node examples/plain-html/serve.mjs
+```
+
+Open http://127.0.0.1:4100. The page is served from a different address than the app on
+purpose: that is how a real site embeds the chat, and it is what the browser tests use.

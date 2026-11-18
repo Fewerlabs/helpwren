@@ -7,6 +7,7 @@ const defaults = {
   brand: { name: "Helpwren" },
   guestDetails: "email",
   defaultCountry: "NG",
+  allowedDomains: [],
   sources: ["web"],
 };
 
@@ -23,6 +24,7 @@ describe("parseSettings", () => {
       brand: { name: "Acme" },
       guestDetails: "phone",
       defaultCountry: "GB",
+      allowedDomains: [],
       sources: ["web", "ios"],
     });
   });

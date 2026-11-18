@@ -7,16 +7,16 @@ This page describes how the code is organised. For what Helpwren is, see the
 
 pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 
-| Workspace                | Role                                                     |
-| ------------------------ | -------------------------------------------------------- |
-| `apps/web`               | The one Next.js app: `/embed`, `/help`, `/inbox`, `/api` |
-| `packages/design-system` | Tokens, components and illustrations                     |
-| `packages/core`          | Headless client library                                  |
-| `packages/widget`        | Embeddable script, published as `helpwren` (stub)        |
-| `packages/react-native`  | React Native support screen (stub)                       |
-| `packages/adapters`      | Identity, push, email and storage adapters (stub)        |
-| `packages/cli`           | Installer and upgrader (stub)                            |
-| `packages/config`        | Shared TypeScript, ESLint and Prettier configuration     |
+| Workspace                | Role                                                              |
+| ------------------------ | ----------------------------------------------------------------- |
+| `apps/web`               | The one Next.js app: `/embed`, `/help`, `/inbox`, `/api`          |
+| `packages/design-system` | Tokens, components and illustrations                              |
+| `packages/core`          | Headless client library                                           |
+| `packages/widget`        | The script a site loads to show the chat, published as `helpwren` |
+| `packages/react-native`  | React Native support screen (stub)                                |
+| `packages/adapters`      | Identity, push, email and storage adapters (stub)                 |
+| `packages/cli`           | Installer and upgrader (stub)                                     |
+| `packages/config`        | Shared TypeScript, ESLint and Prettier configuration              |
 
 Internal packages are consumed as TypeScript source: their `exports` point at `src`, and the app
 compiles them (`transpilePackages`). There is no per-package build step until a package is
@@ -105,6 +105,13 @@ The layouts follow a common shape for support tools, which people already know h
 chat opens on a home screen with tabs along the bottom, and the inbox is three panels side by
 side. The look is Helpwren's own.
 
+### The widget
+
+A site shows the chat by loading `/widget.js`, which the app builds from `packages/widget` when
+it starts. The script draws a launcher and opens `/embed` in a frame; the two talk with
+`postMessage`. `src/features/chat/hooks/use-embed-bridge.ts` is the chat's end of that, and
+`src/proxy.ts` sets which sites may frame it. See [ADR 0009](decisions/0009-widget.md).
+
 ### API routes
 
 API routes do what the access rules leave to the server. Each one follows the same steps:
@@ -185,6 +192,7 @@ between screens does not refetch what was loaded a moment ago.
 | `/help`                             | The public help center (placeholder)                                                                          |
 | `/inbox`                            | The team's inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation   |
 | `/inbox/login`                      | Sign-in for team members                                                                                      |
+| `/widget.js`                        | The widget script, built from `packages/widget`                                                               |
 | `/api/health`                       | Returns `{ "status": "ok" }`                                                                                  |
 | `POST /api/conversations`           | Starts a conversation with its first message                                                                  |
 | `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                            |

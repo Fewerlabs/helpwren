@@ -6,15 +6,21 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/widget.ts",
+    "./protocol": "./src/protocol.ts"
   },
   "scripts": {
+    "build": "esbuild src/index.ts --bundle --minify --format=iife --target=es2020 --outfile=dist/widget.js",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@helpwren/config": "workspace:*",
+    "esbuild": "^0.28.2",
     "eslint": "catalog:",
-    "typescript": "catalog:"
+    "jsdom": "^31.0.1",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

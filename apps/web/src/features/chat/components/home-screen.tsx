@@ -1,19 +1,22 @@
 "use client";
 
 import { type ConversationWithContact } from "@helpwren/core";
-import { Icon, Logo, Wren } from "@helpwren/design-system";
+import { cn, Icon, Logo, Wren } from "@helpwren/design-system";
 
 import { useShowScreen } from "../store/chat-store";
 import { ConversationRow } from "./conversation-row";
+import { CloseButton } from "./screen-header";
 
 export interface HomeScreenProps {
   teamName: string;
   /** The visitor's most recently active conversation, if they have one. */
   recent: ConversationWithContact | undefined;
+  /** Shows a close button that calls this. Given when the chat is in a frame it can close. */
+  onClose?: (() => void) | undefined;
 }
 
 /** Where the chat opens: a greeting, the way to write, and the visitor's latest conversation. */
-export function HomeScreen({ teamName, recent }: HomeScreenProps) {
+export function HomeScreen({ teamName, recent, onClose }: HomeScreenProps) {
   const show = useShowScreen();
 
   return (
@@ -23,8 +26,12 @@ export function HomeScreen({ teamName, recent }: HomeScreenProps) {
         <Wren
           scene="conversations"
           decorative
-          className="text-foreground pointer-events-none absolute top-3 right-3 w-32"
+          className={cn(
+            "text-foreground pointer-events-none absolute top-3 w-32",
+            onClose ? "right-12" : "right-3",
+          )}
         />
+        {onClose ? <CloseButton onClose={onClose} className="absolute top-3 right-3" /> : null}
         <h1 className="mt-10 text-2xl leading-tight font-semibold tracking-tight">
           Hi there.
           <span className="text-muted-foreground block">How can we help?</span>
