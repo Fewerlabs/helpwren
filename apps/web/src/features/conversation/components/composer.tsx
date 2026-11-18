@@ -4,7 +4,7 @@ import { MESSAGE_MAX_LENGTH } from "@helpwren/core";
 import { Button, Icon, Textarea } from "@helpwren/design-system";
 import { useState } from "react";
 
-import { useSendMessage } from "../hooks/use-chat";
+import { useSendMessage } from "../hooks/use-thread";
 
 const failures = {
   rate_limited: "You are writing very fast. Wait a moment and try again.",

@@ -1,26 +1,37 @@
 import { create } from "zustand";
 
-/** Which screen of the chat is showing. With no conversations yet, it is always the start form. */
-type Screen = { name: "list" } | { name: "start" } | { name: "conversation"; id: string };
+/** Which screen of the chat is showing. Home and Messages are the two tabs. */
+export type Screen =
+  | { name: "home" }
+  | { name: "messages" }
+  | { name: "start" }
+  | { name: "conversation"; id: string };
 
 interface ChatState {
   screen: Screen;
+  /** The tab a sub-screen was opened from, which is where its back arrow returns to. */
+  tab: "home" | "messages";
   show: (screen: Screen) => void;
 }
 
-const initial: Screen = { name: "list" };
+const initial = { screen: { name: "home" }, tab: "home" } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
-  screen: initial,
+  ...initial,
   show: (screen) => {
-    set({ screen });
+    set(
+      screen.name === "home" || screen.name === "messages"
+        ? { screen, tab: screen.name }
+        : { screen },
+    );
   },
 }));
 
 export const useScreen = () => useChatStore((state) => state.screen);
+export const useTab = () => useChatStore((state) => state.tab);
 export const useShowScreen = () => useChatStore((state) => state.show);
 
 /** For tests: puts the store back to its starting state. */
 export function resetChatStore() {
-  useChatStore.setState({ screen: initial });
+  useChatStore.setState(initial);
 }

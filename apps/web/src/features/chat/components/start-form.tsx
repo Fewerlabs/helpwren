@@ -14,7 +14,8 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
-import { getChatClient } from "../client";
+import { useHelpwren } from "@/lib/helpwren-context";
+
 import { chatKeys } from "../hooks/use-chat";
 import { useShowScreen } from "../store/chat-store";
 
@@ -142,6 +143,7 @@ export interface StartFormProps {
 
 /** Starts a conversation: who the visitor is, if the install asks, and their first message. */
 export function StartForm({ guestDetails, defaultCountry, source, returning }: StartFormProps) {
+  const getClient = useHelpwren();
   const queryClient = useQueryClient();
   const show = useShowScreen();
   // The server has the last word on whether details are needed; see `start` below.
@@ -153,7 +155,7 @@ export function StartForm({ guestDetails, defaultCountry, source, returning }: S
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
 
   async function start(values: StartValues) {
-    const client = getChatClient();
+    const client = getClient();
     const by = ask === "email_or_phone" ? values.replyBy : ask;
 
     try {

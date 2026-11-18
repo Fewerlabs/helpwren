@@ -1,24 +1,31 @@
 "use client";
 
+import { type Message } from "@helpwren/core";
 import { Button, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
 import { useEffect, useRef } from "react";
 
-import { formatMessageTime } from "../format";
-import { useLiveConversation, useMessages } from "../hooks/use-chat";
+import { formatMessageTime } from "@/lib/format-time";
+
+import { useLiveThread, useMessages } from "../hooks/use-thread";
 import { Composer } from "./composer";
 
-export interface ConversationViewProps {
+export interface ThreadProps {
   conversationId: string;
-  /** The visitor's own id, to tell their messages from the team's. */
-  contactId: string;
-  /** Shown above the team's messages. */
-  teamName: string;
+  /** Whether a message came from the person looking at the screen, or their side. */
+  isOwn: (message: Message) => boolean;
+  /** Shown above messages from the other side. */
+  otherName: string;
+  /** Called after the conversation has been marked as read, to refresh any unread counts. */
+  onRead?: () => void;
 }
 
-/** One conversation: its messages, live, and the box for replying. */
-export function ConversationView({ conversationId, contactId, teamName }: ConversationViewProps) {
+/**
+ * One conversation: its messages, live, and the box for replying. Used by both sides, the
+ * visitor's chat and the team's inbox. It fills the height it is given.
+ */
+export function Thread({ conversationId, isOwn, otherName, onRead }: ThreadProps) {
   const messages = useMessages(conversationId);
-  useLiveConversation(conversationId);
+  useLiveThread(conversationId, { isOwn, onRead });
 
   const end = useRef<HTMLDivElement | null>(null);
   const latestId = messages.data?.at(-1)?.id;
@@ -72,8 +79,8 @@ export function ConversationView({ conversationId, contactId, teamName }: Conver
               {messages.data.map((message) => (
                 <MessageBubble
                   key={message.id}
-                  from={message.senderId === contactId ? "self" : "other"}
-                  author={teamName}
+                  from={isOwn(message) ? "self" : "other"}
+                  author={otherName}
                   time={formatMessageTime(message.createdAt)}
                 >
                   {message.body}

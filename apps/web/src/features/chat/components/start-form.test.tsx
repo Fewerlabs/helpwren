@@ -1,8 +1,10 @@
-import { type GuestDetails } from "@helpwren/core";
+import { type GuestDetails, type HelpwrenClient } from "@helpwren/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { resetChatStore, useScreen } from "../store/chat-store";
 import { StartForm } from "./start-form";
@@ -10,9 +12,8 @@ import { StartForm } from "./start-form";
 // The client library is replaced by stand-ins, so these tests cover the form alone.
 const startGuest = vi.fn();
 const start = vi.fn();
-vi.mock("../client", () => ({
-  getChatClient: () => ({ sessions: { startGuest }, conversations: { start } }),
-}));
+const getClient = () =>
+  ({ sessions: { startGuest }, conversations: { start } }) as unknown as HelpwrenClient;
 
 function Screen() {
   const current = useScreen();
@@ -24,13 +25,15 @@ function Screen() {
 function renderForm(guestDetails: GuestDetails, returning = false) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <StartForm
-        guestDetails={guestDetails}
-        defaultCountry="NG"
-        source="web"
-        returning={returning}
-      />
-      <Screen />
+      <HelpwrenProvider getClient={getClient}>
+        <StartForm
+          guestDetails={guestDetails}
+          defaultCountry="NG"
+          source="web"
+          returning={returning}
+        />
+        <Screen />
+      </HelpwrenProvider>
     </QueryClientProvider>,
   );
   return userEvent.setup();
@@ -122,7 +125,7 @@ describe("StartForm", () => {
     await user.click(send());
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Try again in a while.");
-    expect(screen.getByText("list")).toBeInTheDocument();
+    expect(screen.getByText("home")).toBeInTheDocument();
   });
 
   it("says so when sending fails, and keeps what was written", async () => {
