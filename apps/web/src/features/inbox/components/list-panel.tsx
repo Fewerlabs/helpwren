@@ -128,6 +128,8 @@ export function ListPanel({
         <SearchField
           aria-label="Search conversations"
           placeholder="Search conversations"
+          // Quieter than a form field: it sits above a list, so it is a tint with no edge.
+          className="bg-muted dark:bg-muted min-h-8 border-transparent"
           value={search}
           onValueChange={onSearchChange}
           loading={searching && loading}
