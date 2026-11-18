@@ -1,7 +1,12 @@
 "use client";
 
 import { allowedDomainSchema, type Settings } from "@helpwren/core";
-import { CodeSnippet, FieldList, type FieldItem } from "@helpwren/design-system";
+import {
+  CodeSnippet,
+  FieldList,
+  type CodeSnippetTab,
+  type FieldItem,
+} from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -32,6 +37,69 @@ const fields: FieldItem<InstallationValues>[] = [
   },
 ];
 
+/**
+ * The same install step for a plain page and for the two frameworks most sites are built
+ * with. Each loads `widget.js` from this install, then adds the chat once it has loaded.
+ */
+function installTabs(widgetUrl: string): CodeSnippetTab[] {
+  return [
+    {
+      label: "HTML",
+      language: "html",
+      code: [
+        `<script src="${widgetUrl}"></script>`,
+        "<script>",
+        '  Helpwren.init({ source: "web" });',
+        "</script>",
+      ].join("\n"),
+    },
+    {
+      label: "React",
+      language: "jsx",
+      code: [
+        'import { useEffect } from "react";',
+        "",
+        "// Render this once, near the root of your app.",
+        "export function HelpwrenChat() {",
+        "  useEffect(() => {",
+        '    const script = document.createElement("script");',
+        `    script.src = "${widgetUrl}";`,
+        "    script.async = true;",
+        '    script.onload = () => window.Helpwren.init({ source: "web" });',
+        "    document.body.append(script);",
+        "",
+        "    return () => {",
+        "      window.Helpwren?.destroy();",
+        "      script.remove();",
+        "    };",
+        "  }, []);",
+        "",
+        "  return null;",
+        "}",
+      ].join("\n"),
+    },
+    {
+      label: "Next.js",
+      language: "jsx",
+      code: [
+        '"use client";',
+        "",
+        'import Script from "next/script";',
+        "",
+        "// Render this once, in your root layout.",
+        "export function HelpwrenChat() {",
+        "  return (",
+        "    <Script",
+        `      src="${widgetUrl}"`,
+        '      onLoad={() => window.Helpwren.init({ source: "web" })}',
+        "    />",
+        "  );",
+        "}",
+      ].join("\n"),
+    },
+  ];
+}
+
 export interface InstallationFormProps {
   settings: Settings;
   /** The public address of this install, which the snippet loads the widget from. */
@@ -49,12 +117,8 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
   });
   const domains = useWatch({ control: form.control, name: "allowedDomains" });
 
-  const snippet = [
-    `<script src="${appUrl.replace(/\/$/, "")}/widget.js"></script>`,
-    "<script>",
-    '  Helpwren.init({ source: "web" });',
-    "</script>",
-  ].join("\n");
+  const origin = appUrl.replace(/\/$/, "");
+  const chatUrl = `${origin}/chat`;
 
   async function save(values: InstallationValues) {
     setSaved(false);
@@ -83,18 +147,31 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
         title="Widget"
         description={
           <>
-            Paste this before the closing <code className="font-mono">&lt;/body&gt;</code> tag on
-            every page that should show the chat.
+            On a plain site, paste the HTML before the closing{" "}
+            <code className="font-mono">&lt;/body&gt;</code> tag on every page that should show the
+            chat. In a React or Next.js app, add the component once.
           </>
         }
       >
-        <CodeSnippet code={snippet} language="HTML" />
+        <CodeSnippet
+          tabs={installTabs(`${origin}/widget.js`)}
+          tabsLabel="Ways to install"
+          copiedMessage="Snippet copied"
+        />
       </SettingsSection>
       <SettingsSection
         title="Chat page"
         description="The chat on a page of its own. Link to it from an email, a profile or a QR code."
       >
-        <CodeSnippet code={`${appUrl.replace(/\/$/, "")}/chat`} language="Link" />
+        <CodeSnippet
+          variant="inline"
+          aria-label="Chat page link"
+          code={chatUrl}
+          copyLabel="Copy link"
+          copiedLabel="Link copied"
+          copiedMessage="Link copied"
+          openHref={chatUrl}
+        />
       </SettingsSection>
       <SettingsSection
         title="Allowed domains"
