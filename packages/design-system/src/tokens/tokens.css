@@ -53,7 +53,8 @@
   --destructive-foreground: #ffffff;
   --border: var(--edge);
   --input: var(--edge);
-  --ring: var(--biro);
+  /* The focus ring follows the accent, so it matches the brand of whoever embeds the UI. */
+  --ring: var(--primary);
 
   /* Shape and line */
   --radius: var(--helpwren-radius, 0.625rem);

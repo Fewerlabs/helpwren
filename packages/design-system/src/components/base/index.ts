@@ -51,6 +51,7 @@ export {
 } from "./input/format";
 export { Kbd, type KbdProps } from "./kbd/kbd";
 export { Label, type LabelProps } from "./label/label";
+export { LinearProgress, type LinearProgressProps } from "./linear-progress/linear-progress";
 export { Link, type LinkProps } from "./link/link";
 export {
   Popover,

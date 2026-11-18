@@ -8,6 +8,9 @@ import { defineConfig } from "vitest/config";
 
 const configDir = fileURLToPath(new URL("./.storybook", import.meta.url));
 
+// Interaction tests can exceed the 5s default when lint, build and the browser run alongside.
+const TEST_TIMEOUT = 15_000;
+
 export default defineConfig({
   test: {
     projects: [
@@ -15,6 +18,7 @@ export default defineConfig({
         plugins: [react()],
         test: {
           name: "unit",
+          testTimeout: TEST_TIMEOUT,
           environment: "jsdom",
           // The contrast test reads tokens.css as text; without this Vitest stubs CSS out.
           css: true,
@@ -28,6 +32,7 @@ export default defineConfig({
         optimizeDeps: {
           include: [
             "@phosphor-icons/react/ssr",
+            "@tanstack/react-query",
             "class-variance-authority",
             "clsx",
             "radix-ui",
@@ -36,6 +41,7 @@ export default defineConfig({
         },
         test: {
           name: "storybook",
+          testTimeout: TEST_TIMEOUT,
           browser: {
             enabled: true,
             headless: true,

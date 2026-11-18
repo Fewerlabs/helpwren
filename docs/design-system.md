@@ -25,20 +25,21 @@ Dark mode applies under any element with the `dark` class.
 
 ### Colour
 
-| Utility name                   | Light     | Dark      | Use                                                |
-| ------------------------------ | --------- | --------- | -------------------------------------------------- |
-| `background` / `paper`         | `#F7F4ED` | `#1C1A16` | Page background                                    |
-| `card`, `popover`              | `#FDFBF7` | `#24211C` | Cards, panels, inputs                              |
-| `foreground` / `ink`           | `#26231E` | `#EDE8DC` | Text, icons, outlines                              |
-| `muted-foreground` / `pencil`  | `#6E675B` | `#A39B8B` | Secondary text                                     |
-| `border`, `input` / `edge`     | `#8F8778` | `#827B6E` | Borders of controls and cards                      |
-| `rule`                         | `#E3DDD0` | `#3A362F` | Dividers only, never control borders               |
-| `muted`, `secondary`, `accent` | `#EDE9E0` | `#2E2A24` | Hover and secondary fills                          |
-| `primary` / `moss`             | `#3D6B57` | `#7FB59A` | Primary buttons, brand accent                      |
-| `destructive` / `pen`          | `#B23520` | `#F07A5A` | Destructive actions, errors, urgent                |
-| `highlighter`                  | `#F5D547` | `#E8C64A` | Behind single words, with `highlighter-foreground` |
-| `ring` / `biro`                | `#2F5B85` | `#8DB3DB` | Links, focus ring, internal notes                  |
-| `ochre`                        | `#7D5A12` | `#D9A441` | Waiting                                            |
+| Utility name                   | Light     | Dark      | Use                                                      |
+| ------------------------------ | --------- | --------- | -------------------------------------------------------- |
+| `background` / `paper`         | `#F7F4ED` | `#1C1A16` | Page background                                          |
+| `card`, `popover`              | `#FDFBF7` | `#24211C` | Cards, panels, inputs                                    |
+| `foreground` / `ink`           | `#26231E` | `#EDE8DC` | Text, icons, outlines                                    |
+| `muted-foreground` / `pencil`  | `#6E675B` | `#A39B8B` | Secondary text                                           |
+| `border`, `input` / `edge`     | `#8F8778` | `#827B6E` | Borders of controls and cards                            |
+| `rule`                         | `#E3DDD0` | `#3A362F` | Dividers only, never control borders                     |
+| `muted`, `secondary`, `accent` | `#EDE9E0` | `#2E2A24` | Hover and secondary fills                                |
+| `primary` / `moss`             | `#3D6B57` | `#7FB59A` | Primary buttons, brand accent                            |
+| `destructive` / `pen`          | `#B23520` | `#F07A5A` | Destructive actions, errors, urgent                      |
+| `highlighter`                  | `#F5D547` | `#E8C64A` | Behind single words, with `highlighter-foreground`       |
+| `biro`                         | `#2F5B85` | `#8DB3DB` | Links, open status, internal notes                       |
+| `ring`                         | accent    | accent    | Focus ring: the accent, or red pen on an invalid control |
+| `ochre`                        | `#7D5A12` | `#D9A441` | Waiting                                                  |
 
 Use the semantic name (`bg-background`, `text-muted-foreground`, `border-border`) in components.
 Use a brand name (`text-pen`, `bg-highlighter`) only when you mean that pen on the desk.
@@ -69,7 +70,7 @@ the `--font-figtree`, `--font-jetbrains-mono` and `--font-caveat` variables the 
   for cards.
 - `min-h-target` and `size-target` give the 44px minimum touch target.
 - There are no box shadows: Tailwind's shadow utilities are neutralised in the theme. Focus is
-  shown with a 2px biro outline.
+  shown with a 2px outline in the accent colour, or red pen on an invalid control.
 - Animations and transitions are cut to nothing under `prefers-reduced-motion: reduce`.
 
 ### In TypeScript
@@ -165,7 +166,8 @@ import { Button, Field, Input } from "@helpwren/design-system";
 ```
 
 Every control shares the same rules: a 1.5px edge on a card surface, a 10px radius, a solid 2px
-biro outline when focused with the keyboard, and a red-pen edge when `aria-invalid`. Buttons and
+outline in the accent colour when focused with the keyboard, and a red-pen edge when
+`aria-invalid` (the focus outline turns red pen too, so the ring always matches the state). Buttons and
 inputs are 40px tall so they line up in a row; buttons, checkboxes, radios and switches extend
 their hit area invisibly to 44px. Each has a story under
 **Base** in Storybook and a test beside it.

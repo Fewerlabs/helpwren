@@ -3,9 +3,13 @@
  * focus indicator, edge and error state.
  */
 
-/** A solid 2px biro outline. Replaces shadcn's soft ring, which is too faint on paper. */
+/**
+ * A solid 2px outline in the accent colour, or in red pen when the control is invalid,
+ * so the ring always matches the state of what it surrounds. Replaces shadcn's soft
+ * ring, which is too faint on paper.
+ */
 export const focusRing =
-  "focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid";
+  "focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid aria-invalid:focus-visible:outline-destructive";
 
 /** The 1.5px edge and card surface of an outlined control, in both themes. */
 export const controlSurface = "border-line border-input bg-card dark:bg-card";
@@ -22,7 +26,7 @@ export const controlShell = [
   "flex min-h-10 w-full min-w-0 items-center rounded-lg text-base transition-colors md:text-sm",
   controlSurface,
   "has-[input:focus-visible]:outline-ring has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-solid",
-  "has-[input[aria-invalid=true]]:border-destructive",
+  "has-[input[aria-invalid=true]]:border-destructive has-[input[aria-invalid=true]:focus-visible]:outline-destructive",
   "has-[input:disabled]:bg-muted has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-50",
 ].join(" ");
 

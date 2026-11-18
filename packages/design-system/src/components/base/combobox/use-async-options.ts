@@ -79,11 +79,8 @@ export function useAsyncOptions<Option, Cursor>({
       const controller = new AbortController();
       request.current = controller;
       busy.current = true;
-      setState((previous) => ({
-        ...previous,
-        status: append ? "loading-more" : "loading",
-        options: append ? previous.options : [],
-      }));
+      // Options already on screen stay there while the new ones load.
+      setState((previous) => ({ ...previous, status: append ? "loading-more" : "loading" }));
 
       try {
         const page = await loader({ search: term, cursor, signal: controller.signal });

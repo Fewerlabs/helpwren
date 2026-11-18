@@ -55,6 +55,7 @@ export const contrastPairs: readonly ContrastPair[] = [
     ["background", "card"],
   ),
   ...pairs(EDGE, "Focus ring", ["ring"], ["background", "card", "muted"]),
+  ...pairs(EDGE, "Focus ring on an invalid control", ["destructive"], ["background", "card"]),
   ...pairs(
     EDGE,
     "Filled control against the page",

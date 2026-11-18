@@ -17,6 +17,7 @@ import { cn } from "#lib/cn";
 
 import { ControlShell } from "../control-shell/control-shell";
 import { Icon } from "../icon/icon";
+import { LinearProgress } from "../linear-progress/linear-progress";
 import { Popover, PopoverAnchor, PopoverContent } from "../popover/popover";
 import { Spinner } from "../spinner/spinner";
 import { bareInput, focusRing } from "../styles";
@@ -39,8 +40,8 @@ export interface ComboboxOptionState {
 
 export interface ComboboxMessages {
   empty: ReactNode;
-  loading: ReactNode;
-  loadingMore: ReactNode;
+  loading: string;
+  loadingMore: string;
   error: ReactNode;
   retry: string;
   clear: string;
@@ -433,6 +434,7 @@ export function Combobox<
         ? placeholder
         : undefined;
   const showEmpty = list.length === 0 && async.status === "idle";
+  const busy = async.status === "loading" || async.status === "loading-more";
 
   return (
     <Popover open={open} onOpenChange={changeOpen}>
@@ -550,7 +552,7 @@ export function Combobox<
       <PopoverContent
         align="start"
         sideOffset={6}
-        className="w-(--radix-popover-trigger-width) min-w-48 gap-0 p-0"
+        className="relative w-(--radix-popover-trigger-width) min-w-48 gap-0 overflow-hidden p-0"
         onOpenAutoFocus={(event) => {
           // Focus stays in the input, which drives the list through aria-activedescendant.
           event.preventDefault();
@@ -564,6 +566,13 @@ export function Combobox<
           }
         }}
       >
+        {/* With options on screen, loading shows as a bar along the top so the list does not jump. */}
+        {busy && list.length > 0 ? (
+          <LinearProgress
+            label={async.status === "loading" ? messages.loading : messages.loadingMore}
+            className="absolute inset-x-0 top-0 z-10"
+          />
+        ) : null}
         <div ref={scrollRef} className={cn("max-h-64 overflow-y-auto p-1", listClassName)}>
           <div
             id={listId}
@@ -621,10 +630,10 @@ export function Combobox<
           </div>
           <div ref={sentinelRef} aria-hidden="true" className="h-px" />
           <div aria-live="polite" className="text-muted-foreground text-sm">
-            {async.status === "loading" || async.status === "loading-more" ? (
+            {busy && list.length === 0 ? (
               <p className="flex items-center gap-2 px-2 py-2">
                 <Spinner label="" aria-hidden="true" />
-                {async.status === "loading" ? messages.loading : messages.loadingMore}
+                {messages.loading}
               </p>
             ) : null}
             {async.status === "error" ? (

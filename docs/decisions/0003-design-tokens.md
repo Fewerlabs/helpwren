@@ -22,7 +22,7 @@ test and the Storybook palette page parse the stylesheet itself.
 1. _Brand palette:_ `--paper`, `--ink`, `--pencil`, `--edge`, `--rule`, `--moss`, `--pen`,
    `--highlighter`, `--biro`, `--ochre`, and `--status-*` with a matching `-surface`.
 2. _Semantic roles_, in shadcn/ui's vocabulary, pointing at the palette: `--background` is paper,
-   `--primary` is moss, `--destructive` is red pen, `--ring` is biro, `--border` and `--input` are
+   `--primary` is moss, `--destructive` is red pen, `--ring` is the accent (moss by default), `--border` and `--input` are
    edge.
 3. _Tailwind utilities_, generated from both tiers by `@theme inline` in `theme.css`
    (`bg-background`, `text-pencil`, `bg-status-open-surface`).
