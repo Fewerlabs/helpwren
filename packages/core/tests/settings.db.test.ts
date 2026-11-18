@@ -23,13 +23,20 @@ async function storedValue(key: string) {
 
 afterAll(async () => {
   const admin = serverClient();
-  await admin.from("settings").delete().eq("key", "allowed_domains");
+  await admin
+    .from("settings")
+    .delete()
+    .in("key", ["allowed_domains", "widget", "chat_page", "help_center"]);
+  const { data: logos } = await admin.storage.from("brand").list();
+  if (logos?.length) await admin.storage.from("brand").remove(logos.map((logo) => logo.name));
   await admin
     .from("settings")
     .update({ value: { name: "Helpwren Demo" } })
     .eq("key", "brand");
   await admin.from("settings").update({ value: "email_or_phone" }).eq("key", "guest_details");
 });
+
+const newVisitor = () => createHelpwrenClient({ supabase: browserClient() });
 
 describe("settings.getAll", () => {
   it("gives a team member every setting", async () => {
@@ -122,5 +129,77 @@ describe("agents.list", () => {
   it("gives a visitor nobody", async () => {
     const visitor = createHelpwrenClient({ supabase: browserClient() });
     await expect(visitor.agents.list()).rejects.toThrow();
+  });
+});
+
+describe("branding", () => {
+  // The smallest PNG there is: one transparent pixel.
+  const pixel = Uint8Array.from(
+    atob(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+    ),
+    (character) => character.charCodeAt(0),
+  );
+  const png = () => new Blob([pixel], { type: "image/png" });
+
+  it("lets an admin upload a logo that anyone can then load", async () => {
+    const client = await signedIn("ada@example.com");
+    const result = await client.settings.uploadLogo(png());
+    if (!result.ok) throw new Error(`The upload was refused: ${result.reason}`);
+
+    const loaded = await fetch(result.url);
+    expect(loaded.status).toBe(200);
+    expect(loaded.headers.get("content-type")).toBe("image/png");
+
+    await client.settings.update({ brand: { name: "Acme", logo: result.url, accent: "#1D4ED8" } });
+    await expect(newVisitor().settings.getPublic()).resolves.toMatchObject({
+      brand: { name: "Acme", logo: result.url, accent: "#1d4ed8" },
+    });
+  });
+
+  it("refuses a logo from anyone else, and one that is not an image or is too large", async () => {
+    const agent = await signedIn("sam@example.com");
+    await expect(agent.settings.uploadLogo(png())).resolves.toEqual({
+      ok: false,
+      reason: "forbidden",
+    });
+
+    const admin = await signedIn("ada@example.com");
+    await expect(
+      admin.settings.uploadLogo(new Blob(["<svg/>"], { type: "image/svg+xml" })),
+    ).resolves.toEqual({ ok: false, reason: "unsupported" });
+    await expect(
+      admin.settings.uploadLogo(new Blob([new Uint8Array(1024 * 1024 + 1)], { type: "image/png" })),
+    ).resolves.toEqual({ ok: false, reason: "too_large" });
+  });
+
+  it("saves how the widget, the chat page and the help center wear the brand", async () => {
+    const client = await signedIn("ada@example.com");
+    await client.settings.update({
+      widget: {
+        position: "left",
+        offsetX: 32,
+        offsetY: 24,
+        launcher: "logo",
+        welcome: "  Hello!  ",
+        quickReplies: ["Pricing", "Track my order"],
+      },
+      chatPage: { title: "Talk to Acme" },
+      helpCenter: {},
+    });
+
+    // All of it is public: the chat reads it with no session.
+    await expect(newVisitor().settings.getPublic()).resolves.toMatchObject({
+      widget: {
+        position: "left",
+        offsetX: 32,
+        offsetY: 24,
+        launcher: "logo",
+        welcome: "Hello!",
+        quickReplies: ["Pricing", "Track my order"],
+      },
+      chatPage: { title: "Talk to Acme" },
+      helpCenter: {},
+    });
   });
 });

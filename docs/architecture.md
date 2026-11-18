@@ -138,6 +138,16 @@ it starts. The script draws a launcher and opens `/embed` in a frame; the two ta
 `postMessage`. `src/features/chat/hooks/use-embed-bridge.ts` is the chat's end of that, and
 `src/proxy.ts` sets which sites may frame it. See [ADR 0009](decisions/0009-widget.md).
 
+The script asks `GET /api/widget` where the launcher sits and what colour and icon it has, and
+checks every value of the answer before using it. The chat itself gets its brand, greeting,
+welcome message and quick replies from the public settings, as before. The Branding page shows
+the same script in a preview: `createWidget` mounted inside an element, with the unsaved form
+sent to the chat frame as a `preview` message. The frame takes those only from its own origin,
+loads no session, and sends nothing.
+
+`/chat` is the same chat on a page of its own, for a link where there is no site to put the
+widget on. The logo lives in the public `brand` storage bucket, which only admins may write to.
+
 ### API routes
 
 API routes do what the access rules leave to the server. Each one follows the same steps:
@@ -217,7 +227,8 @@ between screens does not refetch what was loaded a moment ago.
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `/design`                           | The design system running in the app, with the example feature at the bottom                                             |
 | `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded            |
-| `/help`                             | The public help center (placeholder)                                                                                     |
+| `/chat`                             | The chat on a page of its own, with the brand around it                                                                  |
+| `/help`                             | The public help center: its branded header (articles are still to come)                                                  |
 | `/dashboard`                        | The team's screens, behind one sign-in check. Redirects to the inbox                                                     |
 | `/dashboard/inbox`                  | The inbox: views (including tickets), conversations, the open one and its details. `?view=` and `?c=` are in the address |
 | `/dashboard/settings`               | Settings: workspace pages admins change and agents read, and each person's own Profile and Notifications                 |
@@ -226,6 +237,7 @@ between screens does not refetch what was loaded a moment ago.
 | `/login`                            | Sign-in for team members                                                                                                 |
 | `/widget.js`                        | The widget script, built from `packages/widget`                                                                          |
 | `/api/health`                       | Returns `{ "status": "ok" }`                                                                                             |
+| `GET /api/widget`                   | How the widget looks on a host site: position, colour, launcher icon. Readable from any origin                           |
 | `POST /api/conversations`           | Starts a conversation with its first message                                                                             |
 | `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                       |
 

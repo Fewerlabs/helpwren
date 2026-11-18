@@ -1,173 +1,227 @@
 "use client";
 
 import { type Settings } from "@helpwren/core";
-import { cn, FieldList, Icon, Input, Logo, type FieldItem } from "@helpwren/design-system";
+import {
+  ColorPicker,
+  FieldList,
+  Link,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  type ColorSwatch,
+  type FieldItem,
+} from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
-import { accentStyle } from "@/lib/accent";
-
 import { saveBranding } from "../actions";
-import { brandingSchema, type BrandingValues } from "../schemas";
+import {
+  brandingSchema,
+  brandingToSettings,
+  DEFAULT_ACCENT,
+  type BrandingValues,
+} from "../schemas";
+import { LogoField } from "./logo-field";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
+import { WidgetPreview } from "./widget-preview";
 
-/** Colours to start from. The first is Helpwren's own, stored as no colour at all. */
-const swatches = [
-  { value: "", label: "Helpwren green", color: "var(--moss)" },
-  { value: "#1d4ed8", label: "Blue", color: "#1d4ed8" },
-  { value: "#6d28d9", label: "Violet", color: "#6d28d9" },
-  { value: "#be123c", label: "Rose", color: "#be123c" },
-  { value: "#c2410c", label: "Orange", color: "#c2410c" },
-  { value: "#18181b", label: "Black", color: "#18181b" },
+/** Colours to start from: Helpwren's own first, then solid colours, then gradients. */
+const swatches: readonly ColorSwatch[] = [
+  { label: "Helpwren green", color: DEFAULT_ACCENT },
+  { label: "Blue", color: "#1d4ed8" },
+  { label: "Ink", color: "#26231e" },
+  { label: "Violet", color: "#6d28d9" },
+  { label: "Rose", color: "#be123c" },
+  { label: "Lagoon", color: "#0f766e", to: "#38bdf8" },
+  { label: "Midnight", color: "#1e3a8a", to: "#0f172a" },
+  { label: "Dusk", color: "#4c1d95", to: "#be185d" },
+  { label: "Ember", color: "#c2410c", to: "#f59e0b" },
+  { label: "Orchid", color: "#7e22ce", to: "#ec4899" },
+];
+
+const positions = [
+  { value: "right", label: "Bottom right" },
+  { value: "left", label: "Bottom left" },
 ] as const;
 
-const HEX = /^#[0-9a-f]{6}$/i;
+const launchers = [
+  { value: "chat", label: "Chat bubble" },
+  { value: "logo", label: "Your logo" },
+] as const;
 
-interface AccentPickerProps {
-  value: string;
-  onChange: (value: string) => void;
-  onBlur: () => void;
-  disabled: boolean;
-}
-
-/** A few colours to pick from, and a box for any other as hex. */
-function AccentPicker({ value, onChange, onBlur, disabled }: AccentPickerProps) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {swatches.map((swatch) => {
-        const chosen = swatch.value === value.toLowerCase();
-        return (
-          <button
-            key={swatch.label}
-            type="button"
-            aria-label={swatch.label}
-            aria-pressed={chosen}
-            disabled={disabled}
-            className={cn(
-              "focus-visible:outline-ring grid size-7 place-items-center rounded-full text-white transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50",
-              chosen && "ring-foreground ring-offset-card ring-2 ring-offset-2",
-            )}
-            style={{ backgroundColor: swatch.color }}
-            onClick={() => {
-              onChange(swatch.value);
-            }}
-          >
-            {chosen ? <Icon name="check" weight="bold" className="size-3.5" /> : null}
-          </button>
-        );
-      })}
-      <Input
-        aria-label="Custom colour, as hex"
-        placeholder="#2f6f4f"
-        className="w-28 font-mono"
-        maxLength={7}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => {
-          onChange(event.target.value.trim());
-        }}
-        onBlur={onBlur}
-      />
-    </div>
-  );
-}
-
-/** A still picture of the chat's home screen with the values in the form, before they are saved. */
-function ChatPreview({ values }: { values: BrandingValues }) {
-  const name = values.brandName.trim() || "Your brand";
-  return (
-    <div
-      role="img"
-      aria-label="Preview of the chat"
-      className="border-rule bg-card w-72 overflow-hidden rounded-2xl border text-sm"
-      style={accentStyle(HEX.test(values.accent) ? values.accent.toLowerCase() : undefined)}
-    >
-      <div className="px-4 pt-4 pb-3">
-        <Logo variant="mark" size={28} label="" />
-        <p className="mt-6 text-xl leading-tight font-semibold tracking-tight">
-          {values.greeting.trim() || "Hi there."}
-          <span className="text-muted-foreground block">
-            {values.intro.trim() || "How can we help?"}
-          </span>
-        </p>
-      </div>
-      <div className="grid gap-3 px-4 pb-4">
-        <div className="border-input flex h-10 items-center justify-between rounded-xl border px-3 font-medium">
-          Send us a message
-          <Icon name="caret-right" className="text-muted-foreground" />
-        </div>
-        <div className="grid gap-1.5">
-          <p className="bg-muted w-fit max-w-[85%] rounded-2xl px-3 py-1.5">
-            Hello, this is {name}.
-          </p>
-          <p className="bg-primary text-primary-foreground ml-auto w-fit max-w-[85%] rounded-2xl px-3 py-1.5">
-            Do you ship abroad?
-          </p>
-        </div>
-        <div className="bg-primary text-primary-foreground ml-auto flex h-8 w-fit items-center gap-1.5 rounded-lg px-3 font-medium">
-          Send
-          <Icon name="paper-plane-tilt" className="size-3.5" />
-        </div>
-      </div>
-    </div>
-  );
-}
+type Fields = FieldItem<BrandingValues>[];
 
 export interface BrandingFormProps {
   settings: Settings;
   canEdit: boolean;
 }
 
-/** The chat's name, colour and greeting, with a preview that follows what is typed. */
+/**
+ * The brand, and how each place a visitor meets it wears that brand: the widget, the chat page
+ * and the help center. The widget beside the form is the real one, showing what is in the form
+ * before it is saved.
+ */
 export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
+  const { brand, widget, chatPage, helpCenter } = settings;
   const form = useForm<BrandingValues>({
     resolver: zodResolver(brandingSchema),
     defaultValues: {
-      brandName: settings.brand.name,
-      accent: settings.brand.accent ?? "",
-      greeting: settings.brand.greeting ?? "",
-      intro: settings.brand.intro ?? "",
+      brandName: brand.name,
+      logo: brand.logo ?? "",
+      accent: brand.accent ?? DEFAULT_ACCENT,
+      accentTo: brand.accentTo ?? "",
+      position: widget.position,
+      offsetX: String(widget.offsetX),
+      offsetY: String(widget.offsetY),
+      launcher: widget.launcher,
+      greeting: widget.greeting ?? "",
+      intro: widget.intro ?? "",
+      welcome: widget.welcome ?? "",
+      quickReplies: widget.quickReplies,
+      chatTitle: chatPage.title ?? "",
+      chatIntro: chatPage.intro ?? "",
+      helpTitle: helpCenter.title ?? "",
+      helpIntro: helpCenter.intro ?? "",
     },
   });
   const values = useWatch({ control: form.control }) as BrandingValues;
   const disabled = !canEdit || form.formState.isSubmitting;
 
-  const nameFields: FieldItem<BrandingValues>[] = [
+  // The preview follows the form while it is valid, and holds its last good state while a
+  // value is half typed.
+  const [shown, setShown] = useState(() => ({
+    brand,
+    widget,
+    chatPage,
+    helpCenter,
+    guestDetails: settings.guestDetails,
+  }));
+  const draft = useMemo(() => {
+    const parsed = brandingSchema.safeParse(values);
+    return parsed.success
+      ? { ...brandingToSettings(parsed.data), guestDetails: settings.guestDetails }
+      : null;
+  }, [settings.guestDetails, values]);
+  if (draft && JSON.stringify(draft) !== JSON.stringify(shown)) setShown(draft);
+
+  const identity: Fields = [
     { name: "brandName", label: "Brand name", type: "input", required: true },
+    {
+      name: "logo",
+      label: "Logo",
+      type: "custom",
+      hint: "PNG, JPG or WebP, up to 1 MB. Square works best. Without one, the wren stands in.",
+      render: ({ field }) => (
+        <LogoField value={field.value} onChange={field.onChange} disabled={disabled} />
+      ),
+    },
   ];
-  const colourFields: FieldItem<BrandingValues>[] = [
+  const colour: Fields = [
     {
       name: "accent",
-      label: "Accent colour",
+      label: "Brand colour",
       type: "custom",
-      hint: "Buttons and the visitor's own messages. The text on it turns dark or light to stay readable.",
+      hint: "Buttons and the visitor's own messages use the colour. A gradient shows on the launcher and at the top of the chat page and the help center.",
       render: ({ field }) => (
-        <AccentPicker
-          value={field.value}
-          onChange={field.onChange}
-          onBlur={field.onBlur}
+        <ColorPicker
+          label="Brand colour"
+          swatches={swatches}
           disabled={disabled}
+          value={{ color: field.value, to: values.accentTo || undefined }}
+          onValueChange={(next) => {
+            field.onChange(next.color);
+            form.setValue("accentTo", next.to ?? "", { shouldDirty: true });
+          }}
         />
       ),
     },
   ];
-  const greetingFields: FieldItem<BrandingValues>[] = [
+  const launcher: Fields = [
     {
-      name: "greeting",
-      label: "Greeting",
-      type: "input",
-      props: { placeholder: "Hi there." },
+      name: "position",
+      label: "Position",
+      type: "radio",
+      className: "sm:col-span-2",
+      props: { options: positions, className: "flex gap-5" },
     },
+    {
+      name: "offsetX",
+      label: "From the side",
+      type: "input",
+      props: { inputMode: "numeric", append: "px" },
+    },
+    {
+      name: "offsetY",
+      label: "From the bottom",
+      type: "input",
+      props: { inputMode: "numeric", append: "px" },
+    },
+    {
+      name: "launcher",
+      label: "Icon",
+      type: "radio",
+      hint: values.logo ? undefined : "Upload a logo under Brand to use it here.",
+      className: "sm:col-span-2",
+      props: { options: launchers, className: "flex gap-5" },
+    },
+  ];
+  const home: Fields = [
+    { name: "greeting", label: "Greeting", type: "input", props: { placeholder: "Hi there." } },
     {
       name: "intro",
       label: "Line under it",
       type: "input",
       props: { placeholder: "How can we help?" },
+    },
+  ];
+  const opening: Fields = [
+    {
+      name: "welcome",
+      label: "Welcome message",
+      type: "textarea",
+      hint: "Shown as a message from your team when a visitor starts a new conversation.",
+      props: { rows: 3, placeholder: "Hello! Ask us anything, we usually reply in a few minutes." },
+    },
+    {
+      name: "quickReplies",
+      label: "Quick replies",
+      type: "tags",
+      hint: "Up to five. A visitor taps one to send it. Press Enter after each.",
+      props: { placeholder: "Track my order" },
+    },
+  ];
+  const chatPageFields: Fields = [
+    {
+      name: "chatTitle",
+      label: "Title",
+      type: "input",
+      props: { placeholder: `Chat with ${values.brandName || "us"}` },
+    },
+    {
+      name: "chatIntro",
+      label: "Line under it",
+      type: "textarea",
+      props: { rows: 2, placeholder: "Send us a message and we will reply here." },
+    },
+  ];
+  const helpFields: Fields = [
+    {
+      name: "helpTitle",
+      label: "Title",
+      type: "input",
+      props: { placeholder: "How can we help?" },
+    },
+    {
+      name: "helpIntro",
+      label: "Line under it",
+      type: "textarea",
+      props: { rows: 2, placeholder: "Answers to common questions, written by our team." },
     },
   ];
 
@@ -187,32 +241,94 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
     }
   }
 
+  const list = (fields: Fields, columns: 1 | 2 = 1) => (
+    <FieldList control={form.control} fields={fields} columns={columns} disabled={disabled} />
+  );
+
   return (
-    <div className="grid gap-x-10 gap-y-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
+    <div className="grid items-start gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
       <form
         noValidate
         onSubmit={(event) => {
           void form.handleSubmit(save)(event);
         }}
       >
-        <SettingsSection
-          title="Name"
-          description="The name at the top of the chat, and who your replies come from."
-        >
-          <FieldList control={form.control} fields={nameFields} disabled={disabled} />
-        </SettingsSection>
-        <SettingsSection
-          title="Colour"
-          description="One colour of your own, in place of Helpwren's green."
-        >
-          <FieldList control={form.control} fields={colourFields} disabled={disabled} />
-        </SettingsSection>
-        <SettingsSection
-          title="Greeting"
-          description="What a visitor reads when the chat opens. Leave a line empty to keep ours."
-        >
-          <FieldList control={form.control} fields={greetingFields} disabled={disabled} />
-        </SettingsSection>
+        <Tabs defaultValue="brand">
+          <TabsList aria-label="What to brand">
+            <TabsTrigger value="brand">Brand</TabsTrigger>
+            <TabsTrigger value="widget">Widget</TabsTrigger>
+            <TabsTrigger value="chat-page">Chat page</TabsTrigger>
+            <TabsTrigger value="help-center">Help center</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="brand" className="pt-4">
+            <SettingsSection
+              title="Identity"
+              description="Your name and logo, wherever a visitor meets you: the widget, the chat page and the help center."
+            >
+              {list(identity)}
+            </SettingsSection>
+            <SettingsSection
+              title="Colour"
+              description="One colour or gradient of your own, in place of Helpwren's green. Text on it turns dark or light to stay readable."
+            >
+              {list(colour)}
+            </SettingsSection>
+          </TabsContent>
+
+          <TabsContent value="widget" className="pt-4">
+            <SettingsSection
+              title="Launcher"
+              description="The round button that opens the chat on your site: where it sits and what it shows."
+            >
+              {list(launcher, 2)}
+            </SettingsSection>
+            <SettingsSection
+              title="Home screen"
+              description="What a visitor reads when the chat opens. Leave a line empty to keep ours."
+            >
+              {list(home)}
+            </SettingsSection>
+            <SettingsSection
+              title="Starting a conversation"
+              description="An automatic first message from you, and replies a visitor can send with one tap."
+            >
+              {list(opening)}
+            </SettingsSection>
+          </TabsContent>
+
+          <TabsContent value="chat-page" className="pt-4">
+            <SettingsSection
+              title="Chat page"
+              description={
+                <>
+                  The chat on a page of its own, for a link in an email, a profile or a QR code.{" "}
+                  <Link href="/chat" target="_blank">
+                    Open the chat page
+                  </Link>
+                </>
+              }
+            >
+              {list(chatPageFields)}
+            </SettingsSection>
+          </TabsContent>
+
+          <TabsContent value="help-center" className="pt-4">
+            <SettingsSection
+              title="Help center"
+              description={
+                <>
+                  The top of your public help center. Its articles are still to come.{" "}
+                  <Link href="/help" target="_blank">
+                    Open the help center
+                  </Link>
+                </>
+              }
+            >
+              {list(helpFields)}
+            </SettingsSection>
+          </TabsContent>
+        </Tabs>
         {canEdit ? (
           <SaveBar
             saving={form.formState.isSubmitting}
@@ -222,11 +338,11 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           />
         ) : null}
       </form>
-      <aside aria-label="Preview" className="border-rule xl:border-t xl:pt-6">
+      <aside className="xl:sticky xl:top-0">
         <p className="text-muted-foreground text-2xs pb-3 font-mono tracking-wider uppercase">
-          Preview
+          Live preview
         </p>
-        <ChatPreview values={values} />
+        <WidgetPreview settings={shown} />
       </aside>
     </div>
   );

@@ -91,6 +91,12 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
         <CodeSnippet code={snippet} language="HTML" />
       </SettingsSection>
       <SettingsSection
+        title="Chat page"
+        description="The chat on a page of its own. Link to it from an email, a profile or a QR code."
+      >
+        <CodeSnippet code={`${appUrl.replace(/\/$/, "")}/chat`} language="Link" />
+      </SettingsSection>
+      <SettingsSection
         title="Allowed domains"
         description="The sites that may show your chat. Other sites are refused by the visitor's browser."
       >

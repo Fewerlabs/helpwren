@@ -196,6 +196,12 @@ actions.
 
 ### Forms
 
+**ColorPicker** chooses a colour from a set of swatches, some of them gradients, or any other
+from a picker that the last circle opens: a square for saturation and brightness, a strip for
+hue, and a hex box. The value is `{ color, to? }`, where `to` is the colour a gradient ends on,
+and it is always a real colour, so there is nothing to validate. `colorBackground(value)` gives
+the CSS that paints it. Use it for a brand or theme colour, not a bare text input.
+
 **Field** wraps one control with its label, hint and error, and connects them: the label points at
 the control, the hint describes it, and an error marks it invalid, is announced, and takes the
 hint's place so only one line shows under the control. Use

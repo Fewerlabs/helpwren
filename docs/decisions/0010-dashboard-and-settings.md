@@ -51,3 +51,8 @@ adding a team member meant running a script. An install could not be handed to a
   Notification preferences are kept in the browser and not in the database, because permission to
   notify is the browser's to give, one device at a time. They cover desktop notifications and a
   sound while the dashboard is open. Email notifications wait for a way to send mail.
+- 2026-11-18: Branding became four tabs: Brand (name, logo, colour or gradient), Widget
+  (launcher position and icon, greeting, welcome message, quick replies), Chat page and Help
+  center. They are stored as the public settings `brand`, `widget`, `chat_page` and
+  `help_center`. The welcome message is shown by the chat and is not stored as a message, so
+  opening the chat still creates nothing in the inbox.

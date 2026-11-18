@@ -15,6 +15,9 @@ describe("settings.getPublic", () => {
   it("reads the public settings with no session", async () => {
     await expect(newClient().settings.getPublic()).resolves.toEqual({
       brand: { name: "Helpwren Demo" },
+      widget: { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] },
+      chatPage: {},
+      helpCenter: {},
       guestDetails: "email_or_phone",
     });
   });

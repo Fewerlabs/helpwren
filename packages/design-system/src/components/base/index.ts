@@ -28,6 +28,13 @@ export type {
 export type { ComboboxResolver } from "./combobox/use-resolved-options";
 export { Checkbox, type CheckboxProps } from "./checkbox/checkbox";
 export {
+  ColorPicker,
+  colorBackground,
+  type ColorPickerProps,
+  type ColorSwatch,
+  type ColorValue,
+} from "./color-picker/color-picker";
+export {
   Dialog,
   DialogClose,
   DialogContent,

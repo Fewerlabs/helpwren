@@ -41,6 +41,7 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
                 aria-label={count > 0 ? `${section.label}, ${count} unread` : section.label}
                 className={cn(
                   "focus-visible:outline-ring relative grid size-10 place-items-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+                  "bottom" in section && "md:mt-auto",
                   active
                     ? "bg-muted text-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -66,7 +67,13 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
       </nav>
       <div className="flex items-center gap-2 md:flex-col">
         <Tooltip content={agent.name} side="right">
-          <Avatar name={agent.name} size="sm" />
+          <Link
+            href="/dashboard/settings/profile"
+            aria-label={`Your profile: ${agent.name}`}
+            className="focus-visible:outline-ring rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <Avatar name={agent.name} size="sm" />
+          </Link>
         </Tooltip>
         {signOut}
       </div>

@@ -3,6 +3,8 @@ import { useCallback, useEffect } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
+import { usePreview } from "../store/chat-store";
+
 export const chatKeys = {
   session: ["chat", "session"] as const,
   conversations: ["chat", "conversations"] as const,
@@ -11,10 +13,13 @@ export const chatKeys = {
 /** The visitor's session, or `null` if they have never written. Opening the chat creates none. */
 export function useSession() {
   const getClient = useHelpwren();
+  const preview = usePreview();
   return useQuery({
     queryKey: chatKeys.session,
     queryFn: () => getClient().sessions.current(),
     staleTime: Infinity,
+    // A preview shows the chat as a new visitor would see it, whoever is looking.
+    enabled: !preview,
   });
 }
 

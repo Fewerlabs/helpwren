@@ -3,8 +3,13 @@ import { describe, expect, it } from "vitest";
 import { HelpwrenError } from "./errors";
 import { parsePublicSettings, parseSettings } from "./settings";
 
+const widget = { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] };
+
 const defaults = {
   brand: { name: "Helpwren" },
+  widget,
+  chatPage: {},
+  helpCenter: {},
   guestDetails: "email",
   allowedDomains: [],
   sources: ["web"],
@@ -20,18 +25,34 @@ describe("parseSettings", () => {
       ]),
     ).toEqual({
       brand: { name: "Acme" },
+      widget,
+      chatPage: {},
+      helpCenter: {},
       guestDetails: "phone",
       allowedDomains: [],
       sources: ["web", "ios"],
     });
   });
 
-  it("keeps a brand's own colour and greeting, and refuses a colour that is not hex", () => {
-    const brand = { name: "Acme", accent: "#1d4ed8", greeting: "Welcome." };
+  it("keeps a brand's own logo and colours, and refuses a colour that is not hex", () => {
+    const brand = {
+      name: "Acme",
+      logo: "https://cdn.example.com/logo.png",
+      accent: "#1d4ed8",
+      accentTo: "#38bdf8",
+    };
     expect(parseSettings([{ key: "brand", value: brand }]).brand).toEqual(brand);
     expect(() =>
       parseSettings([{ key: "brand", value: { name: "Acme", accent: "blue" } }]),
     ).toThrow(HelpwrenError);
+  });
+
+  it("fills in the parts of the widget's settings that were not stored", () => {
+    const stored = { position: "left", welcome: "Hello!", quickReplies: ["Pricing"] };
+    expect(parseSettings([{ key: "widget", value: stored }]).widget).toEqual({
+      ...widget,
+      ...stored,
+    });
   });
 
   it("falls back to defaults when rows are missing", () => {
@@ -52,6 +73,9 @@ describe("parsePublicSettings", () => {
   it("leaves out settings that are not for everyone", () => {
     expect(parsePublicSettings([{ key: "sources", value: ["web", "ios"] }])).toEqual({
       brand: { name: "Helpwren" },
+      widget,
+      chatPage: {},
+      helpCenter: {},
       guestDetails: "email",
     });
   });

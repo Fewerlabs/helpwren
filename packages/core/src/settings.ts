@@ -26,23 +26,63 @@ export const accentColorSchema = z
   .regex(/^#[0-9a-f]{6}$/);
 
 /**
- * How the install presents itself to visitors. Only the name is needed; anything left out
- * falls back to Helpwren's own colour and wording.
+ * Who the install is, wherever it appears: the widget, the chat page and the help center. Only
+ * the name is needed; anything left out falls back to Helpwren's own look.
  */
 const brandSchema = z.object({
   name: z.string().min(1),
-  /** The colour of the chat's buttons and the visitor's own messages. */
+  /** The address of the logo, shown in place of the wren. */
+  logo: z.url().optional(),
+  /** The colour of buttons and the visitor's own messages. */
   accent: accentColorSchema.optional(),
-  /** The first line of the chat's home screen, in place of "Hi there." */
-  greeting: z.string().min(1).optional(),
-  /** The line under the greeting, in place of "How can we help?" */
-  intro: z.string().min(1).optional(),
+  /** A second colour. With it, large surfaces such as the launcher fade from `accent` to this. */
+  accentTo: accentColorSchema.optional(),
 });
 
 export type Brand = z.infer<typeof brandSchema>;
 
+export const widgetPositionSchema = z.enum(["right", "left"]);
+export const widgetLauncherSchema = z.enum(["chat", "logo"]);
+
+/** The most quick responses a chat offers, and the longest one may be. */
+export const QUICK_REPLIES_MAX = 5;
+export const QUICK_REPLY_MAX_LENGTH = 60;
+
+/** How the chat looks and what it says, in the widget and on the chat page. */
+const widgetSchema = z.object({
+  /** The corner of the page the launcher sits in. */
+  position: widgetPositionSchema.default("right"),
+  /** How far the launcher sits from the side and the bottom of the page, in pixels. */
+  offsetX: z.number().int().min(0).max(120).default(20),
+  offsetY: z.number().int().min(0).max(120).default(20),
+  /** What the launcher shows: a chat bubble, or the brand's logo when it has one. */
+  launcher: widgetLauncherSchema.default("chat"),
+  /** The first line of the home screen, in place of "Hi there." */
+  greeting: z.string().min(1).optional(),
+  /** The line under the greeting, in place of "How can we help?" */
+  intro: z.string().min(1).optional(),
+  /** A message from the team that opens every new conversation, before the visitor writes. */
+  welcome: z.string().min(1).optional(),
+  /** Replies the visitor can send with one tap, offered when a conversation starts. */
+  quickReplies: z.array(z.string().min(1)).max(QUICK_REPLIES_MAX).default([]),
+});
+
+export type WidgetSettings = z.infer<typeof widgetSchema>;
+
+/** What the chat page and the help center say at the top, in place of the usual wording. */
+const pageTextSchema = z.object({
+  title: z.string().min(1).optional(),
+  intro: z.string().min(1).optional(),
+});
+
+export type PageText = z.infer<typeof pageTextSchema>;
+
 const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
+  widget: widgetSchema.default(() => widgetSchema.parse({})),
+  /** The chat on a page of its own, at `/chat`, for a link in an email or a profile. */
+  chat_page: pageTextSchema.default({}),
+  help_center: pageTextSchema.default({}),
   guest_details: guestDetailsSchema.default("email"),
   /**
    * The sites that may show the chat in a frame, as hosts such as `example.com` or
@@ -55,6 +95,9 @@ const storedSettingsSchema = z.object({
 
 export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
+  widget: stored.widget,
+  chatPage: stored.chat_page,
+  helpCenter: stored.help_center,
   guestDetails: stored.guest_details,
   allowedDomains: stored.allowed_domains,
   sources: stored.sources,
@@ -63,7 +106,19 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
 export type Settings = z.infer<typeof settingsSchema>;
 
 /** The settings anyone may read, including a visitor with no session. */
-export type PublicSettings = Pick<Settings, "brand" | "guestDetails">;
+export type PublicSettings = Pick<
+  Settings,
+  "brand" | "widget" | "chatPage" | "helpCenter" | "guestDetails"
+>;
+
+/** For checking settings that arrive from somewhere other than the database, such as a preview. */
+export const publicSettingsSchema = z.object({
+  brand: brandSchema,
+  widget: widgetSchema,
+  chatPage: pageTextSchema,
+  helpCenter: pageTextSchema,
+  guestDetails: guestDetailsSchema,
+});
 
 interface SettingRow {
   key: string;
@@ -84,20 +139,39 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, guestDetails } = parseSettings(rows);
-  return { brand, guestDetails };
+  const { brand, widget, chatPage, helpCenter, guestDetails } = parseSettings(rows);
+  return { brand, widget, chatPage, helpCenter, guestDetails };
 }
+
+const pageTextPatchSchema = z.object({
+  title: z.string().trim().min(1).max(80).optional(),
+  intro: z.string().trim().min(1).max(200).optional(),
+});
 
 /** The settings an admin can change, with the same rules as when they are read. */
 export const settingsPatchSchema = z
   .object({
-    // The whole brand is saved at once: a part left out goes back to its default.
+    // Each of these is saved whole: a part left out goes back to its default.
     brand: z.object({
       name: z.string().trim().min(1).max(60),
+      logo: z.url().max(2000).optional(),
       accent: accentColorSchema.optional(),
+      accentTo: accentColorSchema.optional(),
+    }),
+    widget: z.object({
+      position: widgetPositionSchema,
+      offsetX: z.number().int().min(0).max(120),
+      offsetY: z.number().int().min(0).max(120),
+      launcher: widgetLauncherSchema,
       greeting: z.string().trim().min(1).max(60).optional(),
       intro: z.string().trim().min(1).max(80).optional(),
+      welcome: z.string().trim().min(1).max(500).optional(),
+      quickReplies: z
+        .array(z.string().trim().min(1).max(QUICK_REPLY_MAX_LENGTH))
+        .max(QUICK_REPLIES_MAX),
     }),
+    chatPage: pageTextPatchSchema,
+    helpCenter: pageTextPatchSchema,
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
   })
@@ -107,9 +181,24 @@ export type SettingsPatch = z.input<typeof settingsPatchSchema>;
 
 export type UpdateSettingsResult = { ok: true } | { ok: false; reason: "forbidden" };
 
+/** Where logos are kept, and what one may be. The bucket enforces the same limits. */
+const LOGO_BUCKET = "brand";
+export const LOGO_MAX_BYTES = 1024 * 1024;
+export const LOGO_TYPES = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+} as const;
+
+export type UploadLogoResult =
+  { ok: true; url: string } | { ok: false; reason: "forbidden" | "too_large" | "unsupported" };
+
 /** Where each setting is stored, and whether a visitor with no session may read it. */
 const storage = {
   brand: { key: "brand", isPublic: true },
+  widget: { key: "widget", isPublic: true },
+  chatPage: { key: "chat_page", isPublic: true },
+  helpCenter: { key: "help_center", isPublic: true },
   guestDetails: { key: "guest_details", isPublic: true },
   allowedDomains: { key: "allowed_domains", isPublic: false },
 } as const satisfies Record<keyof SettingsPatch, { key: string; isPublic: boolean }>;
@@ -143,6 +232,31 @@ export function createSettings(supabase: HelpwrenSupabaseClient) {
         throw new HelpwrenError("Could not save the settings.", { cause: error });
       }
       return { ok: true };
+    },
+
+    /**
+     * Stores a logo and gives back its public address, to save as `brand.logo`. Only an admin
+     * may. Each upload gets a new address, so a changed logo is never served from a cache.
+     */
+    async uploadLogo(file: Blob): Promise<UploadLogoResult> {
+      const extension = (LOGO_TYPES as Record<string, string | undefined>)[file.type];
+      if (!extension) return { ok: false, reason: "unsupported" };
+      if (file.size > LOGO_MAX_BYTES) return { ok: false, reason: "too_large" };
+
+      const path = `logo-${crypto.randomUUID()}.${extension}`;
+      const bucket = supabase.storage.from(LOGO_BUCKET);
+      const { error } = await bucket.upload(path, file, {
+        contentType: file.type,
+        cacheControl: "31536000",
+      });
+      if (error) {
+        // Storage reports a refusal by the access rules as a 403.
+        if ("statusCode" in error && String(error.statusCode) === "403") {
+          return { ok: false, reason: "forbidden" };
+        }
+        throw new HelpwrenError("Could not store the logo.", { cause: error });
+      }
+      return { ok: true, url: bucket.getPublicUrl(path).data.publicUrl };
     },
 
     async getPublic(): Promise<PublicSettings> {

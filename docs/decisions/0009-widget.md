@@ -42,3 +42,12 @@ their code and their CSS, and has to open a chat that belongs to another origin.
 - The script is not versioned separately from the app. An install always serves the widget that
   matches its own `/embed`, which removes a whole class of mismatch, and means the script cannot
   be cached for long.
+
+## Later changes
+
+- 2026-11-18: the script asks the install how it should look (`GET /api/widget`: position,
+  spacing, colour, launcher icon) instead of having one fixed look. The answer is public and
+  cacheable for a minute, and each value is checked before it reaches a style or an attribute.
+  `init` gained `container`, `preview` and `open`, and the widget gained `preview()` and
+  `destroy()`, so the dashboard can run the real script as its preview. A `preview` message
+  joined the protocol; the chat accepts it only from a page on its own origin.

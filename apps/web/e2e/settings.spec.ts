@@ -8,7 +8,10 @@ import { signInToInbox } from "./support/mailbox";
 const NEW_MEMBER = { name: "Kofi Mensah", email: "kofi.e2e@example.com" };
 
 async function restore() {
-  await database.from("settings").delete().eq("key", "allowed_domains");
+  await database
+    .from("settings")
+    .delete()
+    .in("key", ["allowed_domains", "widget", "chat_page", "help_center"]);
   await database
     .from("settings")
     .update({ value: { name: "Helpwren Demo" } })
@@ -45,43 +48,76 @@ test("an admin changes what the chat asks guests", async ({ page, browser }) => 
   await visitor.close();
 });
 
-test("an admin gives the chat its own name, colour and greeting", async ({ page, browser }) => {
+test("an admin brands the widget, and sees the real one change as they do", async ({
+  page,
+  browser,
+}) => {
   await signInToInbox(page, "ada@example.com");
   await page.goto("/dashboard/settings/branding");
 
-  const save = page.getByRole("button", { name: "Save changes" });
+  // The preview is the widget itself, in a frame, showing what is in the form.
+  const preview = page.getByRole("region", { name: "Widget preview" });
+  const chat = preview.frameLocator('iframe[title="Chat"]');
+  await expect(chat.getByRole("heading", { level: 1 })).toContainText("Hi there.");
+
   await page.getByLabel("Brand name").fill("Acme Support");
-  await page.getByRole("button", { name: "Blue" }).click();
+  await page.getByLabel("Logo file").setInputFiles({
+    name: "logo.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await expect(page.getByRole("img", { name: "Current logo" })).toBeVisible();
+  await page.getByRole("button", { name: "Blue", exact: true }).click();
+
+  await page.getByRole("tab", { name: "Widget" }).click();
+  await page.getByRole("radio", { name: "Bottom left" }).click();
   await page.getByLabel("Greeting").fill("Welcome to Acme.");
+  await page.getByLabel("Welcome message").fill("Hello! Ask us anything.");
+  const replies = page.getByLabel("Quick replies");
+  await replies.fill("Track my order");
+  await replies.press("Enter");
 
-  // The preview follows the form before anything is saved.
-  await expect(page.getByRole("img", { name: "Preview of the chat" })).toContainText(
-    "Welcome to Acme.",
-  );
-  await save.click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
-
-  // A visitor sees the name, the greeting and the colour.
-  const visitor = await browser.newContext();
-  const chat = await visitor.newPage();
-  await chat.goto("/embed");
+  // Before anything is saved, the preview already shows it, and sends nothing.
   await expect(chat.getByRole("heading", { level: 1 })).toContainText("Welcome to Acme.");
-  await expect(chat.getByRole("heading", { level: 1 })).toContainText("How can we help?");
   await expect(chat.getByRole("img", { name: "Acme Support" })).toBeVisible();
   await chat.getByRole("button", { name: "Send us a message" }).click();
-  await expect(chat.getByRole("button", { name: "Send message" })).toHaveCSS(
+  await expect(chat.getByText("Hello! Ask us anything.")).toBeVisible();
+  await expect(chat.getByRole("button", { name: "Track my order" })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Chat page" }).click();
+  await page.getByLabel("Title").fill("Talk to Acme");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved.");
+
+  // A visitor on the chat page sees the brand, the welcome message and the quick reply.
+  const visitor = await browser.newContext();
+  const chatPage = await visitor.newPage();
+  await chatPage.goto("/chat");
+  await expect(chatPage.getByRole("heading", { name: "Talk to Acme" })).toBeVisible();
+  await expect(chatPage.getByRole("heading", { name: /Welcome to Acme\./ })).toBeVisible();
+  await chatPage.getByRole("button", { name: "Send us a message" }).click();
+  await expect(chatPage.getByText("Hello! Ask us anything.")).toBeVisible();
+  await expect(chatPage.getByRole("button", { name: "Send message" })).toHaveCSS(
     "background-color",
     "rgb(29, 78, 216)",
   );
+
+  // The widget script on a site is told where to sit and what colour to be.
+  const answer = await chatPage.request.get("/api/widget");
+  expect(await answer.json()).toMatchObject({ position: "left", accent: "#1d4ed8" });
+  expect(answer.headers()["access-control-allow-origin"]).toBe("*");
   await visitor.close();
 
-  // The change is still there after a reload, and a colour typed wrongly is refused.
+  // The change is still there after a reload.
   await page.reload();
   await expect(page.getByLabel("Brand name")).toHaveValue("Acme Support");
-  await expect(page.getByRole("button", { name: "Blue" })).toHaveAttribute("aria-pressed", "true");
-  await page.getByLabel("Custom colour, as hex").fill("blue");
-  await save.click();
-  await expect(page.getByText(/six hex digits/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Blue", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });
 
 test("a team member changes their own name, and how they are notified", async ({

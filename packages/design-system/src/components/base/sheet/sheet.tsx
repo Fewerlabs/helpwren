@@ -40,7 +40,7 @@ export function SheetContent({
   ...props
 }: SheetContentProps) {
   return (
-    <UiSheetContent showCloseButton={false} className={cn("border-border", className)} {...props}>
+    <UiSheetContent showCloseButton={false} className={cn("border-rule", className)} {...props}>
       {children}
       <UiSheetClose asChild>
         <Button

@@ -8,10 +8,10 @@ import {
   type GuestDetails,
 } from "@helpwren/core";
 import {
-  Avatar,
   Button,
   FieldList,
   Icon,
+  MessageBubble,
   Textarea,
   Wren,
   type FieldItem,
@@ -24,8 +24,9 @@ import { z } from "zod";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
+import { TeamAvatar } from "../brand";
 import { chatKeys } from "../hooks/use-chat";
-import { usePage, useShowScreen } from "../store/chat-store";
+import { usePage, usePreview, useShowScreen } from "../store/chat-store";
 
 interface StartValues {
   name: string;
@@ -135,13 +136,54 @@ export interface StartFormProps {
   source: string;
   /** Who the visitor is writing to. */
   teamName: string;
+  /** A message from the team that opens the conversation, before the visitor writes. */
+  welcome: string | undefined;
+  /** Replies the visitor can send with one tap. */
+  quickReplies: readonly string[];
   /** True when the visitor has written before, and so has already said who they are. */
   returning: boolean;
 }
 
+interface QuickRepliesProps {
+  replies: readonly string[];
+  disabled: boolean;
+  onPick: (reply: string) => void;
+}
+
+/** The install's ready-made replies, as buttons. */
+function QuickReplies({ replies, disabled, onPick }: QuickRepliesProps) {
+  if (replies.length === 0) return null;
+  return (
+    <ul aria-label="Quick replies" className="flex flex-wrap justify-end gap-1.5">
+      {replies.map((reply) => (
+        <li key={reply}>
+          <button
+            type="button"
+            disabled={disabled}
+            className="border-primary/40 text-primary hover:bg-primary/10 focus-visible:outline-ring rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+            onClick={() => {
+              onPick(reply);
+            }}
+          >
+            {reply}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** Starts a conversation: who the visitor is, if the install asks, and their first message. */
-export function StartForm({ guestDetails, source, teamName, returning }: StartFormProps) {
+export function StartForm({
+  guestDetails,
+  source,
+  teamName,
+  welcome,
+  quickReplies,
+  returning,
+}: StartFormProps) {
   const getClient = useHelpwren();
+  const preview = usePreview();
   const queryClient = useQueryClient();
   const show = useShowScreen();
   const page = usePage();
@@ -154,6 +196,10 @@ export function StartForm({ guestDetails, source, teamName, returning }: StartFo
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
 
   async function start(values: StartValues) {
+    if (preview) {
+      form.setError("root", { message: "This is a preview, so nothing was sent." });
+      return;
+    }
     const client = getClient();
     const by = ask === "email_or_phone" ? values.replyBy : ask;
 
@@ -202,13 +248,32 @@ export function StartForm({ guestDetails, source, teamName, returning }: StartFo
     const message = form.register("message");
     return (
       <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto px-8 text-center">
-          <Wren scene="conversations" decorative className="w-36" />
-          <h2 className="pt-2 text-base font-semibold">What can we help with?</h2>
-          <p className="text-muted-foreground text-sm">
-            Write your message below. {teamName} will reply here.
-          </p>
-        </div>
+        {welcome || quickReplies.length > 0 ? (
+          // A conversation the team has already opened: their welcome, and replies to tap.
+          <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 overflow-y-auto p-4">
+            {welcome ? (
+              <MessageBubble from="other" author={teamName} avatar={<TeamAvatar size="sm" />}>
+                {welcome}
+              </MessageBubble>
+            ) : null}
+            <QuickReplies
+              replies={quickReplies}
+              disabled={isSubmitting}
+              onPick={(reply) => {
+                form.setValue("message", reply);
+                void form.handleSubmit(start)();
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto px-8 text-center">
+            <Wren scene="conversations" decorative className="w-36" />
+            <h2 className="pt-2 text-base font-semibold">What can we help with?</h2>
+            <p className="text-muted-foreground text-sm">
+              Write your message below. {teamName} will reply here.
+            </p>
+          </div>
+        )}
         <div className="border-rule grid gap-2 border-t p-3">
           {(failure ?? errors.message?.message) ? (
             <p role="alert" className="text-destructive text-xs">
@@ -244,7 +309,7 @@ export function StartForm({ guestDetails, source, teamName, returning }: StartFo
     <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <div className="flex items-center gap-3 py-4">
-          <Avatar name={teamName} />
+          <TeamAvatar />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{teamName}</p>
             <p className="text-muted-foreground text-sm">
@@ -252,11 +317,28 @@ export function StartForm({ guestDetails, source, teamName, returning }: StartFo
             </p>
           </div>
         </div>
+        {welcome ? (
+          <MessageBubble from="other" author={teamName} className="pb-4">
+            {welcome}
+          </MessageBubble>
+        ) : null}
         <FieldList
           control={form.control}
           fields={fieldsFor(ask, replyBy)}
           disabled={isSubmitting}
         />
+        {quickReplies.length > 0 ? (
+          <div className="pt-3">
+            <QuickReplies
+              replies={quickReplies}
+              disabled={isSubmitting}
+              // Who they are is still needed, so a tap fills the message in and leaves the rest.
+              onPick={(reply) => {
+                form.setValue("message", reply, { shouldDirty: true, shouldValidate: true });
+              }}
+            />
+          </div>
+        ) : null}
       </div>
       <div className="border-rule grid gap-2 border-t p-3">
         {failure ? (

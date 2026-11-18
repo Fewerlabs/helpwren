@@ -4,7 +4,10 @@ export const styles = `
 :host {
   all: initial;
   --hw-accent: #3d6b57;
+  --hw-accent-fill: var(--hw-accent);
   --hw-accent-ink: #ffffff;
+  --hw-x: 20px;
+  --hw-y: 20px;
   --hw-surface: #ffffff;
   --hw-edge: #e3ddd0;
   --hw-ink: #26231e;
@@ -14,8 +17,8 @@ export const styles = `
 
 .launcher {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: var(--hw-x);
+  bottom: var(--hw-y);
   z-index: 2147483000;
   display: grid;
   place-items: center;
@@ -24,7 +27,7 @@ export const styles = `
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--hw-accent);
+  background: var(--hw-accent-fill);
   color: var(--hw-accent-ink);
   cursor: pointer;
   transition: transform 150ms ease;
@@ -33,6 +36,7 @@ export const styles = `
 .launcher:active { transform: scale(0.97); }
 .launcher:focus-visible { outline: 2px solid var(--hw-accent); outline-offset: 3px; }
 .launcher svg { width: 26px; height: 26px; }
+.launcher img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .launcher [data-icon="close"],
 .launcher[aria-expanded="true"] [data-icon="open"] { display: none; }
 .launcher[aria-expanded="true"] [data-icon="close"] { display: block; }
@@ -55,14 +59,14 @@ export const styles = `
 
 .panel {
   position: fixed;
-  right: 20px;
-  bottom: 84px;
+  right: var(--hw-x);
+  bottom: calc(var(--hw-y) + 64px);
   z-index: 2147483000;
   width: 400px;
-  max-width: calc(100vw - 40px);
+  max-width: calc(100vw - var(--hw-x) * 2);
   height: 680px;
-  max-height: calc(100vh - 104px);
-  max-height: calc(100dvh - 104px);
+  max-height: calc(100vh - var(--hw-y) - 84px);
+  max-height: calc(100dvh - var(--hw-y) - 84px);
   overflow: hidden;
   border: 1px solid var(--hw-edge);
   border-radius: 20px;
@@ -79,9 +83,21 @@ export const styles = `
 }
 .panel iframe { display: block; width: 100%; height: 100%; border: 0; }
 
+:host([data-position="left"]) .launcher,
+:host([data-position="left"]) .panel { right: auto; left: var(--hw-x); }
+:host([data-position="left"]) .panel { transform-origin: bottom left; }
+
+/* Inside an element of the page's own, in place of the whole page. */
+:host([data-contained]) .launcher,
+:host([data-contained]) .panel { position: absolute; z-index: 1; }
+:host([data-contained]) .panel {
+  max-width: calc(100% - var(--hw-x) * 2);
+  max-height: calc(100% - var(--hw-y) - 84px);
+}
+
 /* On a phone the chat takes the whole screen, and its own close button closes it. */
 @media (max-width: 480px) {
-  .panel {
+  :host(:not([data-contained])) .panel {
     inset: 0;
     width: 100%;
     max-width: none;
@@ -90,7 +106,7 @@ export const styles = `
     border: 0;
     border-radius: 0;
   }
-  .launcher[aria-expanded="true"] { display: none; }
+  :host(:not([data-contained])) .launcher[aria-expanded="true"] { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

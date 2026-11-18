@@ -7,6 +7,7 @@ import { getHelpwren } from "@/lib/helpwren";
 
 import {
   brandingSchema,
+  brandingToSettings,
   generalSchema,
   installationSchema,
   inviteSchema,
@@ -42,21 +43,13 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
   return result;
 }
 
-/** Saves how the chat looks and greets. A part left empty goes back to Helpwren's default. */
+/** Saves the brand, and how the widget, the chat page and the help center wear it. */
 export async function saveBranding(values: BrandingValues): Promise<SaveResult> {
   const parsed = brandingSchema.safeParse(values);
   if (!parsed.success) return { ok: false, reason: "invalid" };
-  const { brandName, accent, greeting, intro } = parsed.data;
 
   const helpwren = await getHelpwren();
-  const result = await helpwren.settings.update({
-    brand: {
-      name: brandName,
-      ...(accent ? { accent } : {}),
-      ...(greeting ? { greeting } : {}),
-      ...(intro ? { intro } : {}),
-    },
-  });
+  const result = await helpwren.settings.update(brandingToSettings(parsed.data));
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
 }

@@ -1,5 +1,13 @@
-import { agentRoleSchema, guestDetailsSchema, settingsPatchSchema } from "@helpwren/core";
+import {
+  agentRoleSchema,
+  guestDetailsSchema,
+  QUICK_REPLIES_MAX,
+  QUICK_REPLY_MAX_LENGTH,
+  settingsPatchSchema,
+} from "@helpwren/core";
 import { z } from "zod";
+
+const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
 export const generalSchema = z.object({ guestDetails: guestDetailsSchema });
 export type GeneralValues = z.infer<typeof generalSchema>;
@@ -22,22 +30,72 @@ export const memberChangeSchema = z.object({
 });
 export type MemberChange = z.infer<typeof memberChangeSchema>["change"];
 
+const hex = /^#[0-9a-f]{6}$/;
+const pixels = z
+  .string()
+  .trim()
+  .regex(/^\d{1,3}$/, "Enter a number of pixels.")
+  .refine((value) => Number(value) <= 120, "Keep it to 120 pixels or fewer.");
+
+/** Everything on the Branding page. Text left empty goes back to Helpwren's own wording. */
 export const brandingSchema = z.object({
   brandName: z
     .string()
     .trim()
     .min(1, "Enter a name.")
     .max(60, "Keep the name under 60 characters."),
-  /** Empty for Helpwren's own colour. */
-  accent: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(/^(#[0-9a-f]{6})?$/, "Enter a colour as six hex digits, such as #2f6f4f."),
+  /** The address of the uploaded logo. Empty for none. */
+  logo: z.string(),
+  accent: z.string().regex(hex),
+  /** Empty for a solid colour. */
+  accentTo: z.union([z.literal(""), z.string().regex(hex)]),
+  position: widgetPatchSchema.shape.position,
+  offsetX: pixels,
+  offsetY: pixels,
+  launcher: widgetPatchSchema.shape.launcher,
   greeting: z.string().trim().max(60, "Keep the greeting under 60 characters."),
   intro: z.string().trim().max(80, "Keep this line under 80 characters."),
+  welcome: z.string().trim().max(500, "Keep the message under 500 characters."),
+  quickReplies: z
+    .array(z.string().trim().min(1).max(QUICK_REPLY_MAX_LENGTH, "Keep each reply short."))
+    .max(QUICK_REPLIES_MAX, `Offer ${QUICK_REPLIES_MAX} replies at most.`),
+  chatTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
+  chatIntro: z.string().trim().max(200, "Keep this under 200 characters."),
+  helpTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
+  helpIntro: z.string().trim().max(200, "Keep this under 200 characters."),
 });
 export type BrandingValues = z.infer<typeof brandingSchema>;
+
+/** Helpwren's own green. Choosing it is the same as choosing no colour. */
+export const DEFAULT_ACCENT = "#3d6b57";
+
+type Patch = z.infer<typeof settingsPatchSchema>;
+
+/** The form's values as the settings they stand for, with empty text left out. */
+export function brandingToSettings(values: BrandingValues) {
+  const text = (value: string) => (value ? value : undefined);
+  const own = values.accent !== DEFAULT_ACCENT || values.accentTo !== "";
+  return {
+    brand: {
+      name: values.brandName,
+      logo: text(values.logo),
+      accent: own ? values.accent : undefined,
+      accentTo: own ? text(values.accentTo) : undefined,
+    },
+    widget: {
+      position: values.position,
+      offsetX: Number(values.offsetX),
+      offsetY: Number(values.offsetY),
+      launcher: values.launcher,
+      greeting: text(values.greeting),
+      intro: text(values.intro),
+      welcome: text(values.welcome),
+      quickReplies: values.quickReplies,
+    },
+    chatPage: { title: text(values.chatTitle), intro: text(values.chatIntro) },
+    helpCenter: { title: text(values.helpTitle), intro: text(values.helpIntro) },
+  } satisfies Patch;
+}
 
 export const profileSchema = z.object({
   name: z

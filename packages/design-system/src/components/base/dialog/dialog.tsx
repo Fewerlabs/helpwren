@@ -43,7 +43,7 @@ export function DialogContent({
   return (
     <UiDialogContent
       showCloseButton={false}
-      className={cn("border-line border-border rounded-2xl p-6 ring-0 sm:max-w-md", className)}
+      className={cn("border-rule rounded-2xl border p-6 ring-0 sm:max-w-md", className)}
       {...props}
     >
       {children}

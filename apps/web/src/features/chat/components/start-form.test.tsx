@@ -22,11 +22,22 @@ function Screen() {
   );
 }
 
-function renderForm(guestDetails: GuestDetails, returning = false) {
+function renderForm(
+  guestDetails: GuestDetails,
+  returning = false,
+  opening: { welcome?: string; quickReplies?: string[] } = {},
+) {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <HelpwrenProvider getClient={getClient}>
-        <StartForm guestDetails={guestDetails} teamName="Acme" source="web" returning={returning} />
+        <StartForm
+          guestDetails={guestDetails}
+          teamName="Acme"
+          source="web"
+          welcome={opening.welcome}
+          quickReplies={opening.quickReplies ?? []}
+          returning={returning}
+        />
         <Screen />
       </HelpwrenProvider>
     </QueryClientProvider>,
@@ -132,5 +143,25 @@ describe("StartForm", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be sent");
     expect(screen.getByLabelText(/your message/i)).toHaveValue("Hello");
+  });
+
+  it("opens with the team's welcome, and sends a quick reply at one tap", async () => {
+    const user = renderForm("none", false, {
+      welcome: "Hello! Ask us anything.",
+      quickReplies: ["Pricing", "Track my order"],
+    });
+    expect(screen.getByText("Hello! Ask us anything.")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Track my order" }));
+    expect(await screen.findByText("conversation c1")).toBeInTheDocument();
+    expect(start).toHaveBeenCalledWith({ message: "Track my order", source: "web", contact: {} });
+  });
+
+  it("fills a quick reply in as the message when details are still needed", async () => {
+    const user = renderForm("email", false, { quickReplies: ["Pricing"] });
+
+    await user.click(screen.getByRole("button", { name: "Pricing" }));
+    expect(screen.getByLabelText(/your message/i)).toHaveValue("Pricing");
+    expect(start).not.toHaveBeenCalled();
   });
 });

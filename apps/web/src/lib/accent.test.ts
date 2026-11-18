@@ -13,11 +13,19 @@ describe("readableOn", () => {
 
 describe("accentStyle", () => {
   it("sets the colour and its text colour, or nothing when there is no colour", () => {
-    expect(accentStyle("#facc15")).toEqual({
+    expect(accentStyle({ accent: "#facc15" })).toEqual({
       "--primary": "#facc15",
       "--primary-foreground": "#1c1a16",
       "--ring": "#facc15",
+      "--brand-fill": "#facc15",
     });
-    expect(accentStyle(undefined)).toBeUndefined();
+    expect(accentStyle({})).toBeUndefined();
+  });
+
+  it("fades large surfaces from the colour to its second colour", () => {
+    expect(accentStyle({ accent: "#1d4ed8", accentTo: "#38bdf8" })).toMatchObject({
+      "--primary": "#1d4ed8",
+      "--brand-fill": "linear-gradient(135deg, #1d4ed8, #38bdf8)",
+    });
   });
 });

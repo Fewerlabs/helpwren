@@ -50,7 +50,6 @@ export function MessagesScreen({ conversations, teamName, onClose }: MessagesScr
                   <li key={conversation.id}>
                     <ConversationRow
                       conversation={conversation}
-                      teamName={teamName}
                       onOpen={() => {
                         show({ name: "conversation", id: conversation.id });
                       }}

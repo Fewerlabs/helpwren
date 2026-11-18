@@ -1,14 +1,36 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Help center" };
+import { accentStyle, brandFill } from "@/lib/accent";
+import { getHelpwren } from "@/lib/helpwren";
 
-export default function HelpPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const helpwren = await getHelpwren();
+  const { brand, helpCenter } = await helpwren.settings.getPublic();
+  return { title: { absolute: helpCenter.title ?? `${brand.name} help center` } };
+}
+
+/** The public help center. It wears the install's brand; its articles are not built yet. */
+export default async function HelpPage() {
+  const helpwren = await getHelpwren();
+  const { brand, helpCenter } = await helpwren.settings.getPublic();
+
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-semibold">Help center</h1>
-      <p className="text-muted-foreground mt-2">
-        The public, server-rendered help center. Not built yet.
-      </p>
+    <main style={accentStyle(brand)}>
+      <header
+        className={
+          brand.accent ? "text-primary-foreground px-6 py-16 text-center" : "px-6 py-16 text-center"
+        }
+        style={{ background: brandFill(brand) ?? "var(--muted)" }}
+      >
+        <p className="text-sm font-medium opacity-80">{brand.name}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          {helpCenter.title ?? "How can we help?"}
+        </h1>
+        <p className="mx-auto mt-2 max-w-xl opacity-80">
+          {helpCenter.intro ?? "Answers to common questions, written by our team."}
+        </p>
+      </header>
+      <p className="text-muted-foreground p-8 text-center">Articles are on their way.</p>
     </main>
   );
 }

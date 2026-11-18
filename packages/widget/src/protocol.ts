@@ -8,12 +8,15 @@
  */
 export const CHANNEL = "helpwren";
 
-/** From the page to the chat frame: sent whenever the frame says it is ready. */
-export interface PageMessage {
-  channel: typeof CHANNEL;
-  type: "hello";
-  page: { url: string; title: string };
-}
+/** From the page to the chat frame. */
+export type PageMessage =
+  /** Sent whenever the frame says it is ready. */
+  | { channel: typeof CHANNEL; type: "hello"; page: { url: string; title: string } }
+  /**
+   * Settings to show in place of the saved ones, for the preview in the dashboard. The chat
+   * checks them, and takes them only from a page on its own origin.
+   */
+  | { channel: typeof CHANNEL; type: "preview"; settings: unknown };
 
 /** From the chat frame to the page. */
 export type FrameMessage =

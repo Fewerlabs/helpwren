@@ -1,3 +1,4 @@
+import { type Brand } from "@helpwren/core";
 import { type CSSProperties } from "react";
 
 const DARK_TEXT = "#1c1a16";
@@ -24,11 +25,18 @@ export function readableOn(accent: string): string {
     : DARK_TEXT;
 }
 
+/** What paints a large surface in the brand's colour: its gradient if it has one. */
+export function brandFill({ accent, accentTo }: Pick<Brand, "accent" | "accentTo">) {
+  if (!accent) return undefined;
+  return accentTo ? `linear-gradient(135deg, ${accent}, ${accentTo})` : accent;
+}
+
 /**
  * The style that puts an install's own colour in place of Helpwren's, on an element and
  * everything inside it. Nothing when there is no colour, so the default shows.
  */
-export function accentStyle(accent: string | undefined): CSSProperties | undefined {
+export function accentStyle(brand: Pick<Brand, "accent" | "accentTo">): CSSProperties | undefined {
+  const { accent } = brand;
   if (!accent) return undefined;
   // The tokens themselves, because they are worked out at the top of the page and would not
   // follow a variable they are built from being changed further down.
@@ -36,5 +44,7 @@ export function accentStyle(accent: string | undefined): CSSProperties | undefin
     "--primary": accent,
     "--primary-foreground": readableOn(accent),
     "--ring": accent,
+    // For large surfaces, such as the top of the chat page.
+    "--brand-fill": brandFill(brand),
   } as CSSProperties;
 }

@@ -34,13 +34,29 @@ function receive(
   );
 }
 
+/** What the install answers when the widget asks how it should look. */
+let answer: unknown;
+
 beforeEach(() => {
+  answer = {};
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => Promise.resolve(new Response(JSON.stringify(answer)))),
+  );
   widget = createWidget(APP);
 });
 
 afterEach(() => {
+  widget.destroy();
   document.body.replaceChildren();
+  vi.unstubAllGlobals();
 });
+
+function host() {
+  const element = document.querySelector<HTMLElement>("[data-helpwren]");
+  if (!element) throw new Error("The widget is not on the page.");
+  return element;
+}
 
 describe("init", () => {
   it("adds nothing to the page until it is called", () => {
@@ -184,5 +200,83 @@ describe("messages it must ignore", () => {
     receive(data);
     expect(listener).not.toHaveBeenCalled();
     expect(parts().panel.dataset.open).toBe("true");
+  });
+});
+
+describe("appearance", () => {
+  it("asks the install how to look, and follows the answer", async () => {
+    answer = {
+      position: "left",
+      offsetX: 32,
+      offsetY: 48,
+      accent: "#1d4ed8",
+      accentTo: "#38bdf8",
+      accentInk: "#ffffff",
+      launcher: "logo",
+      logo: "https://cdn.example.com/logo.png",
+    };
+    widget.init();
+    expect(fetch).toHaveBeenCalledWith(new URL("/api/widget", APP));
+
+    await vi.waitFor(() => {
+      expect(host().dataset.position).toBe("left");
+    });
+    expect(host().style.getPropertyValue("--hw-x")).toBe("32px");
+    expect(host().style.getPropertyValue("--hw-y")).toBe("48px");
+    expect(host().style.getPropertyValue("--hw-accent-fill")).toBe(
+      "linear-gradient(135deg, #1d4ed8, #38bdf8)",
+    );
+    expect(parts().launcher?.querySelector("img")?.src).toBe("https://cdn.example.com/logo.png");
+  });
+
+  it("keeps its defaults when the answer is missing or cannot be trusted", async () => {
+    answer = {
+      position: "top",
+      offsetX: 9999,
+      accent: "red; background: url(https://evil.example)",
+      launcher: "logo",
+      logo: "javascript:alert(1)",
+    };
+    widget.init();
+    await vi.waitFor(() => {
+      expect(host().style.getPropertyValue("--hw-x")).toBe("120px");
+    });
+    expect(host().dataset.position).toBe("right");
+    expect(host().style.getPropertyValue("--hw-accent")).toBe("#3d6b57");
+    expect(parts().launcher?.querySelector("img")).toBeNull();
+  });
+});
+
+describe("preview", () => {
+  it("sits inside an element, looks as it is told, and passes the chat its settings", () => {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const settings = { brand: { name: "Acme" } };
+    widget.init({
+      container,
+      open: true,
+      preview: { appearance: { accent: "#be123c" }, settings },
+    });
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(container.contains(host())).toBe(true);
+    expect(host().dataset.contained).toBe("");
+    expect(host().style.getPropertyValue("--hw-accent")).toBe("#be123c");
+    const { frame, panel } = parts();
+    expect(panel.dataset.open).toBe("true");
+    expect(new URL(frame.src).searchParams.get("preview")).toBe("1");
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+
+    receive({ channel: "helpwren", type: "ready" });
+    expect(post).toHaveBeenCalledWith({ channel: "helpwren", type: "preview", settings }, APP);
+
+    widget.preview({ appearance: { position: "left" }, settings: { brand: { name: "Zed" } } });
+    expect(host().dataset.position).toBe("left");
+    expect(host().style.getPropertyValue("--hw-accent")).toBe("#be123c");
+    expect(post).toHaveBeenLastCalledWith(
+      { channel: "helpwren", type: "preview", settings: { brand: { name: "Zed" } } },
+      APP,
+    );
   });
 });

@@ -1,5 +1,8 @@
+import { defaultAppearance, parseAppearance, type Appearance } from "./appearance";
 import { CHANNEL, isFrameMessage, type PageMessage } from "./protocol";
 import { closeIcon, openIcon, styles } from "./styles";
+
+export { type Appearance } from "./appearance";
 
 export interface InitOptions {
   /** Where this page is, as one of the install's sources. Default `web`. */
@@ -9,6 +12,22 @@ export interface InitOptions {
    * button with `Helpwren.show()`. Default true.
    */
   launcher?: boolean;
+  /**
+   * Where to put the widget, in place of the whole page: it then sits inside this element,
+   * which must be positioned. For showing the widget inside a page of your own.
+   */
+  container?: HTMLElement;
+  /** How the widget looks, in place of asking the install. Also starts it as a preview. */
+  preview?: WidgetPreview;
+  /** Whether the chat starts open. Default false. */
+  open?: boolean;
+}
+
+/** What a preview shows in place of the install's saved settings. Nothing in one is sent. */
+export interface WidgetPreview {
+  appearance?: Partial<Appearance>;
+  /** The chat's own settings. Passed to the chat frame, which checks them. */
+  settings?: unknown;
 }
 
 export interface HelpwrenEvents {
@@ -28,9 +47,14 @@ export interface HelpwrenWidget {
     event: Event,
     listener: HelpwrenEvents[Event],
   ) => () => void;
+  /** Changes what a widget started as a preview shows. */
+  preview: (preview: WidgetPreview) => void;
+  /** Takes the widget off the page. `init` can add it again. */
+  destroy: () => void;
 }
 
 interface Mounted {
+  host: HTMLElement;
   launcher: HTMLButtonElement | undefined;
   badge: HTMLSpanElement | undefined;
   panel: HTMLDivElement;
@@ -45,6 +69,60 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   const listeners = new Set<HelpwrenEvents["unread"]>();
   let mounted: Mounted | undefined;
   let unread = 0;
+  let appearance = defaultAppearance;
+  let previewSettings: unknown;
+
+  /** Puts the appearance on the widget. Every value has been checked by `parseAppearance`. */
+  function paint() {
+    if (!mounted) return;
+    const { host, launcher } = mounted;
+    host.dataset.position = appearance.position;
+    host.style.setProperty("--hw-x", `${appearance.offsetX}px`);
+    host.style.setProperty("--hw-y", `${appearance.offsetY}px`);
+    host.style.setProperty("--hw-accent", appearance.accent);
+    host.style.setProperty("--hw-accent-ink", appearance.accentInk);
+    host.style.setProperty(
+      "--hw-accent-fill",
+      appearance.accentTo
+        ? `linear-gradient(135deg, ${appearance.accent}, ${appearance.accentTo})`
+        : appearance.accent,
+    );
+
+    const mark = launcher?.querySelector<HTMLElement>('[data-icon="open"]');
+    if (!launcher || !mark) return;
+    const logo = appearance.launcher === "logo" ? appearance.logo : undefined;
+    const showsLogo = mark instanceof HTMLImageElement;
+    if (logo && showsLogo) {
+      mark.src = logo;
+    } else if (logo) {
+      const image = document.createElement("img");
+      image.dataset.icon = "open";
+      image.alt = "";
+      image.src = logo;
+      mark.replaceWith(image);
+    } else if (showsLogo) {
+      mark.insertAdjacentHTML("afterend", openIcon);
+      mark.remove();
+    }
+  }
+
+  function sendPreview(frame: HTMLIFrameElement) {
+    if (previewSettings === undefined) return;
+    const message: PageMessage = { channel: CHANNEL, type: "preview", settings: previewSettings };
+    frame.contentWindow?.postMessage(message, appOrigin);
+  }
+
+  /** Asks the install how its widget should look. Without an answer the defaults stay. */
+  async function loadAppearance() {
+    try {
+      const response = await fetch(new URL("/api/widget", appOrigin));
+      if (!response.ok) return;
+      appearance = parseAppearance(await response.json(), appearance);
+      paint();
+    } catch {
+      // Offline, or blocked by the page's own rules: the widget still works as it is.
+    }
+  }
 
   function setOpen(open: boolean) {
     if (!mounted) return;
@@ -80,8 +158,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       return;
     }
     if (!isFrameMessage(event.data)) return;
-    if (event.data.type === "ready") greet(mounted.frame);
-    else if (event.data.type === "unread") setUnread(event.data.count);
+    if (event.data.type === "ready") {
+      greet(mounted.frame);
+      sendPreview(mounted.frame);
+    } else if (event.data.type === "unread") setUnread(event.data.count);
     else setOpen(false);
   }
 
@@ -103,6 +183,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       frame.title = "Chat";
       const url = new URL("/embed", appOrigin);
       url.searchParams.set("source", options.source ?? "web");
+      if (options.preview) url.searchParams.set("preview", "1");
       frame.src = url.href;
       panel.append(frame);
       root.append(style, panel);
@@ -124,10 +205,36 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         root.append(launcher);
       }
 
-      mounted = { launcher, badge, panel, frame };
-      setOpen(false);
+      mounted = { host, launcher, badge, panel, frame };
+      setOpen(options.open === true);
       window.addEventListener("message", onMessage);
-      document.body.append(host);
+      if (options.container) host.dataset.contained = "";
+      (options.container ?? document.body).append(host);
+
+      if (options.preview) {
+        appearance = parseAppearance(options.preview.appearance, appearance);
+        previewSettings = options.preview.settings;
+        paint();
+      } else {
+        paint();
+        void loadAppearance();
+      }
+    },
+
+    preview(preview) {
+      appearance = parseAppearance(preview.appearance, appearance);
+      previewSettings = preview.settings;
+      paint();
+      if (mounted) sendPreview(mounted.frame);
+    },
+
+    destroy() {
+      if (!mounted) return;
+      window.removeEventListener("message", onMessage);
+      mounted.host.remove();
+      mounted = undefined;
+      appearance = defaultAppearance;
+      previewSettings = undefined;
     },
 
     show() {

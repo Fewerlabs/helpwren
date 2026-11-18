@@ -16,6 +16,8 @@ export interface ThreadProps {
   isOwn: (message: Message) => boolean;
   /** Shown above messages from the other side. */
   otherName: string;
+  /** A picture for the other side, such as a brand's logo, in place of their initials. */
+  otherAvatar?: string | undefined;
   /**
    * Called when something about the conversation has changed that may show elsewhere on screen:
    * it was marked as read, or an event such as a rating arrived.
@@ -44,6 +46,7 @@ export function Thread({
   conversationId,
   isOwn,
   otherName,
+  otherAvatar,
   onRead,
   density = "comfortable",
   nameOf,
@@ -146,7 +149,14 @@ export function Thread({
                     {...(compact
                       ? {
                           className: "max-w-[72%]",
-                          avatar: <Avatar name={otherName} size="sm" className="text-2xs size-6" />,
+                          avatar: (
+                            <Avatar
+                              name={otherName}
+                              src={otherAvatar}
+                              size="sm"
+                              className="text-2xs size-6"
+                            />
+                          ),
                         }
                       : {})}
                     author={otherName}

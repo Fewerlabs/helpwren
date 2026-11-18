@@ -15,6 +15,9 @@ export interface HostPage {
 
 interface ChatState {
   screen: Screen;
+  /** True in the dashboard's preview, where nothing is loaded and nothing is sent. */
+  preview: boolean;
+  setPreview: (preview: boolean) => void;
   page: HostPage | null;
   setPage: (page: HostPage) => void;
   /** The tab a sub-screen was opened from, which is where its back arrow returns to. */
@@ -22,12 +25,15 @@ interface ChatState {
   show: (screen: Screen) => void;
 }
 
-const initial = { screen: { name: "home" }, tab: "home", page: null } as const;
+const initial = { screen: { name: "home" }, tab: "home", page: null, preview: false } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
   ...initial,
   setPage: (page) => {
     set({ page });
+  },
+  setPreview: (preview) => {
+    set({ preview });
   },
   show: (screen) => {
     set(
@@ -41,6 +47,8 @@ const useChatStore = create<ChatState>()((set) => ({
 export const useScreen = () => useChatStore((state) => state.screen);
 export const useTab = () => useChatStore((state) => state.tab);
 export const useShowScreen = () => useChatStore((state) => state.show);
+export const useSetPreview = () => useChatStore((state) => state.setPreview);
+export const usePreview = () => useChatStore((state) => state.preview);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);
 

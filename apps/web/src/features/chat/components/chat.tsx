@@ -1,13 +1,14 @@
 "use client";
 
 import { type Message, type PublicSettings } from "@helpwren/core";
-import { Avatar, Skeleton } from "@helpwren/design-system";
-import { useCallback } from "react";
+import { cn, Skeleton } from "@helpwren/design-system";
+import { useCallback, useEffect } from "react";
 
 import { Thread } from "@/features/conversation";
 import { accentStyle } from "@/lib/accent";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
+import { BrandProvider, TeamAvatar } from "../brand";
 import { getChatClient } from "../client";
 import {
   useConversations,
@@ -16,7 +17,8 @@ import {
   useSession,
 } from "../hooks/use-chat";
 import { useEmbedBridge } from "../hooks/use-embed-bridge";
-import { useScreen, useShowScreen, useTab } from "../store/chat-store";
+import { usePreviewSettings } from "../hooks/use-preview-settings";
+import { usePreview, useScreen, useSetPreview, useShowScreen, useTab } from "../store/chat-store";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
 import { RatingPrompt } from "./rating-prompt";
@@ -29,9 +31,14 @@ export interface ChatProps {
   settings: PublicSettings;
   /** Where the chat is embedded, such as `web`. One of the install's sources. */
   source: string;
+  /** Shows the chat as a new visitor sees it, follows settings sent to it, and sends nothing. */
+  preview?: boolean;
+  /** Classes for the chat's box. It fills the screen unless told otherwise. */
+  className?: string;
 }
 
-function Screens({ settings, source }: ChatProps) {
+function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
+  const preview = usePreview();
   const screen = useScreen();
   const tab = useTab();
   const show = useShowScreen();
@@ -52,7 +59,7 @@ function Screens({ settings, source }: ChatProps) {
     show({ name: tab });
   };
 
-  if (session.isPending || (Boolean(session.data) && conversations.isPending)) {
+  if (!preview && (session.isPending || (Boolean(session.data) && conversations.isPending))) {
     return (
       <div className="grid gap-3 p-5" aria-busy="true" aria-label="Loading">
         <Skeleton className="size-8 rounded-full" />
@@ -71,7 +78,7 @@ function Screens({ settings, source }: ChatProps) {
           onClose={onClose}
           title={
             <>
-              <Avatar name={teamName} size="sm" className="text-2xs size-6" />
+              <TeamAvatar size="sm" className="text-2xs size-6" />
               <span className="truncate">{teamName}</span>
             </>
           }
@@ -82,6 +89,7 @@ function Screens({ settings, source }: ChatProps) {
           conversationId={screen.id}
           isOwn={isOwn}
           otherName={teamName}
+          otherAvatar={settings.brand.logo}
           onRead={refresh}
           beforeComposer={
             open && (open.status === "resolved" || open.status === "closed") ? (
@@ -101,6 +109,8 @@ function Screens({ settings, source }: ChatProps) {
           guestDetails={settings.guestDetails}
           source={source}
           teamName={teamName}
+          welcome={settings.widget.welcome}
+          quickReplies={settings.widget.quickReplies}
           returning={earlier.length > 0}
         />
       </>
@@ -112,25 +122,48 @@ function Screens({ settings, source }: ChatProps) {
       {screen.name === "messages" ? (
         <MessagesScreen conversations={earlier} teamName={teamName} onClose={onClose} />
       ) : (
-        <HomeScreen brand={settings.brand} recent={earlier[0]} onClose={onClose} />
+        <HomeScreen
+          greeting={settings.widget.greeting}
+          intro={settings.widget.intro}
+          recent={earlier[0]}
+          onClose={onClose}
+        />
       )}
       <TabBar current={screen.name === "messages" ? "messages" : "home"} unread={unread} />
     </>
   );
 }
 
+/** The chat's box, in the brand's colours, with the settings the preview sends if it is one. */
+function Surface({ settings: saved, source, preview = false, className }: ChatProps) {
+  const settings = usePreviewSettings(saved, preview);
+  const setPreview = useSetPreview();
+  useEffect(() => {
+    setPreview(preview);
+  }, [preview, setPreview]);
+
+  return (
+    <BrandProvider brand={settings.brand}>
+      {/* White, so the chat reads as its own surface on whatever site it sits in. */}
+      <div
+        className={cn("bg-card flex h-dvh flex-col", className)}
+        style={accentStyle(settings.brand)}
+      >
+        <Screens settings={settings} source={source} />
+      </div>
+    </BrandProvider>
+  );
+}
+
 /**
  * The visitor's side of Helpwren: a home screen, their messages, and the conversations
- * themselves. It fills whatever box it is given, so it works in the widget's frame and in a
- * mobile app's web view.
+ * themselves. It fills whatever box it is given, so it works in the widget's frame, on the chat
+ * page and in a mobile app's web view.
  */
 export function Chat(props: ChatProps) {
   return (
     <HelpwrenProvider getClient={getChatClient}>
-      {/* White, so the chat reads as its own surface on whatever site it sits in. */}
-      <div className="bg-card flex h-dvh flex-col" style={accentStyle(props.settings.brand.accent)}>
-        <Screens {...props} />
-      </div>
+      <Surface {...props} />
     </HelpwrenProvider>
   );
 }

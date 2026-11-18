@@ -65,7 +65,7 @@ export function SettingsPage({
 }: SettingsPageProps) {
   return (
     <section aria-labelledby="settings-page-title" className="h-full overflow-y-auto">
-      <div className={cn("mx-auto px-8 py-8", wide ? "max-w-5xl" : "max-w-3xl")}>
+      <div className={cn("mx-auto px-8 py-8", wide ? "max-w-6xl" : "max-w-3xl")}>
         <header className="flex items-start justify-between gap-4 pb-6">
           <div className="grid gap-1">
             <h2 id="settings-page-title" className="text-lg font-semibold">
