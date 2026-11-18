@@ -7,6 +7,9 @@
 - **pnpm 12.** The exact version is pinned in the root `package.json` (`packageManager`). Install
   it with `npm install --global pnpm@12`, or follow the
   [pnpm installation guide](https://pnpm.io/installation).
+- **Docker**, for the local database. [Docker Desktop](https://docs.docker.com/desktop/) is the
+  easiest option on macOS and Windows; any Docker-compatible runtime works. It must be running
+  whenever you use the `db:` commands below.
 
 ## Install
 
@@ -28,6 +31,23 @@ Every variable is validated at startup by the Zod schema in `apps/web/src/lib/en
 pnpm dev          # http://localhost:3000
 pnpm storybook    # http://localhost:6006
 ```
+
+## Local database
+
+Helpwren runs on Supabase. The Supabase CLI is a dev dependency, so `pnpm install` brings it, and
+it runs the whole stack (Postgres, Auth, Realtime, Storage and a test mailbox) in Docker on your
+machine. No Supabase account is needed for development.
+
+```bash
+pnpm db:start     # start the stack; the first run downloads the images and takes a while
+pnpm db:status    # print the local URLs and keys
+pnpm db:reset     # rebuild the database from supabase/migrations and the seed data
+pnpm db:stop      # stop the stack and keep its data
+```
+
+`pnpm db:status` also prints the address of Supabase Studio, a browser interface for the local
+database, and of Mailpit, which catches every email the local stack sends. Local settings live in
+`supabase/config.toml`.
 
 ## Check your work
 

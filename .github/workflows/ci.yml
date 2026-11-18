@@ -41,3 +41,26 @@ jobs:
         run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
 
       - run: pnpm turbo run lint typecheck test build
+
+  database:
+    name: Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Studio and image resizing are only useful to a person at a browser, so CI skips them.
+      - name: Start Supabase
+        run: pnpm exec supabase start --exclude studio,imgproxy
+
+      - name: Check the schema
+        run: pnpm exec supabase db lint --level warning --fail-on warning

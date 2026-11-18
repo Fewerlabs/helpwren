@@ -39,6 +39,7 @@ the product libraries.
 | Husky / lint-staged                    | 9.1.7 / 17.6.1 |                                                 |
 | commitlint                             | 21.2.4         | Conventional Commits                            |
 | Changesets                             | 3.0.3          |                                                 |
+| Supabase CLI                           | 3.2.0          | Local stack in Docker; Postgres 17              |
 
 Libraries the design system will add in later phases, with the versions current on the same date:
 shadcn CLI 4.23.0, Zustand 5.1.0, React Hook Form 7.92.0, `@hookform/resolvers` 7.0.7,
@@ -53,6 +54,9 @@ class-variance-authority 0.7.1, `@phosphor-icons/react` 2.1.10.
 - Next.js `optimizePackageImports`: https://nextjs.org/docs/app/api-reference/config/next-config-js/optimizePackageImports
 - Storybook for Next.js with Vite: https://storybook.js.org/docs/get-started/frameworks/nextjs-vite
 - Storybook Vitest addon: https://storybook.js.org/docs/writing-tests/integrations/vitest-addon
+- Supabase local development: https://supabase.com/docs/guides/local-development
+- Supabase CLI configuration: https://supabase.com/docs/guides/local-development/cli/config
+- Supabase CLI 3.0 release notes: https://github.com/supabase/cli/releases/tag/v3.0.0
 
 ### Choices that differ from "latest"
 
@@ -82,6 +86,10 @@ class-variance-authority 0.7.1, `@phosphor-icons/react` 2.1.10.
   off while the project is in early development: it opened a pull request per update, and work
   goes straight to `main`. Turn it back on before the first release.
 - **Every package is `private`** until the npm names are claimed.
+- **The Supabase CLI is a root dev dependency**, not a global install, so every contributor and CI
+  run the same version. Its platform binary arrives as an optional dependency, so it needs no
+  install script. The local stack leaves out Edge Functions, analytics, S3 access to storage and
+  vector buckets, which Helpwren does not use.
 
 ## Consequences
 

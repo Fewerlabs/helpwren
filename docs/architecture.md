@@ -22,6 +22,12 @@ Internal packages are consumed as TypeScript source: their `exports` point at `s
 compiles them (`transpilePackages`). There is no per-package build step until a package is
 published. See [ADR 0001](decisions/0001-tooling.md).
 
+## The database: `supabase/`
+
+Helpwren runs on Supabase: Postgres, Auth, Realtime and Storage. `supabase/config.toml` configures
+the local stack that the Supabase CLI runs in Docker; migrations, seed data and database tests go
+under `supabase/` alongside it. See [Setup](contributing/setup.md#local-database) for the commands.
+
 ## The app: `apps/web`
 
 ```

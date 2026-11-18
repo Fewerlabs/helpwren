@@ -17,11 +17,12 @@ Published by [Fewer Labs](https://helpwren.fewerlabs.dev).
 
 ## Quick start for contributors
 
-You need Node 26 (see `.nvmrc`) and pnpm 12.
+You need Node 26 (see `.nvmrc`), pnpm 12 and Docker, for the local database.
 
 ```bash
 pnpm install
 pnpm exec playwright install chromium   # once, for the Storybook story tests
+pnpm db:start                           # the local Supabase stack, in Docker
 pnpm dev                                # the app on http://localhost:3000
 pnpm storybook                          # the design system on http://localhost:6006
 ```
@@ -57,6 +58,7 @@ packages/
   adapters/            Identity, push, email and storage adapters (stub)
   cli/                 Installer and upgrader (stub)
   config/              Shared TypeScript, ESLint and Prettier configuration
+supabase/              Local Supabase configuration; migrations and database tests come next
 docs/
   brand/               Brand boards: logo, colour palette, illustrations
   decisions/           Architecture decision records
