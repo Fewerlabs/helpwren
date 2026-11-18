@@ -73,11 +73,13 @@ export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
 export { conversationEventSchema, type ConversationEvent } from "./events";
 export {
+  accentColorSchema,
   allowedDomainSchema,
   guestDetailsSchema,
   parseSettings,
   settingsPatchSchema,
   settingsSchema,
+  type Brand,
   type GuestDetails,
   type PublicSettings,
   type Settings,

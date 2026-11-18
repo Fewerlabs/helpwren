@@ -1,6 +1,6 @@
 "use client";
 
-import { type ConversationWithContact } from "@helpwren/core";
+import { type Brand, type ConversationWithContact } from "@helpwren/core";
 import { cn, Icon, Logo, Wren } from "@helpwren/design-system";
 
 import { useShowScreen } from "../store/chat-store";
@@ -8,7 +8,8 @@ import { ConversationRow } from "./conversation-row";
 import { CloseButton } from "./screen-header";
 
 export interface HomeScreenProps {
-  teamName: string;
+  /** The install's name, and its own greeting if it has one. */
+  brand: Brand;
   /** The visitor's most recently active conversation, if they have one. */
   recent: ConversationWithContact | undefined;
   /** Shows a close button that calls this. Given when the chat is in a frame it can close. */
@@ -16,8 +17,9 @@ export interface HomeScreenProps {
 }
 
 /** Where the chat opens: a greeting, the way to write, and the visitor's latest conversation. */
-export function HomeScreen({ teamName, recent, onClose }: HomeScreenProps) {
+export function HomeScreen({ brand, recent, onClose }: HomeScreenProps) {
   const show = useShowScreen();
+  const teamName = brand.name;
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
@@ -33,8 +35,8 @@ export function HomeScreen({ teamName, recent, onClose }: HomeScreenProps) {
         />
         {onClose ? <CloseButton onClose={onClose} className="absolute top-3 right-3" /> : null}
         <h1 className="mt-10 text-2xl leading-tight font-semibold tracking-tight">
-          Hi there.
-          <span className="text-muted-foreground block">How can we help?</span>
+          {brand.greeting ?? "Hi there."}
+          <span className="text-muted-foreground block">{brand.intro ?? "How can we help?"}</span>
         </h1>
       </div>
 

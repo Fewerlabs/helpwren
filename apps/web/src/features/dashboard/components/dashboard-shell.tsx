@@ -4,6 +4,7 @@ import { type Agent } from "@helpwren/core";
 import { cn, compactControls } from "@helpwren/design-system";
 import { type ReactNode } from "react";
 
+import { Notifier } from "@/features/notifications";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { getDashboardClient } from "../client";
@@ -30,6 +31,7 @@ export function DashboardShell({ agent, signOut, children }: DashboardShellProps
           compactControls,
         )}
       >
+        <Notifier agentId={agent.id} />
         <Sidebar agent={agent} signOut={signOut} />
         <main className="min-h-0 min-w-0 flex-1">{children}</main>
       </div>

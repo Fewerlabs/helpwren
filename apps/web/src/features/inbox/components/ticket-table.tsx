@@ -219,12 +219,10 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Refresh tickets"
+                loading={list.isFetching}
                 onClick={list.refetch}
               >
-                <Icon
-                  name="arrows-clockwise"
-                  className={list.isFetching ? "animate-spin" : undefined}
-                />
+                <Icon name="arrows-clockwise" />
               </Button>
             </Tooltip>
             <SearchField

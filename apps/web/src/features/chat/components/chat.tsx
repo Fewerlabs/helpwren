@@ -5,6 +5,7 @@ import { Avatar, Skeleton } from "@helpwren/design-system";
 import { useCallback } from "react";
 
 import { Thread } from "@/features/conversation";
+import { accentStyle } from "@/lib/accent";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { getChatClient } from "../client";
@@ -111,7 +112,7 @@ function Screens({ settings, source }: ChatProps) {
       {screen.name === "messages" ? (
         <MessagesScreen conversations={earlier} teamName={teamName} onClose={onClose} />
       ) : (
-        <HomeScreen teamName={teamName} recent={earlier[0]} onClose={onClose} />
+        <HomeScreen brand={settings.brand} recent={earlier[0]} onClose={onClose} />
       )}
       <TabBar current={screen.name === "messages" ? "messages" : "home"} unread={unread} />
     </>
@@ -127,7 +128,7 @@ export function Chat(props: ChatProps) {
   return (
     <HelpwrenProvider getClient={getChatClient}>
       {/* White, so the chat reads as its own surface on whatever site it sits in. */}
-      <div className="bg-card flex h-dvh flex-col">
+      <div className="bg-card flex h-dvh flex-col" style={accentStyle(props.settings.brand.accent)}>
         <Screens {...props} />
       </div>
     </HelpwrenProvider>

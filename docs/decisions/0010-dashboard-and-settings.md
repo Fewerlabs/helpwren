@@ -45,3 +45,9 @@ adding a team member meant running a script. An install could not be handed to a
 - 2026-11-18: sections share one frame, `DashboardPage`: a navigation column, then a single
   surface divided into columns. "Users" became "Contacts", because it lists guests as well as
   the host product's users. The inbox gained views and search.
+- 2026-11-18: settings are grouped into Workspace (General, Branding, Installation, Team) and
+  Personal (Profile, Notifications). Branding adds an optional colour and greeting to the `brand`
+  setting; the chat applies the colour by setting the `--primary` tokens on its own root.
+  Notification preferences are kept in the browser and not in the database, because permission to
+  notify is the browser's to give, one device at a time. They cover desktop notifications and a
+  sound while the dashboard is open. Email notifications wait for a way to send mail.

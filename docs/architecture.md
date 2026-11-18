@@ -100,7 +100,10 @@ is a folder under `src/app/dashboard`, a feature, and an entry in
 Settings pages load their data in the Server Component and save through Server Actions
 (`src/features/settings/actions.ts`). Settings go through the client library, where the database
 lets only admins write. The team is changed with the secret key, after checking the caller is an
-admin (`src/features/settings/server/team.ts`). See
+admin (`src/features/settings/server/team.ts`); a team member's own name is changed the same way,
+found by who is signed in. Notification preferences are personal and stay in the browser
+(`src/features/notifications`), where `Notifier` in the dashboard shell listens to the inbox
+and shows a desktop notification or plays a sound. See
 [ADR 0010](decisions/0010-dashboard-and-settings.md).
 
 Every section is laid out by `DashboardPage` (`src/features/dashboard`): one card holds the
@@ -217,7 +220,7 @@ between screens does not refetch what was loaded a moment ago.
 | `/help`                             | The public help center (placeholder)                                                                                     |
 | `/dashboard`                        | The team's screens, behind one sign-in check. Redirects to the inbox                                                     |
 | `/dashboard/inbox`                  | The inbox: views (including tickets), conversations, the open one and its details. `?view=` and `?c=` are in the address |
-| `/dashboard/settings`               | Settings: General, Installation and Team. Admins change them; agents read                                                |
+| `/dashboard/settings`               | Settings: workspace pages admins change and agents read, and each person's own Profile and Notifications                 |
 | `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                                 |
 | `/dashboard/help`                   | Planned; it says what is coming                                                                                          |
 | `/login`                            | Sign-in for team members                                                                                                 |

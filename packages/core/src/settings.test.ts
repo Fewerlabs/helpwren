@@ -26,6 +26,14 @@ describe("parseSettings", () => {
     });
   });
 
+  it("keeps a brand's own colour and greeting, and refuses a colour that is not hex", () => {
+    const brand = { name: "Acme", accent: "#1d4ed8", greeting: "Welcome." };
+    expect(parseSettings([{ key: "brand", value: brand }]).brand).toEqual(brand);
+    expect(() =>
+      parseSettings([{ key: "brand", value: { name: "Acme", accent: "blue" } }]),
+    ).toThrow(HelpwrenError);
+  });
+
   it("falls back to defaults when rows are missing", () => {
     expect(parseSettings([])).toEqual(defaults);
   });

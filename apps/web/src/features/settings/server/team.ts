@@ -72,3 +72,12 @@ export async function changeTeamMember(
   }
   return data.length === 0 ? { ok: false, reason: "not_found" } : { ok: true };
 }
+
+/**
+ * Changes a team member's own name, which visitors see beside their replies. Their row is
+ * found by who is signed in and never by an id from the browser, so nobody renames anyone else.
+ */
+export async function renameTeamMember(caller: Agent, name: string): Promise<void> {
+  const { error } = await supabaseAdmin.from("agents").update({ name }).eq("user_id", caller.id);
+  if (error) throw error;
+}

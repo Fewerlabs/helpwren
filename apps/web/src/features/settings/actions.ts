@@ -6,18 +6,23 @@ import { getCurrentAgent } from "@/features/agent-auth";
 import { getHelpwren } from "@/lib/helpwren";
 
 import {
+  brandingSchema,
   generalSchema,
   installationSchema,
   inviteSchema,
   memberChangeSchema,
+  profileSchema,
+  type BrandingValues,
   type GeneralValues,
   type InstallationValues,
   type InviteValues,
   type MemberChange,
+  type ProfileValues,
 } from "./schemas";
 import {
   changeTeamMember,
   inviteTeamMember,
+  renameTeamMember,
   type ChangeMemberResult,
   type InviteResult,
 } from "./server/team";
@@ -32,12 +37,41 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   const helpwren = await getHelpwren();
+  const result = await helpwren.settings.update({ guestDetails: parsed.data.guestDetails });
+  if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
+  return result;
+}
+
+/** Saves how the chat looks and greets. A part left empty goes back to Helpwren's default. */
+export async function saveBranding(values: BrandingValues): Promise<SaveResult> {
+  const parsed = brandingSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  const { brandName, accent, greeting, intro } = parsed.data;
+
+  const helpwren = await getHelpwren();
   const result = await helpwren.settings.update({
-    brand: { name: parsed.data.brandName },
-    guestDetails: parsed.data.guestDetails,
+    brand: {
+      name: brandName,
+      ...(accent ? { accent } : {}),
+      ...(greeting ? { greeting } : {}),
+      ...(intro ? { intro } : {}),
+    },
   });
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
+}
+
+/** Changes the signed-in team member's own name. */
+export async function saveProfile(values: ProfileValues): Promise<SaveResult> {
+  const caller = await getCurrentAgent();
+  if (!caller) return { ok: false, reason: "forbidden" };
+  const parsed = profileSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+
+  await renameTeamMember(caller, parsed.data.name);
+  // The name is in the sidebar, on every dashboard page.
+  revalidatePath("/dashboard", "layout");
+  return { ok: true };
 }
 
 export async function saveInstallation(values: InstallationValues): Promise<SaveResult> {

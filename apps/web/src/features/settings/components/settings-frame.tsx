@@ -1,14 +1,31 @@
 "use client";
 
+import { cn } from "@helpwren/design-system";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 
 import { DashboardPage } from "@/features/dashboard";
 
+const WORKSPACE = "Workspace";
+const PERSONAL = "Personal";
+
 const pages = [
-  { href: "/dashboard/settings/general", label: "General", icon: "gear" },
-  { href: "/dashboard/settings/installation", label: "Installation", icon: "code" },
-  { href: "/dashboard/settings/team", label: "Team", icon: "users" },
+  { href: "/dashboard/settings/general", label: "General", icon: "gear", group: WORKSPACE },
+  { href: "/dashboard/settings/branding", label: "Branding", icon: "image", group: WORKSPACE },
+  {
+    href: "/dashboard/settings/installation",
+    label: "Installation",
+    icon: "code",
+    group: WORKSPACE,
+  },
+  { href: "/dashboard/settings/team", label: "Team", icon: "users", group: WORKSPACE },
+  { href: "/dashboard/settings/profile", label: "Profile", icon: "user", group: PERSONAL },
+  {
+    href: "/dashboard/settings/notifications",
+    label: "Notifications",
+    icon: "bell",
+    group: PERSONAL,
+  },
 ] as const;
 
 /** The frame around every settings page: the list of pages beside the one that is open. */
@@ -28,10 +45,12 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
 export interface SettingsPageProps {
   title: string;
   description: string;
-  /** Shown when the person signed in may look and not change. */
-  readOnly: boolean;
+  /** Shown when the person signed in may look and not change. Leave out for a personal page. */
+  readOnly?: boolean;
   /** A control for the page as a whole, shown beside the title. */
   action?: ReactNode;
+  /** Gives the page more room, for one with a preview beside its form. */
+  wide?: boolean;
   children: ReactNode;
 }
 
@@ -39,13 +58,14 @@ export interface SettingsPageProps {
 export function SettingsPage({
   title,
   description,
-  readOnly,
+  readOnly = false,
   action,
+  wide = false,
   children,
 }: SettingsPageProps) {
   return (
     <section aria-labelledby="settings-page-title" className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-8 py-8">
+      <div className={cn("mx-auto px-8 py-8", wide ? "max-w-5xl" : "max-w-3xl")}>
         <header className="flex items-start justify-between gap-4 pb-6">
           <div className="grid gap-1">
             <h2 id="settings-page-title" className="text-lg font-semibold">

@@ -24,21 +24,17 @@ export interface GeneralFormProps {
   canEdit: boolean;
 }
 
-/** Brand name, and what guests are asked for. */
+/** What guests are asked for. */
 export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const form = useForm<GeneralValues>({
     resolver: zodResolver(generalSchema),
     defaultValues: {
-      brandName: settings.brand.name,
       guestDetails: settings.guestDetails,
     },
   });
 
-  const brandFields: FieldItem<GeneralValues>[] = [
-    { name: "brandName", label: "Brand name", type: "input", required: true },
-  ];
   const guestFields: FieldItem<GeneralValues>[] = [
     {
       name: "guestDetails",
@@ -72,12 +68,6 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
         void form.handleSubmit(save)(event);
       }}
     >
-      <SettingsSection
-        title="Brand"
-        description="The name at the top of the chat, and who your replies come from."
-      >
-        <FieldList control={form.control} fields={brandFields} disabled={disabled} />
-      </SettingsSection>
       <SettingsSection
         title="Guests"
         description="What a visitor gives before their first message, so you can reach them after they leave."

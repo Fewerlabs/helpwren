@@ -15,7 +15,7 @@ export default async function GeneralSettingsPage() {
   return (
     <SettingsPage
       title="General"
-      description="How your install presents itself, and what it asks of visitors."
+      description="What the chat asks of the people who write to you."
       readOnly={!canEdit}
     >
       <GeneralForm settings={settings} canEdit={canEdit} />

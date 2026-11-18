@@ -2,7 +2,7 @@
 
 import { cn, Icon, type IconName } from "@helpwren/design-system";
 import Link from "next/link";
-import { type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 export interface PageNavItem {
   href: string;
@@ -11,6 +11,8 @@ export interface PageNavItem {
   /** A number shown at the end of the row, such as how many conversations a view holds. */
   count?: number | undefined;
   active: boolean;
+  /** A heading shown above the first item of each group, such as "Workspace". */
+  group?: string;
 }
 
 export interface DashboardPageProps {
@@ -64,32 +66,38 @@ export function DashboardPage({
             aria-label={navLabel ?? title}
             className="flex gap-px max-md:overflow-x-auto md:flex-col"
           >
-            {nav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={item.active ? "page" : undefined}
-                className={cn(
-                  "focus-visible:outline-ring flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 transition-colors focus-visible:outline-2",
-                  item.active
-                    ? "bg-muted text-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                )}
-              >
-                {item.icon ? (
-                  <Icon
-                    name={item.icon}
-                    weight={item.active ? "duotone" : "regular"}
-                    className="size-4"
-                  />
+            {nav.map((item, index) => (
+              <Fragment key={item.href}>
+                {item.group && item.group !== nav[index - 1]?.group ? (
+                  <p className="text-muted-foreground text-2xs px-2 pt-3 pb-1 font-mono tracking-wider uppercase max-md:hidden">
+                    {item.group}
+                  </p>
                 ) : null}
-                <span className="flex-1 truncate">{item.label}</span>
-                {item.count === undefined ? null : (
-                  <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                    {item.count}
-                  </span>
-                )}
-              </Link>
+                <Link
+                  href={item.href}
+                  aria-current={item.active ? "page" : undefined}
+                  className={cn(
+                    "focus-visible:outline-ring flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 transition-colors focus-visible:outline-2",
+                    item.active
+                      ? "bg-muted text-foreground font-medium"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  {item.icon ? (
+                    <Icon
+                      name={item.icon}
+                      weight={item.active ? "duotone" : "regular"}
+                      className="size-4"
+                    />
+                  ) : null}
+                  <span className="flex-1 truncate">{item.label}</span>
+                  {item.count === undefined ? null : (
+                    <span className="text-muted-foreground text-xs font-normal tabular-nums">
+                      {item.count}
+                    </span>
+                  )}
+                </Link>
+              </Fragment>
             ))}
           </nav>
         </aside>

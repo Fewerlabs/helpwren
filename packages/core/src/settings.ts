@@ -18,8 +18,31 @@ export const allowedDomainSchema = z
  * Every setting, as stored: one row of the `settings` table per key. A missing row falls back
  * to its default, and keys this version does not know are ignored.
  */
+/** A colour as six hex digits, such as `#2f6f4f`. */
+export const accentColorSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^#[0-9a-f]{6}$/);
+
+/**
+ * How the install presents itself to visitors. Only the name is needed; anything left out
+ * falls back to Helpwren's own colour and wording.
+ */
+const brandSchema = z.object({
+  name: z.string().min(1),
+  /** The colour of the chat's buttons and the visitor's own messages. */
+  accent: accentColorSchema.optional(),
+  /** The first line of the chat's home screen, in place of "Hi there." */
+  greeting: z.string().min(1).optional(),
+  /** The line under the greeting, in place of "How can we help?" */
+  intro: z.string().min(1).optional(),
+});
+
+export type Brand = z.infer<typeof brandSchema>;
+
 const storedSettingsSchema = z.object({
-  brand: z.object({ name: z.string().min(1) }).default({ name: "Helpwren" }),
+  brand: brandSchema.default({ name: "Helpwren" }),
   guest_details: guestDetailsSchema.default("email"),
   /**
    * The sites that may show the chat in a frame, as hosts such as `example.com` or
@@ -68,7 +91,13 @@ export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings
 /** The settings an admin can change, with the same rules as when they are read. */
 export const settingsPatchSchema = z
   .object({
-    brand: z.object({ name: z.string().trim().min(1).max(60) }),
+    // The whole brand is saved at once: a part left out goes back to its default.
+    brand: z.object({
+      name: z.string().trim().min(1).max(60),
+      accent: accentColorSchema.optional(),
+      greeting: z.string().trim().min(1).max(60).optional(),
+      intro: z.string().trim().min(1).max(80).optional(),
+    }),
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
   })
