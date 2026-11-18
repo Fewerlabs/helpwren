@@ -8,12 +8,15 @@ export {
   type UploadAttachmentResult,
 } from "./attachments";
 export {
+  PHOTO_MAX_BYTES,
+  PHOTO_TYPES,
   agentRoleSchema,
   agentSchema,
   teamMemberSchema,
   type Agent,
   type AgentRole,
   type TeamMember,
+  type UploadPhotoResult,
 } from "./agents";
 export {
   LOGIN_CODE_LENGTH,

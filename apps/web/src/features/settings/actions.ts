@@ -23,7 +23,7 @@ import {
 import {
   changeTeamMember,
   inviteTeamMember,
-  renameTeamMember,
+  updateOwnProfile,
   type ChangeMemberResult,
   type InviteResult,
 } from "./server/team";
@@ -54,14 +54,15 @@ export async function saveBranding(values: BrandingValues): Promise<SaveResult> 
   return result;
 }
 
-/** Changes the signed-in team member's own name. */
+/** Changes the signed-in team member's own name and photo. */
 export async function saveProfile(values: ProfileValues): Promise<SaveResult> {
   const caller = await getCurrentAgent();
   if (!caller) return { ok: false, reason: "forbidden" };
   const parsed = profileSchema.safeParse(values);
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
-  await renameTeamMember(caller, parsed.data.name);
+  const saved = await updateOwnProfile(caller, parsed.data);
+  if (!saved) return { ok: false, reason: "invalid" };
   // The name is in the sidebar, on every dashboard page.
   revalidatePath("/dashboard", "layout");
   return { ok: true };

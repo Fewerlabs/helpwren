@@ -31,10 +31,10 @@ export const priorityOptions: OptionListOption[] = (
 export const NOBODY = "nobody";
 
 /** A team member as an avatar and their name. */
-export function Person({ name }: { name: string }) {
+export function Person({ name, photo }: { name: string; photo?: string | undefined }) {
   return (
     <>
-      <Avatar name={name} size="sm" className="size-5 text-[0.5625rem]" />
+      <Avatar name={name} src={photo} size="sm" className="size-5 text-[0.5625rem]" />
       <span className="truncate">{name}</span>
     </>
   );
@@ -49,7 +49,7 @@ export function assigneeOptions(team: readonly TeamMember[]): OptionListOption[]
     ...team.map((member) => ({
       value: member.id,
       label: member.name,
-      content: <Person name={member.name} />,
+      content: <Person name={member.name} photo={member.photo} />,
       // Someone deactivated cannot be given more work, but still shows on what they hold.
       disabled: !member.active,
     })),

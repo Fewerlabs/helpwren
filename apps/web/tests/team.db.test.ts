@@ -10,12 +10,14 @@ const ada: Agent = {
   name: "Ada Okafor",
   email: "ada@example.com",
   role: "admin",
+  photo: undefined,
 };
 const sam: Agent = {
   id: "a0000000-0000-4000-8000-000000000002",
   name: "Sam Rivera",
   email: "sam@example.com",
   role: "agent",
+  photo: undefined,
 };
 const NEW_EMAIL = "kofi.team-test@example.com";
 

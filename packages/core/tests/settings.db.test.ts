@@ -27,6 +27,11 @@ afterAll(async () => {
     .from("settings")
     .delete()
     .in("key", ["allowed_domains", "widget", "chat_page", "help_center"]);
+  const sam = "a0000000-0000-4000-8000-000000000002";
+  const { data: photos } = await admin.storage.from("avatars").list(sam);
+  if (photos?.length) {
+    await admin.storage.from("avatars").remove(photos.map((photo) => `${sam}/${photo.name}`));
+  }
   const { data: logos } = await admin.storage.from("brand").list();
   if (logos?.length) await admin.storage.from("brand").remove(logos.map((logo) => logo.name));
   await admin
@@ -171,6 +176,19 @@ describe("branding", () => {
     await expect(
       admin.settings.uploadLogo(new Blob([new Uint8Array(1024 * 1024 + 1)], { type: "image/png" })),
     ).resolves.toEqual({ ok: false, reason: "too_large" });
+  });
+
+  it("lets a team member store a photo of their own, and nobody a visitor's", async () => {
+    const agent = await signedIn("sam@example.com");
+    const stored = await agent.agents.uploadPhoto(png());
+    if (!stored.ok) throw new Error(`The upload was refused: ${stored.reason}`);
+    expect(stored.url).toContain("/storage/v1/object/public/avatars/");
+    expect((await fetch(stored.url)).status).toBe(200);
+
+    await expect(newVisitor().agents.uploadPhoto(png())).resolves.toEqual({
+      ok: false,
+      reason: "forbidden",
+    });
   });
 
   it("saves how the widget, the chat page and the help center wear the brand", async () => {

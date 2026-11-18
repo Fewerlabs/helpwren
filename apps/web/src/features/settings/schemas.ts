@@ -95,6 +95,8 @@ export function brandingToSettings(values: BrandingValues) {
 }
 
 export const profileSchema = z.object({
+  /** The address of their uploaded photo. Empty for none. */
+  photo: z.string().max(2000),
   name: z
     .string()
     .trim()

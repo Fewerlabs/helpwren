@@ -171,7 +171,7 @@ export function TicketTable({ team, onOpen, onChange }: TicketTableProps) {
                 onChange(ticket.id, { assigneeId: value === NOBODY ? null : value });
               }}
             >
-              {assignee ? <Person name={assignee.name} /> : unassigned}
+              {assignee ? <Person name={assignee.name} photo={assignee.photo} /> : unassigned}
             </InlineSelect>
           );
         },

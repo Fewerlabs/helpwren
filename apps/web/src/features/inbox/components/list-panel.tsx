@@ -26,8 +26,8 @@ const PAGE_SIZE = 30;
 
 interface RowProps {
   conversation: ConversationWithContact;
-  /** The name of whoever it is assigned to, if anyone. */
-  assignee: string | undefined;
+  /** Whoever it is assigned to, if anyone. */
+  assignee: TeamMember | undefined;
   selected: boolean;
   showStatus: boolean;
   onSelect: () => void;
@@ -91,8 +91,13 @@ function Row({ conversation, assignee, selected, showStatus, onSelect }: RowProp
               <StatusChip status={statuses[conversation.status].chip} size="sm" />
             ) : null}
             {assignee ? (
-              <Tooltip content={`Assigned to ${assignee}`}>
-                <Avatar name={assignee} size="sm" className="size-4 text-[0.5rem]" />
+              <Tooltip content={`Assigned to ${assignee.name}`}>
+                <Avatar
+                  name={assignee.name}
+                  src={assignee.photo}
+                  size="sm"
+                  className="size-4 text-[0.5rem]"
+                />
               </Tooltip>
             ) : null}
             {unread > 0 ? (
@@ -178,7 +183,7 @@ export function ListPanel({
         renderItem={(conversation) => (
           <Row
             conversation={conversation}
-            assignee={team.find((member) => member.id === conversation.assigneeId)?.name}
+            assignee={team.find((member) => member.id === conversation.assigneeId)}
             selected={conversation.id === selectedId}
             // Only the view of everything mixes statuses; elsewhere it would be noise.
             showStatus={searching || view.id === "all"}

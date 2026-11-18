@@ -1,14 +1,17 @@
 "use client";
 
-import { type Agent } from "@helpwren/core";
+import { PHOTO_MAX_BYTES, PHOTO_TYPES, type Agent } from "@helpwren/core";
 import { Avatar, Badge, FieldList, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import { useHelpwren } from "@/lib/helpwren-context";
+
 import { saveProfile } from "../actions";
 import { profileSchema, type ProfileValues } from "../schemas";
+import { ImageField } from "./image-field";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 
@@ -21,14 +24,34 @@ export interface ProfileFormProps {
 /** The signed-in team member's own name, and how they sign in. */
 export function ProfileForm({ agent }: ProfileFormProps) {
   const router = useRouter();
+  const getClient = useHelpwren();
   const [saved, setSaved] = useState(false);
   const form = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { name: agent.name },
+    defaultValues: { name: agent.name, photo: agent.photo ?? "" },
   });
   const name = useWatch({ control: form.control, name: "name" });
 
   const fields: FieldItem<ProfileValues>[] = [
+    {
+      name: "photo",
+      label: "Photo",
+      type: "custom",
+      hint: "PNG, JPG or WebP, up to 1 MB. Without one, your initials show.",
+      render: ({ field }) => (
+        <ImageField
+          noun="photo"
+          shape="circle"
+          value={field.value}
+          onChange={field.onChange}
+          upload={(file) => getClient().agents.uploadPhoto(file)}
+          placeholder={<Avatar name={name.trim() || agent.name} className="size-full" />}
+          maxBytes={PHOTO_MAX_BYTES}
+          accept={Object.keys(PHOTO_TYPES)}
+          disabled={form.formState.isSubmitting}
+        />
+      ),
+    },
     { name: "name", label: "Your name", type: "input", required: true },
   ];
 
@@ -56,15 +79,9 @@ export function ProfileForm({ agent }: ProfileFormProps) {
       }}
     >
       <SettingsSection
-        title="Name"
-        description="Shown to teammates, and to visitors beside your replies."
+        title="You"
+        description="Your photo and name, shown to teammates wherever your work is."
       >
-        <div className="flex items-center gap-3">
-          <Avatar name={name.trim() || agent.name} />
-          <p className="text-muted-foreground text-xs">
-            Your initials, until photos are supported.
-          </p>
-        </div>
         <FieldList control={form.control} fields={fields} disabled={form.formState.isSubmitting} />
       </SettingsSection>
       <SettingsSection

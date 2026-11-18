@@ -56,3 +56,6 @@ adding a team member meant running a script. An install could not be handed to a
   center. They are stored as the public settings `brand`, `widget`, `chat_page` and
   `help_center`. The welcome message is shown by the chat and is not stored as a message, so
   opening the chat still creates nothing in the inbox.
+- 2026-11-18: a team member can upload a photo on their Profile. Photos live in the public
+  `avatars` bucket, each person writing only to a folder named after their own id. The address
+  is saved on their row by the server, which checks it points into their own folder.

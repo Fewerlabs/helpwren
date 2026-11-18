@@ -72,7 +72,7 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
             aria-label={`Your profile: ${agent.name}`}
             className="focus-visible:outline-ring rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            <Avatar name={agent.name} size="sm" />
+            <Avatar name={agent.name} src={agent.photo} size="sm" />
           </Link>
         </Tooltip>
         {signOut}

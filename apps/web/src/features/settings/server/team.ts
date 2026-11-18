@@ -2,9 +2,10 @@ import "server-only";
 
 import { type Agent } from "@helpwren/core";
 
+import { env } from "@/lib/env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-import { type InviteValues, type MemberChange } from "../schemas";
+import { type InviteValues, type MemberChange, type ProfileValues } from "../schemas";
 
 export type InviteResult = { ok: true } | { ok: false; reason: "forbidden" | "already_member" };
 
@@ -74,10 +75,18 @@ export async function changeTeamMember(
 }
 
 /**
- * Changes a team member's own name, which visitors see beside their replies. Their row is
- * found by who is signed in and never by an id from the browser, so nobody renames anyone else.
+ * Changes a team member's own name and photo. Their row is found by who is signed in and never
+ * by an id from the browser, so nobody changes anyone else. A photo must be one they uploaded
+ * themselves: an address in their own folder of the photos bucket. False if it is not.
  */
-export async function renameTeamMember(caller: Agent, name: string): Promise<void> {
-  const { error } = await supabaseAdmin.from("agents").update({ name }).eq("user_id", caller.id);
+export async function updateOwnProfile(caller: Agent, profile: ProfileValues): Promise<boolean> {
+  const ownPhotos = `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${caller.id}/`;
+  if (profile.photo && !profile.photo.startsWith(ownPhotos)) return false;
+
+  const { error } = await supabaseAdmin
+    .from("agents")
+    .update({ name: profile.name, photo: profile.photo || null })
+    .eq("user_id", caller.id);
   if (error) throw error;
+  return true;
 }

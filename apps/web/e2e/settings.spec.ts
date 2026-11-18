@@ -17,7 +17,10 @@ async function restore() {
     .update({ value: { name: "Helpwren Demo" } })
     .eq("key", "brand");
   await database.from("settings").update({ value: "email_or_phone" }).eq("key", "guest_details");
-  await database.from("agents").update({ name: "Sam Rivera" }).eq("email", "sam@example.com");
+  await database
+    .from("agents")
+    .update({ name: "Sam Rivera", photo: null })
+    .eq("email", "sam@example.com");
   const { data } = await database.from("agents").select("user_id").eq("email", NEW_MEMBER.email);
   for (const { user_id } of data ?? []) await database.auth.admin.deleteUser(user_id);
 }
@@ -137,10 +140,27 @@ test("a team member changes their own name, and how they are notified", async ({
 
   await expect(page.getByText("sam@example.com")).toBeVisible();
   await page.getByLabel("Your name").fill("Samira Rivera");
+  await page.getByLabel("Photo file").setInputFiles({
+    name: "me.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await expect(page.getByRole("img", { name: "Current photo" })).toBeVisible();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
   await page.reload();
   await expect(page.getByLabel("Your name")).toHaveValue("Samira Rivera");
+  // The photo is theirs from then on: in the form, and on the link to their profile.
+  await expect(page.getByRole("img", { name: "Current photo" })).toHaveAttribute(
+    "src",
+    /\/storage\/v1\/object\/public\/avatars\//,
+  );
+  await expect(
+    page.getByRole("link", { name: "Your profile: Samira Rivera" }).locator("img"),
+  ).toHaveAttribute("src", /\/avatars\//);
 
   // Notification choices are kept as they are made, on this browser.
   await page.getByRole("link", { name: "Notifications" }).click();

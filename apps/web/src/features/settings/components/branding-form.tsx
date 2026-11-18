@@ -1,6 +1,6 @@
 "use client";
 
-import { type Settings } from "@helpwren/core";
+import { LOGO_MAX_BYTES, LOGO_TYPES, type Settings } from "@helpwren/core";
 import {
   ChoiceCards,
   cn,
@@ -9,6 +9,7 @@ import {
   FieldList,
   Icon,
   Link,
+  Logo,
   Slider,
   Tabs,
   TabsContent,
@@ -22,6 +23,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import { useHelpwren } from "@/lib/helpwren-context";
+
 import { saveBranding } from "../actions";
 import {
   brandingSchema,
@@ -29,7 +32,7 @@ import {
   DEFAULT_ACCENT,
   type BrandingValues,
 } from "../schemas";
-import { LogoField } from "./logo-field";
+import { ImageField } from "./image-field";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 import { WidgetPreview } from "./widget-preview";
@@ -93,6 +96,7 @@ export interface BrandingFormProps {
  */
 export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
   const router = useRouter();
+  const getClient = useHelpwren();
   const [saved, setSaved] = useState(false);
   const { brand, widget, chatPage, helpCenter } = settings;
   const form = useForm<BrandingValues>({
@@ -145,7 +149,16 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       type: "custom",
       hint: "PNG, JPG or WebP, up to 1 MB. Square works best. Without one, the wren stands in.",
       render: ({ field }) => (
-        <LogoField value={field.value} onChange={field.onChange} disabled={disabled} />
+        <ImageField
+          noun="logo"
+          value={field.value}
+          onChange={field.onChange}
+          upload={(file) => getClient().settings.uploadLogo(file)}
+          placeholder={<Logo variant="mark" size={28} label="" />}
+          maxBytes={LOGO_MAX_BYTES}
+          accept={Object.keys(LOGO_TYPES)}
+          disabled={disabled}
+        />
       ),
     },
   ];

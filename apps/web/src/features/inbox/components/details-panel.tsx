@@ -160,7 +160,7 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
                 onChange({ assigneeId: value === NOBODY ? null : value });
               }}
             >
-              {assignee ? <Person name={assignee.name} /> : unassigned}
+              {assignee ? <Person name={assignee.name} photo={assignee.photo} /> : unassigned}
             </InlineSelect>
           </Row>
           <Row label="Status">
