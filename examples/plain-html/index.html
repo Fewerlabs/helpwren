@@ -40,13 +40,23 @@
       A site can also open the chat from its own button, and show its own unread count:
       <button type="button" id="help">Help <span id="unread"></span></button>
     </p>
+    <p>
+      Or start a conversation with a message already written:
+      <button type="button" id="order">Ask about my order</button>
+    </p>
+    <p>The chat can also sit <a href="/inline">inside a page of your own</a>, with no launcher.</p>
 
     <!-- Replace localhost:3000 with the address of your Helpwren install. -->
     <script src="http://localhost:3000/widget.js"></script>
     <script>
-      Helpwren.init({ source: "web" });
+      // `trigger` makes your own button open and close the chat, beside the launcher.
+      Helpwren.init({ source: "web", trigger: "#help" });
 
-      document.getElementById("help").addEventListener("click", () => Helpwren.show());
+      document
+        .getElementById("order")
+        .addEventListener("click", () =>
+          Helpwren.startConversation("I have a question about my order."),
+        );
       Helpwren.on("unread", (count) => {
         document.getElementById("unread").textContent = count > 0 ? `(${count})` : "";
       });

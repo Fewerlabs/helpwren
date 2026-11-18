@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Helpwren example: the chat inside a page of your own</title>
+    <style>
+      body {
+        margin: 0;
+        font:
+          1rem/1.6 system-ui,
+          sans-serif;
+        color: #26231e;
+        background: #f6f3ec;
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 26rem);
+        gap: 2rem;
+        max-width: 64rem;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+      }
+      /* The chat fills this box. Give the box whatever size and shape your page wants. */
+      #support {
+        height: min(42rem, calc(100vh - 6rem));
+        overflow: hidden;
+        border: 1px solid #e3ddd0;
+        border-radius: 16px;
+        background: #fff;
+      }
+      @media (max-width: 48rem) {
+        main {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div>
+        <h1>Support</h1>
+        <p>
+          This page puts the chat straight into its own layout. There is no launcher: the chat is
+          always open in the box beside this text, as large as the box, and it never shrinks below a
+          size that still works.
+        </p>
+        <p><a href="/">Back to the floating widget</a></p>
+      </div>
+      <div id="support"></div>
+    </main>
+
+    <!-- Replace localhost:3000 with the address of your Helpwren install. -->
+    <script src="http://localhost:3000/widget.js"></script>
+    <script>
+      Helpwren.init({ source: "web", mode: "inline", container: "#support" });
+    </script>
+  </body>
+</html>

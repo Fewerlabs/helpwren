@@ -99,7 +99,12 @@ describe("init", () => {
     receive({ channel: "helpwren", type: "ready" });
 
     expect(post).toHaveBeenCalledWith(
-      { channel: "helpwren", type: "hello", page: { url: window.location.href, title: "" } },
+      {
+        channel: "helpwren",
+        type: "hello",
+        page: { url: window.location.href, title: "" },
+        closable: true,
+      },
       APP,
     );
   });
@@ -374,5 +379,99 @@ describe("welcome message", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
     });
     expect(teaser().box.hidden).toBe(true);
+  });
+});
+
+describe("the host page's own controls", () => {
+  it("fills a container of the page's own, always open, with nothing to close", () => {
+    const container = document.createElement("div");
+    container.id = "support";
+    document.body.append(container);
+    widget.init({ container: "#support", mode: "inline" });
+
+    expect(container.contains(host())).toBe(true);
+    expect(host().dataset.mode).toBe("inline");
+    const { frame, panel, launcher } = parts();
+    expect(launcher).toBeNull();
+    expect(panel.dataset.open).toBe("true");
+    widget.hide();
+    expect(widget.isOpen()).toBe(true);
+
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hello", closable: false }),
+      APP,
+    );
+  });
+
+  it("opens and closes from the page's own buttons, and keeps them in step", () => {
+    const button = document.createElement("button");
+    button.className = "help";
+    document.body.append(button);
+    const opened = vi.fn();
+    const closed = vi.fn();
+    widget.on("open", opened);
+    widget.on("close", closed);
+    widget.init({ launcher: false, trigger: ".help" });
+
+    expect(parts().launcher).toBeNull();
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    button.click();
+    expect(widget.isOpen()).toBe(true);
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    expect(opened).toHaveBeenCalledOnce();
+
+    widget.toggle();
+    expect(widget.isOpen()).toBe(false);
+    expect(closed).toHaveBeenCalledOnce();
+
+    // Taken off the page, the button is the page's own again.
+    widget.destroy();
+    button.click();
+    expect(button.hasAttribute("aria-expanded")).toBe(false);
+  });
+
+  it("keeps the page's own look over the install's, within limits", async () => {
+    answer = { position: "left", accent: "#1d4ed8", offsetX: 40 };
+    widget.init({
+      appearance: { position: "right", accent: "#be123c" },
+      layout: { width: 5000, height: 500, zIndex: 50 },
+      welcome: false,
+    });
+    await vi.waitFor(() => {
+      expect(host().style.getPropertyValue("--hw-x")).toBe("40px");
+    });
+    // The install set the spacing; the page's own choices win where it made them.
+    expect(host().dataset.position).toBe("right");
+    expect(host().style.getPropertyValue("--hw-accent")).toBe("#be123c");
+    expect(host().style.getPropertyValue("--hw-w")).toBe("640px");
+    expect(host().style.getPropertyValue("--hw-h")).toBe("500px");
+    expect(host().style.getPropertyValue("--hw-z")).toBe("50");
+
+    widget.update({ appearance: { position: "left" }, layout: { width: 360 } });
+    expect(host().dataset.position).toBe("left");
+    expect(host().style.getPropertyValue("--hw-w")).toBe("360px");
+  });
+
+  it("starts a conversation with a draft, and says when the chat is ready", () => {
+    const ready = vi.fn();
+    widget.on("ready", ready);
+    widget.init();
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+
+    receive({ channel: "helpwren", type: "ready" });
+    receive({ channel: "helpwren", type: "ready" });
+    expect(ready).toHaveBeenCalledOnce();
+
+    widget.startConversation("I need help with order 1042");
+    expect(widget.isOpen()).toBe(true);
+    expect(post).toHaveBeenLastCalledWith(
+      { channel: "helpwren", type: "start", draft: "I need help with order 1042" },
+      APP,
+    );
   });
 });

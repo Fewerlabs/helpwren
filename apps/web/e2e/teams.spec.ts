@@ -6,8 +6,14 @@ import { signInToInbox } from "./support/mailbox";
 // Runs against the local Supabase stack and its demo data, where Ada is an admin.
 const TEAM = "Returns E2E";
 
+/** Removes the team and what it left in the demo ticket's history, so the test can run again. */
 async function removeTeam() {
   await database.from("teams").delete().eq("name", TEAM);
+  await database
+    .from("conversation_events")
+    .delete()
+    .eq("kind", "team_changed")
+    .eq("data->>name", TEAM);
 }
 
 test.beforeEach(removeTeam);

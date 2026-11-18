@@ -12,3 +12,6 @@ node examples/plain-html/serve.mjs
 
 Open http://127.0.0.1:4100. The page is served from a different address than the app on
 purpose: that is how a real site embeds the chat, and it is what the browser tests use.
+
+http://127.0.0.1:4100/inline shows the chat inside a page's own layout (`mode: "inline"`), with
+no launcher. Every option a site has is listed in [docs/widget.md](../docs/widget.md).

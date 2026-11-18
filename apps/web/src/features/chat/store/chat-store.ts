@@ -13,6 +13,15 @@ export interface HostPage {
   title: string;
 }
 
+/**
+ * What the page around the chat asked a new conversation to begin with: a quick reply the
+ * visitor tapped beside the launcher, or words for the message box.
+ */
+export interface PendingStart {
+  reply?: string | undefined;
+  draft?: string | undefined;
+}
+
 interface ChatState {
   screen: Screen;
   /** True in the dashboard's preview, where nothing is loaded and nothing is sent. */
@@ -20,9 +29,9 @@ interface ChatState {
   setPreview: (preview: boolean) => void;
   page: HostPage | null;
   setPage: (page: HostPage) => void;
-  /** A quick reply tapped beside the launcher, waiting for the start screen to use it. */
-  pendingReply: string | null;
-  setPendingReply: (reply: string | null) => void;
+  /** Waiting for the start screen to use it, once. */
+  pendingStart: PendingStart | null;
+  setPendingStart: (start: PendingStart | null) => void;
   /** The tab a sub-screen was opened from, which is where its back arrow returns to. */
   tab: "home" | "messages";
   show: (screen: Screen) => void;
@@ -33,7 +42,7 @@ const initial = {
   tab: "home",
   page: null,
   preview: false,
-  pendingReply: null,
+  pendingStart: null,
 } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
@@ -41,8 +50,8 @@ const useChatStore = create<ChatState>()((set) => ({
   setPage: (page) => {
     set({ page });
   },
-  setPendingReply: (pendingReply) => {
-    set({ pendingReply });
+  setPendingStart: (pendingStart) => {
+    set({ pendingStart });
   },
   setPreview: (preview) => {
     set({ preview });
@@ -61,8 +70,8 @@ export const useTab = () => useChatStore((state) => state.tab);
 export const useShowScreen = () => useChatStore((state) => state.show);
 export const useSetPreview = () => useChatStore((state) => state.setPreview);
 export const usePreview = () => useChatStore((state) => state.preview);
-export const usePendingReply = () => useChatStore((state) => state.pendingReply);
-export const useSetPendingReply = () => useChatStore((state) => state.setPendingReply);
+export const usePendingStart = () => useChatStore((state) => state.pendingStart);
+export const useSetPendingStart = () => useChatStore((state) => state.setPendingStart);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);
 

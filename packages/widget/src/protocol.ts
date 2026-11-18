@@ -11,12 +11,19 @@ export const CHANNEL = "helpwren";
 /** From the page to the chat frame. */
 export type PageMessage =
   /** Sent whenever the frame says it is ready. */
-  | { channel: typeof CHANNEL; type: "hello"; page: { url: string; title: string } }
+  | {
+      channel: typeof CHANNEL;
+      type: "hello";
+      page: { url: string; title: string };
+      /** False when the chat is the content of the page and has nothing to close into. */
+      closable?: boolean;
+    }
   /**
-   * The visitor answered the welcome message beside the launcher: start a new conversation,
-   * with the quick reply they tapped if they tapped one.
+   * Start a new conversation. `reply` is a quick reply the visitor tapped beside the launcher,
+   * which the chat sends for them if it is one of the install's own. `draft` is text from the
+   * page, which the chat only puts in the message box.
    */
-  | { channel: typeof CHANNEL; type: "start"; reply?: string }
+  | { channel: typeof CHANNEL; type: "start"; reply?: string; draft?: string }
   /**
    * Settings to show in place of the saved ones, for the preview in the dashboard. The chat
    * checks them, and takes them only from a page on its own origin.

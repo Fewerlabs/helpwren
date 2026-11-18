@@ -4,10 +4,15 @@ import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 
 const PORT = 4100;
-const page = new URL("./index.html", import.meta.url);
+// The pages this site has, by address. Nothing else is served, so no path reaches the disk.
+const pages = {
+  "/": new URL("./index.html", import.meta.url),
+  "/inline": new URL("./inline.html", import.meta.url),
+};
 
 createServer(async (request, response) => {
-  if (request.url !== "/") {
+  const page = pages[request.url ?? ""];
+  if (!page) {
     response.writeHead(404).end("Not found");
     return;
   }

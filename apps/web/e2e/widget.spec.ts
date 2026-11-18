@@ -92,3 +92,29 @@ test("only allowed sites can show the chat, once domains are set", async ({ page
   await page.getByRole("button", { name: "Open chat" }).click();
   await expect(chat.getByRole("button", { name: "Send us a message" })).toBeVisible();
 });
+
+test("a site puts the chat inside its own page, and opens it its own way", async ({ page }) => {
+  // Inline: the chat fills the page's own box, with no launcher and nothing to close.
+  await page.goto(`${SITE}inline`);
+  const box = page.locator("#support");
+  const inline = box.frameLocator('iframe[title="Chat"]');
+  await expect(inline.getByRole("button", { name: "Send us a message" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open chat" })).toHaveCount(0);
+  await expect(inline.getByRole("button", { name: "Close chat" })).toHaveCount(0);
+  const size = await box.boundingBox();
+  const frame = await box.locator("iframe").boundingBox();
+  expect(Math.round(frame?.width ?? 0)).toBe(Math.round((size?.width ?? 0) - 2));
+
+  // Floating: the page's own button opens it, and a draft is put in the box, not sent.
+  await page.goto(SITE);
+  const help = page.getByRole("button", { name: /^Help/ });
+  await expect(help).toHaveAttribute("aria-expanded", "false");
+  await help.click();
+  await expect(help).toHaveAttribute("aria-expanded", "true");
+  const chat = page.frameLocator('iframe[title="Chat"]');
+  await expect(chat.getByRole("button", { name: "Send us a message" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Ask about my order" }).click();
+  await expect(chat.getByLabel("Your message")).toHaveValue("I have a question about my order.");
+  await expect(chat.getByRole("log", { name: "Messages" })).toHaveCount(0);
+});

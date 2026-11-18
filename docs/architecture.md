@@ -152,6 +152,10 @@ the same script in a preview: `createWidget` mounted inside an element, with the
 sent to the chat frame as a `preview` message. The frame takes those only from its own origin,
 loads no session, and sends nothing.
 
+A site can also shape the widget from its own page: put the chat inline in an element, open it
+from its own buttons, and override position, colour and size. [docs/widget.md](widget.md) lists
+every option.
+
 `/chat` is the same chat on a page of its own, for a link where there is no site to put the
 widget on. The logo lives in the public `brand` storage bucket, which only admins may write to.
 

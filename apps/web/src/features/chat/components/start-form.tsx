@@ -26,10 +26,11 @@ import { useHelpwren } from "@/lib/helpwren-context";
 import { TeamAvatar } from "../brand";
 import { chatKeys } from "../hooks/use-chat";
 import {
+  type PendingStart,
   usePage,
-  usePendingReply,
+  usePendingStart,
   usePreview,
-  useSetPendingReply,
+  useSetPendingStart,
   useShowScreen,
 } from "../store/chat-store";
 
@@ -243,19 +244,21 @@ export function StartForm({
     }
   }
 
-  // A quick reply tapped beside the launcher, before the chat was open, is used once here.
-  const pendingReply = usePendingReply();
-  const setPendingReply = useSetPendingReply();
-  const applyPending = useEffectEvent((reply: string) => {
-    setPendingReply(null);
-    // Only one of the install's own replies: the page around the chat does not get to write.
-    if (!quickReplies.includes(reply)) return;
+  // What the page around the chat asked this conversation to begin with is used once here.
+  const pendingStart = usePendingStart();
+  const setPendingStart = useSetPendingStart();
+  const applyPending = useEffectEvent(({ reply, draft }: PendingStart) => {
+    setPendingStart(null);
+    // Words from the page around the chat are only put in the box: the visitor sends them.
+    if (draft) form.setValue("message", draft, { shouldDirty: true });
+    // A quick reply is sent for them, but only if it is one of the install's own.
+    if (!reply || !quickReplies.includes(reply)) return;
     form.setValue("message", reply, { shouldDirty: true });
     if (ask === "nothing" || ask === "none") void form.handleSubmit(start)();
   });
   useEffect(() => {
-    if (pendingReply !== null) applyPending(pendingReply);
-  }, [pendingReply]);
+    if (pendingStart !== null) applyPending(pendingStart);
+  }, [pendingStart]);
 
   const submit: NonNullable<ComponentProps<"form">["onSubmit"]> = (event) => {
     void form.handleSubmit(start)(event);

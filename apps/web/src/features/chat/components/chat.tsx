@@ -54,7 +54,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const earlier = conversations.data ?? [];
   const unread = earlier.reduce((total, item) => total + item.unreadForContact, 0);
   const bridge = useEmbedBridge(unread);
-  const onClose = bridge.embedded ? bridge.close : undefined;
+  const onClose = bridge.embedded && bridge.closable ? bridge.close : undefined;
   const back = () => {
     show({ name: tab });
   };

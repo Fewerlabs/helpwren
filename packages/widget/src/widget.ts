@@ -13,10 +13,31 @@ export interface InitOptions {
    */
   launcher?: boolean;
   /**
-   * Where to put the widget, in place of the whole page: it then sits inside this element,
-   * which must be positioned. For showing the widget inside a page of your own.
+   * Your own buttons or links that open and close the chat: elements, or a CSS selector for
+   * them. Each is given `aria-expanded`, kept in step with the chat.
    */
-  container?: HTMLElement;
+  trigger?: string | Element | readonly Element[];
+  /**
+   * Where to put the widget, in place of the whole page: an element, or a CSS selector for
+   * one. With `mode: "inline"` the chat fills it; otherwise the launcher and panel float
+   * inside it, and it must be positioned.
+   */
+  container?: HTMLElement | string;
+  /**
+   * `floating` is a launcher in the corner that opens a panel (default). `inline` puts the chat
+   * straight into `container`, always open, as large as the container down to a smallest
+   * usable size, with no launcher: for a support page or a panel of your own.
+   */
+  mode?: "floating" | "inline";
+  /**
+   * Your own choices for how the widget looks, over the install's settings: `position`,
+   * `offsetX`, `offsetY`, `accent`, `accentTo`, `accentInk` and `launcher`.
+   */
+  appearance?: Partial<Appearance>;
+  /** Layout the install's settings do not cover. */
+  layout?: WidgetLayout;
+  /** Whether the welcome message may show beside the launcher. Default true. */
+  welcome?: boolean;
   /** How the widget looks, in place of asking the install. Also starts it as a preview. */
   preview?: WidgetPreview;
   /** Whether the chat starts open. Default false. */
@@ -30,7 +51,23 @@ export interface WidgetPreview {
   settings?: unknown;
 }
 
+/** Sizes and stacking for the floating panel. Each is clamped to a sensible range. */
+export interface WidgetLayout {
+  /** The panel's width in pixels, from 320 to 640. Default 400. */
+  width?: number;
+  /** The panel's height in pixels, from 420 to 900. Default 680. */
+  height?: number;
+  /** The widget's `z-index`, for a page with layers of its own. */
+  zIndex?: number;
+}
+
 export interface HelpwrenEvents {
+  /** The chat has loaded and is ready to be shown. */
+  ready: () => void;
+  /** The chat was opened, by the visitor or by you. */
+  open: () => void;
+  /** The chat was closed. */
+  close: () => void;
   /** The number of unread messages changed. Use it for a badge on your own button. */
   unread: (count: number) => void;
 }
@@ -42,6 +79,17 @@ export interface HelpwrenWidget {
   show: () => void;
   /** Closes the chat panel. */
   hide: () => void;
+  /** Opens the chat if it is closed, and closes it if it is open. */
+  toggle: () => void;
+  /** Whether the chat is open now. */
+  isOpen: () => boolean;
+  /**
+   * Opens the chat on a new conversation. `draft` is put in the message box for the visitor to
+   * send or change; nothing is sent for them.
+   */
+  startConversation: (draft?: string) => void;
+  /** Changes how the widget looks or is laid out after `init`. */
+  update: (changes: { appearance?: Partial<Appearance>; layout?: WidgetLayout }) => void;
   /** Listens for an event. Returns a function that stops listening. */
   on: <Event extends keyof HelpwrenEvents>(
     event: Event,
@@ -78,7 +126,17 @@ interface Mounted {
  * `https://support.example.com`. Nothing is added to the page until `init` is called.
  */
 export function createWidget(appOrigin: string): HelpwrenWidget {
-  const listeners = new Set<HelpwrenEvents["unread"]>();
+  const listeners: { [Event in keyof HelpwrenEvents]: Set<HelpwrenEvents[Event]> } = {
+    ready: new Set(),
+    open: new Set(),
+    close: new Set(),
+    unread: new Set(),
+  };
+  // What the host page asked for, kept so it still applies after the install's settings load.
+  let overrides: Partial<Appearance> = {};
+  let triggers: Element[] = [];
+  let inline = false;
+  let showWelcome = true;
   let mounted: Mounted | undefined;
   let unread = 0;
   let appearance = defaultAppearance;
@@ -107,13 +165,13 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     }
   }
 
-  /** Opens the chat on a new conversation, with the quick reply the visitor tapped if any. */
-  function startConversation(reply?: string) {
+  /**
+   * Opens the chat on a new conversation: with the quick reply the visitor tapped, which is
+   * sent for them, or with a draft from the page, which is only put in the message box.
+   */
+  function startConversation(start: { reply?: string; draft?: string } = {}) {
     if (!mounted) return;
-    const message: PageMessage =
-      reply === undefined
-        ? { channel: CHANNEL, type: "start" }
-        : { channel: CHANNEL, type: "start", reply };
+    const message: PageMessage = { channel: CHANNEL, type: "start", ...start };
     if (frameReady) mounted.frame.contentWindow?.postMessage(message, appOrigin);
     else waitingStart = message;
     setOpen(true);
@@ -125,7 +183,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     if (!mounted || !teaser) return;
     const { welcome, quickReplies, name, logo } = appearance;
     const open = mounted.panel.dataset.open === "true";
-    teaser.box.hidden = open || teaserSeen || (!welcome && quickReplies.length === 0);
+    teaser.box.hidden =
+      open || teaserSeen || !showWelcome || (!welcome && quickReplies.length === 0);
 
     teaser.name.textContent = name;
     teaser.message.textContent = welcome ?? "How can we help?";
@@ -144,7 +203,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         chip.className = "chip";
         chip.textContent = reply;
         chip.addEventListener("click", () => {
-          startConversation(reply);
+          startConversation({ reply });
         });
         return chip;
       }),
@@ -200,16 +259,38 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     try {
       const response = await fetch(new URL("/api/widget", appOrigin));
       if (!response.ok) return;
-      appearance = parseAppearance(await response.json(), appearance);
+      // The install's settings first, then whatever this page asked for on top of them.
+      appearance = parseAppearance(overrides, parseAppearance(await response.json(), appearance));
       paint();
     } catch {
       // Offline, or blocked by the page's own rules: the widget still works as it is.
     }
   }
 
-  function setOpen(open: boolean) {
+  /** Sizes and stacking the page asked for, each kept within a range that still works. */
+  function applyLayout(layout: WidgetLayout | undefined) {
+    if (!mounted || !layout) return;
+    const within = (value: number, min: number, max: number) =>
+      Math.min(max, Math.max(min, Math.round(value)));
+    const { style } = mounted.host;
+    if (Number.isFinite(layout.width)) {
+      style.setProperty("--hw-w", `${within(layout.width ?? 0, 320, 640)}px`);
+    }
+    if (Number.isFinite(layout.height)) {
+      style.setProperty("--hw-h", `${within(layout.height ?? 0, 420, 900)}px`);
+    }
+    if (Number.isFinite(layout.zIndex)) {
+      style.setProperty("--hw-z", String(within(layout.zIndex ?? 0, 0, 2147483647)));
+    }
+  }
+
+  function setOpen(wanted: boolean) {
     if (!mounted) return;
+    // Inline, the chat is the content of its container: there is nothing to close.
+    const open = inline || wanted;
+    const changed = mounted.panel.dataset.open !== String(open);
     mounted.panel.dataset.open = String(open);
+    for (const trigger of triggers) trigger.setAttribute("aria-expanded", String(open));
     mounted.launcher?.setAttribute("aria-expanded", String(open));
     mounted.launcher?.setAttribute("aria-label", open ? "Close chat" : "Open chat");
     if (open) {
@@ -220,7 +301,13 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       teaserSeen = false;
     }
     paintTeaser();
+    if (changed) for (const listener of listeners[open ? "open" : "close"]) listener();
   }
+
+  const isOpen = () => mounted?.panel.dataset.open === "true";
+  const toggle = () => {
+    setOpen(!isOpen());
+  };
 
   function setUnread(count: number) {
     if (count === unread) return;
@@ -229,7 +316,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       mounted.badge.hidden = count === 0;
       mounted.badge.textContent = count > 99 ? "99+" : String(count);
     }
-    for (const listener of listeners) listener(count);
+    for (const listener of listeners.unread) listener(count);
   }
 
   function greet(frame: HTMLIFrameElement) {
@@ -237,6 +324,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       channel: CHANNEL,
       type: "hello",
       page: { url: window.location.href, title: document.title },
+      closable: !inline,
     };
     // Addressed to the app's origin only, so no other site loaded in the frame could read it.
     frame.contentWindow?.postMessage(hello, appOrigin);
@@ -249,8 +337,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     }
     if (!isFrameMessage(event.data)) return;
     if (event.data.type === "ready") {
+      const first = !frameReady;
       frameReady = true;
       greet(mounted.frame);
+      if (first) for (const listener of listeners.ready) listener();
       sendPreview(mounted.frame);
       if (waitingStart) {
         mounted.frame.contentWindow?.postMessage(waitingStart, appOrigin);
@@ -286,9 +376,17 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       let launcher: HTMLButtonElement | undefined;
       let badge: HTMLSpanElement | undefined;
       let teaser: Teaser | undefined;
+      const container =
+        typeof options.container === "string"
+          ? document.querySelector<HTMLElement>(options.container)
+          : options.container;
+      // Inline needs somewhere to go; without it the chat falls back to floating.
+      inline = options.mode === "inline" && Boolean(container);
+      showWelcome = options.welcome !== false;
+      overrides = options.appearance ?? {};
       previewing = options.preview !== undefined;
       teaserSeen = previewing ? false : readTeaserSeen();
-      if (options.launcher !== false) {
+      if (options.launcher !== false && !inline) {
         const box = document.createElement("div");
         box.className = "teaser";
         box.hidden = true;
@@ -334,26 +432,46 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         badge.className = "badge";
         badge.hidden = true;
         launcher.append(badge);
-        launcher.addEventListener("click", () => {
-          setOpen(mounted?.panel.dataset.open !== "true");
-        });
+        launcher.addEventListener("click", toggle);
         root.append(launcher);
       }
 
+      triggers =
+        options.trigger === undefined
+          ? []
+          : typeof options.trigger === "string"
+            ? [...document.querySelectorAll(options.trigger)]
+            : options.trigger instanceof Element
+              ? [options.trigger]
+              : [...options.trigger];
+      for (const trigger of triggers) trigger.addEventListener("click", toggle);
+
       mounted = { host, teaser, launcher, badge, panel, frame };
+      if (container) host.dataset.contained = "";
+      if (inline) host.dataset.mode = "inline";
+      applyLayout(options.layout);
       setOpen(options.open === true);
       window.addEventListener("message", onMessage);
-      if (options.container) host.dataset.contained = "";
-      (options.container ?? document.body).append(host);
+      (container ?? document.body).append(host);
 
       if (options.preview) {
         appearance = parseAppearance(options.preview.appearance, appearance);
         previewSettings = options.preview.settings;
         paint();
       } else {
+        appearance = parseAppearance(overrides, appearance);
         paint();
         void loadAppearance();
       }
+    },
+
+    update(changes) {
+      if (changes.appearance) {
+        overrides = { ...overrides, ...changes.appearance };
+        appearance = parseAppearance(overrides, appearance);
+        paint();
+      }
+      applyLayout(changes.layout);
     },
 
     preview(preview) {
@@ -366,6 +484,13 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     destroy() {
       if (!mounted) return;
       window.removeEventListener("message", onMessage);
+      for (const trigger of triggers) {
+        trigger.removeEventListener("click", toggle);
+        trigger.removeAttribute("aria-expanded");
+      }
+      triggers = [];
+      overrides = {};
+      inline = false;
       mounted.host.remove();
       mounted = undefined;
       appearance = defaultAppearance;
@@ -382,11 +507,17 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       setOpen(false);
     },
 
-    // "unread" is the only event so far, so its name is not looked at.
-    on(_event, listener) {
-      listeners.add(listener);
+    toggle,
+    isOpen,
+
+    startConversation(draft) {
+      startConversation(draft === undefined ? {} : { draft });
+    },
+
+    on(event, listener) {
+      listeners[event].add(listener);
       return () => {
-        listeners.delete(listener);
+        listeners[event].delete(listener);
       };
     },
   };
