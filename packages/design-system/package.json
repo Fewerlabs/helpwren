@@ -37,13 +37,15 @@
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.50.0"
   },
   "devDependencies": {
     "@fontsource-variable/caveat": "^5.3.0",
     "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@helpwren/config": "workspace:*",
+    "@hookform/resolvers": "^7.0.7",
     "@storybook/addon-a11y": "^10.6.7",
     "@storybook/addon-docs": "^10.6.7",
     "@storybook/addon-vitest": "^10.6.7",
@@ -65,14 +67,19 @@
     "playwright": "^1.65.1",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "^7.92.0",
     "storybook": "^10.6.7",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "^8.3.8",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod": "^4.6.7"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
+      "optional": true
+    },
+    "react-hook-form": {
       "optional": true
     }
   }

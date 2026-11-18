@@ -63,7 +63,8 @@ const defaultMessages: ComboboxMessages = {
   remove: (label) => `Remove ${label}`,
 };
 
-interface CommonProps<Option, Value, Cursor> extends Pick<
+/** Everything except the value, which differs between single and multiple mode. */
+export interface ComboboxBaseProps<Option, Value, Cursor> extends Pick<
   AriaAttributes,
   "aria-label" | "aria-labelledby" | "aria-describedby" | "aria-invalid" | "aria-required"
 > {
@@ -133,7 +134,7 @@ export type ComboboxProps<
   Option = ComboboxOption,
   Value extends string | number = string,
   Cursor = unknown,
-> = CommonProps<Option, Value, Cursor> &
+> = ComboboxBaseProps<Option, Value, Cursor> &
   (SingleProps<Option, Value> | MultipleProps<Option, Value>);
 
 function property(option: unknown, key: string): unknown {

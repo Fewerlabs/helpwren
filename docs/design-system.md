@@ -116,11 +116,13 @@ reaches 3:1 against the page background. Helpwren tests its own defaults, not yo
 
 ## Layers
 
-| Layer    | What it holds                                     | Who may import it                |
-| -------- | ------------------------------------------------- | -------------------------------- |
-| `ui`     | shadcn/ui output, kept close to upstream          | `base` only                      |
-| `base`   | Our primitives, with our API, variants and styles | `shared`, and everything outside |
-| `shared` | Composed, reusable pieces with no business logic  | Everything outside               |
+| Layer    | What it holds                                     | Who may import it                      |
+| -------- | ------------------------------------------------- | -------------------------------------- |
+| `ui`     | shadcn/ui output, kept close to upstream          | `base` only                            |
+| `base`   | Our primitives, with our API, variants and styles | `shared`, and everything outside       |
+| `shared` | Composed, reusable pieces with no business logic  | `data`, `form`, and everything outside |
+| `data`   | Components that fetch through TanStack Query      | Everything outside                     |
+| `form`   | Components that build forms on React Hook Form    | Everything outside                     |
 
 ESLint enforces the boundaries. The reasoning is in
 [ADR 0002](decisions/0002-component-layers.md).
@@ -299,6 +301,30 @@ milliseconds, `easing`, `fade`, and `contentClassName`. While closed its content
 only animates: put `aria-expanded` and `aria-controls` on your own trigger. Use `Dialog` or
 `Sheet` when the content should sit above the page instead of pushing it.
 
+**DataTable** is a table built from a list of columns. Each column has an `id`, a `header` and a
+`cell(row)` that renders anything, plus optional `align`, `width`, `footer`, `hidden`, `rowHeader`
+and class names.
+
+- **Sorting:** mark a column `sortable` and give it a `sortValue(row)`; pressing the header cycles
+  ascending, descending, unsorted. Empty values always sort last. With `manualSorting` the table
+  only reports the choice through `onSortChange`, for sorting on the server. Control it with
+  `sort`.
+- **Selection:** `selectable` adds a checkbox column with select-all. Control it with
+  `selectedKeys` and `onSelectedKeysChange`; `isRowSelectable` disables rows.
+- **States:** `loading` shows placeholder rows when there are none, or a progress bar under the
+  header when rows are already showing. `empty` replaces the rows when there are none.
+- **Look:** `density`, `striped`, `stickyHeader` (give the table a height with
+  `containerClassName`), `rowProps` for per-row attributes, and `messages` for every label.
+
+It always needs a `caption`, which names the table for screen readers (`showCaption` makes it
+visible). For paging or infinite scrolling, wrap it in `QueryList` and pass `children` as a
+function. To make a row lead somewhere, put a `Link` or `Button` in a cell rather than making the
+whole row clickable, so it works from the keyboard.
+
+**Table** and its parts (`TableHeader`, `TableBody`, `TableFooter`, `TableRow`, `TableHead`,
+`TableCell`, `TableCaption`) are for a table laid out by hand. Use `DataTable` for anything driven
+by data.
+
 **Tabs** (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`) switch between views of the same
 context. Give `TabsList` an `aria-label`. Use links, not tabs, to move between pages.
 
@@ -323,11 +349,149 @@ interactive content in one. Place one `TooltipProvider` near the root of the app
 
 ### Loading
 
+**LinearProgress** is a thin bar along the top edge of content. Use it when content is already on
+screen and is being refreshed or added to, so nothing jumps: `Combobox`, `DataTable`, `QueryList`
+and `QueryDetail` all do. Leave `value` out when the amount of work is unknown, or pass 0 to 100.
+Use `Spinner` or `Skeleton` when there is nothing to show yet.
+
 **Spinner** shows that something short is in progress. It is announced as "Loading"; change that
 with `label`. `Button` has one built in through `loading`.
 
 **Skeleton** stands in for content that is loading, in its shape. It is hidden from assistive
 technology, so announce loading once on the container (`role="status"`).
+
+## Data components
+
+`QueryList` and `QueryDetail` fetch through [TanStack Query](https://tanstack.com/query) and draw
+every state around the request, so a feature only writes the request and the row. They need a
+`QueryClientProvider` above them, which the app provides. The reasoning is in
+[ADR 0004](decisions/0004-data-layer.md).
+
+Both pass these TanStack Query options straight through: `enabled`, `staleTime`, `gcTime`,
+`refetchInterval`, `refetchOnWindowFocus` and `retry`. Results are cached by `queryKey`, so include
+every filter the request depends on in the key.
+
+In both, the progress bar is pinned to the very top edge and stays there while the content
+scrolls. Put the box (border, background, radius, height, scrolling) on `className` and the
+padding on `contentClassName`; padding on `className` would push the bar down.
+
+### QueryList
+
+```tsx
+<QueryList
+  queryKey={["conversations", { status }]}
+  queryFn={({ cursor, signal }) => api.conversations.list({ status, cursor, signal })}
+  renderItem={(conversation) => <ConversationListItem conversation={conversation} />}
+  getItemKey={(conversation) => conversation.id}
+/>
+```
+
+`queryFn` receives `{ page, cursor, pageSize, signal }` and returns `{ items, nextCursor?, total? }`.
+`pagination` chooses how more items arrive:
+
+- **`infinite`** (default) appends the next page when the end of the list scrolls into view, as
+  long as the last page returned `nextCursor`. `loadMoreOn="button"` shows a "Load more" button
+  instead.
+- **`pages`** shows one page at a time with previous and next. The current page stays on screen
+  under the progress bar until the next arrives. Pass `pageSize` and return `total` to show
+  "Page 2 of 13". Control it with `page` and `onPageChange`, for example to keep the page in the
+  URL.
+- **`none`** makes a single request with no paging.
+
+States it draws for you, each replaceable:
+
+| State                                 | Default                                    | Replace with       |
+| ------------------------------------- | ------------------------------------------ | ------------------ |
+| First load                            | Skeleton rows (`loadingRows`)              | `renderLoading`    |
+| No items                              | An empty state with `messages.empty`       | `renderEmpty`      |
+| Failed with nothing to show           | A message and a "Try again" button         | `renderError`      |
+| Failed with items showing (load more) | A compact message and retry under the list | `renderError`      |
+| Refreshing with items showing         | `LinearProgress` pinned to the top         |                    |
+| Paging controls                       | Previous, "Page x of y", Next              | `renderPagination` |
+
+Also: `header` and `footer` around the items, `messages` for every piece of text, and
+`listClassName` and `itemClassName`. For a table, a grid or anything that is not a list, pass
+`children` as a function: it receives the whole state (`items`, `status`, `total`, `hasMore`,
+`loadMore`, `retry`, `refetch`, `pagination`, and the fetching flags) and you draw everything.
+
+### QueryDetail
+
+```tsx
+<QueryDetail queryKey={["contact", id]} queryFn={({ signal }) => api.contacts.get(id, { signal })}>
+  {(contact, { refetch, isFetching }) => <ContactCard contact={contact} />}
+</QueryDetail>
+```
+
+It draws the first load (`renderLoading`), not found when `queryFn` returns `null` or `isEmpty`
+says so (`renderEmpty`), and failure with a retry (`renderError`). Once the item is showing, a
+refresh keeps it on screen under the progress bar. Two components with the same `queryKey` share
+one request and one cached result.
+
+Use `QueryDetail` for one record and `QueryList` for many. Use neither for data you already hold:
+pass it as props.
+
+## Form components
+
+### FieldList
+
+`FieldList` builds the fields of a form from a list. You keep `useForm`, the Zod schema, the
+`<form>` element and the submit button; it renders the controls and wires each one's value, change
+handler and validation message to React Hook Form.
+
+```tsx
+const schema = z.object({
+  email: z.email("Enter an email address."),
+  plan: z.string().min(1, "Choose a plan."),
+  budget: z.string(),
+});
+type Values = z.infer<typeof schema>;
+
+const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues });
+
+<form onSubmit={form.handleSubmit(save)}>
+  <FieldList
+    control={form.control}
+    columns={2}
+    fields={[
+      { name: "email", label: "Email", type: "input", props: { type: "email" } },
+      { name: "plan", label: "Plan", type: "select", props: { options: plans } },
+      { name: "budget", label: "Budget", type: "input", props: { currency: true, prepend: "$" } },
+    ]}
+  />
+  <Button type="submit">Save</Button>
+</form>;
+```
+
+Each item has:
+
+- **`name`:** the path of the value in the form. TypeScript checks it against the form's type, so
+  a name that is not in the schema is an error. Nested paths such as `"address.city"` work.
+- **`label`**, and optionally `hint`, `required` (shows the asterisk; the schema does the
+  validating), `hidden` (leave the field out, for example depending on another value) and
+  `className` (for example `sm:col-span-2`).
+- **`type`**, which picks the control, and **`props`**, which are that control's own props and are
+  typed to match:
+
+| `type`     | Renders      | `props`                                                                       |
+| ---------- | ------------ | ----------------------------------------------------------------------------- |
+| `input`    | `Input`      | Any `Input` prop: `type`, `prepend`, `append`, `currency`, `formatter`        |
+| `textarea` | `Textarea`   | Any `Textarea` prop                                                           |
+| `select`   | `Select`     | `options` (required), `placeholder`                                           |
+| `combobox` | `Combobox`   | Any `Combobox` prop: `options` or `loadOptions`, `resolveOptions`, `multiple` |
+| `tags`     | `TagsInput`  | Any `TagsInput` prop                                                          |
+| `radio`    | `RadioGroup` | `options` (required)                                                          |
+| `checkbox` | `Checkbox`   | Any `Checkbox` prop                                                           |
+| `switch`   | `Switch`     | Any `Switch` prop                                                             |
+| `custom`   | Your own     | No `props`; a `render({ field, fieldState })` function returns the control    |
+
+The form owns `value`, `onChange`, `name` and `id`, so those are not accepted in `props`. Value
+shapes: text controls hold a string (a `currency` input holds the plain number as a string, such
+as `"12500"`), `tags` and a `multiple` combobox hold a string array, and `checkbox` and `switch`
+hold a boolean.
+
+`columns` lays the fields out in one, two or three columns from the `sm` breakpoint up, and
+`disabled` disables them all, for example while saving. For a layout `FieldList` cannot express,
+use `Field` with the controls directly and React Hook Form's `Controller`.
 
 ## The `ui` layer
 

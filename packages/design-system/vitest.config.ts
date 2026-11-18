@@ -32,11 +32,14 @@ export default defineConfig({
         optimizeDeps: {
           include: [
             "@phosphor-icons/react/ssr",
+            "@hookform/resolvers/zod",
             "@tanstack/react-query",
             "class-variance-authority",
             "clsx",
             "radix-ui",
+            "react-hook-form",
             "tailwind-merge",
+            "zod",
           ],
         },
         test: {

@@ -20,9 +20,21 @@ const query = {
   message:
     "Only the data layer may fetch. Take data as props here, or build the component in components/data.",
 };
+const forms = {
+  group: ["react-hook-form", "@hookform/*"],
+  message:
+    "Only the form layer may use React Hook Form. Take value and onChange as props here, or build the component in components/form.",
+};
 const data = {
-  group: ["**/components/data", "**/components/data/**", "**/data/*"],
-  message: "ui, base and shared components must not depend on data components.",
+  group: [
+    "**/components/data",
+    "**/components/data/**",
+    "**/data/*",
+    "**/components/form",
+    "**/components/form/**",
+    "**/form/*",
+  ],
+  message: "ui, base and shared components must not depend on data or form components.",
 };
 const aboveBase = {
   group: ["**/components/shared", "**/components/shared/**", "**/shared/*"],
@@ -41,7 +53,7 @@ export default [
     rules: {
       "no-restricted-imports": [
         "error",
-        { paths: [cnPackage], patterns: [phosphor, ui, query, data] },
+        { paths: [cnPackage], patterns: [phosphor, ui, query, forms, data] },
       ],
     },
   },
@@ -50,7 +62,7 @@ export default [
     rules: {
       "no-restricted-imports": [
         "error",
-        { paths: [cnPackage], patterns: [phosphor, aboveBase, query, data] },
+        { paths: [cnPackage], patterns: [phosphor, aboveBase, query, forms, data] },
       ],
     },
   },
@@ -59,7 +71,7 @@ export default [
     rules: {
       "no-restricted-imports": [
         "error",
-        { paths: [cnPackage], patterns: [phosphor, aboveBase, query, data] },
+        { paths: [cnPackage], patterns: [phosphor, aboveBase, query, forms, data] },
       ],
     },
   },
@@ -68,19 +80,28 @@ export default [
     rules: {
       "no-restricted-imports": [
         "error",
-        { paths: [cnPackage], patterns: [aboveBase, query, data] },
+        { paths: [cnPackage], patterns: [aboveBase, query, forms, data] },
       ],
     },
   },
   {
     // The package entry point re-exports every public layer.
     files: ["src/index.ts"],
-    rules: { "no-restricted-imports": ["error", { patterns: [phosphor, ui, query] }] },
+    rules: { "no-restricted-imports": ["error", { patterns: [phosphor, ui, query, forms] }] },
   },
   {
     // The data layer is the one place that may use TanStack Query. It builds on base and shared.
     files: ["src/components/data/**/*.{ts,tsx}"],
-    rules: { "no-restricted-imports": ["error", { paths: [cnPackage], patterns: [phosphor, ui] }] },
+    rules: {
+      "no-restricted-imports": ["error", { paths: [cnPackage], patterns: [phosphor, ui, forms] }],
+    },
+  },
+  {
+    // The form layer is the one place that may use React Hook Form.
+    files: ["src/components/form/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", { paths: [cnPackage], patterns: [phosphor, ui, query] }],
+    },
   },
   {
     // shadcn/ui output is kept as close to upstream as possible, so rules about style that
