@@ -1,6 +1,7 @@
 "use client";
 
 import { type Agent } from "@helpwren/core";
+import { cn, compactControls } from "@helpwren/design-system";
 import { type ReactNode } from "react";
 
 import { HelpwrenProvider } from "@/lib/helpwren-context";
@@ -22,7 +23,13 @@ export function DashboardShell({ agent, signOut, children }: DashboardShellProps
   return (
     <HelpwrenProvider getClient={getDashboardClient}>
       {/* A lighter canvas than the page colour, so the white panels sit on it quietly. */}
-      <div className="bg-card flex h-dvh max-md:flex-col">
+      <div
+        className={cn(
+          "bg-card flex h-dvh text-[0.8125rem] leading-5 max-md:flex-col",
+          // A dashboard is used with a mouse and keyboard, all day: everything is a size down.
+          compactControls,
+        )}
+      >
         <Sidebar agent={agent} signOut={signOut} />
         <main className="min-h-0 min-w-0 flex-1">{children}</main>
       </div>

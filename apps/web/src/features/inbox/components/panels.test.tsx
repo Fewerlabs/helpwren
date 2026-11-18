@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { contactName } from "../contact-name";
+import { inboxViews } from "../hooks/use-inbox";
 import { DetailsPanel } from "./details-panel";
 import { ListPanel, type ListPanelProps } from "./list-panel";
 
@@ -32,13 +33,15 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
   };
 }
 
+const all = inboxViews[3];
+
 function renderList(props: Partial<ListPanelProps> = {}) {
-  const handlers = { onRetry: vi.fn(), onFilterChange: vi.fn(), onSelect: vi.fn() };
+  const handlers = { onRetry: vi.fn(), onSelect: vi.fn() };
   render(
     <ListPanel
       conversations={[conversation()]}
       failed={false}
-      filter="open"
+      view={inboxViews[0]}
       selectedId={null}
       {...handlers}
       {...props}
@@ -73,16 +76,17 @@ describe("ListPanel", () => {
     expect(onSelect).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111");
   });
 
-  it("shows which filter is on, and asks for the other", async () => {
-    const { onFilterChange } = renderList();
-    expect(screen.getByRole("button", { name: "Open" })).toHaveAttribute("aria-pressed", "true");
-
-    await userEvent.click(screen.getByRole("button", { name: "All" }));
-    expect(onFilterChange).toHaveBeenCalledWith("all");
+  it("is titled with the view it shows, and marks the open conversation", () => {
+    renderList({ selectedId: "11111111-1111-4111-8111-111111111111" });
+    expect(screen.getByRole("heading", { name: /Open/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { current: true })).toHaveTextContent("Priya Nair");
   });
 
   it("shows each conversation's status only when listing all of them", () => {
-    renderList({ conversations: [conversation({ status: "resolved" })], filter: "all" });
+    renderList({
+      conversations: [conversation({ status: "resolved", unreadForAgents: 0 })],
+      view: all,
+    });
     expect(screen.getByText("Resolved")).toBeInTheDocument();
   });
 

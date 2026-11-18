@@ -1,16 +1,14 @@
 "use client";
 
-import { cn } from "@helpwren/design-system";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 
-import { Panel, PanelHeader } from "@/features/dashboard";
+import { DashboardPage } from "@/features/dashboard";
 
 const pages = [
-  { href: "/dashboard/settings/general", label: "General" },
-  { href: "/dashboard/settings/installation", label: "Installation" },
-  { href: "/dashboard/settings/team", label: "Team" },
+  { href: "/dashboard/settings/general", label: "General", icon: "gear" },
+  { href: "/dashboard/settings/installation", label: "Installation", icon: "code" },
+  { href: "/dashboard/settings/team", label: "Team", icon: "users" },
 ] as const;
 
 /** The frame around every settings page: the list of pages beside the one that is open. */
@@ -18,34 +16,12 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="grid h-full gap-3 p-3 md:grid-cols-[14rem_minmax(0,1fr)]">
-      <Panel aria-label="Settings pages" className="max-md:h-auto">
-        <PanelHeader>
-          <h1 className="text-sm font-semibold">Settings</h1>
-        </PanelHeader>
-        <nav aria-label="Settings" className="flex gap-0.5 p-2 max-md:overflow-x-auto md:flex-col">
-          {pages.map((page) => {
-            const active = pathname === page.href;
-            return (
-              <Link
-                key={page.href}
-                href={page.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "focus-visible:outline-ring rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2",
-                  active
-                    ? "bg-muted text-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {page.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </Panel>
+    <DashboardPage
+      title="Settings"
+      nav={pages.map((page) => ({ ...page, active: pathname === page.href }))}
+    >
       {children}
-    </div>
+    </DashboardPage>
   );
 }
 
@@ -59,7 +35,7 @@ export interface SettingsPageProps {
   children: ReactNode;
 }
 
-/** One settings page: its title, what it is for, and its controls. */
+/** One settings page: its title, what it is for, and its sections. */
 export function SettingsPage({
   title,
   description,
@@ -68,26 +44,46 @@ export function SettingsPage({
   children,
 }: SettingsPageProps) {
   return (
-    <Panel aria-labelledby="settings-page-title">
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto grid max-w-2xl gap-6 px-6 py-8">
-          <header className="flex items-start justify-between gap-4">
-            <div className="grid gap-1">
-              <h2 id="settings-page-title" className="text-xl font-semibold">
-                {title}
-              </h2>
-              <p className="text-muted-foreground text-sm">{description}</p>
-            </div>
-            {action}
-          </header>
-          {readOnly ? (
-            <p role="note" className="border-rule bg-muted rounded-xl border px-4 py-3 text-sm">
-              Only admins can change these. Ask an admin if something needs changing.
-            </p>
-          ) : null}
-          {children}
-        </div>
+    <section aria-labelledby="settings-page-title" className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-3xl px-8 py-8">
+        <header className="flex items-start justify-between gap-4 pb-6">
+          <div className="grid gap-1">
+            <h2 id="settings-page-title" className="text-lg font-semibold">
+              {title}
+            </h2>
+            <p className="text-muted-foreground">{description}</p>
+          </div>
+          {action}
+        </header>
+        {readOnly ? (
+          <p role="note" className="bg-muted mb-6 rounded-lg px-3 py-2">
+            Only admins can change these. Ask an admin if something needs changing.
+          </p>
+        ) : null}
+        {children}
       </div>
-    </Panel>
+    </section>
+  );
+}
+
+export interface SettingsSectionProps {
+  title: string;
+  description: ReactNode;
+  children: ReactNode;
+}
+
+/**
+ * A group of related settings: what it is and why on the left, its controls on the right.
+ * On a narrow screen the two stack.
+ */
+export function SettingsSection({ title, description, children }: SettingsSectionProps) {
+  return (
+    <section className="border-rule grid gap-x-10 gap-y-4 border-t py-6 md:grid-cols-[13rem_minmax(0,1fr)]">
+      <div className="grid content-start gap-1">
+        <h3 className="font-medium">{title}</h3>
+        <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
+      </div>
+      <div className="grid min-w-0 content-start gap-4">{children}</div>
+    </section>
   );
 }

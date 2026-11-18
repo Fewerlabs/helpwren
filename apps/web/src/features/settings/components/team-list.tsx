@@ -49,23 +49,23 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
   return (
     <div className="grid gap-3">
       {failure ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive">
           {failures[failure]}
         </p>
       ) : null}
-      <ul aria-label="Team members" className="border-rule divide-rule divide-y rounded-xl border">
+      <ul aria-label="Team members" className="border-rule divide-rule divide-y border-y">
         {members.map((member) => {
           const isSelf = member.id === currentId;
           const busy = pending === member.id;
           return (
-            <li key={member.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-              <Avatar name={member.name} size="sm" />
+            <li key={member.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <Avatar name={member.name} size="sm" className="text-2xs size-7" />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 truncate text-sm font-medium">
+                <p className="flex items-center gap-2 truncate font-medium">
                   {member.name}
                   {isSelf ? <span className="text-muted-foreground font-normal">(you)</span> : null}
                 </p>
-                <p className="text-muted-foreground truncate text-sm">{member.email}</p>
+                <p className="text-muted-foreground truncate text-xs">{member.email}</p>
               </div>
               <Badge variant={member.role === "admin" ? "accent" : "neutral"}>
                 {member.role === "admin" ? "Admin" : "Agent"}

@@ -446,7 +446,11 @@ export function Combobox<
           role="group"
           aria-disabled={disabled || undefined}
           data-state={open ? "open" : "closed"}
-          className={cn("gap-1.5 py-1 pr-1.5 pl-3", multiple && "pl-2", className)}
+          className={cn(
+            "gap-1.5 py-(--hw-control-pad,0.25rem) pr-1.5 pl-3",
+            multiple && "pl-2",
+            className,
+          )}
         >
           {/* While options load, the spinner takes the place of the leading icon. */}
           {prepend === undefined ? null : (

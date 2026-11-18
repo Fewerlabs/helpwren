@@ -1,26 +1,19 @@
 import { cn } from "@helpwren/design-system";
 import { type ComponentProps } from "react";
 
-/** A white card on the dashboard's canvas. Each one scrolls on its own inside the fixed-height page. */
+/**
+ * One column of a dashboard page's surface. Columns sit side by side, divided by a hairline,
+ * and each scrolls on its own inside the fixed-height page.
+ */
 export function Panel({ className, ...props }: ComponentProps<"section">) {
-  return (
-    <section
-      className={cn(
-        // A panel is a surface, not a control, so its edge is the quiet rule colour, not the
-        // stronger one that marks inputs and buttons.
-        "border-rule dark:bg-card flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border bg-white",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <section className={cn("flex min-h-0 min-w-0 flex-col", className)} {...props} />;
 }
 
-/** The bar across the top of a panel. */
+/** The bar across the top of a column. */
 export function PanelHeader({ className, ...props }: ComponentProps<"header">) {
   return (
     <header
-      className={cn("border-rule flex h-14 shrink-0 items-center gap-2 border-b px-4", className)}
+      className={cn("border-rule flex h-11 shrink-0 items-center gap-2 border-b px-3", className)}
       {...props}
     />
   );

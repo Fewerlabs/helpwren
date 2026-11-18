@@ -61,7 +61,7 @@ test("an admin sets which sites may show the chat, and copies the snippet", asyn
   ).toBeVisible();
   await expect(page.getByText("any site can show your chat")).toBeVisible();
 
-  const domains = page.getByLabel("Allowed domains");
+  const domains = page.getByLabel("Domains");
   await domains.fill("https://Example.com/pricing");
   await domains.press("Enter");
   await expect(page.getByRole("button", { name: "Remove example.com" })).toBeVisible();

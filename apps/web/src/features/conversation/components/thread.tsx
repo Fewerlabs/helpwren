@@ -1,7 +1,7 @@
 "use client";
 
 import { type Message } from "@helpwren/core";
-import { Button, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
+import { Avatar, Button, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
 import { useEffect, useRef } from "react";
 
 import { formatMessageTime } from "@/lib/format-time";
@@ -17,13 +17,25 @@ export interface ThreadProps {
   otherName: string;
   /** Called after the conversation has been marked as read, to refresh any unread counts. */
   onRead?: () => void;
+  /**
+   * `compact` is for the inbox: smaller bubbles and a roomier reply box. Default `comfortable`,
+   * for the chat on a phone.
+   */
+  density?: "comfortable" | "compact";
 }
 
 /**
  * One conversation: its messages, live, and the box for replying. Used by both sides, the
  * visitor's chat and the team's inbox. It fills the height it is given.
  */
-export function Thread({ conversationId, isOwn, otherName, onRead }: ThreadProps) {
+export function Thread({
+  conversationId,
+  isOwn,
+  otherName,
+  onRead,
+  density = "comfortable",
+}: ThreadProps) {
+  const compact = density === "compact";
   const messages = useMessages(conversationId);
   useLiveThread(conversationId, { isOwn, onRead });
 
@@ -75,11 +87,22 @@ export function Thread({ conversationId, isOwn, otherName, onRead }: ThreadProps
                 </Button>
               </div>
             ) : null}
-            <div role="log" aria-label="Messages" className="flex flex-col gap-3">
+            <div
+              role="log"
+              aria-label="Messages"
+              className={compact ? "flex flex-col gap-2.5" : "flex flex-col gap-3"}
+            >
               {messages.data.map((message) => (
                 <MessageBubble
                   key={message.id}
                   from={isOwn(message) ? "self" : "other"}
+                  size={compact ? "sm" : "md"}
+                  {...(compact
+                    ? {
+                        className: "max-w-[72%]",
+                        avatar: <Avatar name={otherName} size="sm" className="text-2xs size-6" />,
+                      }
+                    : {})}
                   author={otherName}
                   time={formatMessageTime(message.createdAt)}
                 >
@@ -91,7 +114,7 @@ export function Thread({ conversationId, isOwn, otherName, onRead }: ThreadProps
         )}
         <div ref={end} />
       </div>
-      <Composer conversationId={conversationId} />
+      <Composer conversationId={conversationId} variant={compact ? "card" : "bar"} />
     </div>
   );
 }

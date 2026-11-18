@@ -2,6 +2,7 @@
 export { Avatar, type AvatarProps } from "./avatar/avatar";
 export { Badge, type BadgeProps } from "./badge/badge";
 export { Button, type ButtonProps } from "./button/button";
+export { compactControls } from "./styles";
 export {
   Card,
   CardAction,

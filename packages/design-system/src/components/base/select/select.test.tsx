@@ -49,7 +49,7 @@ describe("Select", () => {
       </Select>,
     );
     const trigger = screen.getByRole("combobox", { name: "Assignee" });
-    expect(trigger).toHaveClass("w-40", "data-[size=default]:h-10");
+    expect(trigger).toHaveClass("w-40", "data-[size=default]:h-(--hw-control-height,2.5rem)");
     expect(trigger).not.toHaveClass("w-full");
   });
 

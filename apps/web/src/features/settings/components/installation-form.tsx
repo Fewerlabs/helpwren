@@ -10,13 +10,14 @@ import { useForm, useWatch } from "react-hook-form";
 import { saveInstallation } from "../actions";
 import { installationSchema, type InstallationValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
+import { SettingsSection } from "./settings-frame";
 
 const fields: FieldItem<InstallationValues>[] = [
   {
     name: "allowedDomains",
-    label: "Allowed domains",
+    label: "Domains",
     type: "tags",
-    hint: "The sites that may show your chat, such as example.com or *.example.com. Press Enter after each.",
+    hint: "Such as example.com or *.example.com. Press Enter after each.",
     props: {
       placeholder: "example.com",
       transform: (text) =>
@@ -72,26 +73,26 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
   }
 
   return (
-    <div className="grid gap-8">
-      <section aria-labelledby="snippet-title" className="grid gap-3">
-        <div className="grid gap-1">
-          <h3 id="snippet-title" className="text-sm font-semibold">
-            Add the chat to your site
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            Paste this before the closing <code className="font-mono text-xs">&lt;/body&gt;</code>{" "}
-            tag on every page that should show the chat.
-          </p>
-        </div>
+    <form
+      noValidate
+      onSubmit={(event) => {
+        void form.handleSubmit(save)(event);
+      }}
+    >
+      <SettingsSection
+        title="Widget"
+        description={
+          <>
+            Paste this before the closing <code className="font-mono">&lt;/body&gt;</code> tag on
+            every page that should show the chat.
+          </>
+        }
+      >
         <CodeSnippet code={snippet} language="HTML" />
-      </section>
-
-      <form
-        noValidate
-        className="grid gap-6"
-        onSubmit={(event) => {
-          void form.handleSubmit(save)(event);
-        }}
+      </SettingsSection>
+      <SettingsSection
+        title="Allowed domains"
+        description="The sites that may show your chat. Other sites are refused by the visitor's browser."
       >
         <FieldList
           control={form.control}
@@ -99,19 +100,19 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
           disabled={!canEdit || form.formState.isSubmitting}
         />
         {domains.length === 0 ? (
-          <p role="note" className="border-rule bg-muted rounded-xl border px-4 py-3 text-sm">
+          <p role="note" className="bg-muted rounded-lg px-3 py-2">
             No domains are set, so any site can show your chat. Add yours to limit it to them.
           </p>
         ) : null}
-        {canEdit ? (
-          <SaveBar
-            saving={form.formState.isSubmitting}
-            saved={saved}
-            dirty={form.formState.isDirty}
-            error={form.formState.errors.root?.message}
-          />
-        ) : null}
-      </form>
-    </div>
+      </SettingsSection>
+      {canEdit ? (
+        <SaveBar
+          saving={form.formState.isSubmitting}
+          saved={saved}
+          dirty={form.formState.isDirty}
+          error={form.formState.errors.root?.message}
+        />
+      ) : null}
+    </form>
   );
 }

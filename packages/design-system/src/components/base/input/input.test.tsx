@@ -31,7 +31,10 @@ describe("Input", () => {
     const input = screen.getByRole("textbox", { name: "Email" });
     expect(input).toHaveAttribute("type", "email");
     expect(input).toBeInvalid();
-    expect(input.closest("[data-slot='input-shell']")).toHaveClass("max-w-xs", "min-h-10");
+    expect(input.closest("[data-slot='input-shell']")).toHaveClass(
+      "max-w-xs",
+      "min-h-(--hw-control-height,2.5rem)",
+    );
   });
 
   it("forwards its ref to the input element", () => {

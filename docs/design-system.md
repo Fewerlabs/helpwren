@@ -480,6 +480,14 @@ In both, the progress bar is pinned to the very top edge and stays there while t
 scrolls. Put the box (border, background, radius, height, scrolling) on `className` and the
 padding on `contentClassName`; padding on `className` would push the bar down.
 
+### Compact controls
+
+Text controls are 40px tall with 14px text, which suits touch. A dense screen used with a mouse
+and keyboard, such as the dashboard, can ask for 32px and 13px: put the exported
+`compactControls` classes on a container, and the `Input`, `Select`, `Combobox`, `TagsInput` and
+`PhoneInput` inside it follow. Use `size="sm"` buttons beside them. `MessageBubble` has its own
+`size="sm"`, and an `avatar` slot that replaces the name above the other person's messages.
+
 ### QueryList
 
 ```tsx

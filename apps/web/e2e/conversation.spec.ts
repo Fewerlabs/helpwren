@@ -76,7 +76,10 @@ test("the inbox can show every conversation, not only open ones", async ({ page 
   await expect(list.getByText("Do you offer a discount for charities?")).toBeVisible();
   await expect(list.getByText("All sorted. Thanks for the quick reply!")).toHaveCount(0);
 
-  await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "All" }).click();
+  const views = page.getByRole("navigation", { name: "Inbox views" });
+  await expect(views.getByRole("link", { name: /Open/ })).toHaveAttribute("aria-current", "page");
+  await views.getByRole("link", { name: /All/ }).click();
+  await expect(page).toHaveURL(/view=all/);
   await expect(list.getByText("All sorted. Thanks for the quick reply!")).toBeVisible();
   await expect(list.getByText("Resolved")).toBeVisible();
 });

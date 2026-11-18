@@ -23,7 +23,8 @@ export const controlInvalid =
  * Focus, error and disabled states are read from the input inside it.
  */
 export const controlShell = [
-  "flex min-h-10 w-full min-w-0 items-center rounded-lg text-base transition-colors md:text-sm",
+  // Height and text size can be lowered for a dense screen; see `compactControls` below.
+  "flex min-h-(--hw-control-height,2.5rem) w-full min-w-0 items-center rounded-lg text-base transition-colors md:text-(length:--hw-control-text,0.875rem)",
   controlSurface,
   // Focus changes the edge to the accent colour. The ring is added only when focus
   // arrived from the keyboard (see ControlShell and lib/keyboard-focus).
@@ -42,6 +43,14 @@ export const textControlFocus = [
   "data-keyboard-focus:outline-ring data-keyboard-focus:outline-2 data-keyboard-focus:outline-offset-2 data-keyboard-focus:outline-solid",
   "aria-invalid:focus:border-destructive aria-invalid:data-keyboard-focus:outline-destructive",
 ].join(" ");
+
+/**
+ * Put this on a container to make the text controls inside it smaller: 32px tall with 13px
+ * text, in place of 40px and 14px. For dense screens such as a dashboard, where people use a
+ * mouse and keyboard. Leave touch screens, such as the chat, at the default.
+ */
+export const compactControls =
+  "[--hw-control-height:2rem] [--hw-control-text:0.8125rem] [--hw-control-pad:0px]";
 
 /** An input stripped of its own box, for use inside a `controlShell`. */
 export const bareInput =

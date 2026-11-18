@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { saveGeneral } from "../actions";
 import { generalSchema, type GeneralValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
+import { SettingsSection } from "./settings-frame";
 
 const guestDetailOptions = [
   { value: "email", label: "Name and email" },
@@ -36,37 +37,33 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
     },
   });
 
-  const fields = useMemo<FieldItem<GeneralValues>[]>(
-    () => [
-      {
-        name: "brandName",
-        label: "Brand name",
-        type: "input",
-        required: true,
-        hint: "Shown at the top of the chat and as the sender of your replies.",
-      },
-      {
-        name: "guestDetails",
-        label: "Ask guests for",
-        type: "select",
-        hint: "What a visitor gives before their first message, so you can reach them later.",
-        props: { options: guestDetailOptions },
-      },
-      {
-        name: "defaultCountry",
-        label: "Default country",
-        type: "combobox",
-        hint: "The country a phone number field starts on.",
-        props: {
-          options: listCountries("en").map((country) => ({
-            value: country.code,
-            label: `${country.name} (+${country.callingCode})`,
-          })),
-        },
-      },
-    ],
+  const countries = useMemo(
+    () =>
+      listCountries("en").map((country) => ({
+        value: country.code,
+        label: `${country.name} (+${country.callingCode})`,
+      })),
     [],
   );
+  const brandFields: FieldItem<GeneralValues>[] = [
+    { name: "brandName", label: "Brand name", type: "input", required: true },
+  ];
+  const guestFields: FieldItem<GeneralValues>[] = [
+    {
+      name: "guestDetails",
+      label: "Ask guests for",
+      type: "select",
+      props: { options: guestDetailOptions },
+    },
+    {
+      name: "defaultCountry",
+      label: "Default country",
+      type: "combobox",
+      hint: "The country a phone number field starts on.",
+      props: { options: countries },
+    },
+  ];
+  const disabled = !canEdit || form.formState.isSubmitting;
 
   async function save(values: GeneralValues) {
     setSaved(false);
@@ -87,16 +84,22 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
   return (
     <form
       noValidate
-      className="grid gap-6"
       onSubmit={(event) => {
         void form.handleSubmit(save)(event);
       }}
     >
-      <FieldList
-        control={form.control}
-        fields={fields}
-        disabled={!canEdit || form.formState.isSubmitting}
-      />
+      <SettingsSection
+        title="Brand"
+        description="The name at the top of the chat, and who your replies come from."
+      >
+        <FieldList control={form.control} fields={brandFields} disabled={disabled} />
+      </SettingsSection>
+      <SettingsSection
+        title="Guests"
+        description="What a visitor gives before their first message, so you can reach them after they leave."
+      >
+        <FieldList control={form.control} fields={guestFields} disabled={disabled} />
+      </SettingsSection>
       {canEdit ? (
         <SaveBar
           saving={form.formState.isSubmitting}

@@ -29,7 +29,7 @@ export function SelectTrigger({ className, ...props }: SelectTriggerProps) {
   return (
     <UiSelectTrigger
       className={cn(
-        "dark:hover:bg-card w-full px-3 data-[size=default]:h-10",
+        "dark:hover:bg-card w-full px-3 data-[size=default]:h-(--hw-control-height,2.5rem) md:text-(length:--hw-control-text,0.875rem)",
         controlSurface,
         // A button only reports focus-visible for the keyboard, so the ring needs no help here.
         "focus:border-ring data-[state=open]:border-ring aria-invalid:focus:border-destructive",

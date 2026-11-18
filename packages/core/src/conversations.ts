@@ -197,6 +197,21 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
       return { ok: true, conversation };
     },
 
+    /** How many conversations the caller may read are in each status. */
+    async countByStatus(): Promise<Record<ConversationStatus, number>> {
+      const counts = await Promise.all(
+        conversationStatusSchema.options.map(async (status) => {
+          const { count, error } = await supabase
+            .from("conversations")
+            .select("id", { count: "exact", head: true })
+            .eq("status", status);
+          if (error) throw unexpected("count the conversations", error);
+          return [status, count ?? 0] as const;
+        }),
+      );
+      return Object.fromEntries(counts) as Record<ConversationStatus, number>;
+    },
+
     /** Clears the unread count for the caller's side of a conversation. */
     async markRead(id: string): Promise<void> {
       const result = await api.post(`/api/conversations/${id}/read`, undefined, z.undefined());

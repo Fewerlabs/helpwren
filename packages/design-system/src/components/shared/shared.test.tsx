@@ -129,7 +129,7 @@ describe("CodeSnippet", () => {
 });
 
 describe("MessageBubble", () => {
-  it("fills your own messages and outlines the other person's, and says who is speaking", () => {
+  it("fills your own messages with the accent and tints the other person's, and says who is speaking", () => {
     render(
       <>
         <MessageBubble from="self" time="10:02">
@@ -144,10 +144,22 @@ describe("MessageBubble", () => {
     const theirs = screen.getByText("You are welcome");
     expect(own).toHaveClass("bg-primary");
     expect(own).toHaveTextContent("You: Thanks");
-    expect(theirs).toHaveClass("border-line");
+    expect(theirs).toHaveClass("bg-muted");
     expect(theirs).not.toHaveClass("bg-primary");
     expect(theirs).toHaveTextContent("Ada: You are welcome");
     expect(screen.getByText("10:02")).toBeInTheDocument();
+  });
+
+  it("shows an avatar beside the other person's message in place of their name", () => {
+    render(
+      <MessageBubble from="other" author="Ada" avatar={<span data-testid="avatar" />}>
+        Hello
+      </MessageBubble>,
+    );
+    expect(screen.getByTestId("avatar")).toBeInTheDocument();
+    // The name is still read out, with the message.
+    expect(screen.getByText("Hello")).toHaveTextContent("Ada: Hello");
+    expect(screen.queryByText("Ada")).not.toBeInTheDocument();
   });
 
   it("labels an internal note", () => {

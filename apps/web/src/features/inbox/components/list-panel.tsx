@@ -2,12 +2,12 @@
 
 import { type ConversationStatus, type ConversationWithContact } from "@helpwren/core";
 import {
-  Badge,
+  Avatar,
   Button,
   cn,
-  ConversationListItem,
   EmptyState,
   Skeleton,
+  StatusChip,
   type StatusName,
 } from "@helpwren/design-system";
 
@@ -15,12 +15,7 @@ import { Panel, PanelHeader } from "@/features/dashboard";
 import { formatTimeAgo } from "@/lib/format-time";
 
 import { contactName } from "../contact-name";
-import { type InboxFilter } from "../hooks/use-inbox";
-
-const filters: readonly { value: InboxFilter; label: string }[] = [
-  { value: "open", label: "Open" },
-  { value: "all", label: "All" },
-];
+import { type InboxView } from "../hooks/use-inbox";
 
 const chipFor: Record<ConversationStatus, StatusName> = {
   open: "open",
@@ -29,12 +24,68 @@ const chipFor: Record<ConversationStatus, StatusName> = {
   closed: "closed",
 };
 
+interface RowProps {
+  conversation: ConversationWithContact;
+  selected: boolean;
+  showStatus: boolean;
+  onSelect: () => void;
+}
+
+/** One conversation in the list. Unread ones are heavier, so they stand out when scanning. */
+function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
+  const name = contactName(conversation.contact);
+  const unread = conversation.unreadForAgents;
+
+  return (
+    <button
+      type="button"
+      aria-current={selected ? "true" : undefined}
+      className={cn(
+        "focus-visible:outline-ring flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:outline-2",
+        selected ? "bg-muted" : "hover:bg-muted/60",
+      )}
+      onClick={onSelect}
+    >
+      <Avatar name={name} size="sm" className="text-2xs mt-0.5 size-7" />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className={cn("truncate", unread > 0 ? "font-semibold" : "font-medium")}>
+            {name}
+          </span>
+          {conversation.lastMessageAt ? (
+            <span className="text-muted-foreground text-2xs shrink-0 tabular-nums">
+              {formatTimeAgo(conversation.lastMessageAt)}
+            </span>
+          ) : null}
+        </span>
+        <span className="flex items-center justify-between gap-2">
+          <span
+            className={cn(
+              "truncate text-xs",
+              unread > 0 ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            {conversation.lastMessagePreview}
+          </span>
+          {unread > 0 ? (
+            <span className="bg-primary text-primary-foreground text-2xs grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 font-medium">
+              {unread}
+              <span className="sr-only"> unread</span>
+            </span>
+          ) : showStatus ? (
+            <StatusChip status={chipFor[conversation.status]} size="sm" className="shrink-0" />
+          ) : null}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export interface ListPanelProps {
   conversations: readonly ConversationWithContact[] | undefined;
   failed: boolean;
   onRetry: () => void;
-  filter: InboxFilter;
-  onFilterChange: (filter: InboxFilter) => void;
+  view: InboxView;
   selectedId: string | null;
   onSelect: (id: string) => void;
   className?: string;
@@ -45,42 +96,25 @@ export function ListPanel({
   conversations,
   failed,
   onRetry,
-  filter,
-  onFilterChange,
+  view,
   selectedId,
   onSelect,
   className,
 }: ListPanelProps) {
   return (
     <Panel aria-label="Conversations" className={className}>
-      <PanelHeader className="justify-between">
-        <h1 className="flex items-center gap-2 text-sm font-semibold">
-          Inbox
-          {conversations ? <Badge>{conversations.length}</Badge> : null}
-        </h1>
-        <div role="group" aria-label="Show" className="flex gap-1">
-          {filters.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={filter === option.value}
-              className={cn(
-                "border-line focus-visible:outline-ring h-7 rounded-full px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
-                filter === option.value
-                  ? "border-foreground bg-foreground text-background font-medium"
-                  : "border-rule text-muted-foreground hover:text-foreground",
-              )}
-              onClick={() => {
-                onFilterChange(option.value);
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+      <PanelHeader>
+        <h2 className="flex items-baseline gap-1.5 font-semibold">
+          {view.label}
+          {conversations ? (
+            <span className="text-muted-foreground text-xs font-normal tabular-nums">
+              {conversations.length}
+            </span>
+          ) : null}
+        </h2>
       </PanelHeader>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {failed ? (
           <EmptyState
             scene={false}
@@ -93,40 +127,33 @@ export function ListPanel({
             }
           />
         ) : !conversations ? (
-          <div className="grid gap-2 p-1" aria-busy="true" aria-label="Loading conversations">
-            <Skeleton className="h-14 rounded-xl" />
-            <Skeleton className="h-14 rounded-xl" />
-            <Skeleton className="h-14 rounded-xl" />
+          <div className="grid gap-1.5 p-1" aria-busy="true" aria-label="Loading conversations">
+            <Skeleton className="h-12 rounded-lg" />
+            <Skeleton className="h-12 rounded-lg" />
+            <Skeleton className="h-12 rounded-lg" />
           </div>
         ) : conversations.length === 0 ? (
           <EmptyState
             scene="all-caught-up"
             size="sm"
             className="pt-8"
-            title={filter === "open" ? "All caught up" : "No conversations yet"}
+            title={view.id === "open" ? "All caught up" : "Nothing here"}
             description={
-              filter === "open"
+              view.id === "open"
                 ? "Nothing is waiting for the team."
-                : "Conversations appear here as soon as someone writes."
+                : `No conversations are in ${view.label.toLowerCase()}.`
             }
           />
         ) : (
-          <ul aria-label="Conversations" className="flex flex-col gap-0.5">
+          <ul aria-label="Conversations" className="flex flex-col gap-px">
             {conversations.map((conversation) => (
               <li key={conversation.id}>
-                <ConversationListItem
-                  name={contactName(conversation.contact)}
-                  preview={conversation.lastMessagePreview ?? ""}
-                  time={
-                    conversation.lastMessageAt
-                      ? formatTimeAgo(conversation.lastMessageAt)
-                      : undefined
-                  }
-                  unread={conversation.unreadForAgents}
+                <Row
+                  conversation={conversation}
                   selected={conversation.id === selectedId}
-                  // In the open view every row has the same status, so it would only be noise.
-                  {...(filter === "all" ? { status: chipFor[conversation.status] } : {})}
-                  onClick={() => {
+                  // Only the view of everything mixes statuses; elsewhere it would be noise.
+                  showStatus={view.id === "all"}
+                  onSelect={() => {
                     onSelect(conversation.id);
                   }}
                 />

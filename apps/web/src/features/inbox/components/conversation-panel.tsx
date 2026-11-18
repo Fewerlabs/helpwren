@@ -1,7 +1,14 @@
 "use client";
 
 import { type ConversationWithContact, type Message } from "@helpwren/core";
-import { Avatar, Button, Icon, StatusChip, type StatusName } from "@helpwren/design-system";
+import {
+  Avatar,
+  Button,
+  Icon,
+  StatusChip,
+  Tooltip,
+  type StatusName,
+} from "@helpwren/design-system";
 
 import { Thread } from "@/features/conversation";
 import { Panel, PanelHeader } from "@/features/dashboard";
@@ -23,6 +30,8 @@ export interface ConversationPanelProps {
   /** Returns to the list. Shown only where the list and conversation do not fit side by side. */
   onBack: () => void;
   onRead: () => void;
+  detailsOpen: boolean;
+  onToggleDetails: () => void;
   className?: string;
 }
 
@@ -31,6 +40,8 @@ export function ConversationPanel({
   conversation,
   onBack,
   onRead,
+  detailsOpen,
+  onToggleDetails,
   className,
 }: ConversationPanelProps) {
   const name = contactName(conversation.contact);
@@ -47,9 +58,22 @@ export function ConversationPanel({
         >
           <Icon name="caret-left" />
         </Button>
-        <Avatar name={name} size="sm" />
-        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{name}</h2>
+        <Avatar name={name} size="sm" className="text-2xs size-6" />
+        <h2 className="min-w-0 truncate font-semibold">{name}</h2>
         <StatusChip status={chipFor[conversation.status]} size="sm" />
+        <span className="flex-1" />
+        <Tooltip content={detailsOpen ? "Hide details" : "Show details"}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Details"
+            aria-pressed={detailsOpen}
+            className="max-xl:hidden"
+            onClick={onToggleDetails}
+          >
+            <Icon name="sidebar-simple" mirrored weight={detailsOpen ? "fill" : "regular"} />
+          </Button>
+        </Tooltip>
       </PanelHeader>
       <Thread
         key={conversation.id}
@@ -57,6 +81,7 @@ export function ConversationPanel({
         isOwn={isFromTeam}
         otherName={name}
         onRead={onRead}
+        density="compact"
       />
     </Panel>
   );

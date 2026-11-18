@@ -11,19 +11,19 @@ export interface SaveBarProps {
 /** The Save button at the foot of a settings form, and what happened when it was last pressed. */
 export function SaveBar({ saving, saved, dirty, error }: SaveBarProps) {
   return (
-    <div className="flex items-center gap-3">
-      <Button type="submit" loading={saving} disabled={!dirty}>
-        Save changes
-      </Button>
+    <div className="border-rule flex items-center justify-end gap-3 border-t pt-5">
       {error ? (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-destructive">
           {error}
         </p>
       ) : saved && !dirty ? (
-        <p role="status" className="text-muted-foreground text-sm">
+        <p role="status" className="text-muted-foreground">
           Saved.
         </p>
       ) : null}
+      <Button type="submit" size="sm" loading={saving} disabled={!dirty}>
+        Save changes
+      </Button>
     </div>
   );
 }
