@@ -3,8 +3,6 @@
 `@helpwren/design-system` holds the tokens, components and illustrations. Feature code imports
 from this package only.
 
-> Being built in phases. This page gains a section per component as each one lands.
-
 ## Look
 
 Calm interface, hand-drawn character. Warm paper, ink lines, generous space. Outlines instead of
@@ -157,6 +155,113 @@ with personality.
 That is all. `IconName` is derived from the registry, so the new name autocompletes and a typo is
 a type error. A test renders every registered icon, and the **Base / Icon / All Icons** story
 lists them with a search box. Only registered icons end up in the bundle.
+
+## Base components
+
+Import them from the package entry point:
+
+```tsx
+import { Button, Field, Input } from "@helpwren/design-system";
+```
+
+Every control shares the same rules: a 1.5px edge on a card surface, a 10px radius, a solid 2px
+biro outline when focused with the keyboard, a red-pen edge when `aria-invalid`, and a touch
+target of at least 44px (smaller controls extend their hit area invisibly). Each has a story under
+**Base** in Storybook and a test beside it.
+
+### Actions and navigation
+
+**Button** starts an action. Variants: `primary` (the one filled element; one per view),
+`secondary` (outlined, the default choice for everything else), `ghost` (low emphasis, toolbars),
+`destructive` (outlined in red pen; confirm with a `Dialog`) and `link`. Sizes: `md` (44px), `sm`
+(36px), `icon` and `icon-sm`. An icon size requires `aria-label`; TypeScript enforces it.
+`loading` shows a spinner and blocks clicks. `asChild` styles a child element, such as a router
+link, as a button. Use `Link` instead when the result is navigation and it should look like text.
+
+**Link** is for navigation inside text. It is biro blue and always underlined. `external` opens a
+new tab, adds an icon and tells screen readers. `asChild` styles a router link. Use `Button` for
+actions.
+
+### Forms
+
+**Field** wraps one control with its label, hint and error, and connects them: the label points at
+the control, the hint and error describe it, and an error marks it invalid and is announced. Use
+it for every `Input`, `Textarea` and select. For a select, put the `Field` inside `Select`, around
+`SelectTrigger`. `required` marks the control and shows an asterisk.
+
+**Input** is a single-line text input. Use `Textarea` for more than one line, and `Select` or
+`RadioGroup` when the answers are known in advance.
+
+**Textarea** is a multi-line input that grows with its content. Use it for replies and notes.
+
+**Label** names a control. Prefer `Field`, which includes one; use `Label` directly beside a
+`Checkbox`, `Radio` or `Switch`.
+
+**Select** (`Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`,
+`SelectGroup`, `SelectLabel`, `SelectSeparator`) chooses one option from a list of five or more.
+With four or fewer, use `RadioGroup` so every option is visible.
+
+**Checkbox** is an independent yes or no that takes effect when a form is saved. Use `Switch` when
+the change applies immediately, and `RadioGroup` when only one of several may be chosen.
+
+**RadioGroup** and **Radio** choose exactly one of a few visible options. Give the group an
+`aria-label` or a visible legend. Use `Select` for longer lists.
+
+**Switch** turns a setting on or off with immediate effect. Use `Checkbox` inside a form that is
+saved later.
+
+### Status and labels
+
+**StatusChip** shows a conversation or ticket status: `open`, `waiting`, `resolved`, `urgent` or
+`closed`. It always pairs the colour with a dot and a word. Pass children to change the wording
+("Waiting on you", "Verified", "Offline"). Use it only for status; use `Badge` for everything else.
+
+**Badge** is a small label for a tag, a category or a count. Variants: `neutral`, `outline` and
+`accent`. It carries no status meaning.
+
+**Avatar** shows a person or organisation as their picture, or their initials while it loads or if
+there is none. `name` is required and is its accessible name. Sizes: `sm`, `md`, `lg`.
+
+**Kbd** shows a keyboard key or shortcut in the monospace font.
+
+### Layout
+
+**Card** (`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardAction`, `CardContent`,
+`CardFooter`) is an outlined surface for a group of related content. It has no shadow. Do not nest
+cards; use a `Separator` inside one.
+
+**Separator** is a thin divider in the rule colour, horizontal or vertical. It is decorative by
+default. Prefer spacing; use a separator when spacing alone is not enough.
+
+**Tabs** (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`) switch between views of the same
+context. Give `TabsList` an `aria-label`. Use links, not tabs, to move between pages.
+
+### Overlays
+
+**Dialog** (`Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`,
+`DialogDescription`, `DialogFooter`, `DialogClose`) interrupts the page for a decision or a short
+task. It needs a `DialogTitle`. Put the primary action last in `DialogFooter`. Use a `Sheet` for
+longer, secondary content, and a `Popover` for something small that should not block the page.
+
+**Sheet** (`Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, `SheetTitle`,
+`SheetDescription`, `SheetFooter`, `SheetClose`) slides a panel in from an edge (`side`), for
+detail beside the page such as contact information. It needs a `SheetTitle`.
+
+**Popover** (`Popover`, `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`) is a small panel
+anchored to its trigger, for content the person interacts with. Give `PopoverContent` an
+`aria-label`. Use `Tooltip` for plain text hints.
+
+**Tooltip** shows a short hint when its child is hovered or focused: `<Tooltip content="Copy">`.
+The child must be focusable. Never put essential information only in a tooltip, and never put
+interactive content in one. Place one `TooltipProvider` near the root of the app.
+
+### Loading
+
+**Spinner** shows that something short is in progress. It is announced as "Loading"; change that
+with `label`. `Button` has one built in through `loading`.
+
+**Skeleton** stands in for content that is loading, in its shape. It is hidden from assistive
+technology, so announce loading once on the container (`role="status"`).
 
 ## The `ui` layer
 

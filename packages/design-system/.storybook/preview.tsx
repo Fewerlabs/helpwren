@@ -4,6 +4,8 @@ import { useEffect, type ReactNode } from "react";
 import "@fontsource-variable/caveat";
 import "@fontsource-variable/figtree";
 import "@fontsource-variable/jetbrains-mono";
+import { TooltipProvider } from "../src/components/base/tooltip/tooltip";
+
 import "./preview.css";
 
 /** Applies the theme chosen in the toolbar to the document, as an app would. */
@@ -16,7 +18,9 @@ function ThemeFrame({ dark, children }: { dark: boolean; children: ReactNode }) 
 
 const withTheme: Decorator = (Story, context) => (
   <ThemeFrame dark={context.globals.theme === "dark"}>
-    <Story />
+    <TooltipProvider>
+      <Story />
+    </TooltipProvider>
   </ThemeFrame>
 );
 

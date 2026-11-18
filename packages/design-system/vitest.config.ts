@@ -24,6 +24,16 @@ export default defineConfig({
       },
       {
         plugins: [tailwindcss(), storybookTest({ configDir })],
+        // Pre-bundle these so Vite does not discover them mid-run and reload the tests.
+        optimizeDeps: {
+          include: [
+            "@phosphor-icons/react/ssr",
+            "class-variance-authority",
+            "clsx",
+            "radix-ui",
+            "tailwind-merge",
+          ],
+        },
         test: {
           name: "storybook",
           browser: {
