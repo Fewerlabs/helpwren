@@ -13,12 +13,11 @@ import {
   Icon,
   MessageBubble,
   Textarea,
-  Wren,
   type FieldItem,
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, type ComponentProps } from "react";
+import { useEffect, useEffectEvent, useMemo, useState, type ComponentProps } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -26,7 +25,13 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { TeamAvatar } from "../brand";
 import { chatKeys } from "../hooks/use-chat";
-import { usePage, usePreview, useShowScreen } from "../store/chat-store";
+import {
+  usePage,
+  usePendingReply,
+  usePreview,
+  useSetPendingReply,
+  useShowScreen,
+} from "../store/chat-store";
 
 interface StartValues {
   name: string;
@@ -154,13 +159,14 @@ interface QuickRepliesProps {
 function QuickReplies({ replies, disabled, onPick }: QuickRepliesProps) {
   if (replies.length === 0) return null;
   return (
-    <ul aria-label="Quick replies" className="flex flex-wrap justify-end gap-1.5">
+    <ul aria-label="Quick replies" className="flex flex-wrap gap-2">
       {replies.map((reply) => (
         <li key={reply}>
           <button
             type="button"
             disabled={disabled}
-            className="border-primary/40 text-primary hover:bg-primary/10 focus-visible:outline-ring rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+            // A raised white pill, the same as the ones beside the launcher.
+            className="bg-card hover:bg-muted focus-visible:outline-ring rounded-full px-3.5 py-2 text-sm font-medium shadow-[0_3px_12px_rgb(38_35_30/0.1),0_0_0_1px_rgb(38_35_30/0.06)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
             onClick={() => {
               onPick(reply);
             }}
@@ -237,6 +243,20 @@ export function StartForm({
     }
   }
 
+  // A quick reply tapped beside the launcher, before the chat was open, is used once here.
+  const pendingReply = usePendingReply();
+  const setPendingReply = useSetPendingReply();
+  const applyPending = useEffectEvent((reply: string) => {
+    setPendingReply(null);
+    // Only one of the install's own replies: the page around the chat does not get to write.
+    if (!quickReplies.includes(reply)) return;
+    form.setValue("message", reply, { shouldDirty: true });
+    if (ask === "nothing" || ask === "none") void form.handleSubmit(start)();
+  });
+  useEffect(() => {
+    if (pendingReply !== null) applyPending(pendingReply);
+  }, [pendingReply]);
+
   const submit: NonNullable<ComponentProps<"form">["onSubmit"]> = (event) => {
     void form.handleSubmit(start)(event);
   };
@@ -267,7 +287,7 @@ export function StartForm({
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto px-8 text-center">
-            <Wren scene="conversations" decorative className="w-36" />
+            <TeamAvatar size="lg" />
             <h2 className="pt-2 text-base font-semibold">What can we help with?</h2>
             <p className="text-muted-foreground text-sm">
               Write your message below. {teamName} will reply here.

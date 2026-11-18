@@ -123,7 +123,7 @@ export const scenes: Record<WrenScene, { label: string; content: ReactNode }> = 
           fill="var(--pen)"
           stroke="none"
         />
-        <g transform="translate(72,13)">
+        <g className="hw-bird" transform="translate(72,13)">
           <Bird eye={1.3} />
         </g>
       </>

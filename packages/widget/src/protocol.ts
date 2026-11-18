@@ -13,6 +13,11 @@ export type PageMessage =
   /** Sent whenever the frame says it is ready. */
   | { channel: typeof CHANNEL; type: "hello"; page: { url: string; title: string } }
   /**
+   * The visitor answered the welcome message beside the launcher: start a new conversation,
+   * with the quick reply they tapped if they tapped one.
+   */
+  | { channel: typeof CHANNEL; type: "start"; reply?: string }
+  /**
    * Settings to show in place of the saved ones, for the preview in the dashboard. The chat
    * checks them, and takes them only from a page on its own origin.
    */

@@ -2,13 +2,20 @@ import { CHANNEL, type FrameMessage } from "helpwren/protocol";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { useSetPage } from "../store/chat-store";
+import { useSetPage, useSetPendingReply, useShowScreen } from "../store/chat-store";
 
 // The page's side of this is the widget script (packages/widget/src/protocol.ts).
 const helloSchema = z.object({
   channel: z.literal(CHANNEL),
   type: z.literal("hello"),
   page: z.object({ url: z.url().max(2000), title: z.string().max(300) }),
+});
+
+/** The visitor answered the welcome message beside the launcher. */
+const startSchema = z.object({
+  channel: z.literal(CHANNEL),
+  type: z.literal("start"),
+  reply: z.string().max(200).optional(),
 });
 
 /**
@@ -20,6 +27,8 @@ const helloSchema = z.object({
  */
 export function useEmbedBridge(unread: number) {
   const setPage = useSetPage();
+  const setPendingReply = useSetPendingReply();
+  const show = useShowScreen();
   const [embedded, setEmbedded] = useState(false);
   const pageOrigin = useRef<string | null>(null);
   const latestUnread = useRef(unread);
@@ -33,6 +42,15 @@ export function useEmbedBridge(unread: number) {
 
     const onMessage = (event: MessageEvent) => {
       if (event.source !== window.parent) return;
+
+      // Only the page that has already introduced itself may move the chat to another screen.
+      const start = startSchema.safeParse(event.data);
+      if (start.success && event.origin === pageOrigin.current) {
+        setPendingReply(start.data.reply ?? null);
+        show({ name: "start" });
+        return;
+      }
+
       const hello = helloSchema.safeParse(event.data);
       if (!hello.success) return;
 
@@ -48,7 +66,7 @@ export function useEmbedBridge(unread: number) {
     return () => {
       window.removeEventListener("message", onMessage);
     };
-  }, [send, setPage]);
+  }, [send, setPage, setPendingReply, show]);
 
   useEffect(() => {
     latestUnread.current = unread;

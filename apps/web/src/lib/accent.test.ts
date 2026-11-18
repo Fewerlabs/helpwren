@@ -13,13 +13,27 @@ describe("readableOn", () => {
 
 describe("accentStyle", () => {
   it("sets the colour and its text colour, or nothing when there is no colour", () => {
-    expect(accentStyle({ accent: "#facc15" })).toEqual({
+    expect(accentStyle({ accent: "#facc15" })).toMatchObject({
       "--primary": "#facc15",
       "--primary-foreground": "#1c1a16",
       "--ring": "#facc15",
+      "--moss": "#facc15",
       "--brand-fill": "#facc15",
     });
     expect(accentStyle({})).toBeUndefined();
+  });
+
+  it("gives buttons a colour of their own when the brand has one", () => {
+    expect(accentStyle({ accent: "#1d4ed8", button: "#26231e" })).toMatchObject({
+      "--primary": "#26231e",
+      "--primary-foreground": "#ffffff",
+      "--brand": "#1d4ed8",
+    });
+    expect(accentStyle({ button: "#26231e" })).toEqual({
+      "--primary": "#26231e",
+      "--primary-foreground": "#ffffff",
+      "--ring": "#26231e",
+    });
   });
 
   it("fades large surfaces from the colour to its second colour", () => {

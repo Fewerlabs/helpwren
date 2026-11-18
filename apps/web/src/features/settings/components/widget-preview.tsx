@@ -1,6 +1,7 @@
 "use client";
 
 import { type PublicSettings } from "@helpwren/core";
+import { Button } from "@helpwren/design-system";
 import { createWidget, type HelpwrenWidget, type WidgetPreview as Preview } from "helpwren";
 import { useEffect, useMemo, useRef } from "react";
 
@@ -24,6 +25,9 @@ function toPreview(settings: PublicSettings): Preview {
       accentInk: brand.accent ? readableOn(brand.accent) : "#ffffff",
       accentTo: brand.accent ? brand.accentTo : undefined,
       logo: brand.logo,
+      name: brand.name,
+      welcome: widget.welcome,
+      quickReplies: widget.quickReplies,
     },
     settings,
   };
@@ -58,19 +62,34 @@ export function WidgetPreview({ settings }: WidgetPreviewProps) {
   }, []);
 
   return (
-    <div
-      ref={page}
-      role="region"
-      aria-label="Widget preview"
-      className="border-rule bg-canvas relative h-[46rem] overflow-hidden rounded-2xl border"
-    >
-      {/* A suggestion of the site the widget sits on. */}
-      <div aria-hidden="true" className="grid gap-3 p-5 opacity-60">
-        <div className="bg-muted h-3 w-24 rounded-full" />
-        <div className="bg-muted mt-4 h-6 w-3/5 rounded-full" />
-        <div className="bg-muted h-3 w-4/5 rounded-full" />
-        <div className="bg-muted h-3 w-2/3 rounded-full" />
-        <div className="bg-muted mt-4 h-28 rounded-xl" />
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between">
+        <p className="text-muted-foreground text-2xs font-mono tracking-wider uppercase">
+          Live preview
+        </p>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" onClick={() => widget.current?.show()}>
+            Open
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => widget.current?.hide()}>
+            Closed
+          </Button>
+        </div>
+      </div>
+      <div
+        ref={page}
+        role="region"
+        aria-label="Widget preview"
+        className="border-rule bg-canvas relative h-[min(46rem,calc(100dvh-9rem))] min-h-[30rem] overflow-hidden rounded-2xl border"
+      >
+        {/* A suggestion of the site the widget sits on. */}
+        <div aria-hidden="true" className="grid gap-3 p-5 opacity-60">
+          <div className="bg-muted h-3 w-24 rounded-full" />
+          <div className="bg-muted mt-4 h-6 w-3/5 rounded-full" />
+          <div className="bg-muted h-3 w-4/5 rounded-full" />
+          <div className="bg-muted h-3 w-2/3 rounded-full" />
+          <div className="bg-muted mt-4 h-28 rounded-xl" />
+        </div>
       </div>
     </div>
   );

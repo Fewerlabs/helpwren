@@ -1,6 +1,6 @@
 import { defaultAppearance, parseAppearance, type Appearance } from "./appearance";
 import { CHANNEL, isFrameMessage, type PageMessage } from "./protocol";
-import { closeIcon, openIcon, styles } from "./styles";
+import { closeIcon, dismissIcon, openIcon, styles } from "./styles";
 
 export { type Appearance } from "./appearance";
 
@@ -53,8 +53,20 @@ export interface HelpwrenWidget {
   destroy: () => void;
 }
 
+interface Teaser {
+  box: HTMLDivElement;
+  avatar: HTMLSpanElement;
+  name: HTMLSpanElement;
+  message: HTMLSpanElement;
+  replies: HTMLDivElement;
+}
+
+/** Remembers, for this visit, that the welcome message has been seen or dismissed. */
+const TEASER_SEEN = "helpwren.welcome-seen";
+
 interface Mounted {
   host: HTMLElement;
+  teaser: Teaser | undefined;
   launcher: HTMLButtonElement | undefined;
   badge: HTMLSpanElement | undefined;
   panel: HTMLDivElement;
@@ -71,6 +83,73 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   let unread = 0;
   let appearance = defaultAppearance;
   let previewSettings: unknown;
+  let previewing = false;
+  let teaserSeen = false;
+  let frameReady = false;
+  let waitingStart: PageMessage | undefined;
+
+  /** Whether the visitor has already seen or dismissed the welcome message on this visit. */
+  function readTeaserSeen(): boolean {
+    try {
+      return window.sessionStorage.getItem(TEASER_SEEN) === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function markTeaserSeen() {
+    teaserSeen = true;
+    if (previewing) return;
+    try {
+      window.sessionStorage.setItem(TEASER_SEEN, "1");
+    } catch {
+      // Storage is blocked: it is remembered until the page is left, which is enough.
+    }
+  }
+
+  /** Opens the chat on a new conversation, with the quick reply the visitor tapped if any. */
+  function startConversation(reply?: string) {
+    if (!mounted) return;
+    const message: PageMessage =
+      reply === undefined
+        ? { channel: CHANNEL, type: "start" }
+        : { channel: CHANNEL, type: "start", reply };
+    if (frameReady) mounted.frame.contentWindow?.postMessage(message, appOrigin);
+    else waitingStart = message;
+    setOpen(true);
+  }
+
+  /** The welcome message beside the launcher: who it is from, what it says, and its replies. */
+  function paintTeaser() {
+    const teaser = mounted?.teaser;
+    if (!mounted || !teaser) return;
+    const { welcome, quickReplies, name, logo } = appearance;
+    const open = mounted.panel.dataset.open === "true";
+    teaser.box.hidden = open || teaserSeen || (!welcome && quickReplies.length === 0);
+
+    teaser.name.textContent = name;
+    teaser.message.textContent = welcome ?? "How can we help?";
+    if (logo) {
+      const image = document.createElement("img");
+      image.alt = "";
+      image.src = logo;
+      teaser.avatar.replaceChildren(image);
+    } else {
+      teaser.avatar.textContent = Array.from(name.trim())[0]?.toUpperCase() ?? "";
+    }
+    teaser.replies.replaceChildren(
+      ...quickReplies.map((reply) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip";
+        chip.textContent = reply;
+        chip.addEventListener("click", () => {
+          startConversation(reply);
+        });
+        return chip;
+      }),
+    );
+  }
 
   /** Puts the appearance on the widget. Every value has been checked by `parseAppearance`. */
   function paint() {
@@ -87,6 +166,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         ? `linear-gradient(135deg, ${appearance.accent}, ${appearance.accentTo})`
         : appearance.accent,
     );
+
+    paintTeaser();
 
     const mark = launcher?.querySelector<HTMLElement>('[data-icon="open"]');
     if (!launcher || !mark) return;
@@ -129,7 +210,14 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     mounted.panel.dataset.open = String(open);
     mounted.launcher?.setAttribute("aria-expanded", String(open));
     mounted.launcher?.setAttribute("aria-label", open ? "Close chat" : "Open chat");
-    if (open) mounted.frame.focus();
+    if (open) {
+      mounted.frame.focus();
+      // Once the chat has been opened the welcome has done its job. A preview shows it again.
+      if (!previewing) markTeaserSeen();
+    } else if (previewing) {
+      teaserSeen = false;
+    }
+    paintTeaser();
   }
 
   function setUnread(count: number) {
@@ -159,8 +247,13 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     }
     if (!isFrameMessage(event.data)) return;
     if (event.data.type === "ready") {
+      frameReady = true;
       greet(mounted.frame);
       sendPreview(mounted.frame);
+      if (waitingStart) {
+        mounted.frame.contentWindow?.postMessage(waitingStart, appOrigin);
+        waitingStart = undefined;
+      }
     } else if (event.data.type === "unread") setUnread(event.data.count);
     else setOpen(false);
   }
@@ -190,7 +283,47 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
 
       let launcher: HTMLButtonElement | undefined;
       let badge: HTMLSpanElement | undefined;
+      let teaser: Teaser | undefined;
+      previewing = options.preview !== undefined;
+      teaserSeen = previewing ? false : readTeaserSeen();
       if (options.launcher !== false) {
+        const box = document.createElement("div");
+        box.className = "teaser";
+        box.hidden = true;
+        const card = document.createElement("div");
+        card.className = "teaser-card";
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "teaser-open";
+        const avatar = document.createElement("span");
+        avatar.className = "teaser-avatar";
+        const words = document.createElement("span");
+        words.className = "teaser-words";
+        const name = document.createElement("span");
+        name.className = "teaser-name";
+        const message = document.createElement("span");
+        message.className = "teaser-message";
+        words.append(name, message);
+        open.append(avatar, words);
+        open.addEventListener("click", () => {
+          startConversation();
+        });
+        const dismiss = document.createElement("button");
+        dismiss.type = "button";
+        dismiss.className = "teaser-close";
+        dismiss.setAttribute("aria-label", "Dismiss");
+        dismiss.innerHTML = dismissIcon;
+        dismiss.addEventListener("click", () => {
+          markTeaserSeen();
+          paintTeaser();
+        });
+        card.append(open, dismiss);
+        const replies = document.createElement("div");
+        replies.className = "teaser-replies";
+        box.append(card, replies);
+        root.append(box);
+        teaser = { box, avatar, name, message, replies };
+
         launcher = document.createElement("button");
         launcher.type = "button";
         launcher.className = "launcher";
@@ -205,7 +338,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         root.append(launcher);
       }
 
-      mounted = { host, launcher, badge, panel, frame };
+      mounted = { host, teaser, launcher, badge, panel, frame };
       setOpen(options.open === true);
       window.addEventListener("message", onMessage);
       if (options.container) host.dataset.contained = "";
@@ -235,6 +368,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       mounted = undefined;
       appearance = defaultAppearance;
       previewSettings = undefined;
+      frameReady = false;
+      waitingStart = undefined;
     },
 
     show() {

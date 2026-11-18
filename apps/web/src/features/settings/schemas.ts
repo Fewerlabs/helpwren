@@ -31,12 +31,6 @@ export const memberChangeSchema = z.object({
 export type MemberChange = z.infer<typeof memberChangeSchema>["change"];
 
 const hex = /^#[0-9a-f]{6}$/;
-const pixels = z
-  .string()
-  .trim()
-  .regex(/^\d{1,3}$/, "Enter a number of pixels.")
-  .refine((value) => Number(value) <= 120, "Keep it to 120 pixels or fewer.");
-
 /** Everything on the Branding page. Text left empty goes back to Helpwren's own wording. */
 export const brandingSchema = z.object({
   brandName: z
@@ -49,9 +43,11 @@ export const brandingSchema = z.object({
   accent: z.string().regex(hex),
   /** Empty for a solid colour. */
   accentTo: z.union([z.literal(""), z.string().regex(hex)]),
+  /** The colour of buttons. The same as `accent` when they follow the brand. */
+  button: z.string().regex(hex),
   position: widgetPatchSchema.shape.position,
-  offsetX: pixels,
-  offsetY: pixels,
+  offsetX: widgetPatchSchema.shape.offsetX,
+  offsetY: widgetPatchSchema.shape.offsetY,
   launcher: widgetPatchSchema.shape.launcher,
   greeting: z.string().trim().max(60, "Keep the greeting under 60 characters."),
   intro: z.string().trim().max(80, "Keep this line under 80 characters."),
@@ -81,11 +77,12 @@ export function brandingToSettings(values: BrandingValues) {
       logo: text(values.logo),
       accent: own ? values.accent : undefined,
       accentTo: own ? text(values.accentTo) : undefined,
+      button: values.button === values.accent ? undefined : values.button,
     },
     widget: {
       position: values.position,
-      offsetX: Number(values.offsetX),
-      offsetY: Number(values.offsetY),
+      offsetX: values.offsetX,
+      offsetY: values.offsetY,
       launcher: values.launcher,
       greeting: text(values.greeting),
       intro: text(values.intro),

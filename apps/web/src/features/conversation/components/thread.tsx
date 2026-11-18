@@ -1,7 +1,7 @@
 "use client";
 
 import { type Message } from "@helpwren/core";
-import { Avatar, Button, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
+import { Avatar, Button, cn, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { formatMessageTime } from "@/lib/format-time";
@@ -154,7 +154,11 @@ export function Thread({
                               name={otherName}
                               src={otherAvatar}
                               size="sm"
-                              className="text-2xs size-6"
+                              // A logo is a finished shape of its own, so it gets no ring.
+                              className={cn(
+                                "text-2xs size-6",
+                                otherAvatar && "bg-transparent after:hidden",
+                              )}
                             />
                           ),
                         }

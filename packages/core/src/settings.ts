@@ -33,8 +33,10 @@ const brandSchema = z.object({
   name: z.string().min(1),
   /** The address of the logo, shown in place of the wren. */
   logo: z.url().optional(),
-  /** The colour of buttons and the visitor's own messages. */
+  /** The brand's colour: the launcher, illustrations, and buttons unless they have their own. */
   accent: accentColorSchema.optional(),
+  /** A colour for buttons and the visitor's own messages, when it is not the brand's colour. */
+  button: accentColorSchema.optional(),
   /** A second colour. With it, large surfaces such as the launcher fade from `accent` to this. */
   accentTo: accentColorSchema.optional(),
 });
@@ -157,6 +159,7 @@ export const settingsPatchSchema = z
       logo: z.url().max(2000).optional(),
       accent: accentColorSchema.optional(),
       accentTo: accentColorSchema.optional(),
+      button: accentColorSchema.optional(),
     }),
     widget: z.object({
       position: widgetPositionSchema,

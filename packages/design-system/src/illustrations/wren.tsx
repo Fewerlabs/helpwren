@@ -13,6 +13,11 @@ export interface WrenProps extends Omit<ComponentProps<"svg">, "children"> {
   label?: string;
   /** Hides the illustration from screen readers, when the text beside it says it all. */
   decorative?: boolean;
+  /**
+   * Leaves the wren out of the `conversations` scene, so only the speech bubbles show. For a
+   * place that carries someone else's brand, where our mark would sit beside their logo.
+   */
+  bird?: boolean;
 }
 
 /**
@@ -24,6 +29,7 @@ export function Wren({
   animate = true,
   label,
   decorative = false,
+  bird = true,
   className,
   ...props
 }: WrenProps) {
@@ -39,6 +45,7 @@ export function Wren({
       data-slot="wren"
       data-scene={scene}
       data-animate={animate ? "" : undefined}
+      data-bird={bird ? undefined : "off"}
       fill="none"
       stroke="currentColor"
       strokeWidth={1.6}

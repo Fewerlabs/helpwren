@@ -57,6 +57,11 @@ describe("Wren", () => {
       expect(container.querySelector(`g[filter="url(#${id})"]`)).not.toBeNull();
     }
   });
+  it("can leave the wren out of the conversations scene", () => {
+    const { container } = render(<Wren scene="conversations" decorative bird={false} />);
+    expect(container.querySelector("[data-slot='wren']")).toHaveAttribute("data-bird", "off");
+    expect(container.querySelector(".hw-bird")).toBeInTheDocument();
+  });
 });
 
 describe("Logo", () => {

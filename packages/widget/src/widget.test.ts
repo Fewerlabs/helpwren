@@ -280,3 +280,72 @@ describe("preview", () => {
     );
   });
 });
+
+describe("welcome message", () => {
+  const teaser = () => {
+    const root = host().shadowRoot;
+    const box = root?.querySelector<HTMLElement>(".teaser");
+    if (!root || !box) throw new Error("There is no welcome message.");
+    return {
+      box,
+      chips: [...root.querySelectorAll<HTMLButtonElement>(".chip")],
+      dismiss: root.querySelector<HTMLButtonElement>(".teaser-close"),
+    };
+  };
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    answer = { name: "Acme", welcome: "Hello! <b>Ask</b> us anything.", quickReplies: ["Pricing"] };
+  });
+
+  it("shows beside the launcher, as text, until the chat is opened", async () => {
+    widget.init();
+    await vi.waitFor(() => {
+      expect(teaser().box.hidden).toBe(false);
+    });
+    // What the install wrote is shown as it is, never read as markup.
+    expect(teaser().box.textContent).toContain("Hello! <b>Ask</b> us anything.");
+    expect(teaser().box.querySelector("b")).toBeNull();
+
+    widget.show();
+    expect(teaser().box.hidden).toBe(true);
+    widget.hide();
+    expect(teaser().box.hidden).toBe(true);
+  });
+
+  it("opens the chat on a new conversation with the reply that was tapped", async () => {
+    widget.init();
+    const { frame, panel } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    await vi.waitFor(() => {
+      expect(teaser().chips).toHaveLength(1);
+    });
+
+    // Tapped before the chat has loaded: the message waits for the frame to be ready.
+    teaser().chips[0]?.click();
+    expect(panel.dataset.open).toBe("true");
+    expect(post).not.toHaveBeenCalled();
+    receive({ channel: "helpwren", type: "ready" });
+    expect(post).toHaveBeenLastCalledWith(
+      { channel: "helpwren", type: "start", reply: "Pricing" },
+      APP,
+    );
+  });
+
+  it("stays away for the rest of the visit once dismissed", async () => {
+    widget.init();
+    await vi.waitFor(() => {
+      expect(teaser().box.hidden).toBe(false);
+    });
+    teaser().dismiss?.click();
+    expect(teaser().box.hidden).toBe(true);
+
+    widget.destroy();
+    widget.init();
+    await vi.waitFor(() => {
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+    expect(teaser().box.hidden).toBe(true);
+  });
+});

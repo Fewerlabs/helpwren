@@ -31,20 +31,32 @@ export function brandFill({ accent, accentTo }: Pick<Brand, "accent" | "accentTo
   return accentTo ? `linear-gradient(135deg, ${accent}, ${accentTo})` : accent;
 }
 
+type Colours = Pick<Brand, "accent" | "accentTo" | "button">;
+
 /**
- * The style that puts an install's own colour in place of Helpwren's, on an element and
- * everything inside it. Nothing when there is no colour, so the default shows.
+ * The style that puts an install's own colours in place of Helpwren's, on an element and
+ * everything inside it. Nothing when it has none, so the defaults show.
  */
-export function accentStyle(brand: Pick<Brand, "accent" | "accentTo">): CSSProperties | undefined {
-  const { accent } = brand;
-  if (!accent) return undefined;
+export function accentStyle({ accent, accentTo, button }: Colours): CSSProperties | undefined {
+  const primary = button ?? accent;
+  if (!primary) return undefined;
   // The tokens themselves, because they are worked out at the top of the page and would not
   // follow a variable they are built from being changed further down.
   return {
-    "--primary": accent,
-    "--primary-foreground": readableOn(accent),
-    "--ring": accent,
-    // For large surfaces, such as the top of the chat page.
-    "--brand-fill": brandFill(brand),
+    // Buttons and the visitor's own messages.
+    "--primary": primary,
+    "--primary-foreground": readableOn(primary),
+    "--ring": primary,
+    ...(accent
+      ? {
+          // The illustrations' own colours, so a drawing in the chat is in the brand's colour.
+          "--moss": accent,
+          "--pen": accent,
+          "--highlighter": `color-mix(in srgb, ${accent} 28%, transparent)`,
+          // For washes and large surfaces, such as the top of the chat page.
+          "--brand": accent,
+          "--brand-fill": brandFill({ accent, accentTo }),
+        }
+      : {}),
   } as CSSProperties;
 }

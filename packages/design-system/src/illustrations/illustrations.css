@@ -3,6 +3,10 @@
  * mostly still. It only runs when the illustration is rendered with `animate`.
  */
 
+[data-slot="wren"][data-bird="off"] .hw-bird {
+  display: none;
+}
+
 [data-slot="wren"] circle[fill] {
   transform-box: fill-box;
   transform-origin: center;

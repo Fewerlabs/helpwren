@@ -1,7 +1,7 @@
 "use client";
 
 import { type Brand } from "@helpwren/core";
-import { Avatar, Logo, type AvatarProps } from "@helpwren/design-system";
+import { Avatar, cn, Logo, type AvatarProps } from "@helpwren/design-system";
 import { createContext, useContext, type ReactNode } from "react";
 
 const BrandContext = createContext<Brand>({ name: "Helpwren" });
@@ -14,9 +14,17 @@ export function BrandProvider({ brand, children }: { brand: Brand; children: Rea
 export const useBrand = () => useContext(BrandContext);
 
 /** The team's face beside its messages: the logo, or its initials. */
-export function TeamAvatar(props: Omit<AvatarProps, "name" | "src">) {
+export function TeamAvatar({ className, ...props }: Omit<AvatarProps, "name" | "src">) {
   const brand = useBrand();
-  return <Avatar name={brand.name} src={brand.logo} {...props} />;
+  return (
+    <Avatar
+      name={brand.name}
+      src={brand.logo}
+      // A logo is a finished shape of its own, so it gets no ring around it.
+      className={cn(brand.logo && "bg-transparent after:hidden", className)}
+      {...props}
+    />
+  );
 }
 
 /** The brand's mark at the top of a screen: its logo, or the wren when it has none. */

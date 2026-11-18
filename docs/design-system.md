@@ -202,6 +202,13 @@ hue, and a hex box. The value is `{ color, to? }`, where `to` is the colour a gr
 and it is always a real colour, so there is nothing to validate. `colorBackground(value)` gives
 the CSS that paints it. Use it for a brand or theme colour, not a bare text input.
 
+**ChoiceCards** chooses one of two to four options that are easier to recognise by sight than by
+name: each is a card with a small `visual` above its label. Underneath it is a radio group, so
+the arrow keys work. A card can be `disabled` with a `description` saying why.
+
+**Slider** picks a number from a range by dragging, with the value shown beside the track through
+`formatValue`. Use it where the feel matters more than the figure, such as spacing.
+
 **Field** wraps one control with its label, hint and error, and connects them: the label points at
 the control, the hint describes it, and an error marks it invalid, is announced, and takes the
 hint's place so only one line shows under the control. Use

@@ -2,9 +2,14 @@
 
 import { type Settings } from "@helpwren/core";
 import {
+  ChoiceCards,
+  cn,
+  colorBackground,
   ColorPicker,
   FieldList,
+  Icon,
   Link,
+  Slider,
   Tabs,
   TabsContent,
   TabsList,
@@ -29,18 +34,22 @@ import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 import { WidgetPreview } from "./widget-preview";
 
-/** Colours to start from: Helpwren's own first, then solid colours, then gradients. */
+/** A few colours to start from, on one row. Any other comes from the picker at the end. */
 const swatches: readonly ColorSwatch[] = [
   { label: "Helpwren green", color: DEFAULT_ACCENT },
   { label: "Blue", color: "#1d4ed8" },
   { label: "Ink", color: "#26231e" },
   { label: "Violet", color: "#6d28d9" },
-  { label: "Rose", color: "#be123c" },
   { label: "Lagoon", color: "#0f766e", to: "#38bdf8" },
-  { label: "Midnight", color: "#1e3a8a", to: "#0f172a" },
   { label: "Dusk", color: "#4c1d95", to: "#be185d" },
-  { label: "Ember", color: "#c2410c", to: "#f59e0b" },
-  { label: "Orchid", color: "#7e22ce", to: "#ec4899" },
+];
+
+/** Plain colours for buttons, which carry text and so are never a gradient. */
+const buttonSwatches: readonly ColorSwatch[] = [
+  { label: "Ink", color: "#26231e" },
+  { label: "Blue", color: "#1d4ed8" },
+  { label: "Violet", color: "#6d28d9" },
+  { label: "Helpwren green", color: DEFAULT_ACCENT },
 ];
 
 const positions = [
@@ -48,10 +57,26 @@ const positions = [
   { value: "left", label: "Bottom left" },
 ] as const;
 
-const launchers = [
-  { value: "chat", label: "Chat bubble" },
-  { value: "logo", label: "Your logo" },
-] as const;
+/** The furthest the launcher can be set from an edge here, in pixels. */
+const MAX_SPACE = 80;
+const px = (value: number) => `${value}px`;
+
+/** A small page with the launcher in one of its bottom corners. */
+function Corner({ side, fill }: { side: "left" | "right"; fill: string }) {
+  return (
+    <span className="border-rule bg-card relative block h-12 w-[4.5rem] rounded-md border">
+      <span className="bg-muted absolute top-1.5 left-1.5 h-1 w-6 rounded-full" />
+      <span className="bg-muted absolute top-4 left-1.5 h-1 w-10 rounded-full" />
+      <span
+        className={cn(
+          "absolute bottom-1.5 size-3 rounded-full",
+          side === "left" ? "left-1.5" : "right-1.5",
+        )}
+        style={{ background: fill }}
+      />
+    </span>
+  );
+}
 
 type Fields = FieldItem<BrandingValues>[];
 
@@ -76,9 +101,10 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       logo: brand.logo ?? "",
       accent: brand.accent ?? DEFAULT_ACCENT,
       accentTo: brand.accentTo ?? "",
+      button: brand.button ?? brand.accent ?? DEFAULT_ACCENT,
       position: widget.position,
-      offsetX: String(widget.offsetX),
-      offsetY: String(widget.offsetY),
+      offsetX: widget.offsetX,
+      offsetY: widget.offsetY,
       launcher: widget.launcher,
       greeting: widget.greeting ?? "",
       intro: widget.intro ?? "",
@@ -127,7 +153,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       name: "accent",
       label: "Brand colour",
       type: "custom",
-      hint: "Buttons and the visitor's own messages use the colour. A gradient shows on the launcher and at the top of the chat page and the help center.",
+      hint: "The launcher, the wash at the top of the chat and its drawings. A gradient shows on the launcher and at the top of the chat page and the help center.",
       render: ({ field }) => (
         <ColorPicker
           label="Brand colour"
@@ -135,40 +161,128 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           disabled={disabled}
           value={{ color: field.value, to: values.accentTo || undefined }}
           onValueChange={(next) => {
+            // Buttons that were following the brand's colour keep following it.
+            if (values.button === field.value) {
+              form.setValue("button", next.color, { shouldDirty: true });
+            }
             field.onChange(next.color);
             form.setValue("accentTo", next.to ?? "", { shouldDirty: true });
           }}
         />
       ),
     },
+    {
+      name: "button",
+      label: "Button colour",
+      type: "custom",
+      hint: "Buttons and the visitor's own messages. The first circle follows your brand colour.",
+      render: ({ field }) => (
+        <ColorPicker
+          label="Button colour"
+          disabled={disabled}
+          swatches={[
+            { label: "Same as brand colour", color: values.accent },
+            ...buttonSwatches.filter((swatch) => swatch.color !== values.accent),
+          ]}
+          value={{ color: field.value }}
+          onValueChange={(next) => {
+            field.onChange(next.color);
+          }}
+        />
+      ),
+    },
   ];
+  const fill = colorBackground({ color: values.accent, to: values.accentTo || undefined });
   const launcher: Fields = [
     {
       name: "position",
       label: "Position",
-      type: "radio",
-      className: "sm:col-span-2",
-      props: { options: positions, className: "flex gap-5" },
-    },
-    {
-      name: "offsetX",
-      label: "From the side",
-      type: "input",
-      props: { inputMode: "numeric", append: "px" },
-    },
-    {
-      name: "offsetY",
-      label: "From the bottom",
-      type: "input",
-      props: { inputMode: "numeric", append: "px" },
+      type: "custom",
+      render: ({ field }) => (
+        <ChoiceCards
+          label="Position"
+          value={field.value}
+          onValueChange={field.onChange}
+          disabled={disabled}
+          options={positions.map((position) => ({
+            ...position,
+            visual: <Corner side={position.value} fill={fill} />,
+          }))}
+        />
+      ),
     },
     {
       name: "launcher",
       label: "Icon",
-      type: "radio",
-      hint: values.logo ? undefined : "Upload a logo under Brand to use it here.",
-      className: "sm:col-span-2",
-      props: { options: launchers, className: "flex gap-5" },
+      type: "custom",
+      render: ({ field }) => (
+        <ChoiceCards
+          label="Icon"
+          value={field.value}
+          onValueChange={field.onChange}
+          disabled={disabled}
+          options={[
+            {
+              value: "chat",
+              label: "Chat bubble",
+              visual: (
+                <span
+                  className="grid size-10 place-items-center rounded-full text-white"
+                  style={{ background: fill }}
+                >
+                  <Icon name="chat-circle" className="size-5" />
+                </span>
+              ),
+            },
+            {
+              value: "logo",
+              label: "Your logo",
+              disabled: !values.logo,
+              ...(values.logo ? {} : { description: "Upload a logo under Brand first." }),
+              visual: values.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element -- from the install's own storage, whose host the optimiser does not know
+                <img src={values.logo} alt="" className="size-10 rounded-full object-cover" />
+              ) : (
+                <span className="border-input text-muted-foreground grid size-10 place-items-center rounded-full border border-dashed">
+                  <Icon name="image" className="size-4" />
+                </span>
+              ),
+            },
+          ]}
+        />
+      ),
+    },
+    {
+      name: "offsetX",
+      label: "Space from the side",
+      type: "custom",
+      render: ({ field }) => (
+        <Slider
+          aria-label="Space from the side"
+          value={field.value}
+          onValueChange={field.onChange}
+          max={MAX_SPACE}
+          step={2}
+          formatValue={px}
+          disabled={disabled}
+        />
+      ),
+    },
+    {
+      name: "offsetY",
+      label: "Space from the bottom",
+      type: "custom",
+      render: ({ field }) => (
+        <Slider
+          aria-label="Space from the bottom"
+          value={field.value}
+          onValueChange={field.onChange}
+          max={MAX_SPACE}
+          step={2}
+          formatValue={px}
+          disabled={disabled}
+        />
+      ),
     },
   ];
   const home: Fields = [
@@ -246,7 +360,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
   );
 
   return (
-    <div className="grid items-start gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
+    <div className="grid items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
       <form
         noValidate
         onSubmit={(event) => {
@@ -254,14 +368,17 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
         }}
       >
         <Tabs defaultValue="brand">
-          <TabsList aria-label="What to brand">
-            <TabsTrigger value="brand">Brand</TabsTrigger>
-            <TabsTrigger value="widget">Widget</TabsTrigger>
-            <TabsTrigger value="chat-page">Chat page</TabsTrigger>
-            <TabsTrigger value="help-center">Help center</TabsTrigger>
-          </TabsList>
+          {/* Stays in reach while a long tab is scrolled, as the preview beside it does. */}
+          <div className="bg-card sticky top-0 z-10 -mx-1 px-1 py-3">
+            <TabsList aria-label="What to brand">
+              <TabsTrigger value="brand">Brand</TabsTrigger>
+              <TabsTrigger value="widget">Widget</TabsTrigger>
+              <TabsTrigger value="chat-page">Chat page</TabsTrigger>
+              <TabsTrigger value="help-center">Help center</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="brand" className="pt-4">
+          <TabsContent value="brand" className="pt-1">
             <SettingsSection
               title="Identity"
               description="Your name and logo, wherever a visitor meets you: the widget, the chat page and the help center."
@@ -270,18 +387,18 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
             </SettingsSection>
             <SettingsSection
               title="Colour"
-              description="One colour or gradient of your own, in place of Helpwren's green. Text on it turns dark or light to stay readable."
+              description="A colour or gradient of your own in place of Helpwren's green, and a colour for buttons if they should differ. Text on a colour turns dark or light to stay readable."
             >
               {list(colour)}
             </SettingsSection>
           </TabsContent>
 
-          <TabsContent value="widget" className="pt-4">
+          <TabsContent value="widget" className="pt-1">
             <SettingsSection
               title="Launcher"
               description="The round button that opens the chat on your site: where it sits and what it shows."
             >
-              {list(launcher, 2)}
+              {list(launcher)}
             </SettingsSection>
             <SettingsSection
               title="Home screen"
@@ -297,7 +414,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
             </SettingsSection>
           </TabsContent>
 
-          <TabsContent value="chat-page" className="pt-4">
+          <TabsContent value="chat-page" className="pt-1">
             <SettingsSection
               title="Chat page"
               description={
@@ -313,7 +430,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
             </SettingsSection>
           </TabsContent>
 
-          <TabsContent value="help-center" className="pt-4">
+          <TabsContent value="help-center" className="pt-1">
             <SettingsSection
               title="Help center"
               description={
@@ -338,10 +455,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           />
         ) : null}
       </form>
-      <aside className="xl:sticky xl:top-0">
-        <p className="text-muted-foreground text-2xs pb-3 font-mono tracking-wider uppercase">
-          Live preview
-        </p>
+      <aside className="lg:sticky lg:top-3">
         <WidgetPreview settings={shown} />
       </aside>
     </div>

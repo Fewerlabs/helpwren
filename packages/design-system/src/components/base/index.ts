@@ -27,6 +27,7 @@ export type {
 } from "./combobox/use-async-options";
 export type { ComboboxResolver } from "./combobox/use-resolved-options";
 export { Checkbox, type CheckboxProps } from "./checkbox/checkbox";
+export { ChoiceCards, type ChoiceCard, type ChoiceCardsProps } from "./choice-cards/choice-cards";
 export {
   ColorPicker,
   colorBackground,
@@ -111,6 +112,7 @@ export {
   type SheetProps,
 } from "./sheet/sheet";
 export { Skeleton, type SkeletonProps } from "./skeleton/skeleton";
+export { Slider, type SliderProps } from "./slider/slider";
 export { Spinner, type SpinnerProps } from "./spinner/spinner";
 export { StatusChip, type StatusChipProps } from "./status-chip/status-chip";
 export { Switch, type SwitchProps } from "./switch/switch";

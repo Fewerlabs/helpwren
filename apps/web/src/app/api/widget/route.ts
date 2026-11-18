@@ -16,6 +16,9 @@ export async function GET(): Promise<Response> {
       offsetX: widget.offsetX,
       offsetY: widget.offsetY,
       launcher: widget.launcher,
+      name: brand.name,
+      welcome: widget.welcome,
+      quickReplies: widget.quickReplies,
       ...(brand.accent
         ? { accent: brand.accent, accentTo: brand.accentTo, accentInk: readableOn(brand.accent) }
         : {}),

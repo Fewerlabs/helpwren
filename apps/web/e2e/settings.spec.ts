@@ -60,6 +60,7 @@ test("an admin brands the widget, and sees the real one change as they do", asyn
   const chat = preview.frameLocator('iframe[title="Chat"]');
   await expect(chat.getByRole("heading", { level: 1 })).toContainText("Hi there.");
 
+  const brandColour = page.getByRole("group", { name: "Brand colour" });
   await page.getByLabel("Brand name").fill("Acme Support");
   await page.getByLabel("Logo file").setInputFiles({
     name: "logo.png",
@@ -70,10 +71,11 @@ test("an admin brands the widget, and sees the real one change as they do", asyn
     ),
   });
   await expect(page.getByRole("img", { name: "Current logo" })).toBeVisible();
-  await page.getByRole("button", { name: "Blue", exact: true }).click();
+  await brandColour.getByRole("button", { name: "Blue" }).click();
 
   await page.getByRole("tab", { name: "Widget" }).click();
-  await page.getByRole("radio", { name: "Bottom left" }).click();
+  await page.getByText("Bottom left").click();
+  await expect(page.getByRole("radio", { name: "Bottom left" })).toBeChecked();
   await page.getByLabel("Greeting").fill("Welcome to Acme.");
   await page.getByLabel("Welcome message").fill("Hello! Ask us anything.");
   const replies = page.getByLabel("Quick replies");
@@ -86,6 +88,11 @@ test("an admin brands the widget, and sees the real one change as they do", asyn
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await expect(chat.getByText("Hello! Ask us anything.")).toBeVisible();
   await expect(chat.getByRole("button", { name: "Track my order" })).toBeVisible();
+
+  // Closed, the widget shows the welcome and its replies beside the launcher.
+  await page.getByRole("button", { name: "Closed" }).click();
+  await expect(preview.getByText("Hello! Ask us anything.")).toBeVisible();
+  await expect(preview.getByRole("button", { name: "Track my order" })).toBeVisible();
 
   await page.getByRole("tab", { name: "Chat page" }).click();
   await page.getByLabel("Title").fill("Talk to Acme");
@@ -114,7 +121,7 @@ test("an admin brands the widget, and sees the real one change as they do", asyn
   // The change is still there after a reload.
   await page.reload();
   await expect(page.getByLabel("Brand name")).toHaveValue("Acme Support");
-  await expect(page.getByRole("button", { name: "Blue", exact: true })).toHaveAttribute(
+  await expect(brandColour.getByRole("button", { name: "Blue" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -212,7 +219,9 @@ test("an agent who is not an admin can read settings and change nothing", async 
 
   await page.getByRole("link", { name: "Branding" }).click();
   await expect(page.getByLabel("Brand name")).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Blue" })).toBeDisabled();
+  await expect(
+    page.getByRole("group", { name: "Brand colour" }).getByRole("button", { name: "Blue" }),
+  ).toBeDisabled();
 
   await page.getByRole("link", { name: "Team" }).click();
   await expect(page.getByRole("list", { name: "Team members" })).toBeVisible();

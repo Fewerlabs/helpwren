@@ -23,14 +23,17 @@ export function HomeScreen({ greeting, intro, recent, onClose }: HomeScreenProps
   const show = useShowScreen();
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
+    // A wash of the brand's colour glows from the top corner and fades out with no edge.
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(130%_22rem_at_0%_0%,color-mix(in_srgb,var(--brand,var(--primary))_20%,transparent),transparent_72%)] bg-no-repeat">
       <div className="relative px-5 pt-5 pb-2">
         <BrandMark />
+        {/* The speech bubbles alone: the wren is our mark, and this screen wears theirs. */}
         <Wren
           scene="conversations"
           decorative
+          bird={false}
           className={cn(
-            "text-foreground pointer-events-none absolute top-3 w-32",
+            "text-foreground pointer-events-none absolute -top-5 w-32",
             onClose ? "right-12" : "right-3",
           )}
         />

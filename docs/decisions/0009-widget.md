@@ -51,3 +51,6 @@ their code and their CSS, and has to open a chat that belongs to another origin.
   `init` gained `container`, `preview` and `open`, and the widget gained `preview()` and
   `destroy()`, so the dashboard can run the real script as its preview. A `preview` message
   joined the protocol; the chat accepts it only from a page on its own origin.
+- 2026-11-18: with a welcome message or quick replies set, the script shows them beside the
+  launcher until the chat is opened or they are dismissed, for that visit. Tapping one sends
+  the chat a `start` message; the chat uses a reply only if it is one of the install's own.

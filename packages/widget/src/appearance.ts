@@ -18,6 +18,12 @@ export interface Appearance {
   accentInk: string;
   /** The address of the install's logo. */
   logo?: string | undefined;
+  /** The install's name, shown beside its welcome message. */
+  name: string;
+  /** A message shown beside the launcher before the chat is opened. */
+  welcome?: string | undefined;
+  /** Replies offered under the welcome message. Tapping one opens the chat with it. */
+  quickReplies: readonly string[];
 }
 
 export const defaultAppearance: Appearance = {
@@ -27,6 +33,8 @@ export const defaultAppearance: Appearance = {
   launcher: "chat",
   accent: "#3d6b57",
   accentInk: "#ffffff",
+  name: "",
+  quickReplies: [],
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -39,6 +47,10 @@ const offset = (value: unknown, fallback: number): number =>
   typeof value === "number" && Number.isFinite(value)
     ? Math.min(MAX_OFFSET, Math.max(0, Math.round(value)))
     : fallback;
+
+/** Text is only ever put on the page as text, so it is checked for type and length alone. */
+const text = (value: unknown, max: number): string | undefined =>
+  typeof value === "string" && value.trim() !== "" ? value.trim().slice(0, max) : undefined;
 
 function httpUrl(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -75,5 +87,10 @@ export function parseAppearance(data: unknown, base: Appearance = defaultAppeara
     accentInk: colours.accentInk,
     ...(colours.accentTo ? { accentTo: colours.accentTo } : {}),
     ...(logo ? { logo } : {}),
+    name: "name" in given ? (text(given.name, 60) ?? "") : base.name,
+    welcome: "welcome" in given ? text(given.welcome, 500) : base.welcome,
+    quickReplies: Array.isArray(given.quickReplies)
+      ? given.quickReplies.flatMap((reply) => text(reply, 60) ?? []).slice(0, 5)
+      : base.quickReplies,
   };
 }
