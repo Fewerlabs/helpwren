@@ -18,7 +18,7 @@ import { cn } from "#lib/cn";
 
 import type { InputFormatter } from "../input/format";
 import { Input, type InputProps } from "../input/input";
-import { focusRing } from "../styles";
+import { caretFlip, focusRing } from "../styles";
 import { flagOf, listCountries } from "./countries";
 
 export interface PhoneDetails {
@@ -186,6 +186,7 @@ export function PhoneInput({
               aria-label={countryLabel}
               className={cn(
                 "text-foreground hover:bg-muted dark:hover:bg-muted h-8 gap-1 border-0 bg-transparent px-2 data-[size=default]:h-8 dark:bg-transparent",
+                caretFlip,
                 focusRing,
               )}
             >

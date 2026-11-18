@@ -25,14 +25,14 @@ function Bird({ eye }: { eye: number }) {
  */
 function FlyingBird({ eye }: { eye: number }) {
   return (
-    <g className="hw-bob">
+    <g className="hw-fly">
       <path
         pathLength={1}
         d="M61.5 27.6 53.6 28.4C52 23 47.5 19.5 42 19.5 35.5 19.5 29 22.5 25 28.5 21.5 25 19 20 18 14.5L13.5 16.5C15 23 18.5 30 22 34.5 22 43.5 28.5 49.5 37.5 50 47 50.5 54.5 43 54.5 34 54.5 33 54.5 32.3 54.3 31.6Z"
       />
       <g className="hw-flap">
-        <path pathLength={1} d="M30 31C25 21 25 9 31 1 39 8 44 18 45 30" />
-        <path pathLength={1} d="M33 11C35 17 38 23 41 28" />
+        <path pathLength={1} d="M31 30.5C27.5 24.5 28 16.5 32 11.5 38 15.5 42.5 22.5 44 29.5" />
+        <path pathLength={1} d="M34 17.5C36 21.5 38.5 25 41 28" />
       </g>
       <path pathLength={1} d="M42 24.4C45 22.8 48.3 23 50.8 24.6M34.5 50 31 54.5M40.5 49.8 38 55" />
       <circle cx="47.5" cy="28.2" r={eye} fill="currentColor" stroke="none" />

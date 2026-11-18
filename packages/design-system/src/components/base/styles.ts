@@ -46,3 +46,7 @@ export const textControlFocus = [
 /** An input stripped of its own box, for use inside a `controlShell`. */
 export const bareInput =
   "placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent outline-none disabled:cursor-not-allowed";
+
+/** Flips the caret of a select trigger while its list is open. */
+export const caretFlip =
+  "[&>svg:last-child]:transition-transform [&>svg:last-child]:duration-200 data-[state=open]:[&>svg:last-child]:rotate-180";

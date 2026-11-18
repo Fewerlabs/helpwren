@@ -541,7 +541,10 @@ export function Combobox<
             }}
             className="text-muted-foreground flex size-7 shrink-0 items-center justify-center"
           >
-            <Icon name="caret-down" className="size-4" />
+            <Icon
+              name="caret-down"
+              className={cn("size-4 transition-transform duration-200", open && "rotate-180")}
+            />
           </button>
           {name === undefined
             ? null

@@ -12,7 +12,7 @@ import {
 } from "#components/ui/select";
 import { cn } from "#lib/cn";
 
-import { controlInvalid, controlSurface, focusRing } from "../styles";
+import { caretFlip, controlInvalid, controlSurface, focusRing } from "../styles";
 
 export type SelectProps = ComponentProps<typeof UiSelect>;
 export type SelectTriggerProps = Omit<ComponentProps<typeof UiSelectTrigger>, "size">;
@@ -33,6 +33,7 @@ export function SelectTrigger({ className, ...props }: SelectTriggerProps) {
         controlSurface,
         // A button only reports focus-visible for the keyboard, so the ring needs no help here.
         "focus:border-ring data-[state=open]:border-ring aria-invalid:focus:border-destructive",
+        caretFlip,
         focusRing,
         controlInvalid,
         className,
