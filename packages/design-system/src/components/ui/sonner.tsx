@@ -1,28 +1,18 @@
-"use client"
+"use client";
 
-import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { Icon } from "#components/base/icon/icon"
+import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { Icon } from "#components/base/icon/icon";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
       icons={{
-        success: (
-          <Icon name="check-circle" className="size-4" />
-        ),
-        info: (
-          <Icon name="info" className="size-4" />
-        ),
-        warning: (
-          <Icon name="warning" className="size-4" />
-        ),
-        error: (
-          <Icon name="x-circle" className="size-4" />
-        ),
-        loading: (
-          <Icon name="spinner" className="size-4 animate-spin" />
-        ),
+        success: <Icon name="check-circle" className="size-4" />,
+        info: <Icon name="info" className="size-4" />,
+        warning: <Icon name="warning" className="size-4" />,
+        error: <Icon name="x-circle" className="size-4" />,
+        loading: <Icon name="spinner" className="size-4 animate-spin" />,
       }}
       style={
         {
@@ -39,7 +29,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       {...props}
     />
-  )
-}
+  );
+};
 
-export { Toaster }
+export { Toaster };

@@ -14,4 +14,14 @@ export { Highlight, type HighlightProps } from "./highlight/highlight";
 export { MarginNote, type MarginNoteProps } from "./margin-note/margin-note";
 export { MessageBubble, type MessageBubbleProps } from "./message-bubble/message-bubble";
 export { PageHeader, type PageHeaderProps } from "./page-header/page-header";
+export {
+  RichText,
+  richTextHeadings,
+  safeHref,
+  type RichTextHeading,
+  type RichTextMark,
+  type RichTextNode,
+  type RichTextProps,
+} from "./rich-text/rich-text";
+export { RichTextEditor, type RichTextEditorProps } from "./rich-text-editor/rich-text-editor";
 export { SearchField, type SearchFieldProps } from "./search-field/search-field";

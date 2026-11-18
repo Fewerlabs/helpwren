@@ -497,6 +497,37 @@ columns and sorting.
 **ArticleCard** is a help article in a list or grid: `category`, `title`, `summary` and `meta`.
 The whole card is one link. Use a plain `Link` for an article mentioned in running text.
 
+**RichText** draws a rich-text document as a page: headings, paragraphs, lists, quotes, code,
+pictures and callouts (`Note`, `Tip`, `Warning`). Give it the `doc` that `RichTextEditor`
+produced. It runs on the server and loads none of the editor's code. It is safe to show
+whatever was written: it draws only the kinds of node and mark it knows, and follows only web,
+email and phone addresses and paths on the same site, so a document cannot become markup or a
+script. `richTextHeadings(doc)` lists the headings with the same `id`s the page gives them, for
+a table of contents. The typography is the `.hw-rich-text` class in the stylesheet, shared with
+the editor so writing looks like the published page.
+
+**RichTextEditor** is where long writing is done, such as a help article. It works the way
+Notion does: the page is only the writing, with no toolbar above it.
+
+- Typing `/` opens a menu of blocks, narrowed by what is typed next: text, heading, subheading,
+  bulleted and numbered lists, quote, code block, the three callouts, divider and picture. The
+  arrow keys move through it and Enter chooses. The "Add block" button under the writing opens
+  the same menu, for touch screens and for anyone who has not found the slash.
+- Selecting words brings up a small bar: heading, subheading, bold, italic, strikethrough,
+  inline code and link. A link's address is typed into the bar itself.
+- Markdown shortcuts work as typed: `## ` and `### ` for headings, `- ` and `1. ` for lists,
+  `> ` for a quote, three backticks for code, `---` for a divider, `**bold**` and `` `code` ``.
+- `uploadImage(file)` stores a picture and returns its address (or `null` if it failed, after
+  you have said why with a `toast`). With it, pictures can be chosen, pasted or dropped in, and
+  a selected picture can be given a description. Without it the editor offers no pictures.
+- It is uncontrolled: `defaultValue` is the document to start from and `onChange` reports the
+  whole document after every change. Give it a new `key` to start again from another document.
+  `disabled` shows the writing and allows no changes.
+
+It is built on [Tiptap](https://tiptap.dev) (see
+[ADR 0013](decisions/0013-knowledge-base.md)); nothing outside this component imports it. Use a
+`Textarea` for a few plain lines, such as a message or a description.
+
 **Highlight** marks a word or short phrase with the yellow highlighter, or with a wavy red-pen
 underline (`variant="pen"`). It sits behind a word, never a paragraph.
 
