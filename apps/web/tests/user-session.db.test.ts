@@ -51,7 +51,9 @@ async function startConversation(contactId: string, body: string): Promise<strin
 afterAll(async () => {
   const ids = [...userIds];
   await supabaseAdmin.from("conversations").delete().in("contact_id", ids);
-  await Promise.all(ids.map((id) => supabaseAdmin.auth.admin.deleteUser(id)));
+  const removed = await Promise.all(ids.map((id) => supabaseAdmin.auth.admin.deleteUser(id)));
+  const failed = removed.filter(({ error }) => error);
+  if (failed.length > 0) throw new Error(`Left ${String(failed.length)} test users behind.`);
 });
 
 describe("a session for an identified user", () => {
@@ -78,7 +80,11 @@ describe("a session for an identified user", () => {
     const request = new Request("http://localhost/api", {
       headers: { authorization: `Bearer ${session.accessToken}` },
     });
-    await expect(getCaller(request)).resolves.toEqual({ id: session.userId, isAgent: false });
+    await expect(getCaller(request)).resolves.toEqual({
+      id: session.userId,
+      isAgent: false,
+      isGuest: false,
+    });
   });
 
   it("reads its own conversations and nobody else's", async () => {

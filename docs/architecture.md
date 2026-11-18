@@ -182,7 +182,8 @@ A product's own logged-in users are confirmed by an identity adapter from `@help
 (`src/lib/identity.ts` picks the one the install is set up for) and then signed in by
 `sessionForUser` (`src/lib/supabase/user-session.ts`), which gives the same person the same
 Supabase Auth user on every device. `identify_contact` in the database records them as a
-verified contact. Signing keys and other credentials live in the `secrets` table, which only the
+verified contact, and `merge_guest_into_user` gives them what they did as a guest on that device.
+Signing keys and other credentials live in the `secrets` table, which only the
 server can read. See [ADR 0013](decisions/0013-sessions-for-identified-users.md) and
 [ADR 0014](decisions/0014-identity-adapters.md).
 

@@ -51,3 +51,16 @@ deprecated its older static hash because it never expires. None of them accept a
 - A guest's earlier conversations are not yet carried over when they are identified. That is the
   next step.
 - There is no screen for the mode or the keys yet; they arrive with the Identity settings page.
+
+## Later changes
+
+- 2026-11-19: a guest's conversations follow them when they are identified. The chat sends its
+  guest session with the token, and `merge_guest_into_user` moves that guest's conversations,
+  messages, ratings and history to the user, fills in a name, email or phone the product did not
+  give, and removes the guest. The session is the proof the conversations are theirs to bring:
+  the function refuses anyone who is not a plain guest, so another user's or a team member's
+  session moves nothing. A session that is sent but cannot be verified fails the request, so the
+  chat renews it and asks again instead of quietly leaving history behind. Someone who signs
+  another person in on a device where they had been chatting as a guest gives that person their
+  guest conversations; that is what merging on sign-in means, and it is the same in Intercom
+  and Zendesk.

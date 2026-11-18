@@ -13,6 +13,8 @@ export const identifyResponseSchema = z.object({
   userId: z.uuid(),
   accessToken: z.string().min(1),
   refreshToken: z.string().min(1),
+  /** How many conversations the visitor had as a guest that are now this user's. */
+  mergedConversations: z.number().int().min(0),
 });
 
 export type IdentifyResponse = z.infer<typeof identifyResponseSchema>;

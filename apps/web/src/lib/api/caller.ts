@@ -7,24 +7,27 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export interface Caller {
   id: string;
   isAgent: boolean;
+  /** True for a visitor with a guest session, who has not been identified as anyone. */
+  isGuest: boolean;
 }
 
 const BEARER = /^Bearer (.+)$/;
 
-async function verifiedUserId(request: Request): Promise<string | null> {
+async function verifiedClaims(request: Request) {
   // The chat frame and other API clients send their session as a bearer token; the inbox,
   // which lives on this site, sends it in cookies.
   const token = BEARER.exec(request.headers.get("authorization") ?? "")?.[1];
   const { data } = token
     ? await supabaseAdmin.auth.getClaims(token)
     : await (await createSupabaseServerClient()).auth.getClaims();
-  return data?.claims.sub ?? null;
+  return data?.claims ?? null;
 }
 
 /** The verified caller of a request, or `null` if it carries no valid session. */
 export async function getCaller(request: Request): Promise<Caller | null> {
-  const id = await verifiedUserId(request);
-  if (!id) return null;
+  const claims = await verifiedClaims(request);
+  if (!claims) return null;
+  const id = claims.sub;
 
   const { data: agent, error } = await supabaseAdmin
     .from("agents")
@@ -34,5 +37,5 @@ export async function getCaller(request: Request): Promise<Caller | null> {
     .maybeSingle();
   if (error) throw error;
 
-  return { id, isAgent: agent !== null };
+  return { id, isAgent: agent !== null, isGuest: claims.is_anonymous === true };
 }
