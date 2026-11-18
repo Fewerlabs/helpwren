@@ -24,7 +24,12 @@ function Screen() {
 function renderForm(guestDetails: GuestDetails, returning = false) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <StartForm guestDetails={guestDetails} source="web" returning={returning} />
+      <StartForm
+        guestDetails={guestDetails}
+        defaultCountry="NG"
+        source="web"
+        returning={returning}
+      />
       <Screen />
     </QueryClientProvider>,
   );
@@ -63,9 +68,10 @@ describe("StartForm", () => {
     });
   });
 
-  it("asks for a phone number when the install wants one", () => {
+  it("asks for a phone number when the install wants one, starting on its default country", () => {
     renderForm("phone");
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /country/i })).toHaveTextContent("+234");
     expect(screen.queryByRole("textbox", { name: /email/i })).not.toBeInTheDocument();
   });
 

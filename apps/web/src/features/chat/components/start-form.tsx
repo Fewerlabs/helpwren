@@ -7,7 +7,7 @@ import {
   phoneSchema,
   type GuestDetails,
 } from "@helpwren/core";
-import { Button, countryOfLocale, FieldList, type FieldItem } from "@helpwren/design-system";
+import { Button, FieldList, Icon, toCountryCode, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -62,16 +62,20 @@ function startSchema(ask: GuestDetails | "nothing") {
     });
 }
 
-function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"]) {
+function fieldsFor(
+  ask: GuestDetails | "nothing",
+  replyBy: StartValues["replyBy"],
+  defaultCountry: string,
+) {
   const fields: FieldItem<StartValues>[] = [];
-  const country = countryOfLocale(navigator.language);
+  const country = toCountryCode(defaultCountry);
   if (ask !== "nothing" && ask !== "none") {
     fields.push({
       name: "name",
       label: "Your name",
       type: "input",
       required: true,
-      props: { autoComplete: "name" },
+      props: { autoComplete: "name", prepend: <Icon name="user" /> },
     });
     if (ask === "email_or_phone") {
       fields.push({
@@ -96,7 +100,12 @@ function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"
             type: "input",
             required: true,
             hint: "So we can reply if you leave.",
-            props: { type: "email", autoComplete: "email", autoCapitalize: "none" },
+            props: {
+              type: "email",
+              autoComplete: "email",
+              autoCapitalize: "none",
+              prepend: <Icon name="envelope" />,
+            },
           }
         : {
             name: "phone",
@@ -106,7 +115,7 @@ function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"
             hint: "So we can reach you if you leave.",
             props: {
               autoComplete: "tel",
-              // Start on the visitor's likely country, from their browser's language.
+              // Pasting a number from another country still switches to it.
               ...(country ? { defaultCountry: country } : {}),
             },
           },
@@ -124,13 +133,15 @@ function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"
 
 export interface StartFormProps {
   guestDetails: GuestDetails;
+  /** The country the phone field starts on, as a two-letter code from the install's settings. */
+  defaultCountry: string;
   source: string;
   /** True when the visitor has written before, and so has already said who they are. */
   returning: boolean;
 }
 
 /** Starts a conversation: who the visitor is, if the install asks, and their first message. */
-export function StartForm({ guestDetails, source, returning }: StartFormProps) {
+export function StartForm({ guestDetails, defaultCountry, source, returning }: StartFormProps) {
   const queryClient = useQueryClient();
   const show = useShowScreen();
   // The server has the last word on whether details are needed; see `start` below.
@@ -188,7 +199,7 @@ export function StartForm({ guestDetails, source, returning }: StartFormProps) {
     >
       <FieldList
         control={form.control}
-        fields={fieldsFor(ask, replyBy)}
+        fields={fieldsFor(ask, replyBy, defaultCountry)}
         disabled={form.formState.isSubmitting}
       />
       {form.formState.errors.root ? (

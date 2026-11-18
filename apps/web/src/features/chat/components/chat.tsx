@@ -73,6 +73,7 @@ export function Chat({ settings, source }: ChatProps) {
           </p>
           <StartForm
             guestDetails={settings.guestDetails}
+            defaultCountry={settings.defaultCountry}
             source={source}
             returning={earlier.length > 0}
           />

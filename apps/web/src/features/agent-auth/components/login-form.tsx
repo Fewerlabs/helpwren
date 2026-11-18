@@ -1,7 +1,7 @@
 "use client";
 
 import { LOGIN_CODE_LENGTH, loginCodeSchema, loginEmailSchema } from "@helpwren/core";
-import { Button, FieldList, type FieldItem } from "@helpwren/design-system";
+import { Button, FieldList, Icon, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useForm, type Control, type FieldValues } from "react-hook-form";
@@ -30,7 +30,13 @@ const emailFields: FieldItem<EmailForm>[] = [
     label: "Work email",
     type: "input",
     required: true,
-    props: { type: "email", autoComplete: "email", autoCapitalize: "none", spellCheck: false },
+    props: {
+      type: "email",
+      autoComplete: "email",
+      autoCapitalize: "none",
+      spellCheck: false,
+      prepend: <Icon name="envelope" />,
+    },
   },
 ];
 

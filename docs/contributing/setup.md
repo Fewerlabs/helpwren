@@ -66,6 +66,7 @@ admin, and `sam@example.com`), a few contacts and some conversations.
 Open http://localhost:3000/embed. It is the visitor's side, sized for a phone or the widget's
 frame. The demo data asks guests for a name and an email or phone number; change the
 `guest_details` row in the `settings` table to `"email"`, `"phone"` or `"none"` to see the others.
+The phone field starts on +234; add a `default_country` row, such as `"GB"`, to change it.
 
 ### Signing in to the inbox
 

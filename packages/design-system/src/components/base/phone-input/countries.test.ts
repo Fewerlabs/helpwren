@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { countryOfLocale } from "./countries";
+import { toCountryCode } from "./countries";
 
-describe("countryOfLocale", () => {
+describe("toCountryCode", () => {
   it.each([
-    ["en-GB", "GB"],
-    ["fr-CA", "CA"],
-    ["pt-BR", "BR"],
-  ])("reads the country out of %s", (locale, country) => {
-    expect(countryOfLocale(locale)).toBe(country);
+    ["NG", "NG"],
+    ["gb", "GB"],
+  ])("accepts %s", (value, country) => {
+    expect(toCountryCode(value)).toBe(country);
   });
 
-  it.each(["en", "es-419", "not a locale", ""])("finds no country in %j", (locale) => {
-    expect(countryOfLocale(locale)).toBeUndefined();
+  it.each(["XX", "Nigeria", "+234", ""])("rejects %j", (value) => {
+    expect(toCountryCode(value)).toBeUndefined();
   });
 });

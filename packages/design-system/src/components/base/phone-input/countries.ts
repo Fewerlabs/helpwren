@@ -11,16 +11,12 @@ export interface Country {
 }
 
 /**
- * The country a locale such as `en-GB` belongs to, if it names one that has a dialling code.
- * Useful as a `defaultCountry` taken from the browser's language.
+ * Checks a country code that came from outside the type system, such as a setting, and returns
+ * it only if it is a country with a dialling code. Use the result as a `defaultCountry`.
  */
-export function countryOfLocale(locale: string): CountryCode | undefined {
-  try {
-    const region = new Intl.Locale(locale).region;
-    return getCountries().find((code) => code === region);
-  } catch {
-    return undefined;
-  }
+export function toCountryCode(value: string): CountryCode | undefined {
+  const upper = value.toUpperCase();
+  return getCountries().find((code) => code === upper);
 }
 
 /** The flag emoji for an ISO country code, built from its two regional indicator letters. */

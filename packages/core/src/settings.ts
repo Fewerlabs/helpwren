@@ -14,6 +14,12 @@ export type GuestDetails = z.infer<typeof guestDetailsSchema>;
 const storedSettingsSchema = z.object({
   brand: z.object({ name: z.string().min(1) }).default({ name: "Helpwren" }),
   guest_details: guestDetailsSchema.default("email"),
+  /** The country a phone field starts on, as a two-letter code. Nigeria (+234) unless set. */
+  default_country: z
+    .string()
+    .regex(/^[A-Za-z]{2}$/)
+    .transform((code) => code.toUpperCase())
+    .default("NG"),
   /** Where a conversation may come from, such as the website or a mobile app. */
   sources: z.array(z.string().min(1)).min(1).default(["web"]),
 });
@@ -21,13 +27,14 @@ const storedSettingsSchema = z.object({
 export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
   guestDetails: stored.guest_details,
+  defaultCountry: stored.default_country,
   sources: stored.sources,
 }));
 
 export type Settings = z.infer<typeof settingsSchema>;
 
 /** The settings anyone may read, including a visitor with no session. */
-export type PublicSettings = Pick<Settings, "brand" | "guestDetails">;
+export type PublicSettings = Pick<Settings, "brand" | "guestDetails" | "defaultCountry">;
 
 interface SettingRow {
   key: string;
@@ -48,8 +55,8 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, guestDetails } = parseSettings(rows);
-  return { brand, guestDetails };
+  const { brand, guestDetails, defaultCountry } = parseSettings(rows);
+  return { brand, guestDetails, defaultCountry };
 }
 
 export function createSettings(supabase: HelpwrenSupabaseClient) {

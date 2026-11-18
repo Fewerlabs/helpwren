@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import { HelpwrenError } from "./errors";
 import { parsePublicSettings, parseSettings } from "./settings";
 
-const defaults = { brand: { name: "Helpwren" }, guestDetails: "email", sources: ["web"] };
+const defaults = {
+  brand: { name: "Helpwren" },
+  guestDetails: "email",
+  defaultCountry: "NG",
+  sources: ["web"],
+};
 
 describe("parseSettings", () => {
   it("builds one object from the rows", () => {
@@ -11,9 +16,15 @@ describe("parseSettings", () => {
       parseSettings([
         { key: "brand", value: { name: "Acme" } },
         { key: "guest_details", value: "phone" },
+        { key: "default_country", value: "gb" },
         { key: "sources", value: ["web", "ios"] },
       ]),
-    ).toEqual({ brand: { name: "Acme" }, guestDetails: "phone", sources: ["web", "ios"] });
+    ).toEqual({
+      brand: { name: "Acme" },
+      guestDetails: "phone",
+      defaultCountry: "GB",
+      sources: ["web", "ios"],
+    });
   });
 
   it("falls back to defaults when rows are missing", () => {
@@ -35,6 +46,7 @@ describe("parsePublicSettings", () => {
     expect(parsePublicSettings([{ key: "sources", value: ["web", "ios"] }])).toEqual({
       brand: { name: "Helpwren" },
       guestDetails: "email",
+      defaultCountry: "NG",
     });
   });
 });

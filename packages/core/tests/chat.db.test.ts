@@ -46,7 +46,8 @@ function collector<Item>() {
     items,
     add: (item: Item) => items.push(item),
     async waitFor(count: number) {
-      await expect.poll(() => items.length, { timeout: 5000 }).toBeGreaterThanOrEqual(count);
+      // Generous, because the first live message after the stack starts can take seconds.
+      await expect.poll(() => items.length, { timeout: 15_000 }).toBeGreaterThanOrEqual(count);
     },
   };
 }

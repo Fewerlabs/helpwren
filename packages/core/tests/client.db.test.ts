@@ -16,6 +16,7 @@ describe("settings.getPublic", () => {
     await expect(newClient().settings.getPublic()).resolves.toEqual({
       brand: { name: "Helpwren Demo" },
       guestDetails: "email_or_phone",
+      defaultCountry: "NG",
     });
   });
 });
