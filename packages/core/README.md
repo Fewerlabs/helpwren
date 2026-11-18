@@ -13,25 +13,42 @@ import { createHelpwrenClient } from "@helpwren/core";
 
 const helpwren = createHelpwrenClient({ supabase });
 
-await helpwren.settings.getPublic(); // brand and other settings anyone may read
-await helpwren.auth.sendLoginCode(email); // email a team member a sign-in code
-await helpwren.auth.verifyLoginCode(email, code); // { ok: true, agent } or { ok: false, reason }
-await helpwren.agents.me(); // the signed-in team member, or null
+// A visitor
+await helpwren.sessions.startGuest(); // keeps the session a returning visitor already has
+await helpwren.conversations.start({ message, contact: { name, email } });
+await helpwren.conversations.list(); // their own conversations, newest first
+await helpwren.messages.list(conversationId);
+await helpwren.messages.send(conversationId, "Hello");
+const stop = await helpwren.messages.subscribe(conversationId, (message) => {});
+await helpwren.conversations.markRead(conversationId);
+await helpwren.conversations.unreadCount("contact");
+
+// A team member
+await helpwren.auth.sendLoginCode(email);
+await helpwren.auth.verifyLoginCode(email, code);
+await helpwren.agents.me();
+await helpwren.conversations.list(); // every conversation
+await helpwren.conversations.subscribe({ inbox: true }, (conversation) => {});
 await helpwren.auth.signOut();
+
+// Anyone
+await helpwren.settings.getPublic(); // brand, and what guests are asked for
 ```
 
 The caller passes in a Supabase client typed with `Database`, because how a session is stored
-depends on where the code runs. Screens call these functions and never read the tables.
+depends on where the code runs. Screens call these functions and never read the tables. Calls
+that the access rules leave to the server (`conversations.start`, `conversations.markRead`) go
+to the Helpwren app's API; pass `apiUrl` if the app is on another origin.
 
-Outcomes a screen should handle, such as a wrong code, come back as values. A `HelpwrenError` is
-thrown only for failures the caller could not have prevented.
+Outcomes a screen should handle, such as a wrong code or writing too fast, come back as values:
+`{ ok: false, reason }`. A `HelpwrenError` is thrown only for failures the caller could not have
+prevented. Lists return `{ items, nextCursor }`; pass `nextCursor` back as `cursor` for the next
+page. Subscriptions resolve once listening has started and return a function that stops them.
 
 ## What comes next
 
-- Sessions: guest sessions and identified users (`identify`, `reset`).
-- Conversations and messages: list, create, send, and live subscriptions to replies.
+- Identified users (`identify`, `reset`).
 - Articles: find by filter and search.
-- Unread counts for badges.
 
 ## Tests
 

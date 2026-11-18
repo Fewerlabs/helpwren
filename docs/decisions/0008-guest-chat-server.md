@@ -43,6 +43,9 @@ and slow down abuse, all with code that is public.
 
 ## Consequences
 
+- Realtime takes about five seconds to answer a subscription it refuses. A screen that
+  subscribes to something the person may not read waits that long for the error.
+
 - The limits are per session, and a new guest session is cheap. Supabase limits anonymous
   sign-ins to 30 an hour per address, and that is the only brake on someone who keeps making new
   sessions until the captcha planned with the abuse-protection work is added.

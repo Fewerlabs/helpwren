@@ -5,20 +5,36 @@ export {
   loginEmailSchema,
   type VerifyLoginCodeResult,
 } from "./auth";
+export { apiErrorSchema, RATE_LIMITED_SQLSTATE, type ApiErrorCode, type ApiOptions } from "./api";
 export {
-  apiErrorSchema,
   contactDetailsSchema,
+  conversationSchema,
+  conversationStatusSchema,
   hasRequiredGuestDetails,
   MESSAGE_MAX_LENGTH,
   messageBodySchema,
   phoneSchema,
-  RATE_LIMITED_SQLSTATE,
   startConversationInputSchema,
   startConversationResultSchema,
-  type ApiErrorCode,
+  type Contact,
   type ContactDetails,
+  type Conversation,
+  type ConversationStatus,
+  type ConversationWithContact,
+  type ListConversationsOptions,
+  type Page,
   type StartConversationInput,
+  type StartConversationResult,
+  type UnreadSide,
 } from "./conversations";
+export {
+  messageSchema,
+  type ListMessagesOptions,
+  type Message,
+  type SendMessageResult,
+} from "./messages";
+export { type Unsubscribe } from "./realtime";
+export { type Session } from "./sessions";
 export { createHelpwrenClient, type HelpwrenClient, type HelpwrenClientOptions } from "./client";
 export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
