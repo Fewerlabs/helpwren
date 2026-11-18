@@ -40,9 +40,19 @@ export function SelectTrigger({ className, ...props }: SelectTriggerProps) {
   );
 }
 
-export function SelectContent({ className, ...props }: SelectContentProps) {
+/** The list opens below the field, or above it when there is no room, and matches its width. */
+export function SelectContent({
+  className,
+  position = "popper",
+  align = "start",
+  sideOffset = 6,
+  ...props
+}: SelectContentProps) {
   return (
     <UiSelectContent
+      position={position}
+      align={align}
+      sideOffset={sideOffset}
       className={cn("border-line border-border rounded-lg ring-0", className)}
       {...props}
     />
