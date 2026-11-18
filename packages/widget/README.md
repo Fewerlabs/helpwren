@@ -13,5 +13,3 @@ The embeddable Helpwren widget script loaded by host sites.
 - Inline contextual help placeholders (`data-helpwren-help`).
 - Widget configuration validated with Zod, with accent colour, font and radius exposed as
   overridable CSS variables.
-
-See the [build plan](../../docs/helpwren-build-plan.md), sections 4.0 (the widget API), 4.1 and 4.15.

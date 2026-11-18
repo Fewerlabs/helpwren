@@ -15,9 +15,6 @@ Published by [Fewer Labs](https://helpwren.fewerlabs.dev).
 - **Layered:** use the drop-in widget, restyle it, or build your own interface on the same client
   library and API.
 
-The full product and architecture plan is in
-[`docs/helpwren-build-plan.md`](docs/helpwren-build-plan.md).
-
 ## Quick start for contributors
 
 You need Node 26 (see `.nvmrc`) and pnpm 12.
@@ -73,7 +70,6 @@ docs/
 - [Architecture and code conventions](docs/architecture.md)
 - [Design system](docs/design-system.md)
 - [Decision records](docs/decisions/)
-- [Build plan](docs/helpwren-build-plan.md)
 
 ## Community
 

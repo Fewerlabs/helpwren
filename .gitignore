@@ -26,3 +26,7 @@ __screenshots__/
 
 # Local assistant tooling
 .claude/
+
+# Internal planning documents. Kept locally, not published.
+docs/helpwren-build-plan.md
+docs/kickoff.md

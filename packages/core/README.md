@@ -14,5 +14,3 @@ Headless client library for Helpwren.
 
 No interface code lives here. The official widget, support screen and inbox are built only on
 this library, so anything they can do a custom interface can do too.
-
-See the [build plan](../../docs/helpwren-build-plan.md), section 4.13 (layer 2, client library) and section 4.15.

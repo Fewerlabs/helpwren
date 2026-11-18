@@ -11,6 +11,4 @@ Support screen for React Native and Expo apps.
   `source` and context by message, never in the URL.
 - Push token registration and removal helpers.
 - Deep-link handling for opening a conversation or an article.
-- Native components as an alternative to the WebView come later (build plan phase 9).
-
-See the [build plan](../../docs/helpwren-build-plan.md), sections 4.4, 4.5 and 4.15.
+- Native components as an alternative to the WebView come later.

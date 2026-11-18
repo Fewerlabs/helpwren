@@ -14,5 +14,3 @@ Identity, push, email and storage adapters that connect Helpwren to a host produ
 - **Storage:** Supabase Storage and S3-compatible storage.
 
 Each adapter is a small, documented interface with a universal fallback.
-
-See the [build plan](../../docs/helpwren-build-plan.md), section 4.9.

@@ -5,8 +5,6 @@ storybook-static/
 coverage/
 .turbo/
 docs/brand/
-docs/helpwren-build-plan.md
-docs/kickoff.md
 CHANGELOG.md
 CODE_OF_CONDUCT.md
 # shadcn/ui output keeps upstream formatting so updates diff cleanly

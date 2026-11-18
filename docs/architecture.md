@@ -1,7 +1,7 @@
 # Architecture
 
-This page describes how the code is organised. For what Helpwren does and why, read the
-[build plan](helpwren-build-plan.md).
+This page describes how the code is organised. For what Helpwren is, see the
+[README](../README.md).
 
 ## Monorepo
 
