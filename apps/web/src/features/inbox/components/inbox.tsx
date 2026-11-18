@@ -9,10 +9,12 @@ import { useDebounced } from "@/lib/use-debounced";
 
 import {
   inboxViews,
+  TICKETS_VIEW,
   teamView,
   MIN_SEARCH_LENGTH,
   useChangeConversation,
   useChangeConversations,
+  useInboxStatus,
   useInboxView,
   useOpenConversation,
   useLiveInbox,
@@ -51,6 +53,7 @@ export function Inbox({ agent }: InboxProps) {
   const counts = useViewCounts(views, agent.id);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [detailsSheetOpen, setDetailsSheetOpen] = useState(false);
+  const [status, setStatus] = useInboxStatus();
   const [selectedId, select] = useSelectedConversation();
   const [search, setSearch] = useState("");
   const typed = useDebounced(search).trim();
@@ -67,7 +70,7 @@ export function Inbox({ agent }: InboxProps) {
 
   // Tickets are tracked more than chatted through, so their view is a table with no list
   // beside it. Opening one shows its conversation in the table's place.
-  const asTable = view.id === "tickets" && !searching;
+  const asTable = view.id === TICKETS_VIEW && !searching;
 
   const openConversation = selected ? (
     <>
@@ -116,8 +119,12 @@ export function Inbox({ agent }: InboxProps) {
     icon: item.icon,
     count: counts[item.id],
     active: item.id === view.id,
-    // Teams sit under their own heading, below the views everyone has.
-    ...(item.id.startsWith("team:") ? { group: "Teams" } : {}),
+    // Whose conversations first, then other ways of looking at them, then each team.
+    ...(item.id.startsWith("team:")
+      ? { group: "Teams" }
+      : item.id === TICKETS_VIEW
+        ? { group: "Views" }
+        : {}),
   }));
   const columns = cn(
     "divide-rule grid divide-x",
@@ -154,6 +161,8 @@ export function Inbox({ agent }: InboxProps) {
           agentId={agent.id}
           team={team}
           count={counts[view.id]}
+          status={status}
+          onStatusChange={setStatus}
           search={search}
           onSearchChange={setSearch}
           searchText={searchText}

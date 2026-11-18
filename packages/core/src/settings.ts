@@ -79,11 +79,21 @@ const pageTextSchema = z.object({
 
 export type PageText = z.infer<typeof pageTextSchema>;
 
+/** Who emails come from. The name falls back to the brand's. */
+const emailSchema = z.object({
+  fromName: z.string().min(1).optional(),
+  fromAddress: z.email().optional(),
+});
+
+export type EmailSettings = z.infer<typeof emailSchema>;
+
 const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
   widget: widgetSchema.default(() => widgetSchema.parse({})),
   /** The chat on a page of its own, at `/chat`, for a link in an email or a profile. */
   chat_page: pageTextSchema.default({}),
+  /** Who the install's emails are from. Without an address it sends none. */
+  email: emailSchema.default({}),
   help_center: pageTextSchema.default({}),
   guest_details: guestDetailsSchema.default("email"),
   /**
@@ -99,6 +109,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
   widget: stored.widget,
   chatPage: stored.chat_page,
+  email: stored.email,
   helpCenter: stored.help_center,
   guestDetails: stored.guest_details,
   allowedDomains: stored.allowed_domains,
@@ -174,6 +185,10 @@ export const settingsPatchSchema = z
         .max(QUICK_REPLIES_MAX),
     }),
     chatPage: pageTextPatchSchema,
+    email: z.object({
+      fromName: z.string().trim().min(1).max(60).optional(),
+      fromAddress: z.string().trim().toLowerCase().pipe(z.email()).optional(),
+    }),
     helpCenter: pageTextPatchSchema,
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
@@ -201,6 +216,8 @@ const storage = {
   brand: { key: "brand", isPublic: true },
   widget: { key: "widget", isPublic: true },
   chatPage: { key: "chat_page", isPublic: true },
+  // Not public: a visitor has no use for the address, and it is nobody's to harvest.
+  email: { key: "email", isPublic: false },
   helpCenter: { key: "help_center", isPublic: true },
   guestDetails: { key: "guest_details", isPublic: true },
   allowedDomains: { key: "allowed_domains", isPublic: false },

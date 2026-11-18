@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { contactName } from "../contact-name";
-import { inboxViews } from "../hooks/use-inbox";
+import { inboxStatuses, inboxViews } from "../hooks/use-inbox";
 import { DetailsPanel } from "./details-panel";
 import { ListPanel, type ListPanelProps } from "./list-panel";
 
@@ -74,19 +74,22 @@ function withClient(ui: ReactElement, client = fakeClient()) {
   );
 }
 
-const all = inboxViews[6];
-const open = inboxViews[2];
+const everyone = inboxViews[2];
+const [open, , , anyStatus] = inboxStatuses;
 
 function renderList(props: Partial<ListPanelProps> = {}, fake: Fake = {}) {
   const onSelect = vi.fn();
+  const onStatusChange = vi.fn();
   const client = fakeClient(fake);
   render(
     withClient(
       <ListPanel
-        view={open}
+        view={everyone}
         agentId="33333333-3333-4333-8333-333333333333"
         team={[]}
         count={1}
+        status={open}
+        onStatusChange={onStatusChange}
         search=""
         onSearchChange={vi.fn()}
         searchText=""
@@ -97,7 +100,7 @@ function renderList(props: Partial<ListPanelProps> = {}, fake: Fake = {}) {
       client,
     ),
   );
-  return { onSelect, client };
+  return { onSelect, onStatusChange, client };
 }
 
 describe("contactName", () => {
@@ -132,13 +135,26 @@ describe("ListPanel", () => {
 
   it("is titled with the view it shows and how much it holds, and marks the open conversation", async () => {
     renderList({ selectedId: conversation().id });
-    expect(screen.getByRole("heading", { name: /^Open\s*1$/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^All\s*1$/ })).toBeInTheDocument();
     expect(await screen.findByRole("button", { current: true })).toHaveTextContent("Priya Nair");
   });
 
-  it("shows each conversation's status only when listing all of them", async () => {
-    renderList({ view: all }, { list: [conversation({ status: "resolved", unreadForAgents: 0 })] });
+  it("shows each conversation's status only when every status is listed", async () => {
+    const { client } = renderList(
+      { status: anyStatus },
+      { list: [conversation({ status: "resolved", unreadForAgents: 0 })] },
+    );
     expect(await screen.findByText("Resolved")).toBeInTheDocument();
+    expect(client.conversations.list).toHaveBeenCalledWith(
+      expect.objectContaining({ status: undefined }),
+    );
+  });
+
+  it("switches which statuses it shows from the top of the list", async () => {
+    const { onStatusChange } = renderList();
+    await userEvent.click(screen.getByRole("button", { name: /^Show:/ }));
+    await userEvent.click(screen.getByRole("option", { name: "Waiting" }));
+    expect(onStatusChange).toHaveBeenCalledWith("waiting");
   });
 
   it("shows what a search found in place of the view", async () => {

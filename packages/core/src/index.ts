@@ -85,6 +85,12 @@ export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
 export { conversationEventSchema, type ConversationEvent } from "./events";
 export {
+  identifyInputSchema,
+  identifyResponseSchema,
+  type IdentifyInput,
+  type IdentifyResponse,
+} from "./identity";
+export {
   accentColorSchema,
   allowedDomainSchema,
   guestDetailsSchema,
@@ -97,6 +103,7 @@ export {
   settingsPatchSchema,
   settingsSchema,
   type Brand,
+  type EmailSettings,
   type GuestDetails,
   type PageText,
   type PublicSettings,
