@@ -93,6 +93,14 @@ insert into public.messages (conversation_id, sender_id, sender_role, body, crea
   ('d0000000-0000-4000-8000-000000000004', 'c0000000-0000-4000-8000-000000000004', 'user',
    'All sorted. Thanks for the quick reply!', now() - interval '3 days');
 
+-- Each message above counted as unread, and the last one reopened the resolved conversation.
+-- Set the state the demo should open with.
+update public.conversations set unread_for_contact = 0, unread_for_agents = case
+  when id in ('d0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000003')
+  then 1 else 0 end;
+update public.conversations set status = 'resolved'
+where id = 'd0000000-0000-4000-8000-000000000004';
+
 insert into public.notes (conversation_id, author_id, body) values
   ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001',
    'Billing address was changed in February. Check whether the March invoice was issued first.');
@@ -100,4 +108,5 @@ insert into public.notes (conversation_id, author_id, body) values
 insert into public.settings (key, value, is_public) values
   ('brand', '{"name": "Helpwren Demo"}', true),
   ('audiences', '["customer", "business"]', false),
-  ('sources', '["web", "web_app"]', false);
+  ('sources', '["web", "web_app"]', false),
+  ('guest_details', '"email_or_phone"', true);

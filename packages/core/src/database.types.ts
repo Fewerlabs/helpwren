@@ -43,6 +43,7 @@ export type Database = {
           name: string | null;
           org_id: string | null;
           org_name: string | null;
+          phone: string | null;
           verified: boolean;
         };
         ComputedFields: never;
@@ -57,6 +58,7 @@ export type Database = {
           name?: string | null;
           org_id?: string | null;
           org_name?: string | null;
+          phone?: string | null;
           verified?: boolean;
         };
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           name?: string | null;
           org_id?: string | null;
           org_name?: string | null;
+          phone?: string | null;
           verified?: boolean;
         };
         Relationships: [];
@@ -259,7 +262,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      start_conversation: {
+        Args: {
+          body: string;
+          contact_email?: string;
+          contact_id: string;
+          contact_name?: string;
+          contact_phone?: string;
+          context?: Json;
+          source: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;

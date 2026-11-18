@@ -1,28 +1,40 @@
 import { describe, expect, it } from "vitest";
 
 import { HelpwrenError } from "./errors";
-import { parsePublicSettings } from "./settings";
+import { parsePublicSettings, parseSettings } from "./settings";
 
-describe("parsePublicSettings", () => {
+const defaults = { brand: { name: "Helpwren" }, guestDetails: "email", sources: ["web"] };
+
+describe("parseSettings", () => {
   it("builds one object from the rows", () => {
-    expect(parsePublicSettings([{ key: "brand", value: { name: "Acme" } }])).toEqual({
-      brand: { name: "Acme" },
-    });
+    expect(
+      parseSettings([
+        { key: "brand", value: { name: "Acme" } },
+        { key: "guest_details", value: "phone" },
+        { key: "sources", value: ["web", "ios"] },
+      ]),
+    ).toEqual({ brand: { name: "Acme" }, guestDetails: "phone", sources: ["web", "ios"] });
   });
 
-  it("falls back to defaults when a row is missing", () => {
-    expect(parsePublicSettings([])).toEqual({ brand: { name: "Helpwren" } });
+  it("falls back to defaults when rows are missing", () => {
+    expect(parseSettings([])).toEqual(defaults);
   });
 
   it("ignores keys this version does not know", () => {
-    expect(parsePublicSettings([{ key: "from_the_future", value: 1 }])).toEqual({
-      brand: { name: "Helpwren" },
-    });
+    expect(parseSettings([{ key: "from_the_future", value: 1 }])).toEqual(defaults);
   });
 
   it("throws when a row has the wrong shape", () => {
-    expect(() => parsePublicSettings([{ key: "brand", value: { name: "" } }])).toThrow(
-      HelpwrenError,
-    );
+    expect(() => parseSettings([{ key: "brand", value: { name: "" } }])).toThrow(HelpwrenError);
+    expect(() => parseSettings([{ key: "guest_details", value: "fax" }])).toThrow(HelpwrenError);
+  });
+});
+
+describe("parsePublicSettings", () => {
+  it("leaves out settings that are not for everyone", () => {
+    expect(parsePublicSettings([{ key: "sources", value: ["web", "ios"] }])).toEqual({
+      brand: { name: "Helpwren" },
+      guestDetails: "email",
+    });
   });
 });

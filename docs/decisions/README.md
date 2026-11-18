@@ -12,3 +12,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0005 | [A form layer in the design system](0005-form-layer.md)               |
 | 0006 | [Database schema and access rules](0006-database-and-access-rules.md) |
 | 0007 | [How team members sign in](0007-agent-sign-in.md)                     |
+| 0008 | [How guest chat reaches the server](0008-guest-chat-server.md)        |

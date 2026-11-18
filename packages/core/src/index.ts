@@ -5,8 +5,29 @@ export {
   loginEmailSchema,
   type VerifyLoginCodeResult,
 } from "./auth";
+export {
+  apiErrorSchema,
+  contactDetailsSchema,
+  hasRequiredGuestDetails,
+  MESSAGE_MAX_LENGTH,
+  messageBodySchema,
+  phoneSchema,
+  RATE_LIMITED_SQLSTATE,
+  startConversationInputSchema,
+  startConversationResultSchema,
+  type ApiErrorCode,
+  type ContactDetails,
+  type StartConversationInput,
+} from "./conversations";
 export { createHelpwrenClient, type HelpwrenClient, type HelpwrenClientOptions } from "./client";
 export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
-export { publicSettingsSchema, type PublicSettings } from "./settings";
+export {
+  guestDetailsSchema,
+  parseSettings,
+  settingsSchema,
+  type GuestDetails,
+  type PublicSettings,
+  type Settings,
+} from "./settings";
 export { type HelpwrenSupabaseClient } from "./supabase";

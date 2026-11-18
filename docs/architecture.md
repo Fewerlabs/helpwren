@@ -30,7 +30,7 @@ Helpwren runs on Supabase: Postgres, Auth, Realtime and Storage.
 | ---------------------- | --------------------------------------------------------------- |
 | `supabase/config.toml` | Settings for the local stack the Supabase CLI runs in Docker    |
 | `supabase/migrations`  | Tables, access rules and triggers, as plain SQL in order        |
-| `supabase/tests`       | pgTAP tests of the access rules, one file per table             |
+| `supabase/tests`       | pgTAP tests of the access rules and triggers                    |
 | `supabase/seed.sql`    | Demo data for local development; never loaded by a real install |
 
 The browser reaches the database with a public key, so Row Level Security decides who can read
@@ -74,6 +74,23 @@ Supabase client that knows whose request this is.
 
 These are server-only. Client components reach the server through Server Actions, as the sign-in
 form does. See [ADR 0007](decisions/0007-agent-sign-in.md).
+
+### API routes
+
+API routes do what the access rules leave to the server. Each one follows the same steps:
+
+1. `getCaller(request)` (`src/lib/api/caller.ts`) verifies the session, from a bearer token or
+   the inbox's cookies, and says whether the caller is an agent.
+2. The body is parsed with a Zod schema from `@helpwren/core`.
+3. Only then does it use `supabaseAdmin` (`src/lib/supabase/admin.ts`), the one client that holds
+   the secret key.
+4. Failures go through `apiError` (`src/lib/api/respond.ts`), so every route answers in the same
+   shape.
+
+The secret key is read in `src/lib/server-env.ts`, apart from the public variables, so importing
+it from browser code fails the build. Route tests live in `apps/web/tests` and call the handlers
+directly against the local database: `pnpm test:db`. See
+[ADR 0008](decisions/0008-guest-chat-server.md).
 
 ### Features
 
@@ -131,14 +148,16 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route          | What it is                                                                   |
-| -------------- | ---------------------------------------------------------------------------- |
-| `/design`      | The design system running in the app, with the example feature at the bottom |
-| `/embed`       | Chat, tickets and help for visitors and users (placeholder)                  |
-| `/help`        | The public help center (placeholder)                                         |
-| `/inbox`       | The agent inbox, for signed-in team members (the inbox itself is not built)  |
-| `/inbox/login` | Sign-in for team members                                                     |
-| `/api/health`  | Returns `{ "status": "ok" }`                                                 |
+| Route                               | What it is                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------------- |
+| `/design`                           | The design system running in the app, with the example feature at the bottom |
+| `/embed`                            | Chat, tickets and help for visitors and users (placeholder)                  |
+| `/help`                             | The public help center (placeholder)                                         |
+| `/inbox`                            | The agent inbox, for signed-in team members (the inbox itself is not built)  |
+| `/inbox/login`                      | Sign-in for team members                                                     |
+| `/api/health`                       | Returns `{ "status": "ok" }`                                                 |
+| `POST /api/conversations`           | Starts a conversation with its first message                                 |
+| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                           |
 
 ## The design system
 

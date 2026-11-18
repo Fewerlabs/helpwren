@@ -52,7 +52,7 @@ pnpm db:reset     # rebuild the database from supabase/migrations and the seed d
 pnpm db:stop      # stop the stack and keep its data
 pnpm db:env       # write apps/web/.env.local for the local stack
 pnpm db:test      # run the access-rule tests in supabase/tests
-pnpm test:db      # run the tests that need the database, such as the client library's
+pnpm test:db      # run the tests that need the database: the client library and API routes
 pnpm test:e2e     # run the browser tests in apps/web/e2e against the local stack
 pnpm db:lint      # check the schema for mistakes
 pnpm db:types     # regenerate packages/core/src/database.types.ts after a schema change

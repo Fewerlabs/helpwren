@@ -21,6 +21,7 @@ jobs:
       # The app will not build without these. Nothing in this job connects to Supabase.
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
+      SUPABASE_SECRET_KEY: placeholder
     steps:
       - uses: actions/checkout@v7
         with:
@@ -85,7 +86,7 @@ jobs:
       - name: Test the access rules
         run: pnpm db:test
 
-      - name: Test the client library against the database
+      - name: Test the client library and the API against the database
         run: pnpm test:db
 
       - name: Install Chromium for the browser tests

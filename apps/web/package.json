@@ -11,9 +11,10 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "test:e2e": "playwright test",
-    "agent:invite": "node --env-file=.env.local scripts/invite-agent.ts"
+    "agent:invite": "node --env-file=.env.local scripts/invite-agent.ts",
+    "test:db": "vitest run --project db"
   },
   "dependencies": {
     "@helpwren/core": "workspace:*",

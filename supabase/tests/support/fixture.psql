@@ -119,3 +119,5 @@ insert into public.settings (key, value, is_public) values
   ('signing_secret', '"hidden"', false);
 
 grant execute on all functions in schema tests to anon, authenticated, service_role;
+-- Lets a test acting as the server remember the id of something it created.
+grant insert on tests.things to service_role;
