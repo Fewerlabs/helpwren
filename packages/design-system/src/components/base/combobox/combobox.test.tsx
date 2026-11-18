@@ -352,6 +352,39 @@ describe("Combobox with options loaded from a server", () => {
     expect(loadOptions).toHaveBeenCalledTimes(3);
   });
 
+  it("says it is loading more at the bottom of the list while the next page loads", async () => {
+    let release: () => void = () => undefined;
+    const loadOptions: ComboboxLoader<Person, number> = ({ cursor = 0 }) =>
+      cursor === 0
+        ? Promise.resolve({ options: people.slice(0, 20), nextCursor: 20 })
+        : new Promise((resolve) => {
+            release = () => {
+              resolve({ options: people.slice(20, 40) });
+            };
+          });
+    render(
+      <Combobox<Person, number, number>
+        aria-label="Person"
+        {...personProps}
+        loadOptions={loadOptions}
+      />,
+    );
+    await userEvent.click(screen.getByRole("combobox", { name: "Person" }));
+    await screen.findByRole("option", { name: "Person 20" });
+    expect(screen.queryByText("Loading more")).not.toBeInTheDocument();
+
+    await scrollToEnd();
+    expect(await screen.findByText("Loading more")).toBeInTheDocument();
+    // The options already loaded stay on screen while the next page arrives.
+    expect(screen.getAllByRole("option")).toHaveLength(20);
+
+    act(() => {
+      release();
+    });
+    expect(await screen.findByRole("option", { name: "Person 40" })).toBeInTheDocument();
+    expect(screen.queryByText("Loading more")).not.toBeInTheDocument();
+  });
+
   it("ignores a slow response for an earlier search", async () => {
     const resolvers = new Map<string, (people: Person[]) => void>();
     const loadOptions: ComboboxLoader<Person, number> = ({ search }) =>

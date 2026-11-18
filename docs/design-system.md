@@ -249,7 +249,7 @@ with `transform` (clean each value), `validate` (reject a value), `separators`, 
 - filters a fixed list (`options`), or loads from a server (`loadOptions`), which receives the
   search text, a cursor and an `AbortSignal`, and returns a page of options
 - scrolls infinitely: return `nextCursor` from `loadOptions` and the next page loads when the end
-  of the list is reached. The cursor can be a page number, an offset or an opaque token
+  of the list is reached. "Loading more" shows at the bottom of the list while it arrives. The cursor can be a page number, an offset or an opaque token
 - debounces typing (`debounceMs`) and aborts the previous request, so a slow early response never
   overwrites a later one
 - takes one value or, with `multiple`, several, shown as removable chips in a box that grows

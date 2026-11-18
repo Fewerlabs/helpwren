@@ -636,6 +636,13 @@ export function Combobox<
           <div ref={sentinelRef} aria-hidden="true" className="h-px" />
           <div aria-live="polite" className="text-muted-foreground text-sm">
             {busy && list.length === 0 ? <p className="px-2 py-2">{messages.loading}</p> : null}
+            {/* The next page arrives at the bottom of the list, so that is where it says so. */}
+            {async.status === "loading-more" ? (
+              <p className="flex items-center justify-center gap-2 px-2 py-3 text-xs">
+                <Spinner label="" aria-hidden="true" />
+                {messages.loadingMore}
+              </p>
+            ) : null}
             {async.status === "error" ? (
               <p className="flex flex-wrap items-center gap-2 px-2 py-2">
                 <span className="text-destructive">{messages.error}</span>
