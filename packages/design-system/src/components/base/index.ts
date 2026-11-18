@@ -111,3 +111,23 @@ export {
 export { TagsInput, type TagRenderContext, type TagsInputProps } from "./tags-input/tags-input";
 export { Textarea, type TextareaProps } from "./textarea/textarea";
 export { Tooltip, TooltipProvider, type TooltipProps } from "./tooltip/tooltip";
+export {
+  DataTable,
+  type DataTableColumn,
+  type DataTableKey,
+  type DataTableMessages,
+  type DataTableProps,
+  type DataTableSort,
+  type DataTableSortValue,
+} from "./table/data-table";
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+  type TableProps,
+} from "./table/table";

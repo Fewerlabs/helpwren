@@ -86,15 +86,14 @@ const list = {
 /** The next page loads when the end of the list scrolls into view. */
 export const InfiniteScroll: Story = {
   render: () => (
-    <div
-      role="region"
-      aria-label="Conversations"
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a scrolling region must be reachable by keyboard so it can be scrolled without a mouse.
-      tabIndex={0}
-      className="border-line bg-card h-96 overflow-y-auto rounded-xl px-4"
-    >
-      <QueryList queryKey={["stories", "infinite"]} queryFn={fetchConversations} {...list} />
-    </div>
+    <QueryList
+      queryKey={["stories", "infinite"]}
+      queryFn={fetchConversations}
+      // The list is its own scrolling box, so the progress bar stays pinned to its top edge.
+      className="border-line bg-card h-96 overflow-y-auto rounded-xl"
+      contentClassName="px-4"
+      {...list}
+    />
   ),
 };
 

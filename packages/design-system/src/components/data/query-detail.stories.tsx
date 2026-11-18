@@ -7,12 +7,18 @@ import { QueryDetail } from "./query-detail";
 import { QueryProvider } from "./test-utils";
 
 // QueryDetail is generic, so the stories set its props in `render` instead of through `args`.
+/** The card is the component itself: the box on `className`, the padding on `contentClassName`. */
+const card = {
+  className: "border-line bg-card overflow-clip rounded-xl",
+  contentClassName: "p-4",
+};
+
 const meta: Meta = {
   title: "Data/QueryDetail",
   decorators: [
     (Story) => (
       <QueryProvider>
-        <div className="border-line bg-card max-w-sm overflow-hidden rounded-xl p-4">
+        <div className="max-w-sm">
           <Story />
         </div>
       </QueryProvider>
@@ -54,7 +60,7 @@ async function fetchContact({ signal }: { signal: AbortSignal }): Promise<Contac
 /** Press Refresh: the contact stays on screen under a progress bar while it reloads. */
 export const Default: Story = {
   render: () => (
-    <QueryDetail<Contact> queryKey={["stories", "contact"]} queryFn={fetchContact}>
+    <QueryDetail<Contact> {...card} queryKey={["stories", "contact"]} queryFn={fetchContact}>
       {(contact, { refetch, isFetching }) => (
         <div className="grid gap-3">
           <div className="flex items-center gap-3">
@@ -79,6 +85,7 @@ export const Default: Story = {
 export const NotFound: Story = {
   render: () => (
     <QueryDetail<Contact>
+      {...card}
       queryKey={["stories", "missing"]}
       queryFn={() => Promise.resolve(null)}
       messages={{
@@ -94,6 +101,7 @@ export const NotFound: Story = {
 export const ErrorWithRetry: Story = {
   render: () => (
     <QueryDetail<Contact>
+      {...card}
       queryKey={["stories", "contact-error"]}
       queryFn={async ({ signal }) => {
         await wait(400, signal);
@@ -108,6 +116,7 @@ export const ErrorWithRetry: Story = {
 export const CustomStates: Story = {
   render: () => (
     <QueryDetail<Contact>
+      {...card}
       queryKey={["stories", "contact-custom"]}
       queryFn={fetchContact}
       renderLoading={() => <p className="text-muted-foreground text-sm">Finding this contact…</p>}
@@ -119,7 +128,7 @@ export const CustomStates: Story = {
 
 export const Dark: Story = {
   render: () => (
-    <QueryDetail<Contact> queryKey={["stories", "contact-dark"]} queryFn={fetchContact}>
+    <QueryDetail<Contact> {...card} queryKey={["stories", "contact-dark"]} queryFn={fetchContact}>
       {(contact) => (
         <div className="flex items-center gap-3">
           <Avatar name={contact.name} />

@@ -6,12 +6,12 @@ import { useEffect, useRef, useState, type Key, type ReactNode } from "react";
 import { cn } from "#lib/cn";
 
 import { Button } from "../base/button/button";
-import { LinearProgress } from "../base/linear-progress/linear-progress";
 import {
   DefaultEmpty,
   DefaultError,
   DefaultListLoading,
   InlineError,
+  StickyProgress,
   type QueryBehaviour,
   type QueryErrorContext,
 } from "./query-states";
@@ -119,7 +119,10 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   /** How many placeholder rows the default loading state shows. */
   loadingRows?: number;
   messages?: Partial<QueryListMessages>;
+  /** Classes for the outer box: border, background, radius, scrolling. Keep padding off it. */
   className?: string;
+  /** Classes for the content inside, such as padding. The progress bar sits above this, edge to edge. */
+  contentClassName?: string;
   listClassName?: string;
   itemClassName?: string;
   "aria-label"?: string;
@@ -172,6 +175,7 @@ function ListView<Item, Cursor>({
   loadingRows = 3,
   messages: overrides,
   className,
+  contentClassName,
   listClassName,
   itemClassName,
   "aria-label": ariaLabel,
@@ -286,10 +290,10 @@ function ListView<Item, Cursor>({
       className={cn("relative", className)}
     >
       {/* With items on screen, loading shows as a bar along the top so the list does not jump. */}
-      {isFetching && status === "ready" ? (
-        <LinearProgress label={messages.loading} className="absolute inset-x-0 top-0 z-10" />
-      ) : null}
-      {body()}
+      <StickyProgress active={isFetching && status === "ready"} label={messages.loading} />
+      <div data-slot="query-list-content" className={contentClassName}>
+        {body()}
+      </div>
     </div>
   );
 }

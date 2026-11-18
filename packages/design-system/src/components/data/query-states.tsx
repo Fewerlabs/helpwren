@@ -4,6 +4,7 @@ import { cn } from "#lib/cn";
 
 import { Button } from "../base/button/button";
 import { Icon } from "../base/icon/icon";
+import { LinearProgress } from "../base/linear-progress/linear-progress";
 import { Skeleton } from "../base/skeleton/skeleton";
 
 /** The options of TanStack Query that these components pass through. */
@@ -115,6 +116,19 @@ export function InlineError({
       <Button variant="secondary" size="sm" onClick={retry} loading={retrying}>
         {retryLabel}
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Holds the progress bar flush against the top edge of the container, above any
+ * padding, and keeps it there while the content scrolls. It takes up no height,
+ * so nothing moves when the bar appears.
+ */
+export function StickyProgress({ active, label }: { active: boolean; label: string }) {
+  return (
+    <div data-slot="query-progress" className="sticky top-0 z-10 h-0">
+      {active ? <LinearProgress label={label} className="absolute inset-x-0 top-0" /> : null}
     </div>
   );
 }

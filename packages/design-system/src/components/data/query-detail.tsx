@@ -5,11 +5,11 @@ import type { ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 
-import { LinearProgress } from "../base/linear-progress/linear-progress";
 import {
   DefaultDetailLoading,
   DefaultEmpty,
   DefaultError,
+  StickyProgress,
   type QueryBehaviour,
   type QueryErrorContext,
 } from "./query-states";
@@ -48,7 +48,10 @@ export interface QueryDetailProps<Data> extends QueryBehaviour {
   renderEmpty?: () => ReactNode;
   renderError?: (context: QueryErrorContext) => ReactNode;
   messages?: Partial<QueryDetailMessages>;
+  /** Classes for the outer box: border, background, radius. Keep padding off it. */
   className?: string;
+  /** Classes for the content inside, such as padding. The progress bar sits above this, edge to edge. */
+  contentClassName?: string;
 }
 
 /**
@@ -66,6 +69,7 @@ export function QueryDetail<Data>({
   renderError,
   messages: overrides,
   className,
+  contentClassName,
   enabled,
   staleTime,
   gcTime,
@@ -129,10 +133,10 @@ export function QueryDetail<Data>({
       className={cn("relative", className)}
     >
       {/* With the item on screen, a refresh shows as a bar along the top so nothing jumps. */}
-      {isFetching && hasData ? (
-        <LinearProgress label={messages.loading} className="absolute inset-x-0 top-0 z-10" />
-      ) : null}
-      {body()}
+      <StickyProgress active={isFetching && hasData} label={messages.loading} />
+      <div data-slot="query-detail-content" className={contentClassName}>
+        {body()}
+      </div>
     </div>
   );
 }
