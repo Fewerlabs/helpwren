@@ -6,6 +6,7 @@ import {
   Button,
   cn,
   EmptyState,
+  SearchField,
   Skeleton,
   StatusChip,
   type StatusName,
@@ -86,6 +87,12 @@ export interface ListPanelProps {
   failed: boolean;
   onRetry: () => void;
   view: InboxView;
+  /** What is typed in the search box. */
+  search: string;
+  onSearchChange: (search: string) => void;
+  /** True while showing search results in place of the view. */
+  searching: boolean;
+  loading: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
   className?: string;
@@ -97,6 +104,10 @@ export function ListPanel({
   failed,
   onRetry,
   view,
+  search,
+  onSearchChange,
+  searching,
+  loading,
   selectedId,
   onSelect,
   className,
@@ -105,7 +116,7 @@ export function ListPanel({
     <Panel aria-label="Conversations" className={className}>
       <PanelHeader>
         <h2 className="flex items-baseline gap-1.5 font-semibold">
-          {view.label}
+          {searching ? "Results" : view.label}
           {conversations ? (
             <span className="text-muted-foreground text-xs font-normal tabular-nums">
               {conversations.length}
@@ -113,6 +124,15 @@ export function ListPanel({
           ) : null}
         </h2>
       </PanelHeader>
+      <div className="px-2 pt-2">
+        <SearchField
+          aria-label="Search conversations"
+          placeholder="Search conversations"
+          value={search}
+          onValueChange={onSearchChange}
+          loading={searching && loading}
+        />
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {failed ? (
@@ -134,14 +154,22 @@ export function ListPanel({
           </div>
         ) : conversations.length === 0 ? (
           <EmptyState
-            scene="all-caught-up"
             size="sm"
             className="pt-8"
-            title={view.id === "open" ? "All caught up" : "Nothing here"}
+            scene={searching ? false : "all-caught-up"}
+            title={
+              searching
+                ? "No conversations found"
+                : view.id === "open"
+                  ? "All caught up"
+                  : "Nothing here"
+            }
             description={
-              view.id === "open"
-                ? "Nothing is waiting for the team."
-                : `No conversations are in ${view.label.toLowerCase()}.`
+              searching
+                ? "Try a name, an email address, or words from a message."
+                : view.id === "open"
+                  ? "Nothing is waiting for the team."
+                  : `No conversations are in ${view.label.toLowerCase()}.`
             }
           />
         ) : (
@@ -152,7 +180,7 @@ export function ListPanel({
                   conversation={conversation}
                   selected={conversation.id === selectedId}
                   // Only the view of everything mixes statuses; elsewhere it would be noise.
-                  showStatus={view.id === "all"}
+                  showStatus={searching || view.id === "all"}
                   onSelect={() => {
                     onSelect(conversation.id);
                   }}

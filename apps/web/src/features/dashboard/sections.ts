@@ -10,6 +10,6 @@ export interface Section {
 export const sections = [
   { href: "/dashboard/inbox", label: "Inbox", icon: "tray" },
   { href: "/dashboard/help", label: "Help center", icon: "book-open" },
-  { href: "/dashboard/users", label: "Users", icon: "users" },
+  { href: "/dashboard/contacts", label: "Contacts", icon: "users" },
   { href: "/dashboard/settings", label: "Settings", icon: "gear" },
 ] as const satisfies readonly Section[];

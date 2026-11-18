@@ -42,6 +42,10 @@ function renderList(props: Partial<ListPanelProps> = {}) {
       conversations={[conversation()]}
       failed={false}
       view={inboxViews[0]}
+      search=""
+      onSearchChange={vi.fn()}
+      searching={false}
+      loading={false}
       selectedId={null}
       {...handlers}
       {...props}

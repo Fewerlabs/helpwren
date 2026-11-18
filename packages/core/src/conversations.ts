@@ -123,6 +123,8 @@ export interface ListConversationsOptions {
   limit?: number | undefined;
   /** Only conversations in one of these statuses. Default: any status. */
   status?: readonly ConversationStatus[] | undefined;
+  /** Only one contact's conversations. */
+  contactId?: string | undefined;
 }
 
 export type StartConversationResult =
@@ -164,6 +166,7 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
         .limit(limit + 1);
       if (options.cursor) query = query.lt("last_message_at", options.cursor);
       if (options.status) query = query.in("status", options.status);
+      if (options.contactId) query = query.eq("contact_id", options.contactId);
 
       const { data, error } = await query;
       if (error) throw unexpected("load the conversations", error);
@@ -195,6 +198,18 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
       const conversation = await get(result.data.conversationId);
       if (!conversation) throw unexpected("load the new conversation", result);
       return { ok: true, conversation };
+    },
+
+    /**
+     * Finds conversations by who they are with or by what was said in them, most recently
+     * active first. Searching starts at two characters; less than that finds nothing.
+     */
+    async search(text: string): Promise<ConversationWithContact[]> {
+      const { data, error } = await supabase
+        .rpc("search_conversations", { query: text })
+        .select(WITH_CONTACT);
+      if (error) throw unexpected("search the conversations", error);
+      return z.array(conversationWithContactSchema).parse(data);
     },
 
     /** How many conversations the caller may read are in each status. */

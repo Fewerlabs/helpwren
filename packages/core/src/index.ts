@@ -42,6 +42,14 @@ export {
 } from "./messages";
 export { type Unsubscribe } from "./realtime";
 export { type Session } from "./sessions";
+export {
+  contactKindSchema,
+  contactSummarySchema,
+  type ContactKind,
+  type ContactsPage,
+  type ContactSummary,
+  type ListContactsOptions,
+} from "./contacts";
 export { createHelpwrenClient, type HelpwrenClient, type HelpwrenClientOptions } from "./client";
 export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";

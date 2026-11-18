@@ -4,9 +4,12 @@ import { cn, EmptyState } from "@helpwren/design-system";
 import { useState } from "react";
 
 import { DashboardPage, Panel } from "@/features/dashboard";
+import { useDebounced } from "@/lib/use-debounced";
 
 import {
   inboxViews,
+  MIN_SEARCH_LENGTH,
+  useConversationSearch,
   useInboxConversations,
   useInboxView,
   useLiveInbox,
@@ -29,7 +32,12 @@ export function Inbox() {
   const counts = useViewCounts();
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [selectedId, select] = useSelectedConversation();
-  const conversations = useInboxConversations(view);
+  const [search, setSearch] = useState("");
+  const searchText = useDebounced(search);
+  const searching = searchText.trim().length >= MIN_SEARCH_LENGTH;
+  const inView = useInboxConversations(view);
+  const found = useConversationSearch(searchText);
+  const conversations = searching ? found : inView;
   const refresh = useRefreshInbox();
   useLiveInbox();
 
@@ -55,6 +63,10 @@ export function Inbox() {
         // On a narrow screen the list and the conversation take turns.
         className={cn(selected && "max-md:hidden")}
         view={view}
+        search={search}
+        onSearchChange={setSearch}
+        searching={searching}
+        loading={conversations.isFetching}
         conversations={conversations.data}
         failed={conversations.isError}
         onRetry={() => {

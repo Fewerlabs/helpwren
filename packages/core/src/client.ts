@@ -1,6 +1,7 @@
 import { createAgents } from "./agents";
 import { createApi, type ApiOptions } from "./api";
 import { createAuth } from "./auth";
+import { createContacts } from "./contacts";
 import { createConversations } from "./conversations";
 import { createMessages } from "./messages";
 import { createSessions } from "./sessions";
@@ -27,6 +28,7 @@ export function createHelpwrenClient({ supabase, ...apiOptions }: HelpwrenClient
     auth: createAuth(supabase, agents),
     agents,
     sessions: createSessions(supabase),
+    contacts: createContacts(supabase),
     conversations: createConversations(supabase, api),
     messages: createMessages(supabase),
     settings: createSettings(supabase),

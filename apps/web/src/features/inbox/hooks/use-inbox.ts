@@ -31,6 +31,20 @@ export function useInboxConversations(view: InboxView) {
   });
 }
 
+/** The fewest characters worth searching for. The database finds nothing below this. */
+export const MIN_SEARCH_LENGTH = 2;
+
+/** Conversations found by who they are with or what was said. Idle until there is enough to search for. */
+export function useConversationSearch(text: string) {
+  const getClient = useHelpwren();
+  const query = text.trim();
+  return useQuery({
+    queryKey: [...inboxKey, "search", query],
+    queryFn: () => getClient().conversations.search(query),
+    enabled: query.length >= MIN_SEARCH_LENGTH,
+  });
+}
+
 /** How many conversations each view holds. */
 export function useViewCounts(): Partial<Record<InboxView["id"], number>> {
   const getClient = useHelpwren();

@@ -39,3 +39,9 @@ adding a team member meant running a script. An install could not be handed to a
   no settings API for other clients yet. The public API comes with the headless release.
 - Deactivating someone takes effect on their next request; a page they already have open keeps
   showing what it loaded.
+
+## Later changes
+
+- 2026-11-18: sections share one frame, `DashboardPage`: a navigation column, then a single
+  surface divided into columns. "Users" became "Contacts", because it lists guests as well as
+  the host product's users. The inbox gained views and search.

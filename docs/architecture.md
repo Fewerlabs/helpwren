@@ -103,6 +103,14 @@ lets only admins write. The team is changed with the secret key, after checking 
 admin (`src/features/settings/server/team.ts`). See
 [ADR 0010](decisions/0010-dashboard-and-settings.md).
 
+Every section is laid out by `DashboardPage` (`src/features/dashboard`): the section's own
+navigation on the canvas, then one white surface whose columns are `Panel`s divided by a
+hairline. Views, segments, the open conversation and the open contact are kept in the address,
+so a reload or a shared link lands in the same place.
+
+Searching is done by the database, never by filtering what the browser happens to have loaded:
+`conversations.search` and `contacts.list({ search })` in the client library.
+
 ### Three features, one thread
 
 | Feature        | Whose screen  | Its client                                                                           |
@@ -200,20 +208,21 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route                                 | What it is                                                                                                    |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `/design`                             | The design system running in the app, with the example feature at the bottom                                  |
-| `/embed`                              | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
-| `/help`                               | The public help center (placeholder)                                                                          |
-| `/dashboard`                          | The team's screens, behind one sign-in check. Redirects to the inbox                                          |
-| `/dashboard/inbox`                    | The inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation          |
-| `/dashboard/settings`                 | Settings: General, Installation and Team. Admins change them; agents read                                     |
-| `/dashboard/help`, `/dashboard/users` | Sections that are planned; each says what is coming                                                           |
-| `/login`                              | Sign-in for team members                                                                                      |
-| `/widget.js`                          | The widget script, built from `packages/widget`                                                               |
-| `/api/health`                         | Returns `{ "status": "ok" }`                                                                                  |
-| `POST /api/conversations`             | Starts a conversation with its first message                                                                  |
-| `POST /api/conversations/{id}/read`   | Marks a conversation as read for the caller's side                                                            |
+| Route                               | What it is                                                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/design`                           | The design system running in the app, with the example feature at the bottom                                  |
+| `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
+| `/help`                             | The public help center (placeholder)                                                                          |
+| `/dashboard`                        | The team's screens, behind one sign-in check. Redirects to the inbox                                          |
+| `/dashboard/inbox`                  | The inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation          |
+| `/dashboard/settings`               | Settings: General, Installation and Team. Admins change them; agents read                                     |
+| `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                      |
+| `/dashboard/help`                   | Planned; it says what is coming                                                                               |
+| `/login`                            | Sign-in for team members                                                                                      |
+| `/widget.js`                        | The widget script, built from `packages/widget`                                                               |
+| `/api/health`                       | Returns `{ "status": "ok" }`                                                                                  |
+| `POST /api/conversations`           | Starts a conversation with its first message                                                                  |
+| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                            |
 
 ## The design system
 

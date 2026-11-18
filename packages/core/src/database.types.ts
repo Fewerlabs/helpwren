@@ -151,6 +151,13 @@ export type Database = {
             foreignKeyName: "conversations_contact_id_fkey";
             columns: ["contact_id"];
             isOneToOne: false;
+            referencedRelation: "contact_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversations_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
             referencedRelation: "contacts";
             referencedColumns: ["id"];
           },
@@ -259,9 +266,53 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      contact_summaries: {
+        Row: {
+          conversation_count: number | null;
+          created_at: string;
+          email: string | null;
+          id: string;
+          kind: string;
+          last_active_at: string | null;
+          name: string | null;
+          org_name: string | null;
+          phone: string | null;
+          verified: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
     };
     Functions: {
+      search_conversations: {
+        Args: { query: string };
+        Returns: {
+          assignee_id: string | null;
+          category: string | null;
+          contact_id: string;
+          context: NonNullable<Json>;
+          created_at: string;
+          id: string;
+          last_message_at: string | null;
+          last_message_preview: string | null;
+          org_id: string | null;
+          priority: string;
+          source: string;
+          status: string;
+          subject: string | null;
+          ticket_number: number | null;
+          type: string;
+          unread_for_agents: number;
+          unread_for_contact: number;
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "conversations";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       start_conversation: {
         Args: {
           body: string;
