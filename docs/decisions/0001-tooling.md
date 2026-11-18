@@ -78,8 +78,9 @@ class-variance-authority 0.7.1, `@phosphor-icons/react` 2.1.10.
   in `pnpm-workspace.yaml` may run them.
 - **No JavaScript Tailwind preset.** Tailwind v4 is configured in CSS, so the theme lives in the
   design system's stylesheet rather than in `packages/config`.
-- **Dependabot** for dependency updates, grouped by tool family. It needs no extra app installed
-  on the repository.
+- **No automatic dependency updates for now.** Dependabot was set up at first and then switched
+  off while the project is in early development: it opened a pull request per update, and work
+  goes straight to `main`. Turn it back on before the first release.
 - **Every package is `private`** until the npm names are claimed.
 
 ## Consequences
