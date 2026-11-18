@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { Button } from "../base/button/button";
+import { Toaster } from "../base/toast/toast";
 import { ArticleCard } from "./article-card/article-card";
 import { CodeSnippet } from "./code-snippet/code-snippet";
 import { ConversationListItem } from "./conversation-list-item/conversation-list-item";
@@ -110,14 +111,17 @@ describe("PageHeader", () => {
 });
 
 describe("CodeSnippet", () => {
+  const code = '<script src="https://support.example.com/widget.js"></script>';
+
   it("shows the code and copies it, then says so", async () => {
     const user = userEvent.setup();
     const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
     const onCopied = vi.fn();
-    const code = '<script src="https://support.example.com/widget.js"></script>';
-    render(<CodeSnippet code={code} language="HTML" onCopied={onCopied} />);
+    const { container } = render(<CodeSnippet code={code} language="HTML" onCopied={onCopied} />);
 
-    expect(screen.getByText(code)).toBeInTheDocument();
+    // Colouring splits the code into pieces; together they are still the code.
+    expect(container.querySelector("code")).toHaveTextContent(code);
+    expect(screen.getByText("src")).toHaveClass("text-ochre");
     expect(screen.getByText("HTML")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Copy" }));
@@ -125,6 +129,84 @@ describe("CodeSnippet", () => {
     expect(writeText).toHaveBeenCalledWith(code);
     expect(onCopied).toHaveBeenCalledWith(code);
     expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();
+  });
+
+  it("shows a language it does not know as plain text", () => {
+    render(<CodeSnippet code="SELECT 1;" language="SQL" />);
+    expect(screen.getByText("SELECT 1;")).toBeInTheDocument();
+  });
+
+  it("numbers the lines when asked, without the numbers being read out or copied", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    render(<CodeSnippet code={"one\ntwo"} lineNumbers />);
+
+    expect(screen.getByText("2")).toHaveAttribute("aria-hidden", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    expect(writeText).toHaveBeenCalledWith("one\ntwo");
+  });
+
+  it("switches between tabs, and copies the one that is open", async () => {
+    const user = userEvent.setup();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    render(
+      <CodeSnippet
+        tabsLabel="Frameworks"
+        tabs={[
+          { label: "HTML", language: "html", code },
+          { label: "React", language: "jsx", code: "useEffect(load, []);" },
+        ]}
+      />,
+    );
+
+    const tabs = screen.getByRole("tablist", { name: "Frameworks" });
+    expect(within(tabs).getByRole("tab", { name: "HTML" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("tabpanel", { name: "HTML" })).toHaveTextContent(code);
+
+    await user.click(within(tabs).getByRole("tab", { name: "React" }));
+    expect(screen.getByRole("tabpanel", { name: "React" })).toHaveTextContent(
+      "useEffect(load, []);",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(writeText).toHaveBeenCalledWith("useEffect(load, []);");
+  });
+
+  it("says it was copied in a toast when given the words", async () => {
+    vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    render(
+      <>
+        <CodeSnippet code={code} copiedMessage="Snippet copied" />
+        <Toaster />
+      </>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Copy" }));
+    expect(await screen.findByText("Snippet copied")).toBeInTheDocument();
+  });
+
+  it("shows a single value on one line, with a link that opens it", async () => {
+    const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+    const link = "https://support.example.com/chat";
+    render(
+      <CodeSnippet
+        variant="inline"
+        code={link}
+        copyLabel="Copy link"
+        copiedLabel="Link copied"
+        openHref={link}
+      />,
+    );
+
+    expect(screen.getByText(link)).toBeInTheDocument();
+    const open = screen.getByRole("link", { name: /^Open/ });
+    expect(open).toHaveAttribute("href", link);
+    expect(open).toHaveAttribute("target", "_blank");
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(writeText).toHaveBeenCalledWith(link);
+    expect(await screen.findByRole("button", { name: "Link copied" })).toBeInTheDocument();
   });
 });
 

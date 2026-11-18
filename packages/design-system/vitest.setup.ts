@@ -7,7 +7,7 @@ afterEach(() => {
   cleanup();
 });
 
-// Browser APIs that Radix primitives use and jsdom does not implement.
+// Browser APIs that Radix primitives and Sonner use and jsdom does not implement.
 class ResizeObserverStub implements ResizeObserver {
   observe(): void {
     // Layout never changes in jsdom, so there is nothing to observe.
@@ -22,5 +22,6 @@ class ResizeObserverStub implements ResizeObserver {
 
 globalThis.ResizeObserver = ResizeObserverStub;
 Element.prototype.hasPointerCapture = () => false;
+Element.prototype.setPointerCapture = () => undefined;
 Element.prototype.releasePointerCapture = () => undefined;
 Element.prototype.scrollIntoView = () => undefined;

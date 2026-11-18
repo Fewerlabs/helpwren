@@ -99,8 +99,12 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   const sent = await database.from("messages").select("body").eq("conversation_id", conversationId);
   expect(sent.data).toEqual([{ body: "My order arrived with a cracked screen." }]);
 
-  // Resolving keeps it open on screen, and it can be reopened.
+  // Resolving asks first. It keeps the ticket open on screen, and it can be reopened.
   await conversation.getByRole("button", { name: "Resolve" }).click();
+  await page
+    .getByRole("alertdialog", { name: "Resolve this ticket?" })
+    .getByRole("button", { name: "Resolve" })
+    .click();
   await expect(conversation.getByRole("button", { name: "Reopen" })).toBeVisible();
   await expect(messages.getByText("Sam Rivera marked this as resolved")).toBeVisible();
 
@@ -125,6 +129,10 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   await expect(row.getByRole("button", { name: /^Status of/ })).toContainText("Open");
   await row.getByRole("button", { name: /^Status of/ }).click();
   await page.getByRole("option", { name: "Resolved" }).click();
+  await page
+    .getByRole("alertdialog", { name: "Resolve this ticket?" })
+    .getByRole("button", { name: "Resolve" })
+    .click();
   await expect(row.getByRole("button", { name: /^Status of/ })).toContainText("Resolved");
   await expect
     .poll(async () => {

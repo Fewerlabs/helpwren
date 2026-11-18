@@ -1,4 +1,5 @@
 import { type ConversationWithContact, type HelpwrenClient } from "@helpwren/core";
+import { ConfirmProvider } from "@helpwren/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -66,7 +67,7 @@ function withClient(ui: ReactElement, client = fakeClient()) {
   return (
     <QueryClientProvider client={queryClient}>
       <HelpwrenProvider getClient={() => client as unknown as HelpwrenClient}>
-        {ui}
+        <ConfirmProvider>{ui}</ConfirmProvider>
       </HelpwrenProvider>
     </QueryClientProvider>
   );
@@ -213,5 +214,58 @@ describe("DetailsPanel", () => {
       ),
     );
     expect(screen.getByText("Unverified user")).toBeInTheDocument();
+  });
+
+  it("asks before resolving, and changes nothing when the answer is no", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      withClient(<DetailsPanel conversation={conversation()} team={[]} onChange={onChange} />),
+    );
+
+    await user.click(screen.getByRole("button", { name: /^Status:/ }));
+    await user.click(screen.getByRole("option", { name: "Resolved" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Resolve this conversation?" });
+    expect(dialog).toHaveTextContent("Priya Nair will see that it is resolved");
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(onChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /^Status:/ }));
+    await user.click(screen.getByRole("option", { name: "Resolved" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Resolve" }),
+    );
+    await vi.waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({ status: "resolved" });
+    });
+  });
+
+  it("asks before closing a ticket, and not before a status that ends nothing", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      withClient(
+        <DetailsPanel
+          team={[]}
+          onChange={onChange}
+          conversation={conversation({ type: "ticket", ticketNumber: 1042 })}
+        />,
+      ),
+    );
+
+    await user.click(screen.getByRole("button", { name: /^Status:/ }));
+    await user.click(screen.getByRole("option", { name: "Waiting" }));
+    await vi.waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({ status: "pending" });
+    });
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^Status:/ }));
+    await user.click(screen.getByRole("option", { name: "Closed" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Close this ticket?" });
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    await vi.waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({ status: "closed" });
+    });
   });
 });

@@ -23,6 +23,7 @@ import { useId, useState, type ReactNode } from "react";
 import { Panel, PanelHeader } from "@/features/dashboard";
 
 import { contactName } from "../contact-name";
+import { useConfirmStatus } from "../hooks/use-confirm-status";
 import { useRating } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
 import {
@@ -117,6 +118,7 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
   const pageTitle = typeof context.title === "string" ? context.title : undefined;
   const isTicket = conversation.type === "ticket";
   const rating = useRating(conversation.id).data;
+  const confirmStatus = useConfirmStatus();
 
   const assignees = assigneeOptions(team);
   const assignee = team.find((member) => member.id === conversation.assigneeId);
@@ -169,7 +171,10 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
               value={conversation.status}
               options={statusOptions}
               onValueChange={(value) => {
-                onChange({ status: value as ConversationStatus });
+                const status = value as ConversationStatus;
+                void confirmStatus(status, conversation).then((confirmed) => {
+                  if (confirmed) onChange({ status });
+                });
               }}
             >
               <StatusChip status={statuses[conversation.status].chip} size="sm" />

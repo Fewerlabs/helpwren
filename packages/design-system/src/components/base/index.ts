@@ -36,6 +36,17 @@ export {
   type ColorValue,
 } from "./color-picker/color-picker";
 export {
+  ConfirmDialog,
+  type ConfirmDialogProps,
+  type ConfirmTone,
+} from "./confirm-dialog/confirm-dialog";
+export {
+  ConfirmProvider,
+  useConfirm,
+  type Confirm,
+  type ConfirmOptions,
+} from "./confirm-dialog/use-confirm";
+export {
   Dialog,
   DialogClose,
   DialogContent,
@@ -126,6 +137,16 @@ export {
   type TabsProps,
   type TabsTriggerProps,
 } from "./tabs/tabs";
+export {
+  toast,
+  Toaster,
+  type ToastAction,
+  type ToasterProps,
+  type ToastId,
+  type ToastOptions,
+  type ToastPosition,
+  type ToastPromiseMessages,
+} from "./toast/toast";
 export { TagsInput, type TagRenderContext, type TagsInputProps } from "./tags-input/tags-input";
 export { Textarea, type TextareaProps } from "./textarea/textarea";
 export { Tooltip, TooltipProvider, type TooltipProps } from "./tooltip/tooltip";

@@ -36,6 +36,8 @@ hand.
 | A choice in a form                                | `Select`                                      |
 | Narrowing a list                                  | `FilterBar`, with `SearchField` for text      |
 | Nothing to show, or a failure                     | `EmptyState`                                  |
+| Confirming an action before it happens            | `ConfirmDialog`, or `useConfirm` from code    |
+| Telling the person something happened             | `toast`                                       |
 
 - A component should not call `useQuery` and then branch on `isPending` and `isError` to draw
   skeletons and a retry button. That is what `QueryList` and `QueryDetail` are for.
