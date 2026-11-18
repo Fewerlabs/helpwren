@@ -18,6 +18,7 @@ describe("settings.getPublic", () => {
       widget: { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] },
       chatPage: {},
       helpCenter: {},
+      tickets: { fromChat: true },
       guestDetails: "email_or_phone",
     });
   });

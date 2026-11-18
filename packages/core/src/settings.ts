@@ -79,6 +79,12 @@ const pageTextSchema = z.object({
 
 export type PageText = z.infer<typeof pageTextSchema>;
 
+/** How tickets come in. */
+const ticketsSchema = z.object({
+  /** Whether a visitor can open a ticket themselves from the chat. */
+  fromChat: z.boolean().default(true),
+});
+
 /** Who emails come from. The name falls back to the brand's. */
 const emailSchema = z.object({
   fromName: z.string().min(1).optional(),
@@ -92,6 +98,7 @@ const storedSettingsSchema = z.object({
   widget: widgetSchema.default(() => widgetSchema.parse({})),
   /** The chat on a page of its own, at `/chat`, for a link in an email or a profile. */
   chat_page: pageTextSchema.default({}),
+  tickets: ticketsSchema.default({ fromChat: true }),
   /** Who the install's emails are from. Without an address it sends none. */
   email: emailSchema.default({}),
   help_center: pageTextSchema.default({}),
@@ -109,6 +116,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
   widget: stored.widget,
   chatPage: stored.chat_page,
+  tickets: stored.tickets,
   email: stored.email,
   helpCenter: stored.help_center,
   guestDetails: stored.guest_details,
@@ -121,7 +129,7 @@ export type Settings = z.infer<typeof settingsSchema>;
 /** The settings anyone may read, including a visitor with no session. */
 export type PublicSettings = Pick<
   Settings,
-  "brand" | "widget" | "chatPage" | "helpCenter" | "guestDetails"
+  "brand" | "widget" | "chatPage" | "helpCenter" | "tickets" | "guestDetails"
 >;
 
 /** For checking settings that arrive from somewhere other than the database, such as a preview. */
@@ -130,6 +138,7 @@ export const publicSettingsSchema = z.object({
   widget: widgetSchema,
   chatPage: pageTextSchema,
   helpCenter: pageTextSchema,
+  tickets: ticketsSchema,
   guestDetails: guestDetailsSchema,
 });
 
@@ -152,8 +161,8 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, widget, chatPage, helpCenter, guestDetails } = parseSettings(rows);
-  return { brand, widget, chatPage, helpCenter, guestDetails };
+  const { brand, widget, chatPage, helpCenter, tickets, guestDetails } = parseSettings(rows);
+  return { brand, widget, chatPage, helpCenter, tickets, guestDetails };
 }
 
 const pageTextPatchSchema = z.object({
@@ -185,6 +194,7 @@ export const settingsPatchSchema = z
         .max(QUICK_REPLIES_MAX),
     }),
     chatPage: pageTextPatchSchema,
+    tickets: z.object({ fromChat: z.boolean() }),
     email: z.object({
       fromName: z.string().trim().min(1).max(60).optional(),
       fromAddress: z.string().trim().toLowerCase().pipe(z.email()).optional(),
@@ -216,6 +226,8 @@ const storage = {
   brand: { key: "brand", isPublic: true },
   widget: { key: "widget", isPublic: true },
   chatPage: { key: "chat_page", isPublic: true },
+  // Public, because the chat decides from it whether to offer the form.
+  tickets: { key: "tickets", isPublic: true },
   // Not public: a visitor has no use for the address, and it is nobody's to harvest.
   email: { key: "email", isPublic: false },
   helpCenter: { key: "help_center", isPublic: true },

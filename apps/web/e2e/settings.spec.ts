@@ -11,7 +11,7 @@ async function restore() {
   await database
     .from("settings")
     .delete()
-    .in("key", ["allowed_domains", "widget", "chat_page", "help_center", "email"]);
+    .in("key", ["allowed_domains", "widget", "chat_page", "help_center", "email", "tickets"]);
   await database
     .from("settings")
     .update({ value: { name: "Helpwren Demo" } })

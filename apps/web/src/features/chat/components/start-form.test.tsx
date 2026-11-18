@@ -25,7 +25,7 @@ function Screen() {
 function renderForm(
   guestDetails: GuestDetails,
   returning = false,
-  opening: { welcome?: string; quickReplies?: string[] } = {},
+  opening: { welcome?: string; quickReplies?: string[]; ticket?: boolean } = {},
 ) {
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -37,6 +37,7 @@ function renderForm(
           welcome={opening.welcome}
           quickReplies={opening.quickReplies ?? []}
           returning={returning}
+          ticket={opening.ticket ?? false}
         />
         <Screen />
       </HelpwrenProvider>
@@ -163,5 +164,27 @@ describe("StartForm", () => {
     await user.click(screen.getByRole("button", { name: "Pricing" }));
     expect(screen.getByLabelText(/your message/i)).toHaveValue("Pricing");
     expect(start).not.toHaveBeenCalled();
+  });
+
+  it("opens a ticket with a subject, and asks for one even from someone already known", async () => {
+    const user = renderForm("email", true, { ticket: true });
+    // Known already, so no name or email; a ticket still needs saying what it is about.
+    expect(screen.queryByLabelText(/your name/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Submit ticket" }));
+    expect(await screen.findByText("Say what the ticket is about.")).toBeInTheDocument();
+    expect(start).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText(/subject/i), "Cracked screen");
+    await user.type(screen.getByLabelText(/details/i), "It arrived broken.");
+    await user.click(screen.getByRole("button", { name: "Submit ticket" }));
+
+    expect(await screen.findByText("conversation c1")).toBeInTheDocument();
+    expect(start).toHaveBeenCalledWith({
+      message: "It arrived broken.",
+      source: "web",
+      contact: {},
+      ticket: { subject: "Cracked screen" },
+    });
   });
 });

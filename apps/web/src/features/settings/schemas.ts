@@ -9,7 +9,11 @@ import { z } from "zod";
 
 const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
-export const generalSchema = z.object({ guestDetails: guestDetailsSchema });
+export const generalSchema = z.object({
+  guestDetails: guestDetailsSchema,
+  /** Whether a visitor can open a ticket themselves from the chat. */
+  ticketsFromChat: z.boolean(),
+});
 export type GeneralValues = z.infer<typeof generalSchema>;
 
 export const installationSchema = z.object({

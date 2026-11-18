@@ -41,7 +41,10 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   const helpwren = await getHelpwren();
-  const result = await helpwren.settings.update({ guestDetails: parsed.data.guestDetails });
+  const result = await helpwren.settings.update({
+    guestDetails: parsed.data.guestDetails,
+    tickets: { fromChat: parsed.data.ticketsFromChat },
+  });
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
 }

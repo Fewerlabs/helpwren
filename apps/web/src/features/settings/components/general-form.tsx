@@ -24,7 +24,7 @@ export interface GeneralFormProps {
   canEdit: boolean;
 }
 
-/** What guests are asked for. */
+/** What guests are asked for, and whether they can open tickets. */
 export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
@@ -32,6 +32,7 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
     resolver: zodResolver(generalSchema),
     defaultValues: {
       guestDetails: settings.guestDetails,
+      ticketsFromChat: settings.tickets.fromChat,
     },
   });
 
@@ -41,6 +42,14 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
       label: "Ask guests for",
       type: "select",
       props: { options: guestDetailOptions },
+    },
+  ];
+  const ticketFields: FieldItem<GeneralValues>[] = [
+    {
+      name: "ticketsFromChat",
+      label: "Let people submit a ticket from the chat",
+      type: "switch",
+      hint: 'Adds "Submit a ticket" beside "Send us a message". Your team can still turn any conversation into a ticket.',
     },
   ];
   const disabled = !canEdit || form.formState.isSubmitting;
@@ -73,6 +82,12 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
         description="What a visitor gives before their first message, so you can reach them after they leave."
       >
         <FieldList control={form.control} fields={guestFields} disabled={disabled} />
+      </SettingsSection>
+      <SettingsSection
+        title="Tickets"
+        description="A ticket is a conversation with a number and a subject, for things that take more than one reply."
+      >
+        <FieldList control={form.control} fields={ticketFields} disabled={disabled} />
       </SettingsSection>
       {canEdit ? (
         <SaveBar

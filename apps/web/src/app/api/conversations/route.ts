@@ -21,7 +21,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const input = startConversationInputSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
-  const { message, source, contact, page } = input.data;
+  const { message, source, contact, page, ticket } = input.data;
 
   const [settingRows, known] = await Promise.all([
     supabaseAdmin.from("settings").select("key, value"),
@@ -33,6 +33,9 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!settings.sources.includes(source)) {
     return apiError("invalid_request", `"${source}" is not one of this install's sources.`);
+  }
+  if (ticket && !settings.tickets.fromChat) {
+    return apiError("invalid_request", "This install does not take tickets from the chat.");
   }
   // Someone who gave their details in an earlier conversation is not asked again.
   if (!hasRequiredGuestDetails(settings.guestDetails, { ...known.data, ...contact })) {
@@ -52,6 +55,7 @@ export async function POST(request: Request): Promise<Response> {
     ...(contact.name === undefined ? {} : { contact_name: contact.name }),
     ...(contact.email === undefined ? {} : { contact_email: contact.email }),
     ...(contact.phone === undefined ? {} : { contact_phone: contact.phone }),
+    ...(ticket ? { ticket_subject: ticket.subject } : {}),
   });
 
   if (error) {

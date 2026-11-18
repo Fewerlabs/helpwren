@@ -5,6 +5,7 @@ import {
   MESSAGE_MAX_LENGTH,
   messageBodySchema,
   phoneSchema,
+  ticketSubjectSchema,
   type GuestDetails,
 } from "@helpwren/core";
 import {
@@ -40,21 +41,36 @@ interface StartValues {
   replyBy: "email" | "phone";
   email: string;
   phone: string;
+  /** What a ticket is about. Only asked for a ticket. */
+  subject: string;
   message: string;
 }
 
-const empty: StartValues = { name: "", replyBy: "email", email: "", phone: "", message: "" };
+const empty: StartValues = {
+  name: "",
+  replyBy: "email",
+  email: "",
+  phone: "",
+  subject: "",
+  message: "",
+};
 
 const valid = (schema: z.ZodType, value: string) => schema.safeParse(value).success;
 
 /** The form's rules for one install: the client library's own, applied to the fields shown. */
-function startSchema(ask: GuestDetails | "nothing") {
+function startSchema(ask: GuestDetails | "nothing", ticket: boolean) {
   return z
     .object({
       name: z.string(),
       replyBy: z.enum(["email", "phone"]),
       email: z.string(),
       phone: z.string(),
+      subject: z.string().refine((value) => !ticket || valid(ticketSubjectSchema, value), {
+        error: (issue) =>
+          String(issue.input).trim() === ""
+            ? "Say what the ticket is about."
+            : "Keep the subject under 200 characters.",
+      }),
       message: z.string().refine((value) => valid(messageBodySchema, value), {
         error: (issue) =>
           String(issue.input).trim().length > MESSAGE_MAX_LENGTH
@@ -78,7 +94,11 @@ function startSchema(ask: GuestDetails | "nothing") {
     });
 }
 
-function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"]) {
+function fieldsFor(
+  ask: GuestDetails | "nothing",
+  replyBy: StartValues["replyBy"],
+  ticket: boolean,
+) {
   const fields: FieldItem<StartValues>[] = [];
   if (ask !== "nothing" && ask !== "none") {
     fields.push({
@@ -127,12 +147,24 @@ function fieldsFor(ask: GuestDetails | "nothing", replyBy: StartValues["replyBy"
           },
     );
   }
+  if (ticket) {
+    fields.push({
+      name: "subject",
+      label: "Subject",
+      type: "input",
+      required: true,
+      props: { placeholder: "What is it about, in a line" },
+    });
+  }
   fields.push({
     name: "message",
-    label: "Your message",
+    label: ticket ? "Details" : "Your message",
     type: "textarea",
     required: true,
-    props: { rows: 5, placeholder: "How can we help?" },
+    props: {
+      rows: 5,
+      placeholder: ticket ? "What happened, and what did you expect?" : "How can we help?",
+    },
   });
   return fields;
 }
@@ -148,6 +180,8 @@ export interface StartFormProps {
   quickReplies: readonly string[];
   /** True when the visitor has written before, and so has already said who they are. */
   returning: boolean;
+  /** Opens a ticket in place of a chat: a subject is asked for, and it is tracked by number. */
+  ticket?: boolean;
 }
 
 interface QuickRepliesProps {
@@ -188,6 +222,7 @@ export function StartForm({
   welcome,
   quickReplies,
   returning,
+  ticket = false,
 }: StartFormProps) {
   const getClient = useHelpwren();
   const preview = usePreview();
@@ -198,7 +233,7 @@ export function StartForm({
   const [askAnyway, setAskAnyway] = useState(false);
   const ask = returning && !askAnyway ? "nothing" : guestDetails;
 
-  const schema = useMemo(() => startSchema(ask), [ask]);
+  const schema = useMemo(() => startSchema(ask, ticket), [ask, ticket]);
   const form = useForm<StartValues>({ resolver: zodResolver(schema), defaultValues: empty });
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
 
@@ -223,6 +258,7 @@ export function StartForm({
                 name: values.name,
                 ...(by === "email" ? { email: values.email } : { phone: values.phone }),
               },
+        ...(ticket ? { ticket: { subject: values.subject } } : {}),
         // The page the chat is on, when the widget script reported one.
         ...(page ? { page } : {}),
       });
@@ -266,8 +302,11 @@ export function StartForm({
   const { errors, isSubmitting } = form.formState;
   const failure = errors.root?.message;
 
-  // With nothing to ask, the screen is a conversation waiting for its first message.
-  if (ask === "nothing" || ask === "none") {
+  const known = ask === "nothing" || ask === "none";
+
+  // With nothing to ask, the screen is a conversation waiting for its first message. A ticket
+  // always has its subject to ask for, so it is always the form below.
+  if (known && !ticket) {
     const message = form.register("message");
     return (
       <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
@@ -336,7 +375,9 @@ export function StartForm({
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{teamName}</p>
             <p className="text-muted-foreground text-sm">
-              Tell us who you are, so we can reply if you leave.
+              {ticket
+                ? "Open a ticket and we will follow it up. You can check on it here at any time."
+                : "Tell us who you are, so we can reply if you leave."}
             </p>
           </div>
         </div>
@@ -347,7 +388,7 @@ export function StartForm({
         ) : null}
         <FieldList
           control={form.control}
-          fields={fieldsFor(ask, replyBy)}
+          fields={fieldsFor(ask, replyBy, ticket)}
           disabled={isSubmitting}
         />
         {quickReplies.length > 0 ? (
@@ -370,8 +411,8 @@ export function StartForm({
           </p>
         ) : null}
         <Button type="submit" loading={isSubmitting}>
-          Send message
-          <Icon name="paper-plane-tilt" />
+          {ticket ? "Submit ticket" : "Send message"}
+          <Icon name={ticket ? "ticket" : "paper-plane-tilt"} />
         </Button>
       </div>
     </form>

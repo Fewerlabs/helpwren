@@ -5,6 +5,8 @@ export type Screen =
   | { name: "home" }
   | { name: "messages" }
   | { name: "start" }
+  /** The form for opening a ticket, in place of a chat. */
+  | { name: "ticket" }
   | { name: "conversation"; id: string };
 
 /** The page the chat is embedded in, as its widget script reported it. */

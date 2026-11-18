@@ -61,3 +61,8 @@ that its contact must never see.
   person. Every agent sees teams and may give a conversation to one; admins make and change
   them. Giving a conversation to a team is in its history for the team only, with the team's
   name kept on the event.
+- 2026-11-19: a contact can open a ticket themselves, from "Submit a ticket" in the chat. The
+  server starts the conversation as a ticket (`start_conversation` with a subject), so it has
+  its number from the first message, and its history says the contact opened it. An install can
+  turn this off under Settings → General. The inbox navigation now says whose conversations
+  (My inbox, Unassigned, All, then Tickets and each team), and status is a switch on the list.

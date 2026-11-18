@@ -12,6 +12,8 @@ export interface HomeScreenProps {
   /** The install's own greeting and the line under it, if it has them. */
   greeting: string | undefined;
   intro: string | undefined;
+  /** Whether a visitor can open a ticket from here, beside starting a chat. */
+  tickets: boolean;
   /** The visitor's most recently active conversation, if they have one. */
   recent: ConversationWithContact | undefined;
   /** Shows a close button that calls this. Given when the chat is in a frame it can close. */
@@ -19,7 +21,7 @@ export interface HomeScreenProps {
 }
 
 /** Where the chat opens: a greeting, the way to write, and the visitor's latest conversation. */
-export function HomeScreen({ greeting, intro, recent, onClose }: HomeScreenProps) {
+export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeScreenProps) {
   const show = useShowScreen();
 
   return (
@@ -44,7 +46,7 @@ export function HomeScreen({ greeting, intro, recent, onClose }: HomeScreenProps
         </h1>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="grid gap-2 px-4 pt-3">
         <button
           type="button"
           className="border-line border-input bg-card hover:bg-muted focus-visible:outline-ring flex h-12 w-full items-center justify-between rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -55,6 +57,19 @@ export function HomeScreen({ greeting, intro, recent, onClose }: HomeScreenProps
           Send us a message
           <Icon name="caret-right" className="text-muted-foreground" />
         </button>
+        {tickets ? (
+          <button
+            type="button"
+            className="border-line border-input bg-card hover:bg-muted focus-visible:outline-ring flex h-12 w-full items-center gap-2.5 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            onClick={() => {
+              show({ name: "ticket" });
+            }}
+          >
+            <Icon name="ticket" className="text-muted-foreground" />
+            <span className="flex-1 text-left">Submit a ticket</span>
+            <Icon name="caret-right" className="text-muted-foreground" />
+          </button>
+        ) : null}
       </div>
 
       {recent ? (

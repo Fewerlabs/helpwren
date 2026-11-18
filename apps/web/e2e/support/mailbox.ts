@@ -37,7 +37,7 @@ export async function signInToInbox(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("Work email").fill(email);
   await page.getByRole("button", { name: "Email me a code" }).click();
+  // The last digit of the code sends the form; there is no button to press.
   await page.getByLabel("Sign-in code").fill(await readSignInCode(page.request, email));
-  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/dashboard\/inbox$/);
 }

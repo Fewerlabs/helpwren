@@ -18,12 +18,12 @@ test("a team member signs in with an emailed code and signs out", async ({ page,
   await page.getByRole("button", { name: "Email me a code" }).click();
 
   const codeField = page.getByLabel("Sign-in code");
+  // A box for each digit, and the last digit sends the form without pressing anything.
+  await expect(page.locator("[data-slot='otp-input'] > div")).toHaveCount(6);
   await codeField.fill("000000");
-  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByText("That code is wrong or out of date.")).toBeVisible();
 
   await codeField.fill(await readSignInCode(request, AGENT.email));
-  await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page).toHaveURL(/\/dashboard\/inbox$/);
   await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();

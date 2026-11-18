@@ -14,7 +14,11 @@ export function describeEvent(
   nameOf?: (id: string | null) => string,
 ): string {
   if (!nameOf) {
-    if (event.kind === "ticket_created") return `This became ticket #${event.data.number}`;
+    if (event.kind === "ticket_created") {
+      return event.data.opened
+        ? `You opened ticket #${event.data.number}`
+        : `This became ticket #${event.data.number}`;
+    }
     if (event.kind === "status_changed") {
       if (done(event.data.from) && !done(event.data.to)) return "Reopened";
       return `Marked as ${statusNames[event.data.to].toLowerCase()}`;
@@ -26,7 +30,9 @@ export function describeEvent(
   const actor = nameOf(event.actorId);
   switch (event.kind) {
     case "ticket_created":
-      return `${actor} converted this to ticket #${event.data.number}`;
+      return event.data.opened
+        ? `${actor} opened ticket #${event.data.number}`
+        : `${actor} converted this to ticket #${event.data.number}`;
     case "status_changed":
       return done(event.data.from) && !done(event.data.to)
         ? `${actor} reopened this`

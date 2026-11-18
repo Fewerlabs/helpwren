@@ -484,6 +484,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
       search_conversations: {
         Args: { query: string };
         Returns: {
@@ -523,6 +524,7 @@ export type Database = {
           contact_phone?: string;
           context?: Json;
           source: string;
+          ticket_subject?: string;
         };
         Returns: string;
       };

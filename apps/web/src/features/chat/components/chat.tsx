@@ -101,6 +101,23 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     );
   }
 
+  if (screen.name === "ticket" && settings.tickets.fromChat) {
+    return (
+      <>
+        <ScreenHeader onBack={back} onClose={onClose} title="New ticket" />
+        <StartForm
+          ticket
+          guestDetails={settings.guestDetails}
+          source={source}
+          teamName={teamName}
+          welcome={undefined}
+          quickReplies={[]}
+          returning={earlier.length > 0}
+        />
+      </>
+    );
+  }
+
   if (screen.name === "start") {
     return (
       <>
@@ -125,6 +142,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
         <HomeScreen
           greeting={settings.widget.greeting}
           intro={settings.widget.intro}
+          tickets={settings.tickets.fromChat}
           recent={earlier[0]}
           onClose={onClose}
         />
