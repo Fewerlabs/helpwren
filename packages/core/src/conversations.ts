@@ -121,6 +121,8 @@ export interface ListConversationsOptions {
   cursor?: string | undefined;
   /** How many to return. Default 25. */
   limit?: number | undefined;
+  /** Only conversations in one of these statuses. Default: any status. */
+  status?: readonly ConversationStatus[] | undefined;
 }
 
 export type StartConversationResult =
@@ -161,6 +163,7 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
         .order("last_message_at", { ascending: false })
         .limit(limit + 1);
       if (options.cursor) query = query.lt("last_message_at", options.cursor);
+      if (options.status) query = query.in("status", options.status);
 
       const { data, error } = await query;
       if (error) throw unexpected("load the conversations", error);

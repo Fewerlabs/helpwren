@@ -88,6 +88,23 @@ block cookies. Two rules follow from that:
   cache (`src/features/chat/hooks/use-chat.ts`), so a message that arrives over the live channel
   and one that arrives from a reload are the same thing to the components.
 
+### Three features, one thread
+
+| Feature        | Whose screen  | Its client                                                     |
+| -------------- | ------------- | -------------------------------------------------------------- |
+| `chat`         | The visitor's | `chat/client.ts`: session in the browser's storage             |
+| `inbox`        | The team's    | `inbox/client.ts`: the session the sign-in page put in cookies |
+| `conversation` | Both          | None of its own                                                |
+
+`conversation` holds `Thread`: a conversation's messages, live, and the reply box. It takes its
+client from `HelpwrenProvider` (`src/lib/helpwren-context.tsx`), which each screen sets up with
+its own. The provider hands down a function that returns the client, not the client, so nothing
+is created while rendering on the server.
+
+The layouts follow a common shape for support tools, which people already know how to use: the
+chat opens on a home screen with tabs along the bottom, and the inbox is three panels side by
+side. The look is Helpwren's own.
+
 ### API routes
 
 API routes do what the access rules leave to the server. Each one follows the same steps:
@@ -166,7 +183,7 @@ between screens does not refetch what was loaded a moment ago.
 | `/design`                           | The design system running in the app, with the example feature at the bottom                                  |
 | `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
 | `/help`                             | The public help center (placeholder)                                                                          |
-| `/inbox`                            | The agent inbox, for signed-in team members (the inbox itself is not built)                                   |
+| `/inbox`                            | The team's inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation   |
 | `/inbox/login`                      | Sign-in for team members                                                                                      |
 | `/api/health`                       | Returns `{ "status": "ok" }`                                                                                  |
 | `POST /api/conversations`           | Starts a conversation with its first message                                                                  |

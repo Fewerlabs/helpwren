@@ -71,7 +71,8 @@ The phone field starts on +234; add a `default_country` row, such as `"GB"`, to 
 ### Signing in to the inbox
 
 Open http://localhost:3000/inbox and enter one of the demo emails. The six-digit code arrives in
-Mailpit, the local test mailbox, at http://127.0.0.1:54324. To add yourself:
+Mailpit, the local test mailbox, at http://127.0.0.1:54324. Keep `/embed` open in another
+window to write as a visitor and see both sides update live. To add yourself:
 
 ```bash
 pnpm agent:invite you@example.com --name "Your Name" --admin

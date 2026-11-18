@@ -118,6 +118,17 @@ describe("conversations", () => {
     expect(second.items.every((item) => !firstIds.includes(item.id))).toBe(true);
   });
 
+  it("filters by status", async () => {
+    const { client } = await signedInAgent();
+
+    const resolved = await client.conversations.list({ status: ["resolved"] });
+    expect(resolved.items.length).toBeGreaterThan(0);
+    expect(resolved.items.every((item) => item.status === "resolved")).toBe(true);
+
+    const active = await client.conversations.list({ status: ["open", "pending"] });
+    expect(active.items.some((item) => item.status === "resolved")).toBe(false);
+  });
+
   it("counts unread messages for each side", async () => {
     const { client, session } = await newGuest();
     const agent = await signedInAgent();
