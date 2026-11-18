@@ -103,9 +103,9 @@ lets only admins write. The team is changed with the secret key, after checking 
 admin (`src/features/settings/server/team.ts`). See
 [ADR 0010](decisions/0010-dashboard-and-settings.md).
 
-Every section is laid out by `DashboardPage` (`src/features/dashboard`): the section's own
-navigation on the canvas, then one white surface whose columns are `Panel`s divided by a
-hairline. Views, segments, the open conversation and the open contact are kept in the address,
+Every section is laid out by `DashboardPage` (`src/features/dashboard`): one card holds the
+section's navigation and, where there is one, the list it selects from; a second card holds the
+work, in columns (`Panel`s) divided by a hairline. Views, segments, the open conversation and the open contact are kept in the address,
 so a reload or a shared link lands in the same place.
 
 Searching is done by the database, never by filtering what the browser happens to have loaded:

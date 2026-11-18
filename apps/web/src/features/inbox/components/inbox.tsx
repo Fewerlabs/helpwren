@@ -54,27 +54,29 @@ export function Inbox() {
         count: counts[item.id],
         active: item.id === view.id,
       }))}
+      listHiddenWhenNarrow={Boolean(selected)}
+      list={
+        <ListPanel
+          className="min-h-0 flex-1"
+          view={view}
+          search={search}
+          onSearchChange={setSearch}
+          searching={searching}
+          loading={conversations.isFetching}
+          conversations={conversations.data}
+          failed={conversations.isError}
+          onRetry={() => {
+            void conversations.refetch();
+          }}
+          selectedId={selectedId}
+          onSelect={select}
+        />
+      }
       className={cn(
-        "divide-rule grid divide-x md:grid-cols-[18.5rem_minmax(0,1fr)]",
-        selected && detailsOpen && "xl:grid-cols-[18.5rem_minmax(0,1fr)_17rem]",
+        "divide-rule grid divide-x",
+        selected && detailsOpen && "xl:grid-cols-[minmax(0,1fr)_17rem]",
       )}
     >
-      <ListPanel
-        // On a narrow screen the list and the conversation take turns.
-        className={cn(selected && "max-md:hidden")}
-        view={view}
-        search={search}
-        onSearchChange={setSearch}
-        searching={searching}
-        loading={conversations.isFetching}
-        conversations={conversations.data}
-        failed={conversations.isError}
-        onRetry={() => {
-          void conversations.refetch();
-        }}
-        selectedId={selectedId}
-        onSelect={select}
-      />
       {selected ? (
         <>
           <ConversationPanel
@@ -91,7 +93,7 @@ export function Inbox() {
           {detailsOpen ? <DetailsPanel conversation={selected} className="max-xl:hidden" /> : null}
         </>
       ) : (
-        <Panel aria-label="Conversation" className="max-md:hidden">
+        <Panel aria-label="Conversation">
           <EmptyState
             scene="conversations"
             size="sm"

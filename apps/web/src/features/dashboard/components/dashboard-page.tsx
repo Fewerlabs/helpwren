@@ -16,27 +16,50 @@ export interface PageNavItem {
 export interface DashboardPageProps {
   /** The section's name, at the top of its navigation. */
   title: string;
-  /** The section's own pages or views. Leave it out for a section with only one. */
-  nav?: readonly PageNavItem[];
+  /** The section's own pages or views. */
+  nav: readonly PageNavItem[];
   /** Names the navigation for assistive technology, such as "Inbox views". */
   navLabel?: string;
-  /** Classes for the surface, such as the grid that lays out its columns. */
+  /**
+   * A column that belongs with the navigation, in the same card: the list a view selects from,
+   * such as the inbox's conversations.
+   */
+  list?: ReactNode;
+  /** Hides the navigation and list on a narrow screen, while something from the list is open. */
+  listHiddenWhenNarrow?: boolean;
+  /** Classes for the main card, such as the grid that lays out its columns. */
   className?: string;
   children: ReactNode;
 }
 
+const card = "border-rule bg-card overflow-hidden rounded-xl border";
+
 /**
- * The frame of every dashboard section: its own navigation on the canvas, then one white
- * surface that holds the work. On a phone the navigation becomes a row above the surface.
+ * The frame of every dashboard section. One card holds the section's navigation and, where
+ * there is one, the list it selects from; a second card holds the work. On a narrow screen the
+ * navigation becomes a row above the list.
  */
-export function DashboardPage({ title, nav, navLabel, className, children }: DashboardPageProps) {
+export function DashboardPage({
+  title,
+  nav,
+  navLabel,
+  list,
+  listHiddenWhenNarrow = false,
+  className,
+  children,
+}: DashboardPageProps) {
   return (
-    <div className="flex h-full max-md:flex-col">
-      {nav ? (
-        <aside className="flex shrink-0 flex-col gap-1 p-2 max-md:pb-0 md:w-48 md:pr-0">
-          <h1 className="flex h-9 items-center px-2 text-sm font-semibold max-md:hidden">
-            {title}
-          </h1>
+    <div className="flex h-full gap-2 p-2 max-md:flex-col">
+      <div
+        className={cn(
+          card,
+          "divide-rule flex shrink-0 max-md:flex-col max-md:divide-y md:divide-x",
+          list ? "max-md:min-h-0 max-md:flex-1" : null,
+          listHiddenWhenNarrow && "max-md:hidden",
+        )}
+      >
+        <aside className="flex shrink-0 flex-col gap-1 p-2 md:w-48">
+          <h1 className="flex h-9 items-center px-2 text-sm font-semibold">{title}</h1>
           <nav
             aria-label={navLabel ?? title}
             className="flex gap-px max-md:overflow-x-auto md:flex-col"
@@ -70,13 +93,17 @@ export function DashboardPage({ title, nav, navLabel, className, children }: Das
             ))}
           </nav>
         </aside>
-      ) : null}
-      <div className="min-h-0 min-w-0 flex-1 p-2">
-        <div
-          className={cn("border-rule bg-card h-full overflow-hidden rounded-xl border", className)}
-        >
-          {children}
-        </div>
+        {list ? <div className="flex min-h-0 min-w-0 flex-col md:w-[18.5rem]">{list}</div> : null}
+      </div>
+      <div
+        className={cn(
+          card,
+          "min-h-0 min-w-0 flex-1",
+          list && !listHiddenWhenNarrow && "max-md:hidden",
+          className,
+        )}
+      >
+        {children}
       </div>
     </div>
   );
