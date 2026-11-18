@@ -20,6 +20,7 @@
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --schema public,private --level warning --fail-on warning",
     "db:test": "supabase test db",
+    "test:db": "pnpm --filter @helpwren/core test:db",
     "db:types": "supabase gen types typescript --schema public > packages/core/src/database.types.ts && prettier --write packages/core/src/database.types.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

@@ -68,5 +68,8 @@ jobs:
       - name: Test the access rules
         run: pnpm db:test
 
+      - name: Test the client library against the database
+        run: pnpm test:db
+
       - name: Check the generated types are up to date
         run: pnpm db:types && git diff --exit-code packages/core/src/database.types.ts

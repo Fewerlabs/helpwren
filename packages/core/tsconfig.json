@@ -1,4 +1,4 @@
 {
   "extends": "@helpwren/config/typescript/base.json",
-  "include": ["src", "*.mjs"]
+  "include": ["src", "tests", "*.ts", "*.mjs"]
 }

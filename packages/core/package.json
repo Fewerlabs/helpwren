@@ -10,11 +10,19 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:db": "vitest run --project db"
   },
   "devDependencies": {
     "@helpwren/config": "workspace:*",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
+    "zod": "catalog:"
   }
 }

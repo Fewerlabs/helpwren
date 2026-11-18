@@ -42,8 +42,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
   with `pnpm storybook`.
 - **The app shell** (`apps/web`): a Next.js app with placeholder routes, and `/design`, which shows
   the design system running in the app together with a worked example feature.
-- **Documented stubs** for the product packages: the client library, the widget, the React Native
-  screen, the adapters and the installer.
+- **The database** (`supabase/`): the first tables, the rules for who can read and write each
+  row, and tests that prove them.
+- **The start of the client library** (`packages/core`): sign-in for team members and settings.
+- **Documented stubs** for the other product packages: the widget, the React Native screen, the
+  adapters and the installer.
 
 ## Repository layout
 
@@ -52,7 +55,7 @@ apps/
   web/                 Next.js app: /embed, /help, /inbox, /api (placeholder routes for now)
 packages/
   design-system/       Tokens, components and illustrations
-  core/                Headless client library (stub)
+  core/                Headless client library
   widget/              Embeddable script, published as `helpwren` (stub)
   react-native/        React Native support screen (stub)
   adapters/            Identity, push, email and storage adapters (stub)

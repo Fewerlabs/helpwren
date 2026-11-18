@@ -11,7 +11,7 @@ pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 | ------------------------ | -------------------------------------------------------- |
 | `apps/web`               | The one Next.js app: `/embed`, `/help`, `/inbox`, `/api` |
 | `packages/design-system` | Tokens, components and illustrations                     |
-| `packages/core`          | Headless client library (stub)                           |
+| `packages/core`          | Headless client library                                  |
 | `packages/widget`        | Embeddable script, published as `helpwren` (stub)        |
 | `packages/react-native`  | React Native support screen (stub)                       |
 | `packages/adapters`      | Identity, push, email and storage adapters (stub)        |
