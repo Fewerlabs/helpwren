@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
+import { HELP_CENTER_TAG } from "@/lib/help-center-cache";
 import { getHelpwren } from "@/lib/helpwren";
 
 import {
@@ -50,7 +51,11 @@ export async function saveBranding(values: BrandingValues): Promise<SaveResult> 
 
   const helpwren = await getHelpwren();
   const result = await helpwren.settings.update(brandingToSettings(parsed.data));
-  if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
+  if (result.ok) {
+    revalidatePath(SETTINGS_PATH, "layout");
+    // The help center keeps the brand between requests, and should wear the new one at once.
+    updateTag(HELP_CENTER_TAG);
+  }
   return result;
 }
 

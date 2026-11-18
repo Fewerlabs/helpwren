@@ -1,6 +1,12 @@
 "use client";
 
-import { LOGO_MAX_BYTES, LOGO_TYPES, type Settings } from "@helpwren/core";
+import {
+  HELP_FOOTER_LINKS_MAX,
+  HELP_HEADER_LINKS_MAX,
+  LOGO_MAX_BYTES,
+  LOGO_TYPES,
+  type Settings,
+} from "@helpwren/core";
 import {
   ChoiceCards,
   cn,
@@ -20,7 +26,7 @@ import {
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { useHelpwren } from "@/lib/helpwren-context";
@@ -32,7 +38,9 @@ import {
   DEFAULT_ACCENT,
   type BrandingValues,
 } from "../schemas";
+import { HelpCenterPreview } from "./help-center-preview";
 import { ImageField } from "./image-field";
+import { LinksField } from "./links-field";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 import { WidgetPreview } from "./widget-preview";
@@ -82,6 +90,21 @@ function Corner({ side, fill }: { side: "left" | "right"; fill: string }) {
   );
 }
 
+/** A small picture of the help center's header, for choosing what is behind it. */
+function HeaderSwatch({ className, style, children }: ComponentProps<"span">) {
+  return (
+    <span
+      style={style}
+      className={cn(
+        "border-rule text-muted-foreground grid h-12 w-[4.5rem] place-items-center rounded-md border",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 type Fields = FieldItem<BrandingValues>[];
 
 export interface BrandingFormProps {
@@ -98,6 +121,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
   const router = useRouter();
   const getClient = useHelpwren();
   const [saved, setSaved] = useState(false);
+  const [tab, setTab] = useState("brand");
   const { brand, widget, chatPage, helpCenter } = settings;
   const form = useForm<BrandingValues>({
     resolver: zodResolver(brandingSchema),
@@ -119,6 +143,15 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       chatIntro: chatPage.intro ?? "",
       helpTitle: helpCenter.title ?? "",
       helpIntro: helpCenter.intro ?? "",
+      helpHeaderStyle: helpCenter.headerStyle,
+      helpHeaderImage: helpCenter.headerImage ?? "",
+      helpSearchPlaceholder: helpCenter.searchPlaceholder ?? "",
+      helpHeaderLinks: helpCenter.headerLinks,
+      helpFooterLinks: helpCenter.footerLinks,
+      helpShowChat: helpCenter.showChat,
+      helpSeoTitle: helpCenter.seoTitle ?? "",
+      helpSeoDescription: helpCenter.seoDescription ?? "",
+      helpUrl: helpCenter.url ?? "",
     },
   });
   const values = useWatch({ control: form.control }) as BrandingValues;
@@ -363,6 +396,142 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       type: "textarea",
       props: { rows: 2, placeholder: "Answers to common questions, written by our team." },
     },
+    {
+      name: "helpSearchPlaceholder",
+      label: "Search hint",
+      type: "input",
+      hint: "The words inside the empty search box.",
+      props: { placeholder: "Search for articles" },
+    },
+    {
+      name: "helpHeaderStyle",
+      label: "Background",
+      type: "custom",
+      render: ({ field }) => (
+        <ChoiceCards
+          label="Background"
+          value={field.value}
+          onValueChange={field.onChange}
+          disabled={disabled}
+          options={[
+            {
+              value: "brand",
+              label: "Brand colour",
+              visual: <HeaderSwatch style={{ background: fill }} />,
+            },
+            {
+              value: "plain",
+              label: "Plain",
+              visual: <HeaderSwatch className="bg-background" />,
+            },
+            {
+              value: "image",
+              label: "Picture",
+              visual: (
+                <HeaderSwatch
+                  className="bg-muted"
+                  {...(values.helpHeaderImage
+                    ? {
+                        style: {
+                          backgroundImage: `url(${JSON.stringify(values.helpHeaderImage)})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        },
+                      }
+                    : {})}
+                >
+                  {values.helpHeaderImage ? null : <Icon name="image" className="size-4" />}
+                </HeaderSwatch>
+              ),
+            },
+          ]}
+        />
+      ),
+    },
+    {
+      name: "helpHeaderImage",
+      label: "Header picture",
+      type: "custom",
+      hidden: values.helpHeaderStyle !== "image",
+      hint: "PNG, JPG or WebP, up to 1 MB. Wide works best. It is darkened so the words on it stay readable.",
+      render: ({ field }) => (
+        <ImageField
+          noun="picture"
+          value={field.value}
+          onChange={field.onChange}
+          upload={(file) => getClient().settings.uploadHeaderImage(file)}
+          placeholder={<Icon name="image" className="text-muted-foreground size-5" />}
+          maxBytes={LOGO_MAX_BYTES}
+          accept={Object.keys(LOGO_TYPES)}
+          disabled={disabled}
+        />
+      ),
+    },
+  ];
+  const helpLinkFields: Fields = [
+    {
+      name: "helpHeaderLinks",
+      label: "Header links",
+      type: "custom",
+      hint: `Beside your name at the top, such as a way back to your site. Up to ${HELP_HEADER_LINKS_MAX}.`,
+      render: ({ field, fieldState }) => (
+        <LinksField
+          noun="Header link"
+          value={field.value}
+          onChange={field.onChange}
+          max={HELP_HEADER_LINKS_MAX}
+          errors={fieldState.error}
+          disabled={disabled}
+        />
+      ),
+    },
+    {
+      name: "helpFooterLinks",
+      label: "Footer links",
+      type: "custom",
+      hint: `At the foot of every page, such as your terms and privacy policy. Up to ${HELP_FOOTER_LINKS_MAX}.`,
+      render: ({ field, fieldState }) => (
+        <LinksField
+          noun="Footer link"
+          value={field.value}
+          onChange={field.onChange}
+          max={HELP_FOOTER_LINKS_MAX}
+          errors={fieldState.error}
+          disabled={disabled}
+        />
+      ),
+    },
+  ];
+  const helpChatFields: Fields = [
+    {
+      name: "helpShowChat",
+      label: "Show the chat launcher on help pages",
+      type: "switch",
+      hint: "So a reader can ask your team when an article does not answer their question.",
+    },
+  ];
+  const helpSeoFields: Fields = [
+    {
+      name: "helpSeoTitle",
+      label: "Home page title",
+      type: "input",
+      hint: "Shown in the browser tab and in search results. Up to 70 characters.",
+      props: { placeholder: `${values.brandName || "Your"} Help Center` },
+    },
+    {
+      name: "helpSeoDescription",
+      label: "Home page description",
+      type: "textarea",
+      hint: "The lines under the title in search results. Up to 200 characters.",
+      props: { rows: 2, placeholder: "Answers to common questions about your product." },
+    },
+    {
+      name: "helpUrl",
+      label: "Public address",
+      type: "input",
+      hint: "Only if visitors reach the help center through your own site, such as https://example.com/help. Search engines are told this is its one address.",
+      props: { placeholder: "https://example.com/help", autoCapitalize: "none" },
+    },
   ];
 
   async function save(next: BrandingValues) {
@@ -393,7 +562,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           void form.handleSubmit(save)(event);
         }}
       >
-        <Tabs defaultValue="brand">
+        <Tabs value={tab} onValueChange={setTab}>
           {/* Stays in reach while a long tab is scrolled, as the preview beside it does. */}
           <div className="bg-card sticky top-0 z-10 -mx-1 [scrollbar-width:none] overflow-x-auto px-1 py-3 [&::-webkit-scrollbar]:hidden">
             <TabsList aria-label="What to brand">
@@ -458,17 +627,28 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
 
           <TabsContent value="help-center" className="pt-1">
             <SettingsSection
-              title="Help center"
-              description={
-                <>
-                  The top of your public help center. Its articles are still to come.{" "}
-                  <Link href="/help" target="_blank">
-                    Open the help center
-                  </Link>
-                </>
-              }
+              title="Header"
+              description="The top of your public help center: what it says, and what is behind it."
             >
               {list(helpFields)}
+            </SettingsSection>
+            <SettingsSection
+              title="Links"
+              description="Ways out of the help center, to the rest of your site."
+            >
+              {list(helpLinkFields)}
+            </SettingsSection>
+            <SettingsSection
+              title="Chat"
+              description="Whether readers can reach your team from here."
+            >
+              {list(helpChatFields)}
+            </SettingsSection>
+            <SettingsSection
+              title="Search engines"
+              description="How the help center's home page appears in search results. Each article has its own title and description, set in its editor."
+            >
+              {list(helpSeoFields)}
             </SettingsSection>
           </TabsContent>
         </Tabs>
@@ -482,7 +662,11 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
         ) : null}
       </form>
       <aside className="lg:sticky lg:top-3">
-        <WidgetPreview settings={shown} />
+        {tab === "help-center" ? (
+          <HelpCenterPreview settings={shown} />
+        ) : (
+          <WidgetPreview settings={shown} />
+        )}
       </aside>
     </div>
   );

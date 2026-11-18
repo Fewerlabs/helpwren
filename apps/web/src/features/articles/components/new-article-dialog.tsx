@@ -36,7 +36,7 @@ const LATER = "later";
 const FAILED = "The article could not be started. Try again.";
 
 /**
- * Asks for a title before an article exists, because its address is made from the title once
+ * Asks for a title before an article exists, because its slug is made from the title once
  * and then stays put. The draft opens in the editor.
  */
 export function NewArticleDialog({
@@ -60,7 +60,7 @@ export function NewArticleDialog({
         label: "Title",
         type: "input",
         required: true,
-        hint: "Its address is made from this. You can change both while it is a draft.",
+        hint: "Its slug is made from this. You can change both while it is a draft.",
         props: { placeholder: "Reset your password", autoComplete: "off" },
       },
       {

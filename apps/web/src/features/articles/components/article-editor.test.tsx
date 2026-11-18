@@ -37,6 +37,11 @@ const draft: Article = {
   authorId: "22222222-2222-4222-8222-222222222222",
   publishedAt: null,
   updatedAt: new Date().toISOString(),
+  tags: ["passwords"],
+  visibility: "public",
+  featured: false,
+  metaTitle: null,
+  metaDescription: null,
   body: {
     type: "doc",
     content: [{ type: "paragraph", content: [{ type: "text", text: "Open Settings." }] }],
@@ -109,20 +114,37 @@ describe("ArticleEditor", () => {
     expect(screen.getByRole("status").textContent).toMatch(/^Saved/);
   });
 
-  it("puts a refused address beside the address, where it can be fixed", async () => {
+  it("puts a refused slug beside the slug, where it can be fixed", async () => {
     const user = userEvent.setup();
     articles.update.mockResolvedValue({ ok: false, reason: "slug_taken" });
     await renderEditor();
 
-    const address = screen.getByRole("textbox", { name: "Address" });
-    await user.clear(address);
-    await user.type(address, "Password Help");
+    const slugField = screen.getByRole("textbox", { name: "Slug" });
+    await user.clear(slugField);
+    await user.type(slugField, "Password Help");
     // Typed as words, kept as a slug.
-    expect(address).toHaveValue("password-help");
+    expect(slugField).toHaveValue("password-help");
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
-    expect(await screen.findByText(/Another article already has that address/)).toBeInTheDocument();
+    expect(await screen.findByText(/Another article already has that slug/)).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
+  });
+
+  it("saves tags, visibility and what search engines are told", async () => {
+    const user = userEvent.setup();
+    articles.update.mockResolvedValue({ ok: true, article: draft });
+    await renderEditor();
+
+    await user.type(screen.getByRole("textbox", { name: "Tags" }), "Sign-In{Enter}");
+    await user.type(screen.getByRole("textbox", { name: "SEO title" }), "Password help");
+    await user.click(screen.getByRole("switch", { name: /Featured/ }));
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+
+    expect(articles.update).toHaveBeenCalledWith(draft.id, {
+      tags: ["passwords", "sign-in"],
+      featured: true,
+      metaTitle: "Password help",
+    });
   });
 
   it("explains why an article with no collection cannot be published", async () => {

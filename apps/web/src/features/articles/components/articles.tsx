@@ -1,7 +1,8 @@
 "use client";
 
-import { type ArticleStatus, type ArticleSummary } from "@helpwren/core";
+import { articleStatusSchema, articleVisibilitySchema, type ArticleSummary } from "@helpwren/core";
 import {
+  Badge,
   Button,
   DataTable,
   EmptyState,
@@ -41,22 +42,38 @@ import { NewArticleDialog } from "./new-article-dialog";
 
 const PAGE_SIZE = 25;
 
-const filters: readonly FilterDefinition[] = [
-  {
-    id: "status",
-    label: "Status",
-    icon: "funnel",
-    options: [
-      { value: "published", label: "Published" },
-      { value: "draft", label: "Draft" },
-    ],
-  },
-];
+const statusFilter: FilterDefinition = {
+  id: "status",
+  label: "Status",
+  icon: "check-circle",
+  options: [
+    { value: "published", label: "Published" },
+    { value: "draft", label: "Draft" },
+  ],
+};
+const visibilityFilter: FilterDefinition = {
+  id: "visibility",
+  label: "Visibility",
+  icon: "eye",
+  options: [
+    { value: "public", label: "Help center and chat" },
+    { value: "in_app", label: "Chat only" },
+  ],
+};
+const featuredFilter: FilterDefinition = {
+  id: "featured",
+  label: "Featured",
+  icon: "star",
+  options: [
+    { value: "yes", label: "Featured" },
+    { value: "no", label: "Not featured" },
+  ],
+};
 
-/** One status when exactly one is ticked; both ticked is the same as neither. */
-function chosenStatus(value: FilterValue): ArticleStatus | undefined {
-  const chosen = value.status ?? [];
-  return chosen.length === 1 ? (chosen[0] as ArticleStatus) : undefined;
+/** The one value of a filter with two choices; both ticked is the same as neither. */
+function only(value: FilterValue, id: string): string | undefined {
+  const chosen = value[id] ?? [];
+  return chosen.length === 1 ? chosen[0] : undefined;
 }
 
 /**
@@ -75,7 +92,48 @@ export function Articles() {
   const [editing, setEditing] = useState<"new" | "current" | null>(null);
   const [starting, setStarting] = useState(false);
   const searchText = useDebounced(search).trim();
-  const status = chosenStatus(filter);
+  const status = articleStatusSchema.safeParse(only(filter, "status")).data;
+  const visibility = articleVisibilitySchema.safeParse(only(filter, "visibility")).data;
+  const featuredOnly = only(filter, "featured");
+  const tags = filter.tags ?? [];
+  const authorIds = filter.author ?? [];
+  const filtered = Object.values(filter).some((chosen) => chosen.length > 0);
+
+  // The choices for two of the filters come from the data: the tags in use, and the team.
+  // Hooks, because the filter bar and the editor both read them.
+  const allTags = useQuery({
+    queryKey: [...ARTICLES_QUERY_KEY, "tags"],
+    queryFn: () => getClient().articles.tags(),
+  }).data;
+  const team = useQuery({ queryKey: ["team"], queryFn: () => getClient().agents.list() }).data;
+  const filters = useMemo<FilterDefinition[]>(
+    () => [
+      statusFilter,
+      ...(allTags?.length
+        ? [
+            {
+              id: "tags",
+              label: "Tag",
+              icon: "tag" as const,
+              options: allTags.map((tag) => ({ value: tag, label: tag })),
+            },
+          ]
+        : []),
+      ...(team?.length
+        ? [
+            {
+              id: "author",
+              label: "Author",
+              icon: "user" as const,
+              options: team.map((member) => ({ value: member.id, label: member.name })),
+            },
+          ]
+        : []),
+      visibilityFilter,
+      featuredFilter,
+    ],
+    [allTags, team],
+  );
 
   // What readers answered, shared by every row. A hook, because no one row owns it.
   const feedback = useQuery({
@@ -89,7 +147,8 @@ export function Articles() {
   const title = shown.kind === "all" ? "All articles" : (collection?.name ?? "Not in a collection");
 
   // A new search, filter or collection starts from its first page.
-  const listKey = `${shownKey}:${searchText}:${status ?? ""}`;
+  const filterKey = JSON.stringify(filter);
+  const listKey = `${shownKey}:${searchText}:${filterKey}`;
   const [lastListKey, setLastListKey] = useState(listKey);
   if (lastListKey !== listKey) {
     setLastListKey(listKey);
@@ -97,7 +156,7 @@ export function Articles() {
   }
 
   // Order is a collection's own, so it can only be changed while all of it is in view.
-  const canReorder = Boolean(collection) && !searchText && !status;
+  const canReorder = Boolean(collection) && !searchText && !filtered;
 
   const nav = useMemo<PageNavItem[]>(
     () => [
@@ -152,11 +211,15 @@ export function Articles() {
       }
     >
       <QueryList
-        queryKey={[...ARTICLES_QUERY_KEY, "list", shownKey, searchText, status ?? "any"]}
+        queryKey={[...ARTICLES_QUERY_KEY, "list", shownKey, searchText, filterKey]}
         queryFn={({ page: number, pageSize }) =>
           getClient().articles.list({
             collectionId,
             status,
+            visibility,
+            featured: featuredOnly === undefined ? undefined : featuredOnly === "yes",
+            tags,
+            authorIds,
             search: searchText,
             page: number,
             // A collection is reordered as a whole, so all of it is loaded at once.
@@ -192,7 +255,22 @@ export function Articles() {
                   href={`${HELP_PATH}/${article.id}`}
                   className="focus-visible:outline-ring block max-w-full rounded-md focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <span className="block truncate font-medium">{article.title}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate font-medium">{article.title}</span>
+                    {article.featured ? (
+                      <Icon
+                        name="star"
+                        weight="fill"
+                        label="Featured"
+                        className="text-ochre size-3.5 shrink-0"
+                      />
+                    ) : null}
+                    {article.visibility === "in_app" ? (
+                      <Badge variant="outline" className="shrink-0">
+                        Chat only
+                      </Badge>
+                    ) : null}
+                  </span>
                   {article.summary ? (
                     <span className="text-muted-foreground block truncate text-xs font-normal">
                       {article.summary}
@@ -341,13 +419,13 @@ export function Articles() {
                     getRowKey={(article) => article.id}
                     loading={list.isFetching}
                     empty={
-                      searchText || status ? (
+                      searchText || filtered ? (
                         <EmptyState
                           scene="no-results"
                           size="sm"
                           className="py-10"
                           title="No articles found"
-                          description="Try other words, or clear the filter."
+                          description="Try other words, or clear the filters."
                         />
                       ) : (
                         <EmptyState

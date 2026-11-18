@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // The dashboard and sign-in page have sessions to refresh; the chat has a framing rule to
-  // set. Other routes skip the proxy entirely.
-  matcher: ["/dashboard/:path*", "/login", "/embed"],
+  // The dashboard, the sign-in page and a team member's preview of a draft have sessions to
+  // refresh; the chat has a framing rule to set. Other routes skip the proxy entirely.
+  matcher: ["/dashboard/:path*", "/login", "/embed", "/help/preview/:path*"],
 };

@@ -2,10 +2,12 @@
 
 import {
   ARTICLE_IMAGE_MAX_BYTES,
+  ARTICLE_TAGS_MAX,
   richTextSchema,
   slugSchema,
   type Article,
   type ArticleChanges,
+  type ArticleVisibility,
   type ChangeArticleResult,
 } from "@helpwren/core";
 import {
@@ -21,6 +23,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Switch,
+  TagsInput,
   Textarea,
   toast,
   Tooltip,
@@ -30,7 +34,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { formatBytes } from "@/lib/format-bytes";
 import { formatTimeAgo } from "@/lib/format-time";
@@ -50,8 +54,8 @@ const NONE = "none";
 
 const failures: Record<Exclude<ChangeArticleResult, { ok: true }>["reason"], string> = {
   not_found: "This article no longer exists.",
-  slug_taken: "Another article already has that address. Choose a different one.",
-  slug_locked: "A published article keeps its address. Unpublish it to change it.",
+  slug_taken: "Another article already has that slug. Choose a different one.",
+  slug_locked: "A published article keeps its slug. Unpublish it to change it.",
   needs_collection: "Choose a collection first. A published article has to be in one.",
 };
 
@@ -75,7 +79,10 @@ export function ArticleEditor({ articleId }: ArticleEditorProps) {
         queryFn={() => getClient().articles.get(articleId)}
         // The form keeps its own copy once loaded, so a refresh must not disturb the writing.
         staleTime={Infinity}
+        messages={{ loading: "Opening the article" }}
         className="border-rule bg-card h-full overflow-hidden rounded-xl border"
+        // The page inside scrolls in its own columns, so it needs the card's full height.
+        contentClassName="h-full"
         renderEmpty={() => (
           <EmptyState
             scene="not-found"
@@ -109,8 +116,15 @@ function EditorForm({ article }: { article: Article }) {
   const [collectionId, setCollectionId] = useState(article.collectionId);
   const [slug, setSlug] = useState(article.slug);
   const [slugError, setSlugError] = useState<string>();
+  const [tags, setTags] = useState<readonly string[]>(article.tags);
+  const [visibility, setVisibility] = useState<ArticleVisibility>(article.visibility);
+  const [featured, setFeatured] = useState(article.featured);
+  const [metaTitle, setMetaTitle] = useState(article.metaTitle ?? "");
+  const [metaDescription, setMetaDescription] = useState(article.metaDescription ?? "");
+  const [authorId, setAuthorId] = useState(article.authorId);
   const [body, setBody] = useState<RichTextNode | null>(null);
   const [busy, setBusy] = useState<"save" | "publish" | null>(null);
+  const featuredId = useId();
 
   const published = saved.status === "published";
   const dirty =
@@ -118,14 +132,17 @@ function EditorForm({ article }: { article: Article }) {
     title !== saved.title ||
     summary !== (saved.summary ?? "") ||
     collectionId !== saved.collectionId ||
-    slug !== saved.slug;
+    slug !== saved.slug ||
+    tags.join() !== saved.tags.join() ||
+    visibility !== saved.visibility ||
+    featured !== saved.featured ||
+    metaTitle !== (saved.metaTitle ?? "") ||
+    metaDescription !== (saved.metaDescription ?? "") ||
+    authorId !== saved.authorId;
 
-  // Who wrote it, by name. A hook, because the team list is shared with other screens.
-  const author = useQuery({
-    queryKey: ["team"],
-    queryFn: () => getClient().agents.list(),
-    select: (team) => team.find((member) => member.id === saved.authorId)?.name,
-  }).data;
+  // The team, to choose the author from. A hook, because the list is shared with other screens.
+  const team =
+    useQuery({ queryKey: ["team"], queryFn: () => getClient().agents.list() }).data ?? [];
   const feedback = useQuery({
     queryKey: [...ARTICLES_QUERY_KEY, "feedback"],
     queryFn: () => getClient().articles.feedbackTotals(),
@@ -153,6 +170,14 @@ function EditorForm({ article }: { article: Article }) {
       }
       changes.slug = parsed.data;
     }
+    if (tags.join() !== saved.tags.join()) changes.tags = [...tags];
+    if (visibility !== saved.visibility) changes.visibility = visibility;
+    if (featured !== saved.featured) changes.featured = featured;
+    if (metaTitle !== (saved.metaTitle ?? "")) changes.metaTitle = metaTitle;
+    if (metaDescription !== (saved.metaDescription ?? "")) {
+      changes.metaDescription = metaDescription;
+    }
+    if (authorId && authorId !== saved.authorId) changes.authorId = authorId;
     if (body) {
       const parsed = richTextSchema.safeParse(body);
       if (!parsed.success) {
@@ -174,6 +199,9 @@ function EditorForm({ article }: { article: Article }) {
       setTitle(result.article.title);
       setSummary(result.article.summary ?? "");
       setSlug(result.article.slug);
+      setTags(result.article.tags);
+      setMetaTitle(result.article.metaTitle ?? "");
+      setMetaDescription(result.article.metaDescription ?? "");
       setBody(null);
       await changed();
       return result.article;
@@ -181,7 +209,22 @@ function EditorForm({ article }: { article: Article }) {
       toast.error("The article could not be saved. Try again.");
       return null;
     }
-  }, [body, changed, collectionId, getClient, saved, slug, summary, title]);
+  }, [
+    authorId,
+    body,
+    changed,
+    collectionId,
+    featured,
+    getClient,
+    metaDescription,
+    metaTitle,
+    saved,
+    slug,
+    summary,
+    tags,
+    title,
+    visibility,
+  ]);
 
   async function saveNow() {
     setBusy("save");
@@ -371,7 +414,8 @@ function EditorForm({ article }: { article: Article }) {
 
       <div className="flex min-h-0 flex-1 max-lg:flex-col max-lg:overflow-y-auto">
         <div className="min-w-0 flex-1 lg:overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-6 py-8 sm:px-10">
+          {/* Wide margins: the controls that appear beside a block sit in the left one. */}
+          <div className="mx-auto max-w-3xl px-6 py-8 sm:px-16">
             <Textarea
               aria-label="Title"
               rows={1}
@@ -434,29 +478,129 @@ function EditorForm({ article }: { article: Article }) {
             </SelectContent>
           </Select>
 
-          <Field
-            label="Address"
-            error={slugError}
-            hint={
-              published
-                ? "Fixed while the article is published, so links to it keep working."
-                : `/help/${collection?.slug ?? "collection"}/${slug}`
-            }
-          >
-            <Input
-              value={slug}
-              disabled={published}
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              onValueChange={(value) => {
-                setSlug(value.toLowerCase().replace(/\s+/g, "-"));
-              }}
+          <Field label="Tags" hint="Labels to find and group articles by. Press Enter after each.">
+            <TagsInput
+              value={tags}
+              max={ARTICLE_TAGS_MAX}
+              placeholder={tags.length === 0 ? "refunds" : undefined}
+              transform={(text) => text.trim().toLowerCase()}
+              onValueChange={setTags}
             />
           </Field>
 
+          <Select
+            value={authorId ?? ""}
+            onValueChange={(value) => {
+              setAuthorId(value);
+            }}
+          >
+            <Field label="Author">
+              <SelectTrigger>
+                <SelectValue placeholder="Unknown" />
+              </SelectTrigger>
+            </Field>
+            <SelectContent>
+              {team
+                .filter((member) => member.active || member.id === authorId)
+                .map((member) => (
+                  <SelectItem key={member.id} value={member.id}>
+                    {member.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+
+          <Section title="Publishing">
+            <Field
+              label="Slug"
+              error={slugError}
+              hint={
+                published
+                  ? "Fixed while the article is published, so links to it keep working."
+                  : `/help/${collection?.slug ?? "collection"}/${slug}`
+              }
+            >
+              <Input
+                value={slug}
+                disabled={published}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                onValueChange={(value) => {
+                  setSlug(value.toLowerCase().replace(/\s+/g, "-"));
+                }}
+              />
+            </Field>
+
+            <Select
+              value={visibility}
+              onValueChange={(value) => {
+                setVisibility(value as ArticleVisibility);
+              }}
+            >
+              <Field
+                label="Visibility"
+                hint={
+                  visibility === "in_app"
+                    ? "Left off the public help center and out of search engines."
+                    : undefined
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+              </Field>
+              <SelectContent>
+                <SelectItem value="public">Help center and chat</SelectItem>
+                <SelectItem value="in_app">Chat only</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <label htmlFor={featuredId} className="block font-medium">
+                  Featured
+                </label>
+                <p id={`${featuredId}-hint`} className="text-muted-foreground text-xs">
+                  Shown on the help center&apos;s home page and first in the chat.
+                </p>
+              </div>
+              <Switch
+                id={featuredId}
+                aria-describedby={`${featuredId}-hint`}
+                checked={featured}
+                onCheckedChange={setFeatured}
+              />
+            </div>
+          </Section>
+
+          <Section title="Search engines">
+            <Field label="SEO title" hint="Up to 70 characters. Left empty, the title is used.">
+              <Input
+                value={metaTitle}
+                maxLength={70}
+                placeholder={title}
+                onValueChange={setMetaTitle}
+              />
+            </Field>
+            <Field
+              label="SEO description"
+              hint="Up to 200 characters. Left empty, the summary is used."
+            >
+              <Textarea
+                rows={3}
+                value={metaDescription}
+                maxLength={200}
+                placeholder={summary}
+                className="min-h-0"
+                onChange={(event) => {
+                  setMetaDescription(event.target.value);
+                }}
+              />
+            </Field>
+          </Section>
+
           <dl className="border-rule grid gap-2.5 border-t pt-4">
-            <Detail term="Written by">{author ?? "Unknown"}</Detail>
             <Detail term="Last changed">{formatTimeAgo(saved.updatedAt)}</Detail>
             <Detail term="Published">
               {saved.publishedAt ? formatTimeAgo(saved.publishedAt) : "Not yet"}
@@ -479,6 +623,16 @@ function EditorForm({ article }: { article: Article }) {
         </aside>
       </div>
     </div>
+  );
+}
+
+/** A titled group of settings in the side panel, under a hairline. */
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="border-rule grid gap-4 border-t pt-4">
+      <h2 className="text-muted-foreground text-2xs font-mono tracking-wider uppercase">{title}</h2>
+      {children}
+    </section>
   );
 }
 

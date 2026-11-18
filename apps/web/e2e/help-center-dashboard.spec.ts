@@ -61,7 +61,7 @@ test("a team member writes an article, publishes it and takes it down again", as
   await articleForm.getByLabel("Title").fill("Track a parcel (e2e)");
   await articleForm.getByRole("button", { name: "Start writing" }).click();
   await expect(page).toHaveURL(/\/dashboard\/help\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("textbox", { name: "Address" })).toHaveValue("track-a-parcel-e2e");
+  await expect(page.getByRole("textbox", { name: "Slug" })).toHaveValue("track-a-parcel-e2e");
 
   // Written the Notion way: a slash for a block, Markdown as typed.
   const body = page.getByRole("textbox", { name: "Article body" });
@@ -85,7 +85,7 @@ test("a team member writes an article, publishes it and takes it down again", as
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByText("Article published")).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Address" })).toBeDisabled();
+  await expect(page.getByRole("textbox", { name: "Slug" })).toBeDisabled();
 
   // Published: anyone can read it, with the heading the editor made.
   const published = await page.request.get("/help/shipping-e2e/track-a-parcel-e2e");
