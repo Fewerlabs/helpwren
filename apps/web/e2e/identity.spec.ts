@@ -3,12 +3,14 @@ import { type HelpwrenWidget, type Identity, type IdentityState } from "helpwren
 import { SignJWT } from "jose";
 
 import { database, removeContactByEmail } from "./support/database";
+import { signInToInbox } from "./support/mailbox";
 
 // A site telling the chat who its visitor is: examples/plain-html, on another origin than the
 // app, calling the widget as a product's own pages would. The install is set up to accept
 // signed tokens for the length of these tests.
 const SITE = "http://127.0.0.1:4100/";
 const KEY = { id: "e2e", secret: "e2e-signing-secret-e2e-signing-secret" };
+const AGENT = "sam@example.com";
 const GUEST = { name: "Noor Haddad", email: "noor.e2e@example.org" };
 
 declare global {
@@ -127,6 +129,61 @@ test("a guest keeps their conversation when they log in, and finds it on another
     chatOf(page).getByRole("button", { name: "Send us a message" }).first(),
   ).toBeVisible();
   await expect(chatOf(page).getByText("I am logged in now.")).toBeHidden();
+});
+
+test("a logged-in user writes without saying who they are, and the team sees them as verified", async ({
+  browser,
+}) => {
+  const agentContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const inbox = await agentContext.newPage();
+  await signInToInbox(inbox, AGENT);
+  const list = inbox.getByRole("list", { name: "Conversations" });
+  await expect(list.getByRole("listitem").first()).toBeVisible();
+
+  // The site knows who is logged in, and what they are looking at.
+  const site = await (await browser.newContext()).newPage();
+  await site.goto(SITE);
+  const signedIn = site.evaluate(
+    () =>
+      new Promise<IdentityState>((resolve) => {
+        window.Helpwren?.on("identity", resolve);
+      }),
+  );
+  await identify(site, {
+    token: await tokenFor("ines", {
+      name: "Ines Marchetti",
+      email: "ines.e2e@example.org",
+      org: { id: `e2e-${run}-org`, name: "Marchetti Studio" },
+    }),
+  });
+  await site.evaluate(() => {
+    window.Helpwren?.setContext({ plan: "pro" });
+  });
+  await expect(signedIn).resolves.toEqual({ state: "user" });
+
+  // They are asked for a message and nothing else.
+  await site.getByRole("button", { name: "Open chat" }).click();
+  const chat = chatOf(site);
+  await chat.getByRole("button", { name: "Send us a message" }).click();
+  await expect(chat.getByLabel("Your name")).toHaveCount(0);
+  await chat.getByLabel("Your message").fill("My invoice shows the wrong plan.");
+  // By keyboard: with so short a form, the dev server's own badge sits over the button.
+  await chat.getByRole("button", { name: "Send message" }).press("Enter");
+  await expect(chat.getByRole("log", { name: "Messages" })).toContainText(
+    "My invoice shows the wrong plan.",
+  );
+
+  // The team sees who it is on the host product's word, and what the page said.
+  const row = list.getByRole("button", { name: /Ines Marchetti/ });
+  await expect(row).toContainText("My invoice shows the wrong plan.");
+  await row.click();
+  const details = inbox.getByRole("region", { name: "Details" });
+  await expect(details.getByText("Verified user")).toBeVisible();
+  await expect(details.getByText("ines.e2e@example.org")).toBeVisible();
+  await expect(details.getByText("pro", { exact: true })).toBeVisible();
+
+  await agentContext.close();
+  await site.context().close();
 });
 
 test("a token the install did not sign leaves the visitor a guest, and tells the page", async ({
