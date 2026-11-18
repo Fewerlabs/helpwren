@@ -61,6 +61,12 @@ pnpm db:types     # regenerate packages/core/src/database.types.ts after a schem
 `pnpm db:reset` loads demo data from `supabase/seed.sql`: two team members (`ada@example.com`, an
 admin, and `sam@example.com`), a few contacts and some conversations.
 
+### Trying the chat
+
+Open http://localhost:3000/embed. It is the visitor's side, sized for a phone or the widget's
+frame. The demo data asks guests for a name and an email or phone number; change the
+`guest_details` row in the `settings` table to `"email"`, `"phone"` or `"none"` to see the others.
+
 ### Signing in to the inbox
 
 Open http://localhost:3000/inbox and enter one of the demo emails. The six-digit code arrives in

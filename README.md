@@ -41,8 +41,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 - **A design system** (`packages/design-system`): design tokens for light and dark, more than
   thirty components, the wren illustrations, and components for data fetching and forms. Browse it
   with `pnpm storybook`.
-- **The app** (`apps/web`): a Next.js app with sign-in for team members at `/inbox`, placeholder
-  routes for the rest, and `/design`, which shows the design system running in the app together
+- **The app** (`apps/web`): a Next.js app with the visitor's chat at `/embed`, sign-in for team
+  members at `/inbox`, placeholder routes for the rest, and `/design`, which shows the design system running in the app together
   with a worked example feature.
 - **The database** (`supabase/`): the first tables, the rules for who can read and write each
   row, and tests that prove them.

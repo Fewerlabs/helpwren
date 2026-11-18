@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Embed" };
+import { Chat } from "@/features/chat";
+import { getHelpwren } from "@/lib/helpwren";
 
-export default function EmbedPage() {
+export const metadata: Metadata = { title: "Chat" };
+
+const DEFAULT_SOURCE = "web";
+
+export default async function EmbedPage({ searchParams }: PageProps<"/embed">) {
+  const { source } = await searchParams;
+  const helpwren = await getHelpwren();
+  const settings = await helpwren.settings.getPublic();
+
   return (
-    <main className="p-8">
-      <h1 className="text-2xl font-semibold">Embed</h1>
-      <p className="text-muted-foreground mt-2">
-        Chat, tickets and help for visitors and users. Not built yet.
-      </p>
+    <main>
+      <Chat settings={settings} source={typeof source === "string" ? source : DEFAULT_SOURCE} />
     </main>
   );
 }

@@ -75,6 +75,19 @@ Supabase client that knows whose request this is.
 These are server-only. Client components reach the server through Server Actions, as the sign-in
 form does. See [ADR 0007](decisions/0007-agent-sign-in.md).
 
+### The visitor's chat
+
+`/embed` is the one screen that talks to Supabase from the browser. `src/features/chat/client.ts`
+builds the client library with a Supabase client that keeps the visitor's session in the
+browser's own storage, because the chat runs in a frame on someone else's site, where browsers
+block cookies. Two rules follow from that:
+
+- **Opening the chat creates nothing.** A guest session is started with the first message, so
+  page views do not fill the database with guests who never wrote.
+- **Server data lives in TanStack Query**, as everywhere else. Live updates write into the same
+  cache (`src/features/chat/hooks/use-chat.ts`), so a message that arrives over the live channel
+  and one that arrives from a reload are the same thing to the components.
+
 ### API routes
 
 API routes do what the access rules leave to the server. Each one follows the same steps:
@@ -148,16 +161,16 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route                               | What it is                                                                   |
-| ----------------------------------- | ---------------------------------------------------------------------------- |
-| `/design`                           | The design system running in the app, with the example feature at the bottom |
-| `/embed`                            | Chat, tickets and help for visitors and users (placeholder)                  |
-| `/help`                             | The public help center (placeholder)                                         |
-| `/inbox`                            | The agent inbox, for signed-in team members (the inbox itself is not built)  |
-| `/inbox/login`                      | Sign-in for team members                                                     |
-| `/api/health`                       | Returns `{ "status": "ok" }`                                                 |
-| `POST /api/conversations`           | Starts a conversation with its first message                                 |
-| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                           |
+| Route                               | What it is                                                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/design`                           | The design system running in the app, with the example feature at the bottom                                  |
+| `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
+| `/help`                             | The public help center (placeholder)                                                                          |
+| `/inbox`                            | The agent inbox, for signed-in team members (the inbox itself is not built)                                   |
+| `/inbox/login`                      | Sign-in for team members                                                                                      |
+| `/api/health`                       | Returns `{ "status": "ok" }`                                                                                  |
+| `POST /api/conversations`           | Starts a conversation with its first message                                                                  |
+| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                            |
 
 ## The design system
 

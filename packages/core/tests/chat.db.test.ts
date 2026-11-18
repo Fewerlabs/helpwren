@@ -219,6 +219,27 @@ describe("live updates", () => {
     await stopAgent();
   });
 
+  it("lets two parts of a screen listen to the same conversation, and stop separately", async () => {
+    const { client, session } = await newGuest();
+    const id = await startConversation(session.id);
+
+    const first = collector<Message>();
+    const second = collector<Message>();
+    const stopFirst = await client.messages.subscribe(id, first.add);
+    const stopSecond = await client.messages.subscribe(id, second.add);
+
+    await client.messages.send(id, "Both hear this");
+    await first.waitFor(1);
+    await second.waitFor(1);
+
+    await stopFirst();
+    await client.messages.send(id, "Only the second hears this");
+    await second.waitFor(2);
+    expect(first.items).toHaveLength(1);
+
+    await stopSecond();
+  });
+
   it("refuses to let a guest listen to someone else's conversation", async () => {
     const owner = await newGuest();
     const other = await newGuest();

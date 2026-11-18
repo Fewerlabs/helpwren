@@ -10,6 +10,19 @@ export interface Country {
   flag: string;
 }
 
+/**
+ * The country a locale such as `en-GB` belongs to, if it names one that has a dialling code.
+ * Useful as a `defaultCountry` taken from the browser's language.
+ */
+export function countryOfLocale(locale: string): CountryCode | undefined {
+  try {
+    const region = new Intl.Locale(locale).region;
+    return getCountries().find((code) => code === region);
+  } catch {
+    return undefined;
+  }
+}
+
 /** The flag emoji for an ISO country code, built from its two regional indicator letters. */
 export function flagOf(code: string): string {
   const letters = code.toUpperCase();

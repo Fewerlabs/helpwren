@@ -41,6 +41,11 @@ and slow down abuse, all with code that is public.
 - **The secret key is read in one server-only module** and used through one admin client, after
   the caller has been verified.
 
+- **One live channel per topic, shared.** Supabase allows a client one channel per topic, so the
+  client library keeps one open however many parts of a screen listen to it, and closes it when
+  the last one stops. Without this, React's double mounting in development left a screen with
+  no live updates at all.
+
 ## Consequences
 
 - Realtime takes about five seconds to answer a subscription it refuses. A screen that
