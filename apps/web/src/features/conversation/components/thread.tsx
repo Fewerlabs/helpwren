@@ -6,7 +6,8 @@ import { useEffect, useRef } from "react";
 
 import { formatMessageTime } from "@/lib/format-time";
 
-import { useLiveThread, useMessages, useNotes } from "../hooks/use-thread";
+import { describeEvent } from "../describe-event";
+import { useEvents, useLiveThread, useMessages, useNotes } from "../hooks/use-thread";
 import { Composer } from "./composer";
 
 export interface ThreadProps {
@@ -23,10 +24,11 @@ export interface ThreadProps {
    */
   density?: "comfortable" | "compact";
   /**
-   * Turns on internal notes, for the team's side: they are shown among the messages and can be
-   * written from the reply box. The function names a note's author from their id.
+   * Given on the team's side only. It names a person from their id, and turns on what only the
+   * team has: internal notes among the messages and in the reply box, and who did what in the
+   * activity. `null` is the system.
    */
-  noteAuthor?: (authorId: string) => string;
+  nameOf?: (id: string | null) => string;
 }
 
 /**
@@ -39,20 +41,23 @@ export function Thread({
   otherName,
   onRead,
   density = "comfortable",
-  noteAuthor,
+  nameOf,
 }: ThreadProps) {
   const compact = density === "compact";
   const messages = useMessages(conversationId);
-  const notes = useNotes(conversationId, noteAuthor !== undefined);
+  const forTeam = nameOf !== undefined;
+  const notes = useNotes(conversationId, forTeam);
+  const events = useEvents(conversationId, forTeam);
   useLiveThread(conversationId, { isOwn, onRead });
 
   const end = useRef<HTMLDivElement | null>(null);
-  // Messages and notes together, in the order they were written.
+  // Messages, notes and activity together, in the order they happened.
   const entries = [
-    ...(messages.data ?? []).map((message) => ({ kind: "message" as const, ...message })),
-    ...(notes.data ?? []).map((note) => ({ kind: "note" as const, ...note })),
-  ].sort((first, second) => first.createdAt.localeCompare(second.createdAt));
-  const latestId = entries.at(-1)?.id;
+    ...(messages.data ?? []).map((message) => ({ type: "message" as const, item: message })),
+    ...(notes.data ?? []).map((note) => ({ type: "note" as const, item: note })),
+    ...(events.data ?? []).map((event) => ({ type: "event" as const, item: event })),
+  ].sort((first, second) => first.item.createdAt.localeCompare(second.item.createdAt));
+  const latestId = entries.at(-1)?.item.id;
   useEffect(() => {
     // Keep the newest message in view, on opening and as each one arrives.
     end.current?.scrollIntoView({ block: "end" });
@@ -105,22 +110,31 @@ export function Thread({
               className={compact ? "flex flex-col gap-2.5" : "flex flex-col gap-3"}
             >
               {entries.map((entry) =>
-                entry.kind === "note" ? (
+                entry.type === "event" ? (
+                  <p
+                    key={entry.item.id}
+                    className="text-muted-foreground text-2xs self-center px-3 py-0.5 text-center"
+                  >
+                    {describeEvent(entry.item, nameOf)}
+                    <span aria-hidden="true"> · </span>
+                    {formatMessageTime(entry.item.createdAt)}
+                  </p>
+                ) : entry.type === "note" ? (
                   <MessageBubble
-                    key={entry.id}
+                    key={entry.item.id}
                     from="self"
                     note
                     size={compact ? "sm" : "md"}
-                    time={formatMessageTime(entry.createdAt)}
-                    footer={noteAuthor?.(entry.authorId)}
+                    time={formatMessageTime(entry.item.createdAt)}
+                    footer={nameOf?.(entry.item.authorId)}
                     {...(compact ? { className: "max-w-[72%]" } : {})}
                   >
-                    {entry.body}
+                    {entry.item.body}
                   </MessageBubble>
                 ) : (
                   <MessageBubble
-                    key={entry.id}
-                    from={isOwn(entry) ? "self" : "other"}
+                    key={entry.item.id}
+                    from={isOwn(entry.item) ? "self" : "other"}
                     size={compact ? "sm" : "md"}
                     {...(compact
                       ? {
@@ -129,9 +143,9 @@ export function Thread({
                         }
                       : {})}
                     author={otherName}
-                    time={formatMessageTime(entry.createdAt)}
+                    time={formatMessageTime(entry.item.createdAt)}
                   >
-                    {entry.body}
+                    {entry.item.body}
                   </MessageBubble>
                 ),
               )}
@@ -143,7 +157,7 @@ export function Thread({
       <Composer
         conversationId={conversationId}
         variant={compact ? "card" : "bar"}
-        allowNotes={noteAuthor !== undefined}
+        allowNotes={forTeam}
       />
     </div>
   );

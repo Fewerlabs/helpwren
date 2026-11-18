@@ -24,6 +24,12 @@ export function ConversationRow({ conversation, teamName, onOpen }: Conversation
     >
       <Avatar name={teamName} size="sm" />
       <span className={unread ? "min-w-0 flex-1 text-sm font-medium" : "min-w-0 flex-1 text-sm"}>
+        {conversation.type === "ticket" ? (
+          <span className="text-muted-foreground block truncate text-xs font-normal">
+            Ticket #{conversation.ticketNumber}
+            {conversation.subject ? ` · ${conversation.subject}` : null}
+          </span>
+        ) : null}
         <span className="line-clamp-2">{conversation.lastMessagePreview}</span>
       </span>
       {unread ? (

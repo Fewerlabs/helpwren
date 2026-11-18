@@ -63,6 +63,7 @@ export {
 export { createHelpwrenClient, type HelpwrenClient, type HelpwrenClientOptions } from "./client";
 export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
+export { conversationEventSchema, type ConversationEvent } from "./events";
 export {
   allowedDomainSchema,
   guestDetailsSchema,

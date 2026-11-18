@@ -21,6 +21,7 @@ import { MessagesScreen } from "./messages-screen";
 import { ScreenHeader } from "./screen-header";
 import { StartForm } from "./start-form";
 import { TabBar } from "./tab-bar";
+import { TicketBar } from "./ticket-bar";
 
 export interface ChatProps {
   settings: PublicSettings;
@@ -60,6 +61,7 @@ function Screens({ settings, source }: ChatProps) {
   }
 
   if (screen.name === "conversation" && contactId) {
+    const open = earlier.find((item) => item.id === screen.id);
     return (
       <>
         <ScreenHeader
@@ -72,6 +74,7 @@ function Screens({ settings, source }: ChatProps) {
             </>
           }
         />
+        {open?.type === "ticket" ? <TicketBar ticket={open} /> : null}
         <Thread
           key={screen.id}
           conversationId={screen.id}

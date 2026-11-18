@@ -62,6 +62,23 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await expect(agentMessages.getByText("12 Harbour Road, please.")).toBeVisible();
   await expect(row).toContainText("12 Harbour Road, please.");
 
+  // The team makes it a ticket. The visitor sees that, and where it stands, without reloading.
+  await inbox.getByRole("button", { name: "Convert to ticket" }).click();
+  const dialog = inbox.getByRole("dialog", { name: "Convert to ticket" });
+  await dialog.getByLabel("Subject").fill("Change of delivery address");
+  await dialog.getByRole("button", { name: "Convert to ticket" }).click();
+  await expect(chat.getByText(/Ticket #\d{4}/)).toBeVisible();
+  await expect(chat.getByText("Change of delivery address")).toBeVisible();
+  await expect(visitorMessages.getByText(/This became ticket #\d{4}/)).toBeVisible();
+
+  await inbox.getByRole("button", { name: "Resolve" }).click();
+  await expect(visitorMessages.getByText("Marked as resolved")).toBeVisible();
+  await expect(chat.getByText("Resolved", { exact: true })).toBeVisible();
+  // Who has the ticket, and how urgent the team thinks it is, stays with the team.
+  await inbox.getByRole("button", { name: "Assign to me" }).click();
+  await expect(agentMessages.getByText("Sam Rivera took this")).toBeVisible();
+  await expect(visitorMessages.getByText(/took this|assigned/)).toHaveCount(0);
+
   // A reload lands on the same conversation, because it is in the address.
   await inbox.reload();
   await expect(agentMessages.getByText("12 Harbour Road, please.")).toBeVisible();

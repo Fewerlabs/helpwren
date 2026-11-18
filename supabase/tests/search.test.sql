@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(9);
+select plan(13);
 
 select tests.act_as_visitor();
 select throws_ok(
@@ -32,8 +32,36 @@ select is_empty(
   'a wildcard character is searched for as itself'
 );
 select is_empty(
-  $$ select * from public.search_conversations('Guest_A') $$,
+  $$ select * from public.search_conversations('Hello_from') $$,
   'and so is an underscore'
+);
+
+-- Tickets are found by number, with or without the hash, and by subject.
+update public.conversations set type = 'ticket', subject = 'Refund for a damaged order'
+where id = tests.thing('guest_b_conversation');
+
+select results_eq(
+  $$ select id from public.search_conversations(
+       (select ticket_number::text from public.conversations
+        where id = tests.thing('guest_b_conversation'))) $$,
+  $$ values (tests.thing('guest_b_conversation')) $$,
+  'a ticket is found by its number'
+);
+select results_eq(
+  $$ select id from public.search_conversations(
+       (select '#' || ticket_number from public.conversations
+        where id = tests.thing('guest_b_conversation'))) $$,
+  $$ values (tests.thing('guest_b_conversation')) $$,
+  'and by its number written with a hash'
+);
+select results_eq(
+  $$ select id from public.search_conversations('damaged order') $$,
+  $$ values (tests.thing('guest_b_conversation')) $$,
+  'and by its subject'
+);
+select is_empty(
+  $$ select * from public.search_conversations('#999999') $$,
+  'a number that is no ticket''s finds nothing'
 );
 
 select tests.act_as('guest_a');

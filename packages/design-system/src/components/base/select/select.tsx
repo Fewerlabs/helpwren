@@ -56,14 +56,15 @@ export function SelectContent({
       position={position}
       align={align}
       sideOffset={sideOffset}
-      className={cn("border-line border-border rounded-lg ring-0", className)}
+      // No padding: options run edge to edge, and the list's own corners clip the first and last.
+      className={cn("border-line border-border rounded-lg p-0 ring-0", className)}
       {...props}
     />
   );
 }
 
 export function SelectItem({ className, ...props }: SelectItemProps) {
-  return <UiSelectItem className={cn("min-h-9 py-2 pl-2", className)} {...props} />;
+  return <UiSelectItem className={cn("min-h-9 rounded-none py-2 pl-3", className)} {...props} />;
 }
 
 export function SelectLabel({ className, ...props }: ComponentProps<typeof UiSelectLabel>) {

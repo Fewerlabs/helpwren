@@ -14,8 +14,8 @@ create extension if not exists pgtap with schema extensions;
 
 -- Start from empty tables, so the tests give the same result with or without the demo data.
 -- Like everything else here, this is undone by the rollback.
-truncate public.settings, public.notes, public.messages, public.conversations, public.agents,
-  public.contacts;
+truncate public.settings, public.conversation_events, public.notes, public.messages,
+  public.conversations, public.agents, public.contacts;
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;

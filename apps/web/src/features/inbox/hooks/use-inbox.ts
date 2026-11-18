@@ -45,7 +45,8 @@ export const inboxViews = [
     id: "tickets",
     label: "Tickets",
     icon: "ticket",
-    filter: (): ConversationFilter => ({ type: "ticket", status: ACTIVE }),
+    // Every ticket, whatever its status: the table shows the status of each.
+    filter: (): ConversationFilter => ({ type: "ticket" }),
   },
   {
     id: "resolved",

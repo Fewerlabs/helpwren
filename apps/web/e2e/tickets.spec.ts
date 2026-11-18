@@ -67,33 +67,54 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   );
   await expect(page.getByRole("button", { name: "Convert to ticket" })).toHaveCount(0);
   await expect(details.getByText(/^#\d{4}$/)).toBeVisible();
-  await views.getByRole("link", { name: /Tickets/ }).click();
-  await expect(list.getByRole("button", { name: /Cracked screen on delivery/ })).toBeVisible();
+  // Its history says who did what.
+  const messages = page.getByRole("log", { name: "Messages" });
+  await expect(messages.getByText("Sam Rivera took this")).toBeVisible();
+  await expect(messages.getByText(/Sam Rivera converted this to ticket #\d{4}/)).toBeVisible();
 
-  // Priority is set from the details.
-  await list.getByRole("button", { name: /Cracked screen on delivery/ }).click();
+  // Tickets are a table: number, subject, status and who has it.
+  await views.getByRole("link", { name: /Tickets/ }).click();
+  const table = page.getByRole("table", { name: "Tickets" });
+  const row = table.getByRole("row").filter({ hasText: "Cracked screen on delivery" });
+  await expect(row).toContainText(/#\d{4}/);
+  await expect(row).toContainText("Open");
+  await expect(row).toContainText("Sam Rivera");
+  const number = /#\d{4}/.exec(await row.innerText())?.[0] ?? "";
+
+  // Opening one shows its conversation in the table's place. Priority is set from the details.
+  await row.getByRole("button", { name: "Cracked screen on delivery" }).click();
   await details.getByRole("combobox", { name: "Priority" }).click();
   await page.getByRole("option", { name: "High" }).click();
   await expect(details.getByRole("combobox", { name: "Priority" })).toContainText("High");
+  await expect(messages.getByText("Sam Rivera set the priority to high")).toBeVisible();
 
   // A note is for the team: it is shown as one, and is not a message to the contact.
   await conversation.getByRole("button", { name: "Note" }).click();
   const note = conversation.getByRole("textbox", { name: "Your note" });
   await note.fill("Courier confirmed the damage. Refund approved.");
   await conversation.getByRole("button", { name: "Add note" }).click();
-  const messages = page.getByRole("log", { name: "Messages" });
   await expect(messages.getByText("Courier confirmed the damage. Refund approved.")).toBeVisible();
   await expect(messages.getByText("Internal note")).toBeVisible();
   await expect(note).toHaveValue("");
   const sent = await database.from("messages").select("body").eq("conversation_id", conversationId);
   expect(sent.data).toEqual([{ body: "My order arrived with a cracked screen." }]);
 
-  // Resolving takes it out of the active views, and it can be reopened.
+  // Resolving keeps it open on screen, and it can be reopened.
   await conversation.getByRole("button", { name: "Resolve" }).click();
   await expect(conversation.getByRole("button", { name: "Reopen" })).toBeVisible();
-  await expect(list.getByRole("button", { name: /Cracked screen on delivery/ })).toHaveCount(0);
-  await views.getByRole("link", { name: /Resolved/ }).click();
-  await expect(list.getByRole("button", { name: /Cracked screen on delivery/ })).toBeVisible();
+  await expect(messages.getByText("Sam Rivera marked this as resolved")).toBeVisible();
+
+  // Back in the table it shows as resolved, and it leaves the active views.
+  await conversation.getByRole("button", { name: "Back to the list" }).click();
+  await expect(row).toContainText("Resolved");
+  await expect(row).toContainText("High");
+  await views.getByRole("link", { name: /My inbox/ }).click();
+  await expect(list.getByRole("button", { name: new RegExp(CONTACT.name) })).toHaveCount(0);
+
+  // The inbox search finds it by its number.
+  await page.getByRole("searchbox", { name: "Search conversations" }).fill(number);
+  await expect(list.getByRole("button")).toHaveCount(1);
+  await expect(list.getByRole("button")).toContainText("Cracked screen on delivery");
 
   const { data } = await database
     .from("conversations")

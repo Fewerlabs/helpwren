@@ -45,6 +45,7 @@ function renderList(props: Partial<ListPanelProps> = {}) {
   render(
     <ListPanel
       conversations={[conversation()]}
+      team={[]}
       failed={false}
       view={open}
       search=""

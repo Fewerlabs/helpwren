@@ -1,4 +1,4 @@
-import { type Message, type Note, type Page } from "@helpwren/core";
+import { type ConversationEvent, type Message, type Note, type Page } from "@helpwren/core";
 import {
   useInfiniteQuery,
   useMutation,
@@ -162,5 +162,51 @@ export function useAddNote(conversationId: string) {
     onSuccess: (note) => {
       addNote(queryClient, note);
     },
+  });
+}
+
+const eventsKey = (conversationId: string) => ["conversation", "events", conversationId];
+
+/**
+ * What happened to a conversation besides its messages, kept current. `team` also asks for the
+ * events only the team sees; pass it on the team's side only.
+ */
+export function useEvents(conversationId: string, team: boolean) {
+  const getClient = useHelpwren();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let stopped = false;
+    let stop: (() => Promise<void>) | undefined;
+
+    void getClient()
+      .events.subscribe(
+        conversationId,
+        (event) => {
+          queryClient.setQueryData<ConversationEvent[]>(eventsKey(conversationId), (events = []) =>
+            events.some((item) => item.id === event.id) ? events : [...events, event],
+          );
+        },
+        { team },
+      )
+      .then((unsubscribe) => {
+        if (stopped) {
+          void unsubscribe();
+        } else {
+          stop = unsubscribe;
+        }
+      })
+      // Without live updates, the activity shows on the next load.
+      .catch(() => undefined);
+
+    return () => {
+      stopped = true;
+      void stop?.();
+    };
+  }, [conversationId, getClient, queryClient, team]);
+
+  return useQuery({
+    queryKey: eventsKey(conversationId),
+    queryFn: () => getClient().events.list(conversationId),
   });
 }

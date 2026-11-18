@@ -136,6 +136,66 @@ describe("tickets", () => {
   });
 });
 
+describe("activity", () => {
+  it("records what the team did, and shows the contact only where their request stands", async () => {
+    const { client, agent } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    const id = guest.conversationId;
+
+    await client.conversations.convertToTicket(id, "Damaged order");
+    await client.conversations.update(id, { assigneeId: agent.id, priority: "high" });
+    await client.conversations.update(id, { status: "resolved" });
+
+    const forTeam = await client.events.list(id);
+    expect(forTeam.map((event) => event.kind).sort()).toEqual([
+      "assigned",
+      "priority_changed",
+      "status_changed",
+      "ticket_created",
+    ]);
+    expect(forTeam.every((event) => event.actorId === agent.id)).toBe(true);
+    expect(forTeam.find((event) => event.kind === "ticket_created")).toMatchObject({
+      data: { subject: "Damaged order" },
+    });
+
+    const forContact = await guest.client.events.list(id);
+    expect(forContact.map((event) => event.kind).sort()).toEqual([
+      "status_changed",
+      "ticket_created",
+    ]);
+  });
+
+  it("arrives live: everything for the team, and only their own part for the contact", async () => {
+    const { client, agent } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    const id = guest.conversationId;
+
+    const teamSaw: string[] = [];
+    const contactSaw: string[] = [];
+    const other = await signedInAgent("ada@example.com");
+    const stopTeam = await other.client.events.subscribe(id, (event) => teamSaw.push(event.kind), {
+      team: true,
+    });
+    const stopContact = await guest.client.events.subscribe(id, (event) =>
+      contactSaw.push(event.kind),
+    );
+    await expect(
+      guest.client.events.subscribe(id, () => undefined, { team: true }),
+    ).rejects.toThrow(/live updates/);
+
+    await client.conversations.update(id, { assigneeId: agent.id });
+    await client.conversations.update(id, { status: "resolved" });
+
+    await expect
+      .poll(() => [...teamSaw].sort(), { timeout: 15_000 })
+      .toEqual(["assigned", "status_changed"]);
+    await expect.poll(() => contactSaw, { timeout: 15_000 }).toEqual(["status_changed"]);
+
+    await stopTeam();
+    await stopContact();
+  });
+});
+
 describe("internal notes", () => {
   it("are written and read by the team, in order", async () => {
     const { client, agent } = await signedInAgent();

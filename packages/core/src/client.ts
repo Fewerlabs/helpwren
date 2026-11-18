@@ -3,6 +3,7 @@ import { createApi, type ApiOptions } from "./api";
 import { createAuth } from "./auth";
 import { createContacts } from "./contacts";
 import { createConversations } from "./conversations";
+import { createEvents } from "./events";
 import { createMessages } from "./messages";
 import { createNotes } from "./notes";
 import { createSessions } from "./sessions";
@@ -31,6 +32,7 @@ export function createHelpwrenClient({ supabase, ...apiOptions }: HelpwrenClient
     sessions: createSessions(supabase),
     contacts: createContacts(supabase),
     conversations: createConversations(supabase, api),
+    events: createEvents(supabase),
     messages: createMessages(supabase),
     notes: createNotes(supabase),
     settings: createSettings(supabase),

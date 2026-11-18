@@ -77,6 +77,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      conversation_events: {
+        Row: {
+          actor_id: string | null;
+          conversation_id: string;
+          created_at: string;
+          data: NonNullable<Json>;
+          id: string;
+          kind: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          data?: NonNullable<Json>;
+          id?: string;
+          kind: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          data?: NonNullable<Json>;
+          id?: string;
+          kind?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_events_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       conversations: {
         Row: {
           assignee_id: string | null;

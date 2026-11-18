@@ -18,6 +18,10 @@ const isFromTeam = (message: Message) => message.senderRole === "agent";
 export interface ConversationPanelProps {
   conversation: ConversationWithContact;
   team: readonly TeamMember[];
+  /** The signed-in team member, for "Assign to me". */
+  agentId: string;
+  /** Shows the back button at every width, for a view with no list beside the conversation. */
+  backAlways?: boolean;
   /** Returns to the list. Shown only where the list and conversation do not fit side by side. */
   onBack: () => void;
   onRead: () => void;
@@ -30,6 +34,8 @@ export interface ConversationPanelProps {
 export function ConversationPanel({
   conversation,
   team,
+  agentId,
+  backAlways = false,
   onBack,
   onRead,
   detailsOpen,
@@ -42,9 +48,16 @@ export function ConversationPanel({
   const isTicket = conversation.type === "ticket";
   const done = conversation.status === "resolved" || conversation.status === "closed";
 
-  const noteAuthor = useCallback(
-    (authorId: string) => team.find((member) => member.id === authorId)?.name ?? "A team member",
-    [team],
+  // Names for notes and activity: a team member, the contact, or the system.
+  const contactId = conversation.contactId;
+  const nameOf = useCallback(
+    (id: string | null) =>
+      id === null
+        ? "The system"
+        : id === contactId
+          ? name
+          : (team.find((member) => member.id === id)?.name ?? "A team member"),
+    [contactId, name, team],
   );
 
   return (
@@ -53,8 +66,8 @@ export function ConversationPanel({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Back to the inbox"
-          className="md:hidden"
+          aria-label="Back to the list"
+          className={backAlways ? undefined : "md:hidden"}
           onClick={onBack}
         >
           <Icon name="caret-left" />
@@ -83,6 +96,17 @@ export function ConversationPanel({
               <Icon name="ticket" />
             </Button>
           </Tooltip>
+        )}
+        {conversation.assigneeId === agentId ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              change.mutate({ assigneeId: agentId });
+            }}
+          >
+            Assign to me
+          </Button>
         )}
         <Button
           variant="secondary"
@@ -115,7 +139,7 @@ export function ConversationPanel({
         otherName={name}
         onRead={onRead}
         density="compact"
-        noteAuthor={noteAuthor}
+        nameOf={nameOf}
       />
       <TicketDialog
         open={ticketDialogOpen}

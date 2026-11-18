@@ -25,6 +25,7 @@ import {
 import { ConversationPanel } from "./conversation-panel";
 import { DetailsPanel } from "./details-panel";
 import { ListPanel } from "./list-panel";
+import { TicketTable } from "./ticket-table";
 
 /**
  * The team's inbox: its views down the side, then the list of conversations, the open one, and
@@ -60,17 +61,72 @@ export function Inbox({ agent }: InboxProps) {
         (loaded?.id === selectedId ? loaded : undefined));
   const change = useChangeConversation(selectedId ?? "");
 
+  // Tickets are tracked more than chatted through, so their view is a table with no list
+  // beside it. Opening one shows its conversation in the table's place.
+  const asTable = view.id === "tickets" && !searching;
+
+  const openConversation = selected ? (
+    <>
+      <ConversationPanel
+        conversation={selected}
+        team={team}
+        agentId={agent.id}
+        backAlways={asTable}
+        onRead={refresh}
+        onBack={() => {
+          select(null);
+        }}
+        detailsOpen={detailsOpen}
+        onToggleDetails={() => {
+          setDetailsOpen((open) => !open);
+        }}
+      />
+      {detailsOpen ? (
+        <DetailsPanel
+          conversation={selected}
+          team={team}
+          onChange={change.mutate}
+          className="max-xl:hidden"
+        />
+      ) : null}
+    </>
+  ) : null;
+
+  const nav = inboxViews.map((item) => ({
+    href: viewHref(item),
+    label: item.label,
+    icon: item.icon,
+    count: counts[item.id],
+    active: item.id === view.id,
+  }));
+  const columns = cn(
+    "divide-rule grid divide-x",
+    selected && detailsOpen && "xl:grid-cols-[minmax(0,1fr)_17rem]",
+  );
+
+  if (asTable) {
+    return (
+      <DashboardPage title="Inbox" navLabel="Inbox views" nav={nav} className={columns}>
+        {openConversation ?? (
+          <TicketTable
+            tickets={conversations.data}
+            team={team}
+            failed={conversations.isError}
+            onRetry={() => {
+              void conversations.refetch();
+            }}
+            onOpen={select}
+          />
+        )}
+      </DashboardPage>
+    );
+  }
+
   return (
     <DashboardPage
       title="Inbox"
       navLabel="Inbox views"
-      nav={inboxViews.map((item) => ({
-        href: viewHref(item),
-        label: item.label,
-        icon: item.icon,
-        count: counts[item.id],
-        active: item.id === view.id,
-      }))}
+      nav={nav}
       listHiddenWhenNarrow={Boolean(selected)}
       list={
         <ListPanel
@@ -81,6 +137,7 @@ export function Inbox({ agent }: InboxProps) {
           searching={searching}
           loading={conversations.isFetching}
           conversations={conversations.data}
+          team={team}
           failed={conversations.isError}
           onRetry={() => {
             void conversations.refetch();
@@ -89,35 +146,9 @@ export function Inbox({ agent }: InboxProps) {
           onSelect={select}
         />
       }
-      className={cn(
-        "divide-rule grid divide-x",
-        selected && detailsOpen && "xl:grid-cols-[minmax(0,1fr)_17rem]",
-      )}
+      className={columns}
     >
-      {selected ? (
-        <>
-          <ConversationPanel
-            conversation={selected}
-            team={team}
-            onRead={refresh}
-            onBack={() => {
-              select(null);
-            }}
-            detailsOpen={detailsOpen}
-            onToggleDetails={() => {
-              setDetailsOpen((open) => !open);
-            }}
-          />
-          {detailsOpen ? (
-            <DetailsPanel
-              conversation={selected}
-              team={team}
-              onChange={change.mutate}
-              className="max-xl:hidden"
-            />
-          ) : null}
-        </>
-      ) : (
+      {openConversation ?? (
         <Panel aria-label="Conversation">
           <EmptyState
             scene="conversations"

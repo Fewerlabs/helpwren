@@ -41,3 +41,13 @@ that its contact must never see.
   belongs with notifications and email.
 - The reply box has two modes one click apart. The note mode is tinted and dashed so a note is
   not mistaken for a reply, but the risk of writing in the wrong one is real.
+
+## Later changes
+
+- 2026-11-18: the database records a conversation's activity itself (`conversation_events`): it
+  became a ticket, its status changed, it was assigned, its priority changed. The thread shows
+  these among the messages. A contact sees only that it became a ticket and its status, in the
+  chat, with the ticket's number and subject; assignment and priority stay with the team and
+  travel on the team's live channel.
+- 2026-11-18: the Tickets view is a table of every ticket, whatever its status, and opening one
+  shows its conversation in the table's place. Search finds a ticket by its number or subject.

@@ -1,14 +1,16 @@
 "use client";
 
-import { type ConversationWithContact } from "@helpwren/core";
+import { type ConversationWithContact, type TeamMember } from "@helpwren/core";
 import {
   Avatar,
   Button,
   cn,
   EmptyState,
+  Icon,
   SearchField,
   Skeleton,
   StatusChip,
+  Tooltip,
 } from "@helpwren/design-system";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
@@ -20,13 +22,15 @@ import { statuses, ticketLabel } from "../labels";
 
 interface RowProps {
   conversation: ConversationWithContact;
+  /** The name of whoever it is assigned to, if anyone. */
+  assignee: string | undefined;
   selected: boolean;
   showStatus: boolean;
   onSelect: () => void;
 }
 
 /** One conversation in the list. Unread ones are heavier, so they stand out when scanning. */
-function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
+function Row({ conversation, assignee, selected, showStatus, onSelect }: RowProps) {
   const name = contactName(conversation.contact);
   const unread = conversation.unreadForAgents;
 
@@ -43,8 +47,18 @@ function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
       <Avatar name={name} size="sm" className="text-2xs mt-0.5 size-7" />
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
-          <span className={cn("truncate", unread > 0 ? "font-semibold" : "font-medium")}>
-            {name}
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className={cn("truncate", unread > 0 ? "font-semibold" : "font-medium")}>
+              {name}
+            </span>
+            {conversation.priority === "high" ? (
+              <Icon
+                name="warning-circle"
+                weight="fill"
+                label="High priority"
+                className="text-destructive size-3.5"
+              />
+            ) : null}
           </span>
           {conversation.lastMessageAt ? (
             <span className="text-muted-foreground text-2xs shrink-0 tabular-nums">
@@ -68,18 +82,22 @@ function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
               ? conversation.subject
               : conversation.lastMessagePreview}
           </span>
-          {unread > 0 ? (
-            <span className="bg-primary text-primary-foreground text-2xs grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 font-medium">
-              {unread}
-              <span className="sr-only"> unread</span>
-            </span>
-          ) : showStatus ? (
-            <StatusChip
-              status={statuses[conversation.status].chip}
-              size="sm"
-              className="shrink-0"
-            />
-          ) : null}
+          <span className="flex shrink-0 items-center gap-1.5">
+            {showStatus ? (
+              <StatusChip status={statuses[conversation.status].chip} size="sm" />
+            ) : null}
+            {assignee ? (
+              <Tooltip content={`Assigned to ${assignee}`}>
+                <Avatar name={assignee} size="sm" className="size-4 text-[0.5rem]" />
+              </Tooltip>
+            ) : null}
+            {unread > 0 ? (
+              <span className="bg-primary text-primary-foreground text-2xs grid h-4 min-w-4 place-items-center rounded-full px-1 font-medium">
+                {unread}
+                <span className="sr-only"> unread</span>
+              </span>
+            ) : null}
+          </span>
         </span>
       </span>
     </button>
@@ -88,6 +106,7 @@ function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
 
 export interface ListPanelProps {
   conversations: readonly ConversationWithContact[] | undefined;
+  team: readonly TeamMember[];
   failed: boolean;
   onRetry: () => void;
   view: InboxView;
@@ -105,6 +124,7 @@ export interface ListPanelProps {
 /** The left panel: every conversation, most recently active first. */
 export function ListPanel({
   conversations,
+  team,
   failed,
   onRetry,
   view,
@@ -184,6 +204,7 @@ export function ListPanel({
               <li key={conversation.id}>
                 <Row
                   conversation={conversation}
+                  assignee={team.find((member) => member.id === conversation.assigneeId)?.name}
                   selected={conversation.id === selectedId}
                   // Only the view of everything mixes statuses; elsewhere it would be noise.
                   showStatus={searching || view.id === "all"}
