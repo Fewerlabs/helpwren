@@ -12,6 +12,9 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   use: {
     baseURL: "http://localhost:3000",
+    // A step that cannot be done fails with its own explanation, well before the whole test does.
+    actionTimeout: 10_000,
+    navigationTimeout: 15_000,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

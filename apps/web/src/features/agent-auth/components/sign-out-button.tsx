@@ -1,4 +1,4 @@
-import { Button } from "@helpwren/design-system";
+import { Button, Icon, Tooltip } from "@helpwren/design-system";
 
 import { signOut } from "../actions";
 
@@ -6,9 +6,11 @@ import { signOut } from "../actions";
 export function SignOutButton() {
   return (
     <form action={signOut}>
-      <Button type="submit" variant="secondary" size="sm">
-        Sign out
-      </Button>
+      <Tooltip content="Sign out" side="right">
+        <Button type="submit" variant="ghost" size="icon-sm" aria-label="Sign out">
+          <Icon name="sign-out" />
+        </Button>
+      </Tooltip>
     </form>
   );
 }

@@ -31,13 +31,13 @@ export async function readSignInCode(request: APIRequestContext, email: string):
   return code ?? "";
 }
 
-/** Signs a team member from the demo data in to the inbox, through the sign-in page. */
+/** Signs a team member from the demo data in to the dashboard, through the sign-in page. */
 export async function signInToInbox(page: Page, email: string) {
   await emptyMailbox(page.request);
-  await page.goto("/inbox/login");
+  await page.goto("/login");
   await page.getByLabel("Work email").fill(email);
   await page.getByRole("button", { name: "Email me a code" }).click();
   await page.getByLabel("Sign-in code").fill(await readSignInCode(page.request, email));
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page).toHaveURL(/\/dashboard\/inbox$/);
 }

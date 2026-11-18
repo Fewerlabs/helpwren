@@ -68,7 +68,7 @@ export function ListPanel({
                 "border-line focus-visible:outline-ring h-7 rounded-full px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
                 filter === option.value
                   ? "border-foreground bg-foreground text-background font-medium"
-                  : "border-border text-muted-foreground hover:text-foreground",
+                  : "border-rule text-muted-foreground hover:text-foreground",
               )}
               onClick={() => {
                 onFilterChange(option.value);

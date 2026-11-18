@@ -42,7 +42,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
   thirty components, the wren illustrations, and components for data fetching and forms. Browse it
   with `pnpm storybook`.
 - **The app** (`apps/web`): a Next.js app with the visitor's chat at `/embed`, the team's inbox
-  at `/inbox`, placeholder routes for the rest, and `/design`, which shows the design system running in the app together
+  at `/dashboard`, placeholder routes for the rest, and `/design`, which shows the design system running in the app together
   with a worked example feature.
 - **The database** (`supabase/`): the first tables, the rules for who can read and write each
   row, and tests that prove them.
@@ -56,7 +56,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 
 ```
 apps/
-  web/                 Next.js app: /embed, /help, /inbox, /api (placeholder routes for now)
+  web/                 Next.js app: /embed, /help, /dashboard, /api
 packages/
   design-system/       Tokens, components and illustrations
   core/                Headless client library

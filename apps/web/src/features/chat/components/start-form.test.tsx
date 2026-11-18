@@ -29,6 +29,7 @@ function renderForm(guestDetails: GuestDetails, returning = false) {
         <StartForm
           guestDetails={guestDetails}
           defaultCountry="NG"
+          teamName="Acme"
           source="web"
           returning={returning}
         />

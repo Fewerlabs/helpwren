@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getHelpwren } from "@/lib/helpwren";
 
-import { INBOX_PATH, LOGIN_PATH } from "./routes";
+import { DASHBOARD_PATH, LOGIN_PATH } from "./routes";
 
 export type RequestLoginCodeResult =
   { ok: true } | { ok: false; reason: "invalid_email" | "failed" };
@@ -45,7 +45,7 @@ export async function submitLoginCode(email: string, code: string): Promise<Subm
   }
 
   if (!result.ok) return result;
-  redirect(INBOX_PATH);
+  redirect(DASHBOARD_PATH);
 }
 
 export async function signOut(): Promise<never> {

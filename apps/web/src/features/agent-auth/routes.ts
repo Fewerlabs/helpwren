@@ -1,2 +1,3 @@
-export const INBOX_PATH = "/inbox";
-export const LOGIN_PATH = "/inbox/login";
+/** Where a team member lands after signing in. */
+export const DASHBOARD_PATH = "/dashboard";
+export const LOGIN_PATH = "/login";

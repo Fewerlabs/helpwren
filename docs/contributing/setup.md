@@ -76,9 +76,9 @@ node examples/plain-html/serve.mjs
 
 Then open http://127.0.0.1:4100.
 
-### Signing in to the inbox
+### Signing in to the dashboard
 
-Open http://localhost:3000/inbox and enter one of the demo emails. The six-digit code arrives in
+Open http://localhost:3000/dashboard and enter one of the demo emails. The six-digit code arrives in
 Mailpit, the local test mailbox, at http://127.0.0.1:54324. Keep `/embed` open in another
 window to write as a visitor and see both sides update live. To add yourself:
 

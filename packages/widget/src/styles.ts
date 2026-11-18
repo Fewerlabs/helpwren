@@ -5,8 +5,8 @@ export const styles = `
   all: initial;
   --hw-accent: #3d6b57;
   --hw-accent-ink: #ffffff;
-  --hw-surface: #f7f4ed;
-  --hw-edge: #8f8778;
+  --hw-surface: #ffffff;
+  --hw-edge: #e3ddd0;
   --hw-ink: #26231e;
 }
 
@@ -64,7 +64,7 @@ export const styles = `
   max-height: calc(100vh - 104px);
   max-height: calc(100dvh - 104px);
   overflow: hidden;
-  border: 1.5px solid var(--hw-edge);
+  border: 1px solid var(--hw-edge);
   border-radius: 20px;
   background: var(--hw-surface);
   box-shadow: 0 12px 40px rgb(38 35 30 / 0.16);

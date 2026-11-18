@@ -63,7 +63,7 @@ export function useLiveInbox() {
 const SELECTED = "c";
 
 /**
- * The open conversation, kept in the address (`/inbox?c=<id>`) so that a reload, the back
+ * The open conversation, kept in the address (`/dashboard/inbox?c=<id>`) so that a reload, the back
  * button and a shared link all land on the same conversation.
  */
 export function useSelectedConversation() {

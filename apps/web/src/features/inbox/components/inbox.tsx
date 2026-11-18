@@ -1,12 +1,8 @@
 "use client";
 
-import { type Agent } from "@helpwren/core";
-import { Avatar, cn, EmptyState, Logo } from "@helpwren/design-system";
-import { useState, type ReactNode } from "react";
+import { cn, EmptyState } from "@helpwren/design-system";
+import { useState } from "react";
 
-import { HelpwrenProvider } from "@/lib/helpwren-context";
-
-import { getInboxClient } from "../client";
 import {
   useInboxConversations,
   useLiveInbox,
@@ -18,12 +14,6 @@ import { ConversationPanel } from "./conversation-panel";
 import { DetailsPanel } from "./details-panel";
 import { ListPanel } from "./list-panel";
 import { Panel } from "./panel";
-
-export interface InboxProps {
-  agent: Agent;
-  /** The sign-out control, passed in because signing out belongs to another feature. */
-  signOut: ReactNode;
-}
 
 function Panels() {
   const [filter, setFilter] = useState<InboxFilter>("open");
@@ -76,24 +66,13 @@ function Panels() {
 
 /**
  * The team's inbox: the list of conversations, the open one, and details about who it is with,
- * as three panels side by side. Narrower screens drop the details, then show one panel at a time.
+ * as three panels side by side. Narrower screens drop the details, then show one panel at a
+ * time. It fills the space the dashboard gives it.
  */
-export function Inbox({ agent, signOut }: InboxProps) {
+export function Inbox() {
   return (
-    <HelpwrenProvider getClient={getInboxClient}>
-      <div className="bg-background flex h-dvh flex-col gap-3 p-3">
-        <header className="flex h-9 shrink-0 items-center justify-between gap-3 px-1">
-          <Logo variant="lockup" size={22} />
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2 text-sm">
-              <Avatar name={agent.name} size="sm" className="text-2xs size-6" />
-              <span className="max-sm:hidden">{agent.name}</span>
-            </span>
-            {signOut}
-          </div>
-        </header>
-        <Panels />
-      </div>
-    </HelpwrenProvider>
+    <div className="flex h-full flex-col p-3">
+      <Panels />
+    </div>
   );
 }

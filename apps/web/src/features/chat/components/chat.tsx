@@ -87,14 +87,13 @@ function Screens({ settings, source }: ChatProps) {
     return (
       <>
         <ScreenHeader onBack={back} onClose={onClose} title="New conversation" />
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <StartForm
-            guestDetails={settings.guestDetails}
-            defaultCountry={settings.defaultCountry}
-            source={source}
-            returning={earlier.length > 0}
-          />
-        </div>
+        <StartForm
+          guestDetails={settings.guestDetails}
+          defaultCountry={settings.defaultCountry}
+          source={source}
+          teamName={teamName}
+          returning={earlier.length > 0}
+        />
       </>
     );
   }
@@ -119,7 +118,8 @@ function Screens({ settings, source }: ChatProps) {
 export function Chat(props: ChatProps) {
   return (
     <HelpwrenProvider getClient={getChatClient}>
-      <div className="bg-background flex h-dvh flex-col">
+      {/* White, so the chat reads as its own surface on whatever site it sits in. */}
+      <div className="dark:bg-background flex h-dvh flex-col bg-white">
         <Screens {...props} />
       </div>
     </HelpwrenProvider>

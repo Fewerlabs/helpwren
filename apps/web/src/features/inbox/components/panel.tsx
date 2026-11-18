@@ -6,7 +6,9 @@ export function Panel({ className, ...props }: ComponentProps<"section">) {
   return (
     <section
       className={cn(
-        "border-line border-border bg-card flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl",
+        // A panel is a surface, not a control, so its edge is the quiet rule colour, not the
+        // stronger one that marks inputs and buttons.
+        "border-rule dark:bg-card flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border bg-white",
         className,
       )}
       {...props}

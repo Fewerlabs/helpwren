@@ -45,3 +45,8 @@ Sign-in also sets the pattern for how the app talks to Supabase and to `@helpwre
   that belongs with the abuse protection work.
 - The app now needs two environment variables to start, so a fresh checkout needs `pnpm db:env`
   or a copied `.env.example` before it builds.
+
+## Later changes
+
+- 2026-11-18: the team's screens moved from `/inbox` to `/dashboard`, and sign-in from
+  `/inbox/login` to `/login`. Where this record says `/inbox`, read `/dashboard`.

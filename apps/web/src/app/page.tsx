@@ -3,7 +3,7 @@ import Link from "next/link";
 const sections = [
   { href: "/embed", label: "Embed" },
   { href: "/help", label: "Help center" },
-  { href: "/inbox", label: "Inbox" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/design", label: "Design system" },
 ] as const;
 

@@ -11,8 +11,8 @@ test.beforeEach(async ({ request }) => {
 });
 
 test("a team member signs in with an emailed code and signs out", async ({ page, request }) => {
-  await page.goto("/inbox");
-  await expect(page).toHaveURL(/\/inbox\/login$/);
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/login$/);
 
   await page.getByLabel("Work email").fill(AGENT.email);
   await page.getByRole("button", { name: "Email me a code" }).click();
@@ -25,25 +25,25 @@ test("a team member signs in with an emailed code and signs out", async ({ page,
   await codeField.fill(await readSignInCode(request, AGENT.email));
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page).toHaveURL(/\/dashboard\/inbox$/);
   await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
-  await expect(page.getByText(AGENT.name)).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Dashboard" })).toBeVisible();
 
-  await page.goto("/inbox/login");
-  await expect(page, "someone signed in skips the sign-in page").toHaveURL(/\/inbox$/);
+  await page.goto("/login");
+  await expect(page, "someone signed in skips the sign-in page").toHaveURL(/\/dashboard\/inbox$/);
 
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/\/inbox\/login$/);
+  await expect(page).toHaveURL(/\/login$/);
 
-  await page.goto("/inbox");
-  await expect(page, "the inbox is closed again after signing out").toHaveURL(/\/inbox\/login$/);
+  await page.goto("/dashboard");
+  await expect(page, "the inbox is closed again after signing out").toHaveURL(/\/login$/);
 });
 
 test("an email that is not on the team gets the same answer and no code", async ({
   page,
   request,
 }) => {
-  await page.goto("/inbox/login");
+  await page.goto("/login");
   await page.getByLabel("Work email").fill("nobody@example.com");
   await page.getByRole("button", { name: "Email me a code" }).click();
 

@@ -7,10 +7,10 @@ let client: HelpwrenClient | undefined;
 
 /**
  * The Helpwren client for the team member in this browser. It shares the session the sign-in
- * page put in cookies, so the inbox needs no sign-in of its own. Call it from effects, event
+ * page put in cookies, so the dashboard needs no sign-in of its own. Call it from effects, event
  * handlers and query functions, never while rendering on the server.
  */
-export function getInboxClient(): HelpwrenClient {
+export function getDashboardClient(): HelpwrenClient {
   client ??= createHelpwrenClient({
     supabase: createBrowserClient<Database>(
       env.NEXT_PUBLIC_SUPABASE_URL,

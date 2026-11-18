@@ -7,10 +7,19 @@ import {
   phoneSchema,
   type GuestDetails,
 } from "@helpwren/core";
-import { Button, FieldList, Icon, toCountryCode, type FieldItem } from "@helpwren/design-system";
+import {
+  Avatar,
+  Button,
+  FieldList,
+  Icon,
+  Textarea,
+  toCountryCode,
+  Wren,
+  type FieldItem,
+} from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -100,7 +109,6 @@ function fieldsFor(
             label: "Email",
             type: "input",
             required: true,
-            hint: "So we can reply if you leave.",
             props: {
               type: "email",
               autoComplete: "email",
@@ -113,7 +121,6 @@ function fieldsFor(
             label: "Phone number",
             type: "phone",
             required: true,
-            hint: "So we can reach you if you leave.",
             props: {
               autoComplete: "tel",
               // Pasting a number from another country still switches to it.
@@ -127,7 +134,7 @@ function fieldsFor(
     label: "Your message",
     type: "textarea",
     required: true,
-    props: { rows: 4, placeholder: "How can we help?" },
+    props: { rows: 5, placeholder: "How can we help?" },
   });
   return fields;
 }
@@ -137,12 +144,20 @@ export interface StartFormProps {
   /** The country the phone field starts on, as a two-letter code from the install's settings. */
   defaultCountry: string;
   source: string;
+  /** Who the visitor is writing to. */
+  teamName: string;
   /** True when the visitor has written before, and so has already said who they are. */
   returning: boolean;
 }
 
 /** Starts a conversation: who the visitor is, if the install asks, and their first message. */
-export function StartForm({ guestDetails, defaultCountry, source, returning }: StartFormProps) {
+export function StartForm({
+  guestDetails,
+  defaultCountry,
+  source,
+  teamName,
+  returning,
+}: StartFormProps) {
   const getClient = useHelpwren();
   const queryClient = useQueryClient();
   const show = useShowScreen();
@@ -193,27 +208,84 @@ export function StartForm({ guestDetails, defaultCountry, source, returning }: S
     }
   }
 
+  const submit: NonNullable<ComponentProps<"form">["onSubmit"]> = (event) => {
+    void form.handleSubmit(start)(event);
+  };
+  const { errors, isSubmitting } = form.formState;
+  const failure = errors.root?.message;
+
+  // With nothing to ask, the screen is a conversation waiting for its first message.
+  if (ask === "nothing" || ask === "none") {
+    const message = form.register("message");
+    return (
+      <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto px-8 text-center">
+          <Wren scene="conversations" decorative className="w-36" />
+          <h2 className="pt-2 text-base font-semibold">What can we help with?</h2>
+          <p className="text-muted-foreground text-sm">
+            Write your message below. {teamName} will reply here.
+          </p>
+        </div>
+        <div className="border-rule grid gap-2 border-t p-3">
+          {(failure ?? errors.message?.message) ? (
+            <p role="alert" className="text-destructive text-xs">
+              {failure ?? errors.message?.message}
+            </p>
+          ) : null}
+          <div className="flex items-end gap-2">
+            <Textarea
+              aria-label="Your message"
+              placeholder="Write a message"
+              rows={1}
+              maxLength={MESSAGE_MAX_LENGTH}
+              className="max-h-32 min-h-10 flex-1 resize-none"
+              disabled={isSubmitting}
+              {...message}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <Button type="submit" size="icon" aria-label="Send message" loading={isSubmitting}>
+              <Icon name="paper-plane-tilt" />
+            </Button>
+          </div>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form
-      noValidate
-      className="grid gap-5 p-4"
-      onSubmit={(event) => {
-        void form.handleSubmit(start)(event);
-      }}
-    >
-      <FieldList
-        control={form.control}
-        fields={fieldsFor(ask, replyBy, defaultCountry)}
-        disabled={form.formState.isSubmitting}
-      />
-      {form.formState.errors.root ? (
-        <p role="alert" className="text-destructive text-sm">
-          {form.formState.errors.root.message}
-        </p>
-      ) : null}
-      <Button type="submit" loading={form.formState.isSubmitting}>
-        Send message
-      </Button>
+    <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <div className="flex items-center gap-3 py-4">
+          <Avatar name={teamName} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{teamName}</p>
+            <p className="text-muted-foreground text-sm">
+              Tell us who you are, so we can reply if you leave.
+            </p>
+          </div>
+        </div>
+        <FieldList
+          control={form.control}
+          fields={fieldsFor(ask, replyBy, defaultCountry)}
+          disabled={isSubmitting}
+        />
+      </div>
+      <div className="border-rule grid gap-2 border-t p-3">
+        {failure ? (
+          <p role="alert" className="text-destructive text-sm">
+            {failure}
+          </p>
+        ) : null}
+        <Button type="submit" loading={isSubmitting}>
+          Send message
+          <Icon name="paper-plane-tilt" />
+        </Button>
+      </div>
     </form>
   );
 }

@@ -199,7 +199,7 @@ export default function DesignPage() {
           <ul className="border-line bg-card flex flex-col gap-0.5 self-start rounded-2xl p-1.5">
             <li>
               <ConversationListItem
-                href="/inbox"
+                href="/dashboard/inbox"
                 name="Ada Lovelace"
                 preview="I was charged twice for my booking"
                 time="2m"
@@ -209,7 +209,7 @@ export default function DesignPage() {
             </li>
             <li>
               <ConversationListItem
-                href="/inbox"
+                href="/dashboard/inbox"
                 name="Grace Hopper"
                 preview="Thanks, that fixed it"
                 time="1h"
@@ -219,7 +219,7 @@ export default function DesignPage() {
             </li>
             <li>
               <ConversationListItem
-                href="/inbox"
+                href="/dashboard/inbox"
                 name="Alan Turing"
                 preview="Can I move my booking to Tuesday?"
                 time="Mon"

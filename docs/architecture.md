@@ -9,7 +9,7 @@ pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 
 | Workspace                | Role                                                              |
 | ------------------------ | ----------------------------------------------------------------- |
-| `apps/web`               | The one Next.js app: `/embed`, `/help`, `/inbox`, `/api`          |
+| `apps/web`               | The one Next.js app: `/embed`, `/help`, `/dashboard`, `/api`      |
 | `packages/design-system` | Tokens, components and illustrations                              |
 | `packages/core`          | Headless client library                                           |
 | `packages/widget`        | The script a site loads to show the chat, published as `helpwren` |
@@ -65,12 +65,12 @@ with a message naming it. Add a variable to the schema and to `.env.example` in 
 Screens never read tables. They call `@helpwren/core`, and the app's only job is to give it a
 Supabase client that knows whose request this is.
 
-| File                                 | Role                                                          |
-| ------------------------------------ | ------------------------------------------------------------- |
-| `src/lib/supabase/server.ts`         | A Supabase client for the current request, from its cookies   |
-| `src/lib/helpwren.ts`                | `getHelpwren()`: the client library on top of that client     |
-| `src/proxy.ts`                       | Refreshes the session before a page renders. Runs on `/inbox` |
-| `src/features/agent-auth/session.ts` | `requireAgent()`, which every team-only page calls first      |
+| File                                 | Role                                                              |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| `src/lib/supabase/server.ts`         | A Supabase client for the current request, from its cookies       |
+| `src/lib/helpwren.ts`                | `getHelpwren()`: the client library on top of that client         |
+| `src/proxy.ts`                       | Refreshes the session before a page renders. Runs on `/dashboard` |
+| `src/features/agent-auth/session.ts` | `requireAgent()`, which every team-only page calls first          |
 
 These are server-only. Client components reach the server through Server Actions, as the sign-in
 form does. See [ADR 0007](decisions/0007-agent-sign-in.md).
@@ -88,13 +88,22 @@ block cookies. Two rules follow from that:
   cache (`src/features/chat/hooks/use-chat.ts`), so a message that arrives over the live channel
   and one that arrives from a reload are the same thing to the components.
 
+### The dashboard
+
+Everything the team uses is under `/dashboard`. `src/app/dashboard/layout.tsx` checks the sign-in
+and wraps every page in `DashboardShell` (`src/features/dashboard`), which draws the sidebar and
+provides the signed-in team member's Helpwren client to the sections inside it. Each page also
+calls `requireAgent()` itself, because a layout is not re-run on every navigation. A new section
+is a folder under `src/app/dashboard`, a feature, and an entry in
+`src/features/dashboard/sections.ts`.
+
 ### Three features, one thread
 
-| Feature        | Whose screen  | Its client                                                     |
-| -------------- | ------------- | -------------------------------------------------------------- |
-| `chat`         | The visitor's | `chat/client.ts`: session in the browser's storage             |
-| `inbox`        | The team's    | `inbox/client.ts`: the session the sign-in page put in cookies |
-| `conversation` | Both          | None of its own                                                |
+| Feature        | Whose screen  | Its client                                                                           |
+| -------------- | ------------- | ------------------------------------------------------------------------------------ |
+| `chat`         | The visitor's | `chat/client.ts`: session in the browser's storage                                   |
+| `inbox`        | The team's    | The dashboard's (`dashboard/client.ts`): the session the sign-in page put in cookies |
+| `conversation` | Both          | None of its own                                                                      |
 
 `conversation` holds `Thread`: a conversation's messages, live, and the reply box. It takes its
 client from `HelpwrenProvider` (`src/lib/helpwren-context.tsx`), which each screen sets up with
@@ -185,17 +194,19 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route                               | What it is                                                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `/design`                           | The design system running in the app, with the example feature at the bottom                                  |
-| `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
-| `/help`                             | The public help center (placeholder)                                                                          |
-| `/inbox`                            | The team's inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation   |
-| `/inbox/login`                      | Sign-in for team members                                                                                      |
-| `/widget.js`                        | The widget script, built from `packages/widget`                                                               |
-| `/api/health`                       | Returns `{ "status": "ok" }`                                                                                  |
-| `POST /api/conversations`           | Starts a conversation with its first message                                                                  |
-| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                            |
+| Route                                    | What it is                                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `/design`                                | The design system running in the app, with the example feature at the bottom                                  |
+| `/embed`                                 | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded |
+| `/help`                                  | The public help center (placeholder)                                                                          |
+| `/dashboard`                             | The team's screens, behind one sign-in check. Redirects to the inbox                                          |
+| `/dashboard/inbox`                       | The inbox: conversations, the open one, and details, in three panels. `?c=` is the open conversation          |
+| `/dashboard/help`, `/users`, `/settings` | Sections that are planned; each says what is coming                                                           |
+| `/login`                                 | Sign-in for team members                                                                                      |
+| `/widget.js`                             | The widget script, built from `packages/widget`                                                               |
+| `/api/health`                            | Returns `{ "status": "ok" }`                                                                                  |
+| `POST /api/conversations`                | Starts a conversation with its first message                                                                  |
+| `POST /api/conversations/{id}/read`      | Marks a conversation as read for the caller's side                                                            |
 
 ## The design system
 
