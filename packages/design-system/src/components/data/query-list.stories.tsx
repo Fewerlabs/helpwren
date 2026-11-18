@@ -83,6 +83,14 @@ const list = {
   listClassName: "divide-rule divide-y",
 };
 
+/**
+ * Waits for the first page, so the accessibility check sees the list scrolling in its box and
+ * not the loading state that comes before it.
+ */
+const waitForList: Story["play"] = async ({ canvas }) => {
+  await canvas.findByRole("list", { name: "Conversations" });
+};
+
 /** The next page loads when the end of the list scrolls into view. */
 export const InfiniteScroll: Story = {
   render: () => (
@@ -95,6 +103,7 @@ export const InfiniteScroll: Story = {
       {...list}
     />
   ),
+  play: waitForList,
 };
 
 /**
@@ -115,6 +124,7 @@ export const EndOfList: Story = {
       {...list}
     />
   ),
+  play: waitForList,
 };
 
 export const LoadMoreButton: Story = {

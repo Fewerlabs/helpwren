@@ -519,6 +519,11 @@ States it draws for you, each replaceable:
 The end marker appears only after more than one page has loaded, so a list that fits on one page
 is not followed by it. Return `null` from `renderEnd` to turn it off.
 
+If you make the list its own scrolling box (`className="h-96 overflow-y-auto"`), it becomes a tab
+stop while its content overflows, so a keyboard can scroll it with the arrow keys. `Table` does
+the same for its scrolling container. Both use `useScrollableFocus` from `src/lib`; use it for
+any other box that scrolls and may hold nothing focusable.
+
 Also: `header` and `footer` around the items, `messages` for every piece of text, and
 `listClassName` and `itemClassName`. For a table, a grid or anything that is not a list, pass
 `children` as a function: it receives the whole state (`items`, `status`, `total`, `hasMore`,

@@ -1,3 +1,5 @@
+"use client";
+
 import type { ComponentProps } from "react";
 
 import {
@@ -10,6 +12,9 @@ import {
   TableRow as UiTableRow,
 } from "#components/ui/table";
 import { cn } from "#lib/cn";
+import { useScrollableFocus } from "#lib/scrollable-focus";
+
+import { focusRing } from "../styles";
 
 export interface TableProps extends ComponentProps<"table"> {
   /** Classes for the scrolling box around the table, for example `max-h-96 overflow-y-auto`. */
@@ -24,10 +29,13 @@ export interface TableProps extends ComponentProps<"table"> {
  * container cannot be styled; the container is needed for sticky headers.
  */
 export function Table({ className, containerClassName, ...props }: TableProps) {
+  // A table wider or taller than its box scrolls; a keyboard must be able to scroll it too.
+  const scrollable = useScrollableFocus<HTMLDivElement>();
   return (
     <div
       data-slot="table-container"
-      className={cn("relative w-full overflow-x-auto", containerClassName)}
+      className={cn("relative w-full overflow-x-auto", focusRing, containerClassName)}
+      {...scrollable}
     >
       <table
         data-slot="table"

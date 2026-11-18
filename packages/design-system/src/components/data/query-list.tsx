@@ -4,10 +4,12 @@ import { keepPreviousData, useInfiniteQuery, useQuery, type QueryKey } from "@ta
 import { useEffect, useRef, useState, type Key, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
+import { useScrollableFocus } from "#lib/scrollable-focus";
 
 import { Wren } from "../../illustrations/wren";
 import { Button } from "../base/button/button";
 import { Spinner } from "../base/spinner/spinner";
+import { focusRing } from "../base/styles";
 import {
   DefaultEmpty,
   DefaultError,
@@ -130,7 +132,10 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   /** How many placeholder rows the default loading state shows. */
   loadingRows?: number;
   messages?: Partial<QueryListMessages>;
-  /** Classes for the outer box: border, background, radius, scrolling. Keep padding off it. */
+  /**
+   * Classes for the outer box: border, background, radius, scrolling. Keep padding off it.
+   * If it scrolls, it becomes a tab stop while its content overflows.
+   */
   className?: string;
   /** Classes for the content inside, such as padding. The progress bar sits above this, edge to edge. */
   contentClassName?: string;
@@ -194,6 +199,8 @@ function ListView<Item, Cursor>({
 }: ViewProps<Item, Cursor>) {
   const messages = { ...defaultMessages, ...overrides };
   const sentinel = useRef<HTMLDivElement | null>(null);
+  // A caller may make the list its own scrolling box; a keyboard must be able to scroll it.
+  const scrollable = useScrollableFocus<HTMLDivElement>();
   const { hasMore, loadMore, items, status, isFetching, isFetchingMore, isEnd, retry, error } =
     state;
   const autoLoad = mode === "infinite" && loadMoreOn === "scroll";
@@ -325,7 +332,8 @@ function ListView<Item, Cursor>({
       data-slot="query-list"
       data-status={status}
       aria-busy={isFetching || undefined}
-      className={cn("relative", className)}
+      className={cn("relative", focusRing, className)}
+      {...scrollable}
     >
       {/* With items on screen, loading shows as a bar along the top so the list does not jump. */}
       <StickyProgress
