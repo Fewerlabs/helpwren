@@ -13,13 +13,7 @@ export default async function LoginPage() {
     <main className="grid min-h-dvh place-items-center p-6">
       <div className="grid w-full max-w-sm gap-6">
         <Logo variant="lockup" size={32} />
-        <Card className="grid gap-5 p-6">
-          <div className="grid gap-1">
-            <h1 className="text-xl font-semibold">Sign in to Helpwren</h1>
-            <p className="text-muted-foreground text-sm">
-              For team members. We will email you a code; there is no password.
-            </p>
-          </div>
+        <Card className="p-6">
           <LoginForm />
         </Card>
       </div>

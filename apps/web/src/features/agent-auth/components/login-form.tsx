@@ -65,6 +65,8 @@ const codeErrors = {
 } as const;
 
 interface StepProps<Values extends FieldValues> {
+  /** Under the heading: what this step is for, or what has just happened. */
+  description: ReactNode;
   control: Control<Values>;
   fields: FieldItem<Values>[];
   rootError: string | undefined;
@@ -75,6 +77,7 @@ interface StepProps<Values extends FieldValues> {
 }
 
 function Step<Values extends FieldValues>({
+  description,
   control,
   fields,
   rootError,
@@ -85,6 +88,10 @@ function Step<Values extends FieldValues>({
 }: StepProps<Values>) {
   return (
     <form noValidate className="grid gap-5" onSubmit={onSubmit}>
+      <div className="grid gap-1">
+        <h1 className="text-xl font-semibold">Sign in to Helpwren</h1>
+        <p className="text-muted-foreground text-sm">{description}</p>
+      </div>
       <FieldList control={control} fields={fields} disabled={submitting} />
       {rootError ? (
         <p role="alert" className="text-destructive text-sm">
@@ -142,6 +149,7 @@ export function LoginForm() {
   if (sentTo === null) {
     return (
       <Step
+        description="For team members. We will email you a code; there is no password."
         control={emailForm.control}
         fields={emailFields}
         rootError={emailForm.formState.errors.root?.message}
@@ -156,6 +164,14 @@ export function LoginForm() {
 
   return (
     <Step
+      // What was done with the email takes the place of the introduction, where the eye already is.
+      description={
+        <span role="status">
+          {resent ? "A new code is on its way. " : null}
+          If <span className="text-foreground font-medium">{sentTo}</span> is on the team, a{" "}
+          {LOGIN_CODE_LENGTH}-digit code has been sent to it.
+        </span>
+      }
       control={codeForm.control}
       fields={codeFields}
       rootError={codeForm.formState.errors.root?.message}
@@ -165,11 +181,6 @@ export function LoginForm() {
         void codeForm.handleSubmit((values) => signIn(sentTo, values))(event);
       }}
     >
-      <p className="text-muted-foreground text-sm" role="status">
-        {resent ? "A new code is on its way. " : null}
-        If <span className="text-foreground font-medium">{sentTo}</span> is on the team, a{" "}
-        {LOGIN_CODE_LENGTH}-digit code has been sent to it.
-      </p>
       <div className="flex flex-wrap gap-2">
         <Button
           variant="ghost"
