@@ -1,3 +1,4 @@
+import { type PageContext } from "@helpwren/core";
 import { create } from "zustand";
 
 /** Which screen of the chat is showing. Home and Messages are the two tabs. */
@@ -24,6 +25,13 @@ export interface PendingStart {
   draft?: string | undefined;
 }
 
+/** Who the page says the visitor is, without proof. Labels for the team, and nothing more. */
+export interface ClaimedIdentity {
+  id?: string | undefined;
+  name?: string | undefined;
+  email?: string | undefined;
+}
+
 interface ChatState {
   screen: Screen;
   /** True in the dashboard's preview, where nothing is loaded and nothing is sent. */
@@ -31,6 +39,11 @@ interface ChatState {
   setPreview: (preview: boolean) => void;
   page: HostPage | null;
   setPage: (page: HostPage) => void;
+  claimed: ClaimedIdentity | null;
+  setClaimed: (claimed: ClaimedIdentity | null) => void;
+  /** What the page wants the team to know about where the visitor is. */
+  context: PageContext | null;
+  setContext: (context: PageContext | null) => void;
   /** Waiting for the start screen to use it, once. */
   pendingStart: PendingStart | null;
   setPendingStart: (start: PendingStart | null) => void;
@@ -45,12 +58,20 @@ const initial = {
   page: null,
   preview: false,
   pendingStart: null,
+  claimed: null,
+  context: null,
 } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
   ...initial,
   setPage: (page) => {
     set({ page });
+  },
+  setClaimed: (claimed) => {
+    set({ claimed });
+  },
+  setContext: (context) => {
+    set({ context });
   },
   setPendingStart: (pendingStart) => {
     set({ pendingStart });
@@ -74,6 +95,10 @@ export const useSetPreview = () => useChatStore((state) => state.setPreview);
 export const usePreview = () => useChatStore((state) => state.preview);
 export const usePendingStart = () => useChatStore((state) => state.pendingStart);
 export const useSetPendingStart = () => useChatStore((state) => state.setPendingStart);
+export const useClaimed = () => useChatStore((state) => state.claimed);
+export const useSetClaimed = () => useChatStore((state) => state.setClaimed);
+export const usePageContext = () => useChatStore((state) => state.context);
+export const useSetPageContext = () => useChatStore((state) => state.setContext);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);
 

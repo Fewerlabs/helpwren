@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  pageContextSchema,
   RATING_MAX,
   type ConversationChanges,
   type ConversationPriority,
@@ -128,6 +129,7 @@ export function DetailsPanel({
   const name = contactName(contact);
   const page = typeof context.url === "string" ? context.url : undefined;
   const pageTitle = typeof context.title === "string" ? context.title : undefined;
+  const fromPage = Object.entries(pageContextSchema.safeParse(context.custom).data ?? {});
   const isTicket = conversation.type === "ticket";
   const rating = useRating(conversation.id).data;
   const confirmStatus = useConfirmStatus();
@@ -244,6 +246,16 @@ export function DetailsPanel({
             )}
           </Row>
         </Section>
+        {fromPage.length > 0 ? (
+          // What the site said with `setContext`. It is the page's word, not something checked.
+          <Section title="From the page" icon="code">
+            {fromPage.map(([key, value]) => (
+              <Row key={key} label={key}>
+                {String(value)}
+              </Row>
+            ))}
+          </Section>
+        ) : null}
         <Section title="Contact" icon="user">
           <Row label="Name">{contact.name ?? missing}</Row>
           <Row label="Email">

@@ -55,6 +55,9 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const unread = earlier.reduce((total, item) => total + item.unreadForContact, 0);
   const bridge = useEmbedBridge(unread);
   const onClose = bridge.embedded && bridge.closable ? bridge.close : undefined;
+  // Someone who has written before, or whom the host product vouches for, is not asked who
+  // they are.
+  const known = earlier.length > 0 || session.data?.isGuest === false;
   const back = () => {
     show({ name: tab });
   };
@@ -112,7 +115,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           teamName={teamName}
           welcome={undefined}
           quickReplies={[]}
-          returning={earlier.length > 0}
+          returning={known}
         />
       </>
     );
@@ -128,7 +131,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           teamName={teamName}
           welcome={settings.widget.welcome}
           quickReplies={settings.widget.quickReplies}
-          returning={earlier.length > 0}
+          returning={known}
         />
       </>
     );

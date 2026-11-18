@@ -183,7 +183,9 @@ A product's own logged-in users are confirmed by an identity adapter from `@help
 `sessionForUser` (`src/lib/supabase/user-session.ts`), which gives the same person the same
 Supabase Auth user on every device. `identify_contact` in the database records them as a
 verified contact, and `merge_guest_into_user` gives them what they did as a guest on that device.
-Signing keys and other credentials live in the `secrets` table, which only the
+The widget's `identify`, `reset` and `setContext` reach the chat as messages
+(`src/features/chat/hooks/use-embed-bridge.ts`), and `use-identity.ts` signs the chat in or out
+through `sessions.identify` and `sessions.reset` in the client library. Signing keys and other credentials live in the `secrets` table, which only the
 server can read. See [ADR 0013](decisions/0013-sessions-for-identified-users.md) and
 [ADR 0014](decisions/0014-identity-adapters.md).
 

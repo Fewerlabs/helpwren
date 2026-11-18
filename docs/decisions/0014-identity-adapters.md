@@ -64,3 +64,15 @@ deprecated its older static hash because it never expires. None of them accept a
   another person in on a device where they had been chatting as a guest gives that person their
   guest conversations; that is what merging on sign-in means, and it is the same in Intercom
   and Zendesk.
+- 2026-11-19: the widget and the client library can identify. Three choices worth knowing:
+  - **The page vouches on every load.** The chat keeps a user's session only while the page that
+    embeds it says a user is logged in. Greeted without one, it signs out. That is how a user
+    who logs out of the product, or is disabled there, loses support access too, without this
+    install being told.
+  - **A page load does not cost a new session.** A chat already signed in as the user the token
+    is for is told so and keeps the session it has; only their details are refreshed.
+  - **Details without a token are labels.** `identify({ id, name, email })` fills the form and
+    is shown to the team, and the contact stays an unverified guest. What a page says with
+    `setContext` is stored under `context.custom`, apart from what the server itself knows.
+    A long-lived tab that is never reloaded keeps its session until it is. Opening a conversation
+    from the page (for a push notification) comes with the mobile screen.

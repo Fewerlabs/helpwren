@@ -17,7 +17,22 @@ export type PageMessage =
       page: { url: string; title: string };
       /** False when the chat is the content of the page and has nothing to close into. */
       closable?: boolean;
+      /**
+       * True when the page vouches for a logged-in user and their token is on its way. When it
+       * is not, a chat still signed in as a user from an earlier visit signs out: the page is
+       * the one that knows whether they are still logged in.
+       */
+      identified?: boolean;
     }
+  /**
+   * Who the visitor is. With a `token`, the install confirms it and signs them in as that
+   * user. With `details` alone they stay a guest, and the details are only labels for the team.
+   */
+  | { channel: typeof CHANNEL; type: "identify"; token?: string; details?: VisitorDetails }
+  /** The visitor logged out of the page. The chat forgets who they were. */
+  | { channel: typeof CHANNEL; type: "reset" }
+  /** What the page wants the team to know about where the visitor is. Replaces what was sent. */
+  | { channel: typeof CHANNEL; type: "context"; context: PageContext }
   /**
    * Start a new conversation. `reply` is a quick reply the visitor tapped beside the launcher,
    * which the chat sends for them if it is one of the install's own. `draft` is text from the
@@ -30,19 +45,43 @@ export type PageMessage =
    */
   | { channel: typeof CHANNEL; type: "preview"; settings: unknown };
 
+/** What a page says about a visitor without proof. Shown to the team; unlocks nothing. */
+export interface VisitorDetails {
+  id?: string | undefined;
+  name?: string | undefined;
+  email?: string | undefined;
+}
+
+/** A few plain values, by name, such as `{ plan: "pro", orderId: 1234 }`. */
+export type PageContext = Record<string, string | number | boolean | null>;
+
+/** Whether the chat is signed in as one of the page's users, and if not after trying, why. */
+export type IdentityState =
+  | { state: "guest" }
+  | { state: "user" }
+  | { state: "failed"; reason: "expired" | "rejected" | "off" | "error" };
+
 /** From the chat frame to the page. */
 export type FrameMessage =
   /** The chat has started and is listening. Sent to any origin, because it carries nothing. */
   | { channel: typeof CHANNEL; type: "ready" }
   | { channel: typeof CHANNEL; type: "unread"; count: number }
   /** The visitor pressed the close button inside the chat. */
-  | { channel: typeof CHANNEL; type: "close" };
+  | { channel: typeof CHANNEL; type: "close" }
+  /** The answer to `identify` and `reset`. */
+  | ({ channel: typeof CHANNEL; type: "identity" } & IdentityState);
+
+const FAILURES = ["expired", "rejected", "off", "error"] as const;
 
 export function isFrameMessage(data: unknown): data is FrameMessage {
   if (typeof data !== "object" || data === null) return false;
   const message = data as Record<string, unknown>;
   if (message.channel !== CHANNEL) return false;
   if (message.type === "ready" || message.type === "close") return true;
+  if (message.type === "identity") {
+    if (message.state === "guest" || message.state === "user") return true;
+    return message.state === "failed" && (FAILURES as readonly unknown[]).includes(message.reason);
+  }
   return (
     message.type === "unread" &&
     typeof message.count === "number" &&

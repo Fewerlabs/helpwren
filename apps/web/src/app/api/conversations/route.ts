@@ -21,11 +21,15 @@ export async function POST(request: Request): Promise<Response> {
 
   const input = startConversationInputSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
-  const { message, source, contact, page, ticket } = input.data;
+  const { message, source, contact, page, ticket, context } = input.data;
 
   const [settingRows, known] = await Promise.all([
     supabaseAdmin.from("settings").select("key, value"),
-    supabaseAdmin.from("contacts").select("name, email, phone").eq("id", caller.id).maybeSingle(),
+    supabaseAdmin
+      .from("contacts")
+      .select("name, email, phone, verified")
+      .eq("id", caller.id)
+      .maybeSingle(),
   ]);
   if (settingRows.error) throw settingRows.error;
   if (known.error) throw known.error;
@@ -38,7 +42,11 @@ export async function POST(request: Request): Promise<Response> {
     return apiError("invalid_request", "This install does not take tickets from the chat.");
   }
   // Someone who gave their details in an earlier conversation is not asked again.
-  if (!hasRequiredGuestDetails(settings.guestDetails, { ...known.data, ...contact })) {
+  // Nor is someone the host product has vouched for: it has said who they are.
+  if (
+    !known.data?.verified &&
+    !hasRequiredGuestDetails(settings.guestDetails, { ...known.data, ...contact })
+  ) {
     return apiError("details_required", "Contact details are needed before the first message.");
   }
 
@@ -48,6 +56,8 @@ export async function POST(request: Request): Promise<Response> {
     source,
     context: {
       ...page,
+      // Kept apart from what the server knows, because the page could have said anything.
+      ...(context && Object.keys(context).length > 0 ? { custom: context } : {}),
       ...(request.headers.has("user-agent")
         ? { userAgent: request.headers.get("user-agent") }
         : {}),

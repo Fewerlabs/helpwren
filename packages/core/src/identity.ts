@@ -8,13 +8,36 @@ export const identifyInputSchema = z.object({
 
 export type IdentifyInput = z.infer<typeof identifyInputSchema>;
 
-/** A session for the user the token belongs to, for the chat to load in place of its own. */
 export const identifyResponseSchema = z.object({
   userId: z.uuid(),
-  accessToken: z.string().min(1),
-  refreshToken: z.string().min(1),
+  /**
+   * A session for the user the token belongs to, for the chat to load in place of its own.
+   * `null` when the session the chat sent is already theirs, and there is nothing to change.
+   */
+  session: z.object({ accessToken: z.string().min(1), refreshToken: z.string().min(1) }).nullable(),
   /** How many conversations the visitor had as a guest that are now this user's. */
   mergedConversations: z.number().int().min(0),
 });
 
 export type IdentifyResponse = z.infer<typeof identifyResponseSchema>;
+
+/**
+ * Why the chat could not be signed in as a user. `expired`: the token was good once, and a
+ * fresh one will work. `rejected`: this token never will. `off`: the install identifies nobody.
+ */
+export type IdentifyFailure = "expired" | "rejected" | "off";
+
+export type IdentifyResult =
+  | { ok: true; userId: string; mergedConversations: number }
+  | { ok: false; reason: IdentifyFailure };
+
+/** What a page may tell the team about where the visitor is: a few plain values, by name. */
+export const CONTEXT_MAX_KEYS = 20;
+export const pageContextSchema = z
+  .record(
+    z.string().min(1).max(60),
+    z.union([z.string().max(500), z.number(), z.boolean(), z.null()]),
+  )
+  .refine((context) => Object.keys(context).length <= CONTEXT_MAX_KEYS);
+
+export type PageContext = z.infer<typeof pageContextSchema>;

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { type Api } from "./api";
 import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
+import { pageContextSchema } from "./identity";
 import { listenForRows, type Unsubscribe } from "./realtime";
 import { type GuestDetails } from "./settings";
 import { type HelpwrenSupabaseClient } from "./supabase";
@@ -40,6 +41,11 @@ export const startConversationInputSchema = z.object({
   page: z
     .object({ url: z.url().max(2000), title: z.string().trim().max(300).optional() })
     .optional(),
+  /**
+   * What the page said about where the visitor is, with `setContext`, and who an unverified
+   * `identify` said they are. Shown to agents as the page's word, never as fact.
+   */
+  context: pageContextSchema.optional(),
 });
 
 export type StartConversationInput = z.input<typeof startConversationInputSchema>;

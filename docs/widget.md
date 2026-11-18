@@ -55,30 +55,69 @@ through. There is no launcher and no close button, because there is nothing to c
 
 ## Methods
 
-| Method                             | What it does                                                                                               |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `Helpwren.show()` / `hide()`       | Opens or closes the chat.                                                                                  |
-| `Helpwren.toggle()`                | Opens it if closed, closes it if open.                                                                     |
-| `Helpwren.isOpen()`                | Whether it is open now.                                                                                    |
-| `Helpwren.startConversation(text)` | Opens a new conversation. `text`, if given, is put in the message box; the visitor sends it or changes it. |
-| `Helpwren.update({ ... })`         | Changes `appearance` or `layout` after `init`, for example when your site switches theme.                  |
-| `Helpwren.on(event, listener)`     | Listens for an event. Returns a function that stops listening.                                             |
-| `Helpwren.destroy()`               | Takes the widget off the page. `init` can add it again.                                                    |
+| Method                             | What it does                                                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `Helpwren.show()` / `hide()`       | Opens or closes the chat.                                                                                                  |
+| `Helpwren.toggle()`                | Opens it if closed, closes it if open.                                                                                     |
+| `Helpwren.isOpen()`                | Whether it is open now.                                                                                                    |
+| `Helpwren.startConversation(text)` | Opens a new conversation. `text`, if given, is put in the message box; the visitor sends it or changes it.                 |
+| `Helpwren.identify({ ... })`       | Says who the visitor is. See "Logged-in users" below.                                                                      |
+| `Helpwren.reset()`                 | Forgets who the visitor is. Call it when they log out.                                                                     |
+| `Helpwren.setContext({ ... })`     | Tells the team where the visitor is, such as `{ plan: "pro", orderId: 1234 }`. Sent with the next conversation they start. |
+| `Helpwren.update({ ... })`         | Changes `appearance` or `layout` after `init`, for example when your site switches theme.                                  |
+| `Helpwren.on(event, listener)`     | Listens for an event. Returns a function that stops listening.                                                             |
+| `Helpwren.destroy()`               | Takes the widget off the page. `init` can add it again.                                                                    |
 
 ## Events
 
-| Event    | When                                                                     |
-| -------- | ------------------------------------------------------------------------ |
-| `ready`  | The chat has loaded.                                                     |
-| `open`   | The chat was opened, by the visitor or by your code.                     |
-| `close`  | The chat was closed.                                                     |
-| `unread` | The number of unread messages changed. The listener is given the number. |
+| Event      | When                                                                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ready`    | The chat has loaded.                                                                                                                                                           |
+| `open`     | The chat was opened, by the visitor or by your code.                                                                                                                           |
+| `close`    | The chat was closed.                                                                                                                                                           |
+| `unread`   | The number of unread messages changed. The listener is given the number.                                                                                                       |
+| `identity` | The chat signed in as your user, went back to a guest, or could not sign in. The listener is given `{ state: "user" }`, `{ state: "guest" }` or `{ state: "failed", reason }`. |
 
 ```js
 Helpwren.on("unread", (count) => {
   document.querySelector("#help-badge").textContent = count > 0 ? String(count) : "";
 });
 ```
+
+## Logged-in users
+
+There are two ways to say who a visitor is, and they do different things.
+
+**With a token**, the install checks it and signs the chat in as that user. Their conversations
+follow them to every device, and what they wrote as a guest on this one becomes theirs.
+
+```html
+<script>
+  Helpwren.init({ source: "web_app" });
+  // A function, so a fresh token can be fetched if one expires.
+  Helpwren.identify({ token: () => fetch("/api/support-token").then((r) => r.text()) });
+
+  // When they log out:
+  Helpwren.reset();
+</script>
+```
+
+Your server makes the token: a JWT signed with HS256 and a signing key from your install, with
+the user's id in `sub`, an `exp` no more than a day ahead (a few minutes is plenty), and
+optionally `name`, `email`, `org: { id, name }`, `audience` and `attributes`. Never sign it in
+the browser or ship the key in an app: anyone holding the key can be any of your users.
+
+Call `identify` straight after `init` on every page where someone is logged in. A page that
+loads without it shows a guest's chat, even if a user was signed in there before, so someone who
+logs out of your product does not stay logged in to support.
+
+**Without a token**, `Helpwren.identify({ id, name, email })` only labels the visitor for your
+team and fills in the form for them. They stay a guest, their history stays on this device, and
+the team sees them as unverified. It needs no server work, and it unlocks nothing: typing someone
+else's email into the console only mislabels your own chat.
+
+`setContext` values are shown to the team as "From the page". Like labels, they are the page's
+word and are never treated as fact.
 
 ## What a page cannot do
 

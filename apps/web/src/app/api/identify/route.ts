@@ -8,6 +8,17 @@ import { verifyIdentity } from "@/lib/identity";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { sessionForUser } from "@/lib/supabase/user-session";
 
+/** Whether this signed-in person is the contact the host product knows by this id. */
+async function isContact(id: string, externalId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("contacts")
+    .select("external_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.external_id === externalId;
+}
+
 /** Gives a guest's conversations to the user they turned out to be. Returns how many moved. */
 async function mergeGuest(guestId: string, userId: string): Promise<number> {
   const { data, error } = await supabaseAdmin.rpc("merge_guest_into_user", {
@@ -51,9 +62,16 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (!identity) return apiError("forbidden", "This install does not identify its users.");
 
-  const session = await sessionForUser(identity.externalId);
+  // A chat that is already signed in as this user keeps its session: a page load should not
+  // cost a new one. Their details are still brought up to date.
+  const already =
+    caller && !caller.isGuest ? await isContact(caller.id, identity.externalId) : false;
+  const session = already ? null : await sessionForUser(identity.externalId);
+  const userId = session?.userId ?? caller?.id;
+  if (!userId) throw new Error("No user to identify.");
+
   const { error } = await supabaseAdmin.rpc("identify_contact", {
-    contact_id: session.userId,
+    contact_id: userId,
     external_id: identity.externalId,
     attributes: identity.attributes,
     ...(identity.name === undefined ? {} : { name: identity.name }),
@@ -64,9 +82,12 @@ export async function POST(request: Request): Promise<Response> {
   });
   if (error) throw error;
 
-  const mergedConversations = caller?.isGuest ? await mergeGuest(caller.id, session.userId) : 0;
+  const mergedConversations = caller?.isGuest ? await mergeGuest(caller.id, userId) : 0;
 
-  return Response.json({ ...session, mergedConversations } satisfies IdentifyResponse, {
-    headers: { "cache-control": "no-store" },
-  });
+  const body: IdentifyResponse = {
+    userId,
+    session: session && { accessToken: session.accessToken, refreshToken: session.refreshToken },
+    mergedConversations,
+  };
+  return Response.json(body, { headers: { "cache-control": "no-store" } });
 }

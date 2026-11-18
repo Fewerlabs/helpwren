@@ -117,9 +117,11 @@ describe("POST /api/identify", () => {
       attributes: { plan: "pro" },
     });
 
-    await expect(supabaseAdmin.auth.getClaims(session.accessToken)).resolves.toMatchObject({
-      data: { claims: { sub: session.userId, is_anonymous: false } },
-    });
+    await expect(supabaseAdmin.auth.getClaims(session.session?.accessToken)).resolves.toMatchObject(
+      {
+        data: { claims: { sub: session.userId, is_anonymous: false } },
+      },
+    );
     await expect(contactOf(session.userId)).resolves.toEqual({
       kind: "user",
       verified: true,
@@ -181,12 +183,24 @@ describe("POST /api/identify", () => {
 
     const fay = await signedIn(
       { sub: `${run}:fay` },
-      { headers: { authorization: `Bearer ${eve.accessToken}` } },
+      { headers: { authorization: `Bearer ${eve.session?.accessToken ?? ""}` } },
     );
 
     expect(fay.mergedConversations).toBe(0);
     await expect(conversationsOf(eve.userId)).resolves.toEqual([conversationId]);
     await expect(conversationsOf(fay.userId)).resolves.toEqual([]);
+  });
+
+  it("leaves a chat that is already signed in as the user with the session it has", async () => {
+    const first = await signedIn({ sub: `${run}:gil`, name: "Gil" });
+    const again = await signedIn(
+      { sub: `${run}:gil`, name: "Gil Moreno" },
+      { headers: { authorization: `Bearer ${first.session?.accessToken ?? ""}` } },
+    );
+
+    expect(first.session).not.toBeNull();
+    expect(again).toEqual({ userId: first.userId, session: null, mergedConversations: 0 });
+    await expect(contactOf(first.userId)).resolves.toMatchObject({ name: "Gil Moreno" });
   });
 
   it("turns away a session it cannot verify, so no history is left behind unnoticed", async () => {

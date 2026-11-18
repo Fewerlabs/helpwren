@@ -1,8 +1,25 @@
 import { defaultAppearance, parseAppearance, type Appearance } from "./appearance";
-import { CHANNEL, isFrameMessage, type PageMessage } from "./protocol";
+import {
+  CHANNEL,
+  isFrameMessage,
+  type IdentityState,
+  type PageContext,
+  type PageMessage,
+  type VisitorDetails,
+} from "./protocol";
 import { closeIcon, dismissIcon, openIcon, styles, wrenIcon } from "./styles";
 
 export { type Appearance } from "./appearance";
+export { type IdentityState, type PageContext, type VisitorDetails } from "./protocol";
+
+/**
+ * Who the visitor is. A `token` proves it: the install checks it and signs them in as that
+ * user, with their history from every device. Give a function when you can, so a fresh token
+ * can be fetched if one expires. Without a token, `id`, `name` and `email` are labels for the
+ * team and nothing more; the visitor stays a guest.
+ */
+export type Identity =
+  { token: string | (() => string | Promise<string>) } | (VisitorDetails & { token?: undefined });
 
 export interface InitOptions {
   /** Where this page is, as one of the install's sources. Default `web`. */
@@ -70,6 +87,8 @@ export interface HelpwrenEvents {
   close: () => void;
   /** The number of unread messages changed. Use it for a badge on your own button. */
   unread: (count: number) => void;
+  /** The chat signed in as your user, went back to a guest, or could not be signed in. */
+  identity: (identity: IdentityState) => void;
 }
 
 export interface HelpwrenWidget {
@@ -88,6 +107,18 @@ export interface HelpwrenWidget {
    * send or change; nothing is sent for them.
    */
   startConversation: (draft?: string) => void;
+  /**
+   * Says who the visitor is. Call it straight after `init` on pages where someone is logged in,
+   * and again when they log in. It may be called before `init`.
+   */
+  identify: (identity: Identity) => void;
+  /** Forgets who the visitor is. Call it when they log out. */
+  reset: () => void;
+  /**
+   * Tells the team about where the visitor is, such as the plan they are on or the order they
+   * are looking at. It is sent with the next conversation they start, and replaces what was set.
+   */
+  setContext: (context: PageContext) => void;
   /** Changes how the widget looks or is laid out after `init`. */
   update: (changes: { appearance?: Partial<Appearance>; layout?: WidgetLayout }) => void;
   /** Listens for an event. Returns a function that stops listening. */
@@ -131,7 +162,13 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     open: new Set(),
     close: new Set(),
     unread: new Set(),
+    identity: new Set(),
   };
+  // Who the page says the visitor is, kept so it can be said again each time the frame loads.
+  let identity: Identity | undefined;
+  let context: PageContext | undefined;
+  // A fresh token is fetched once when one expires, not over and over.
+  let retriedToken = false;
   // What the host page asked for, kept so it still applies after the install's settings load.
   let overrides: Partial<Appearance> = {};
   let triggers: Element[] = [];
@@ -319,15 +356,52 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     for (const listener of listeners.unread) listener(count);
   }
 
+  function post(message: PageMessage) {
+    // Addressed to the app's origin only, so no other site loaded in the frame could read it.
+    if (frameReady) mounted?.frame.contentWindow?.postMessage(message, appOrigin);
+  }
+
+  /** Hands the chat who the visitor is. A token goes by message, never in an address. */
+  async function sendIdentity() {
+    const sending = identity;
+    if (!sending) return;
+    if (sending.token === undefined) {
+      const { id, name, email } = sending;
+      post({ channel: CHANNEL, type: "identify", details: { id, name, email } });
+      return;
+    }
+    try {
+      const token = typeof sending.token === "function" ? await sending.token() : sending.token;
+      // The visitor may have logged out, or in as someone else, while the token was fetched.
+      if (identity === sending) post({ channel: CHANNEL, type: "identify", token });
+    } catch {
+      for (const listener of listeners.identity) listener({ state: "failed", reason: "error" });
+    }
+  }
+
+  function onIdentity(state: IdentityState) {
+    const expired = state.state === "failed" && state.reason === "expired";
+    if (expired && typeof identity?.token === "function" && !retriedToken) {
+      retriedToken = true;
+      void sendIdentity();
+      return;
+    }
+    if (state.state === "user") retriedToken = false;
+    for (const listener of listeners.identity) listener(state);
+  }
+
   function greet(frame: HTMLIFrameElement) {
     const hello: PageMessage = {
       channel: CHANNEL,
       type: "hello",
       page: { url: window.location.href, title: document.title },
       closable: !inline,
+      identified: identity?.token !== undefined,
     };
     // Addressed to the app's origin only, so no other site loaded in the frame could read it.
     frame.contentWindow?.postMessage(hello, appOrigin);
+    if (context) post({ channel: CHANNEL, type: "context", context });
+    void sendIdentity();
   }
 
   function onMessage(event: MessageEvent) {
@@ -347,7 +421,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         waitingStart = undefined;
       }
     } else if (event.data.type === "unread") setUnread(event.data.count);
-    else setOpen(false);
+    else if (event.data.type === "identity") {
+      const { state } = event.data;
+      onIdentity(state === "failed" ? { state, reason: event.data.reason } : { state });
+    } else setOpen(false);
   }
 
   return {
@@ -509,6 +586,23 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
 
     toggle,
     isOpen,
+
+    identify(who) {
+      identity = who;
+      retriedToken = false;
+      void sendIdentity();
+    },
+
+    reset() {
+      identity = undefined;
+      retriedToken = false;
+      post({ channel: CHANNEL, type: "reset" });
+    },
+
+    setContext(next) {
+      context = next;
+      post({ channel: CHANNEL, type: "context", context: next });
+    },
 
     startConversation(draft) {
       startConversation(draft === undefined ? {} : { draft });

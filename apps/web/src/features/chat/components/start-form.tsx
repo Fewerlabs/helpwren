@@ -28,7 +28,9 @@ import { TeamAvatar } from "../brand";
 import { chatKeys } from "../hooks/use-chat";
 import {
   type PendingStart,
+  useClaimed,
   usePage,
+  usePageContext,
   usePendingStart,
   usePreview,
   useSetPendingStart,
@@ -229,12 +231,18 @@ export function StartForm({
   const queryClient = useQueryClient();
   const show = useShowScreen();
   const page = usePage();
+  const pageContext = usePageContext();
+  // Who the page says this is, without proof: it saves them typing, and labels the conversation.
+  const claimed = useClaimed();
   // The server has the last word on whether details are needed; see `start` below.
   const [askAnyway, setAskAnyway] = useState(false);
   const ask = returning && !askAnyway ? "nothing" : guestDetails;
 
   const schema = useMemo(() => startSchema(ask, ticket), [ask, ticket]);
-  const form = useForm<StartValues>({ resolver: zodResolver(schema), defaultValues: empty });
+  const form = useForm<StartValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { ...empty, name: claimed?.name ?? "", email: claimed?.email ?? "" },
+  });
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
 
   async function start(values: StartValues) {
@@ -245,6 +253,9 @@ export function StartForm({
     const client = getClient();
     const by = ask === "email_or_phone" ? values.replyBy : ask;
 
+    // What the page said about the visitor, for the team to see beside the conversation.
+    const context = { ...pageContext, ...(claimed?.id ? { claimedUserId: claimed.id } : {}) };
+
     try {
       // The session is created here, with the first message, not when the chat is opened.
       await client.sessions.startGuest();
@@ -253,7 +264,10 @@ export function StartForm({
         source,
         contact:
           ask === "nothing" || ask === "none"
-            ? {}
+            ? {
+                ...(claimed?.name ? { name: claimed.name } : {}),
+                ...(claimed?.email ? { email: claimed.email } : {}),
+              }
             : {
                 name: values.name,
                 ...(by === "email" ? { email: values.email } : { phone: values.phone }),
@@ -261,6 +275,7 @@ export function StartForm({
         ...(ticket ? { ticket: { subject: values.subject } } : {}),
         // The page the chat is on, when the widget script reported one.
         ...(page ? { page } : {}),
+        ...(Object.keys(context).length > 0 ? { context } : {}),
       });
 
       if (result.ok) {

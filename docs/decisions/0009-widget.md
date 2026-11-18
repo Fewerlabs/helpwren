@@ -59,3 +59,8 @@ their code and their CSS, and has to open a chat that belongs to another origin.
   overrides, `toggle`, `isOpen`, `startConversation(draft)`, `update`, and `ready`, `open` and
   `close` events. A draft from the page is only put in the message box; the chat still sends
   nothing a visitor did not send. The full list is in [docs/widget.md](../widget.md).
+- 2026-11-19: `identify`, `reset`, `setContext` and an `identity` event. The page's greeting
+  says whether it vouches for a logged-in user, a token is handed over by message and never in
+  an address, and the chat answers with what happened. A chat still signed in as a user signs
+  out when the page greets it without one. See
+  [ADR 0014](0014-identity-adapters.md) and [docs/widget.md](../widget.md).
