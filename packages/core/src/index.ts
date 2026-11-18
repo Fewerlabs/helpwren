@@ -50,6 +50,14 @@ export {
   type SendMessageResult,
 } from "./messages";
 export { noteBodySchema, noteSchema, type Note } from "./notes";
+export {
+  RATING_MAX,
+  ratingCommentSchema,
+  ratingSchema,
+  ratingScoreSchema,
+  type Rating,
+  type SubmitRatingResult,
+} from "./ratings";
 export { type Unsubscribe } from "./realtime";
 export { type Session } from "./sessions";
 export {

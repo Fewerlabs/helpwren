@@ -51,3 +51,8 @@ that its contact must never see.
   travel on the team's live channel.
 - 2026-11-18: the Tickets view is a table of every ticket, whatever its status, and opening one
   shows its conversation in the table's place. Search finds a ticket by its number or subject.
+- 2026-11-18: once a conversation is resolved or closed, the chat asks its contact how it went:
+  a score from 1 to 5 and an optional comment (`conversation_ratings`). A contact rates only
+  their own conversation, only once, and cannot change it. The team sees the rating in the
+  details and in the conversation's activity. The request is automatic on resolving; there is
+  no separate "ask for a rating" action or setting to turn it off yet.

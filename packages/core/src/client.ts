@@ -6,6 +6,7 @@ import { createConversations } from "./conversations";
 import { createEvents } from "./events";
 import { createMessages } from "./messages";
 import { createNotes } from "./notes";
+import { createRatings } from "./ratings";
 import { createSessions } from "./sessions";
 import { createSettings } from "./settings";
 import { type HelpwrenSupabaseClient } from "./supabase";
@@ -35,6 +36,7 @@ export function createHelpwrenClient({ supabase, ...apiOptions }: HelpwrenClient
     events: createEvents(supabase),
     messages: createMessages(supabase),
     notes: createNotes(supabase),
+    ratings: createRatings(supabase),
     settings: createSettings(supabase),
   };
 }

@@ -11,6 +11,7 @@ import {
   inboxViews,
   MIN_SEARCH_LENGTH,
   useChangeConversation,
+  useChangeConversations,
   useConversationSearch,
   useInboxConversations,
   useInboxView,
@@ -60,6 +61,7 @@ export function Inbox({ agent }: InboxProps) {
       : (conversations.data?.find((item) => item.id === selectedId) ??
         (loaded?.id === selectedId ? loaded : undefined));
   const change = useChangeConversation(selectedId ?? "");
+  const changeAny = useChangeConversations();
 
   // Tickets are tracked more than chatted through, so their view is a table with no list
   // beside it. Opening one shows its conversation in the table's place.
@@ -116,6 +118,9 @@ export function Inbox({ agent }: InboxProps) {
               void conversations.refetch();
             }}
             onOpen={select}
+            onChange={(id, changes) => {
+              changeAny.mutate({ id, changes });
+            }}
           />
         )}
       </DashboardPage>

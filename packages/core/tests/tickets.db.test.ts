@@ -196,6 +196,64 @@ describe("activity", () => {
   });
 });
 
+describe("ratings", () => {
+  it("lets the contact rate a resolved conversation once, and the team read it", async () => {
+    const { client } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    const id = guest.conversationId;
+
+    await expect(guest.client.ratings.submit(id, 5)).resolves.toEqual({
+      ok: false,
+      reason: "not_resolved",
+    });
+    await expect(guest.client.ratings.get(id)).resolves.toBeNull();
+
+    await client.conversations.update(id, { status: "resolved" });
+    await expect(
+      guest.client.ratings.submit(id, 4, "  Fast and friendly.  "),
+    ).resolves.toMatchObject({
+      ok: true,
+      rating: { score: 4, comment: "Fast and friendly." },
+    });
+    await expect(guest.client.ratings.submit(id, 1)).resolves.toEqual({
+      ok: false,
+      reason: "already_rated",
+    });
+
+    await expect(client.ratings.get(id)).resolves.toMatchObject({ score: 4 });
+    const events = await client.events.list(id);
+    expect(events.at(-1)).toMatchObject({ kind: "rated", data: { score: 4 } });
+  });
+
+  it("stores no comment when none is given, and rejects a score out of range", async () => {
+    const { client } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    await client.conversations.update(guest.conversationId, { status: "resolved" });
+
+    await expect(guest.client.ratings.submit(guest.conversationId, 6)).rejects.toThrow();
+    await expect(guest.client.ratings.submit(guest.conversationId, 3)).resolves.toMatchObject({
+      ok: true,
+      rating: { score: 3, comment: null },
+    });
+  });
+
+  it("refuses a rating from anyone but the contact", async () => {
+    const { client } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    const other = await newGuestWithConversation();
+    await client.conversations.update(guest.conversationId, { status: "resolved" });
+
+    await expect(other.client.ratings.submit(guest.conversationId, 1)).resolves.toEqual({
+      ok: false,
+      reason: "not_resolved",
+    });
+    await expect(client.ratings.submit(guest.conversationId, 5)).resolves.toEqual({
+      ok: false,
+      reason: "not_resolved",
+    });
+  });
+});
+
 describe("internal notes", () => {
   it("are written and read by the team, in order", async () => {
     const { client, agent } = await signedInAgent();

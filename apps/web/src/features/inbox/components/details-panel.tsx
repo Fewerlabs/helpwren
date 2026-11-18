@@ -1,31 +1,22 @@
 "use client";
 
 import {
+  RATING_MAX,
   type ConversationChanges,
   type ConversationPriority,
   type ConversationStatus,
   type ConversationWithContact,
   type TeamMember,
 } from "@helpwren/core";
-import {
-  Avatar,
-  Badge,
-  Expandable,
-  Icon,
-  Link,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  type IconName,
-} from "@helpwren/design-system";
+import { Avatar, Badge, Expandable, Icon, Link, type IconName } from "@helpwren/design-system";
 import { useId, useState, type ReactNode } from "react";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
 
 import { contactName } from "../contact-name";
+import { useRating } from "../hooks/use-inbox";
 import { priorities, statuses, ticketLabel } from "../labels";
+import { NOBODY, Picker } from "./picker";
 
 const startedFormat = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
@@ -87,33 +78,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-interface PickerProps {
-  label: string;
-  value: string;
-  options: readonly { value: string; label: string }[];
-  onChange: (value: string) => void;
-}
-
-/** A small select for changing one property in place. */
-function Picker({ label, value, options, onChange }: PickerProps) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger aria-label={label} className="h-7 px-2 text-xs data-[size=default]:h-7">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
 const missing = <span className="text-muted-foreground">Not given</span>;
-const NOBODY = "nobody";
 
 /** A page address without its scheme, which is how people read one. */
 function shortUrl(url: string): string {
@@ -134,6 +99,7 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
   const page = typeof context.url === "string" ? context.url : undefined;
   const pageTitle = typeof context.title === "string" ? context.title : undefined;
   const isTicket = conversation.type === "ticket";
+  const rating = useRating(conversation.id).data;
 
   // Someone who was deactivated while holding a conversation still shows as its assignee.
   const assignees = team.filter((member) => member.active || member.id === conversation.assigneeId);
@@ -204,6 +170,16 @@ export function DetailsPanel({ conversation, team, onChange, className }: Detail
               }}
             />
           </Row>
+          {rating ? (
+            <Row label="Rating">
+              <span className="font-medium tabular-nums">
+                {rating.score} out of {RATING_MAX}
+              </span>
+              {rating.comment ? (
+                <span className="text-muted-foreground block pt-0.5">“{rating.comment}”</span>
+              ) : null}
+            </Row>
+          ) : null}
           <Row label="Started">{startedFormat.format(new Date(conversation.createdAt))}</Row>
           <Row label="Source">
             <span className="font-mono">{conversation.source}</span>

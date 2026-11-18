@@ -2,7 +2,7 @@
 
 import { type Message } from "@helpwren/core";
 import { Avatar, Button, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { formatMessageTime } from "@/lib/format-time";
 
@@ -16,7 +16,10 @@ export interface ThreadProps {
   isOwn: (message: Message) => boolean;
   /** Shown above messages from the other side. */
   otherName: string;
-  /** Called after the conversation has been marked as read, to refresh any unread counts. */
+  /**
+   * Called when something about the conversation has changed that may show elsewhere on screen:
+   * it was marked as read, or an event such as a rating arrived.
+   */
   onRead?: () => void;
   /**
    * `compact` is for the inbox: smaller bubbles and a roomier reply box. Default `comfortable`,
@@ -29,6 +32,8 @@ export interface ThreadProps {
    * activity. `null` is the system.
    */
   nameOf?: (id: string | null) => string;
+  /** Shown between the messages and the reply box, such as a request to rate the conversation. */
+  beforeComposer?: ReactNode;
 }
 
 /**
@@ -42,12 +47,14 @@ export function Thread({
   onRead,
   density = "comfortable",
   nameOf,
+  beforeComposer,
 }: ThreadProps) {
   const compact = density === "compact";
   const messages = useMessages(conversationId);
   const forTeam = nameOf !== undefined;
   const notes = useNotes(conversationId, forTeam);
-  const events = useEvents(conversationId, forTeam);
+  // A change to the conversation, such as a rating, may show elsewhere on screen too.
+  const events = useEvents(conversationId, forTeam, onRead);
   useLiveThread(conversationId, { isOwn, onRead });
 
   const end = useRef<HTMLDivElement | null>(null);
@@ -154,6 +161,7 @@ export function Thread({
         )}
         <div ref={end} />
       </div>
+      {beforeComposer}
       <Composer
         conversationId={conversationId}
         variant={compact ? "card" : "bar"}

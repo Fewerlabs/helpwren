@@ -1,8 +1,12 @@
 "use client";
 
-import { type ConversationWithContact, type TeamMember } from "@helpwren/core";
 import {
-  Avatar,
+  type ConversationChanges,
+  type ConversationPriority,
+  type ConversationWithContact,
+  type TeamMember,
+} from "@helpwren/core";
+import {
   Button,
   cn,
   EmptyState,
@@ -21,6 +25,7 @@ import { formatTimeAgo } from "@/lib/format-time";
 
 import { contactName } from "../contact-name";
 import { priorities, statuses, ticketLabel } from "../labels";
+import { NOBODY, Picker } from "./picker";
 
 export interface TicketTableProps {
   tickets: readonly ConversationWithContact[] | undefined;
@@ -28,6 +33,8 @@ export interface TicketTableProps {
   failed: boolean;
   onRetry: () => void;
   onOpen: (id: string) => void;
+  /** Changes one ticket in place, from its row. */
+  onChange: (id: string, changes: ConversationChanges) => void;
 }
 
 const head = "text-muted-foreground h-9 text-xs font-normal";
@@ -36,7 +43,14 @@ const head = "text-muted-foreground h-9 text-xs font-normal";
  * Every ticket in one table. A ticket is tracked by its number, status and owner more than by
  * its latest message, so it is laid out as a row of those and not as a chat.
  */
-export function TicketTable({ tickets, team, failed, onRetry, onOpen }: TicketTableProps) {
+export function TicketTable({
+  tickets,
+  team,
+  failed,
+  onRetry,
+  onOpen,
+  onChange,
+}: TicketTableProps) {
   return (
     <Panel aria-label="Tickets" className="h-full">
       <PanelHeader>
@@ -89,59 +103,64 @@ export function TicketTable({ tickets, team, failed, onRetry, onOpen }: TicketTa
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tickets.map((ticket) => {
-                const assignee = team.find((member) => member.id === ticket.assigneeId);
-                return (
-                  <TableRow key={ticket.id} className="h-11">
-                    <TableCell className="text-muted-foreground pl-4 font-mono text-xs">
-                      {ticketLabel(ticket)}
-                    </TableCell>
-                    <TableCell className="w-[40%] max-w-0">
-                      <button
-                        type="button"
-                        className="focus-visible:outline-ring block max-w-full truncate rounded-md text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
-                        onClick={() => {
-                          onOpen(ticket.id);
-                        }}
-                      >
-                        {ticket.subject ?? ticket.lastMessagePreview}
-                      </button>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-lg:hidden">
-                      {contactName(ticket.contact)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip status={statuses[ticket.status].chip} size="sm" />
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        "max-md:hidden",
-                        ticket.priority === "high" ? "text-destructive font-medium" : null,
-                        ticket.priority === "low" ? "text-muted-foreground" : null,
-                      )}
+              {tickets.map((ticket) => (
+                <TableRow key={ticket.id} className="h-11">
+                  <TableCell className="text-muted-foreground pl-4 font-mono text-xs">
+                    {ticketLabel(ticket)}
+                  </TableCell>
+                  <TableCell className="w-[40%] max-w-0">
+                    <button
+                      type="button"
+                      className="focus-visible:outline-ring block max-w-full truncate rounded-md text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                      onClick={() => {
+                        onOpen(ticket.id);
+                      }}
                     >
-                      {priorities[ticket.priority]}
-                    </TableCell>
-                    <TableCell className="max-md:hidden">
-                      {assignee ? (
-                        <span className="flex items-center gap-2">
-                          <Avatar
-                            name={assignee.name}
-                            size="sm"
-                            className="size-5 text-[0.5625rem]"
-                          />
-                          <span className="truncate">{assignee.name}</span>
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">Unassigned</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground pr-4 text-end tabular-nums">
-                      {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                      {ticket.subject ?? ticket.lastMessagePreview}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground max-lg:hidden">
+                    {contactName(ticket.contact)}
+                  </TableCell>
+                  <TableCell>
+                    <StatusChip status={statuses[ticket.status].chip} size="sm" />
+                  </TableCell>
+                  <TableCell className="max-md:hidden">
+                    <Picker
+                      label={`Priority of ${ticketLabel(ticket)}`}
+                      className={cn("w-24", ticket.priority === "high" && "text-destructive")}
+                      value={ticket.priority}
+                      options={Object.entries(priorities).map(([value, label]) => ({
+                        value,
+                        label,
+                      }))}
+                      onChange={(value) => {
+                        onChange(ticket.id, { priority: value as ConversationPriority });
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell className="max-md:hidden">
+                    <Picker
+                      label={`Assignee of ${ticketLabel(ticket)}`}
+                      className="w-36"
+                      value={ticket.assigneeId ?? NOBODY}
+                      options={[
+                        { value: NOBODY, label: "Unassigned" },
+                        // Someone deactivated while holding a ticket still shows as its assignee.
+                        ...team
+                          .filter((member) => member.active || member.id === ticket.assigneeId)
+                          .map((member) => ({ value: member.id, label: member.name })),
+                      ]}
+                      onChange={(value) => {
+                        onChange(ticket.id, { assigneeId: value === NOBODY ? null : value });
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground pr-4 text-end tabular-nums">
+                    {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         )}

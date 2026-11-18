@@ -113,6 +113,53 @@ export type Database = {
           },
         ];
       };
+      conversation_ratings: {
+        Row: {
+          comment: string | null;
+          contact_id: string;
+          conversation_id: string;
+          created_at: string;
+          score: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          comment?: string | null;
+          contact_id: string;
+          conversation_id: string;
+          created_at?: string;
+          score: number;
+        };
+        Update: {
+          comment?: string | null;
+          contact_id?: string;
+          conversation_id?: string;
+          created_at?: string;
+          score?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_ratings_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contact_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_ratings_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_ratings_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: true;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       conversations: {
         Row: {
           assignee_id: string | null;

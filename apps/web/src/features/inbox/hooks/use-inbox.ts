@@ -127,6 +127,26 @@ export function useViewCounts(agentId: string): Partial<Record<InboxView["id"], 
   return counts.data ?? {};
 }
 
+/** How the contact rated a conversation, if they have. Refreshed with the rest of the inbox. */
+export function useRating(conversationId: string) {
+  const getClient = useHelpwren();
+  return useQuery({
+    queryKey: [...inboxKey, "rating", conversationId],
+    queryFn: () => getClient().ratings.get(conversationId),
+  });
+}
+
+/** Changes any conversation by its id, for a table where each row can be changed in place. */
+export function useChangeConversations() {
+  const getClient = useHelpwren();
+  const refresh = useRefreshInbox();
+  return useMutation({
+    mutationFn: ({ id, changes }: { id: string; changes: ConversationChanges }) =>
+      getClient().conversations.update(id, changes),
+    onSettled: refresh,
+  });
+}
+
 /** Everyone on the team, for choosing an assignee and naming who wrote a note. */
 export function useTeam() {
   const getClient = useHelpwren();

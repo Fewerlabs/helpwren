@@ -18,6 +18,7 @@ import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { useScreen, useShowScreen, useTab } from "../store/chat-store";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
+import { RatingPrompt } from "./rating-prompt";
 import { ScreenHeader } from "./screen-header";
 import { StartForm } from "./start-form";
 import { TabBar } from "./tab-bar";
@@ -81,6 +82,11 @@ function Screens({ settings, source }: ChatProps) {
           isOwn={isOwn}
           otherName={teamName}
           onRead={refresh}
+          beforeComposer={
+            open && (open.status === "resolved" || open.status === "closed") ? (
+              <RatingPrompt conversationId={open.id} />
+            ) : null
+          }
         />
       </>
     );

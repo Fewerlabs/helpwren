@@ -169,11 +169,21 @@ const eventsKey = (conversationId: string) => ["conversation", "events", convers
 
 /**
  * What happened to a conversation besides its messages, kept current. `team` also asks for the
- * events only the team sees; pass it on the team's side only.
+ * events only the team sees; pass it on the team's side only. `onEvent` is called as each new
+ * one arrives, for anything else on screen that depends on it.
  */
-export function useEvents(conversationId: string, team: boolean) {
+export function useEvents(
+  conversationId: string,
+  team: boolean,
+  onEvent?: (event: ConversationEvent) => void,
+) {
   const getClient = useHelpwren();
   const queryClient = useQueryClient();
+  // The latest callback, without restarting the subscription each time a parent re-renders.
+  const latestOnEvent = useRef(onEvent);
+  useEffect(() => {
+    latestOnEvent.current = onEvent;
+  });
 
   useEffect(() => {
     let stopped = false;
@@ -186,6 +196,7 @@ export function useEvents(conversationId: string, team: boolean) {
           queryClient.setQueryData<ConversationEvent[]>(eventsKey(conversationId), (events = []) =>
             events.some((item) => item.id === event.id) ? events : [...events, event],
           );
+          latestOnEvent.current?.(event);
         },
         { team },
       )

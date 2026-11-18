@@ -107,6 +107,11 @@ set type = 'ticket', subject = 'Wrong billing address on an invoice', priority =
     assignee_id = 'a0000000-0000-4000-8000-000000000001'
 where id = 'd0000000-0000-4000-8000-000000000003';
 
+-- The resolved conversation was rated by its contact.
+insert into public.conversation_ratings (conversation_id, contact_id, score, comment) values
+  ('d0000000-0000-4000-8000-000000000004', 'c0000000-0000-4000-8000-000000000004', 5,
+   'Sorted in minutes. Thank you!');
+
 insert into public.notes (conversation_id, author_id, body) values
   ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001',
    'Billing address was changed in February. Check whether the March invoice was issued first.');

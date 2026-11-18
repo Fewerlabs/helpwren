@@ -66,3 +66,15 @@ describe("describeEvent, for the contact", () => {
     expect(describeEvent(event(change))).toBe(expected);
   });
 });
+
+describe("describeEvent, for a rating", () => {
+  const rated = event({ kind: "rated", data: { score: 4 } });
+
+  it("names who rated, for the team", () => {
+    expect(describeEvent(rated, nameOf)).toBe("Sam rated this 4 out of 5");
+  });
+
+  it("speaks to the contact, who gave it", () => {
+    expect(describeEvent(rated)).toBe("You rated this 4 out of 5");
+  });
+});

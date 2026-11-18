@@ -78,7 +78,7 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   const row = table.getByRole("row").filter({ hasText: "Cracked screen on delivery" });
   await expect(row).toContainText(/#\d{4}/);
   await expect(row).toContainText("Open");
-  await expect(row).toContainText("Sam Rivera");
+  await expect(row.getByRole("combobox", { name: /^Assignee of/ })).toContainText("Sam Rivera");
   const number = /#\d{4}/.exec(await row.innerText())?.[0] ?? "";
 
   // Opening one shows its conversation in the table's place. Priority is set from the details.
@@ -107,9 +107,29 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   // Back in the table it shows as resolved, and it leaves the active views.
   await conversation.getByRole("button", { name: "Back to the list" }).click();
   await expect(row).toContainText("Resolved");
-  await expect(row).toContainText("High");
+  await expect(row.getByRole("combobox", { name: /^Priority of/ })).toContainText("High");
   await views.getByRole("link", { name: /My inbox/ }).click();
   await expect(list.getByRole("button", { name: new RegExp(CONTACT.name) })).toHaveCount(0);
+
+  // Priority and assignee can be changed from the table, without opening the ticket.
+  await views.getByRole("link", { name: /Tickets/ }).click();
+  await row.getByRole("combobox", { name: /^Priority of/ }).click();
+  await page.getByRole("option", { name: "Low" }).click();
+  await expect(row.getByRole("combobox", { name: /^Priority of/ })).toContainText("Low");
+  await row.getByRole("combobox", { name: /^Assignee of/ }).click();
+  await page.getByRole("option", { name: "Ada Okafor" }).click();
+  await expect(row.getByRole("combobox", { name: /^Assignee of/ })).toContainText("Ada Okafor");
+  await expect
+    .poll(async () => {
+      const { data: saved } = await database
+        .from("conversations")
+        .select("priority, assignee:agents(name)")
+        .eq("id", conversationId)
+        .single();
+      return saved;
+    })
+    .toEqual({ priority: "low", assignee: { name: "Ada Okafor" } });
+  await views.getByRole("link", { name: /My inbox/ }).click();
 
   // The inbox search finds it by its number.
   await page.getByRole("searchbox", { name: "Search conversations" }).fill(number);
@@ -124,7 +144,7 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   expect(data).toEqual({
     type: "ticket",
     status: "resolved",
-    priority: "high",
+    priority: "low",
     subject: "Cracked screen on delivery",
   });
 });

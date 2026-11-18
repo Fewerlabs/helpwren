@@ -33,6 +33,11 @@ const eventRowSchema = z.discriminatedUnion("kind", [
     kind: z.literal("priority_changed"),
     data: z.object({ from: conversationPrioritySchema, to: conversationPrioritySchema }),
   }),
+  z.object({
+    ...base,
+    kind: z.literal("rated"),
+    data: z.object({ score: z.number().int() }),
+  }),
 ]);
 
 export const conversationEventSchema = eventRowSchema.transform((row) => ({
@@ -41,19 +46,22 @@ export const conversationEventSchema = eventRowSchema.transform((row) => ({
   /** Who made the change: a team member or the contact. `null` when the system did. */
   actorId: row.actor_id,
   createdAt: row.created_at,
-  // `kind` says which shape `data` has: {number, subject}, {from, to} or {to}.
+  // `kind` says which shape `data` has: {number, subject}, {from, to}, {to} or {score}.
   ...(row.kind === "ticket_created"
     ? { kind: row.kind, data: row.data }
     : row.kind === "status_changed"
       ? { kind: row.kind, data: row.data }
       : row.kind === "assigned"
         ? { kind: row.kind, data: row.data }
-        : { kind: row.kind, data: row.data }),
+        : row.kind === "priority_changed"
+          ? { kind: row.kind, data: row.data }
+          : { kind: row.kind, data: row.data }),
 }));
 
 /**
  * Something that happened to a conversation besides a message: it became a ticket, its status
- * changed, it was assigned, or its priority changed. The database records these itself.
+ * changed, it was assigned, its priority changed, or its contact rated it. The database
+ * records these itself.
  */
 export type ConversationEvent = z.infer<typeof conversationEventSchema>;
 

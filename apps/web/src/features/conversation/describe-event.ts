@@ -19,6 +19,7 @@ export function describeEvent(
       if (done(event.data.from) && !done(event.data.to)) return "Reopened";
       return `Marked as ${statusNames[event.data.to].toLowerCase()}`;
     }
+    if (event.kind === "rated") return `You rated this ${event.data.score} out of 5`;
     return "Updated";
   }
 
@@ -38,5 +39,7 @@ export function describeEvent(
           : `${actor} assigned this to ${nameOf(event.data.to)}`;
     case "priority_changed":
       return `${actor} set the priority to ${priorityNames[event.data.to].toLowerCase()}`;
+    case "rated":
+      return `${actor} rated this ${event.data.score} out of 5`;
   }
 }

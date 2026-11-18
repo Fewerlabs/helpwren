@@ -1,7 +1,11 @@
-import { type ConversationWithContact } from "@helpwren/core";
+import { type ConversationWithContact, type HelpwrenClient } from "@helpwren/core";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
+
+import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { contactName } from "../contact-name";
 import { inboxViews } from "../hooks/use-inbox";
@@ -35,6 +39,18 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
     },
     ...overrides,
   };
+}
+
+// The details panel loads the conversation's rating; here there is none.
+const getClient = () =>
+  ({ ratings: { get: () => Promise.resolve(null) } }) as unknown as HelpwrenClient;
+
+function withClient(ui: ReactElement) {
+  return (
+    <QueryClientProvider client={new QueryClient()}>
+      <HelpwrenProvider getClient={getClient}>{ui}</HelpwrenProvider>
+    </QueryClientProvider>
+  );
 }
 
 const all = inboxViews[6];
@@ -114,7 +130,7 @@ describe("ListPanel", () => {
 
 describe("DetailsPanel", () => {
   it("shows how to reach the contact, and says what was not given", () => {
-    render(<DetailsPanel conversation={conversation()} team={[]} onChange={vi.fn()} />);
+    render(withClient(<DetailsPanel conversation={conversation()} team={[]} onChange={vi.fn()} />));
     const details = screen.getByRole("region", { name: "Details" });
 
     expect(within(details).getByRole("link", { name: "priya@example.org" })).toHaveAttribute(
@@ -127,13 +143,15 @@ describe("DetailsPanel", () => {
 
   it("links to the page the visitor wrote from, by its title", () => {
     render(
-      <DetailsPanel
-        team={[]}
-        onChange={vi.fn()}
-        conversation={conversation({
-          context: { url: "https://example.com/pricing", title: "Pricing" },
-        })}
-      />,
+      withClient(
+        <DetailsPanel
+          team={[]}
+          onChange={vi.fn()}
+          conversation={conversation({
+            context: { url: "https://example.com/pricing", title: "Pricing" },
+          })}
+        />,
+      ),
     );
     expect(screen.getByRole("link", { name: /Pricing/ })).toHaveAttribute(
       "href",
@@ -144,20 +162,24 @@ describe("DetailsPanel", () => {
   it("marks a verified user apart from one who only claims to be", () => {
     const { contact } = conversation();
     const { rerender } = render(
-      <DetailsPanel
-        team={[]}
-        onChange={vi.fn()}
-        conversation={conversation({ contact: { ...contact, kind: "user", verified: true } })}
-      />,
+      withClient(
+        <DetailsPanel
+          team={[]}
+          onChange={vi.fn()}
+          conversation={conversation({ contact: { ...contact, kind: "user", verified: true } })}
+        />,
+      ),
     );
     expect(screen.getByText("Verified user")).toBeInTheDocument();
 
     rerender(
-      <DetailsPanel
-        team={[]}
-        onChange={vi.fn()}
-        conversation={conversation({ contact: { ...contact, kind: "user", verified: false } })}
-      />,
+      withClient(
+        <DetailsPanel
+          team={[]}
+          onChange={vi.fn()}
+          conversation={conversation({ contact: { ...contact, kind: "user", verified: false } })}
+        />,
+      ),
     );
     expect(screen.getByText("Unverified user")).toBeInTheDocument();
   });

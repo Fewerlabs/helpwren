@@ -74,6 +74,18 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await inbox.getByRole("button", { name: "Resolve" }).click();
   await expect(visitorMessages.getByText("Marked as resolved")).toBeVisible();
   await expect(chat.getByText("Resolved", { exact: true })).toBeVisible();
+  // Once it is resolved, the visitor is asked how it went, and the team sees the answer.
+  const rate = chat.getByRole("form", { name: "Rate this conversation" });
+  await rate.getByRole("radio", { name: /^4 out of 5/ }).click();
+  await rate.getByRole("textbox", { name: "Anything to add?" }).fill("Quick and clear.");
+  await rate.getByRole("button", { name: "Send rating" }).click();
+  await expect(rate).toHaveCount(0);
+  await expect(visitorMessages.getByText("You rated this 4 out of 5")).toBeVisible();
+  await expect(agentMessages.getByText("Noor Haddad rated this 4 out of 5")).toBeVisible();
+  const ratedDetails = inbox.getByRole("region", { name: "Details" });
+  await expect(ratedDetails.getByText("4 out of 5")).toBeVisible();
+  await expect(ratedDetails.getByText("“Quick and clear.”")).toBeVisible();
+
   // Who has the ticket, and how urgent the team thinks it is, stays with the team.
   await inbox.getByRole("button", { name: "Assign to me" }).click();
   await expect(agentMessages.getByText("Sam Rivera took this")).toBeVisible();
