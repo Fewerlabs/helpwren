@@ -229,6 +229,33 @@ describe("appearance", () => {
     expect(parts().launcher?.querySelector("img")?.src).toBe("https://cdn.example.com/logo.png");
   });
 
+  it("shows the wren in a chat bubble when asked, and the plain bubble again after", async () => {
+    answer = { launcher: "wren" };
+    widget.init();
+    const marks = () => [...(parts().launcher?.querySelectorAll('[data-icon="open"]') ?? [])];
+    expect(marks().map((mark) => mark.getAttribute("data-mark"))).toEqual(["chat"]);
+
+    await vi.waitFor(() => {
+      expect(marks().map((mark) => mark.getAttribute("data-mark"))).toEqual(["wren"]);
+    });
+    // One colour, taken from the launcher, so it follows the install's brand.
+    expect(marks()[0]?.getAttribute("fill")).toBe("currentColor");
+    expect(marks()[0]?.outerHTML).not.toMatch(/#[0-9a-f]{3,6}/i);
+  });
+
+  it("swaps the launcher's icon as a preview changes it", () => {
+    widget.init({ preview: { appearance: { launcher: "wren" } } });
+    const mark = () => parts().launcher?.querySelector('[data-icon="open"]');
+    expect(mark()?.getAttribute("data-mark")).toBe("wren");
+
+    widget.preview({ appearance: { launcher: "chat" } });
+    expect(mark()?.getAttribute("data-mark")).toBe("chat");
+
+    // A logo was asked for and there is none, so the bubble stays.
+    widget.preview({ appearance: { launcher: "logo" } });
+    expect(mark()?.getAttribute("data-mark")).toBe("chat");
+  });
+
   it("keeps its defaults when the answer is missing or cannot be trusted", async () => {
     answer = {
       position: "top",

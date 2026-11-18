@@ -1,3 +1,4 @@
+import { EmptyState } from "@helpwren/design-system";
 import type { Metadata } from "next";
 
 import { accentStyle, brandFill } from "@/lib/accent";
@@ -30,7 +31,8 @@ export default async function HelpPage() {
           {helpCenter.intro ?? "Answers to common questions, written by our team."}
         </p>
       </header>
-      <p className="text-muted-foreground p-8 text-center">Articles are on their way.</p>
+      {/* The book and pencil alone: the wren is our mark, and this page wears theirs. */}
+      <EmptyState scene="first-article" bird={false} title="Articles are on their way" />
     </main>
   );
 }

@@ -12,13 +12,15 @@ export interface EmptyStateProps extends Omit<ComponentProps<"div">, "title"> {
   action?: ReactNode;
   /** Which wren scene to show, or `false` for none. Default `all-caught-up`. */
   scene?: WrenScene | false;
+  /** Set false to leave the wren out of the scene, on a screen that carries someone else's brand. */
+  bird?: boolean;
   /** Replaces the wren with your own illustration or icon. */
   illustration?: ReactNode;
   /** Draws the wren in when it appears. Default true. */
   animate?: boolean;
   size?: "sm" | "md";
-  /** The level of the title's heading, to fit the page outline. Default 2. */
-  headingLevel?: 2 | 3 | 4 | 5 | 6;
+  /** The level of the title's heading, to fit the page outline; 1 when it is the whole page. Default 2. */
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 /**
@@ -31,6 +33,7 @@ export function EmptyState({
   description,
   action,
   scene = "all-caught-up",
+  bird = true,
   illustration,
   animate = true,
   size = "md",
@@ -45,6 +48,7 @@ export function EmptyState({
       <Wren
         scene={scene}
         animate={animate}
+        bird={bird}
         decorative
         className={size === "sm" ? "max-w-36" : "max-w-56"}
       />

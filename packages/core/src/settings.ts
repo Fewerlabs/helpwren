@@ -44,7 +44,7 @@ const brandSchema = z.object({
 export type Brand = z.infer<typeof brandSchema>;
 
 export const widgetPositionSchema = z.enum(["right", "left"]);
-export const widgetLauncherSchema = z.enum(["chat", "logo"]);
+export const widgetLauncherSchema = z.enum(["chat", "logo", "wren"]);
 
 /** The most quick responses a chat offers, and the longest one may be. */
 export const QUICK_REPLIES_MAX = 5;
@@ -57,7 +57,7 @@ const widgetSchema = z.object({
   /** How far the launcher sits from the side and the bottom of the page, in pixels. */
   offsetX: z.number().int().min(0).max(120).default(20),
   offsetY: z.number().int().min(0).max(120).default(20),
-  /** What the launcher shows: a chat bubble, or the brand's logo when it has one. */
+  /** What the launcher shows: a chat bubble, one with the wren in it, or the brand's logo. */
   launcher: widgetLauncherSchema.default("chat"),
   /** The first line of the home screen, in place of "Hi there." */
   greeting: z.string().min(1).optional(),

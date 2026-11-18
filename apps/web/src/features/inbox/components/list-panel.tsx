@@ -196,7 +196,7 @@ export function ListPanel({
           <EmptyState
             size="sm"
             className="pt-8"
-            scene={searching ? false : "all-caught-up"}
+            scene={searching ? "no-results" : view.id === "open" ? "all-caught-up" : "nothing-here"}
             title={
               searching
                 ? "No conversations found"

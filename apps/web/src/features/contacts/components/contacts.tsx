@@ -183,7 +183,7 @@ export function Contacts() {
                   loading={list.isFetching}
                   empty={
                     <EmptyState
-                      scene={searchText ? false : "conversations"}
+                      scene={searchText ? "no-results" : "visitors"}
                       size="sm"
                       className="py-10"
                       title={searchText ? "No contacts found" : "No contacts yet"}

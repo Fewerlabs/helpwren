@@ -1,6 +1,6 @@
 import { defaultAppearance, parseAppearance, type Appearance } from "./appearance";
 import { CHANNEL, isFrameMessage, type PageMessage } from "./protocol";
-import { closeIcon, dismissIcon, openIcon, styles } from "./styles";
+import { closeIcon, dismissIcon, openIcon, styles, wrenIcon } from "./styles";
 
 export { type Appearance } from "./appearance";
 
@@ -171,18 +171,20 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
 
     const mark = launcher?.querySelector<HTMLElement>('[data-icon="open"]');
     if (!launcher || !mark) return;
+    // The logo is only shown when there is one; without it the launcher falls back to the bubble.
     const logo = appearance.launcher === "logo" ? appearance.logo : undefined;
-    const showsLogo = mark instanceof HTMLImageElement;
-    if (logo && showsLogo) {
+    const wanted = logo ? "logo" : appearance.launcher === "wren" ? "wren" : "chat";
+    if (mark instanceof HTMLImageElement && logo) {
       mark.src = logo;
     } else if (logo) {
       const image = document.createElement("img");
       image.dataset.icon = "open";
+      image.dataset.mark = "logo";
       image.alt = "";
       image.src = logo;
       mark.replaceWith(image);
-    } else if (showsLogo) {
-      mark.insertAdjacentHTML("afterend", openIcon);
+    } else if (mark.dataset.mark !== wanted) {
+      mark.insertAdjacentHTML("afterend", wanted === "wren" ? wrenIcon : openIcon);
       mark.remove();
     }
   }

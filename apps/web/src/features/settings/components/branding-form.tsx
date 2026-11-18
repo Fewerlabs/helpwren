@@ -249,6 +249,18 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
               ),
             },
             {
+              value: "wren",
+              label: "Wren in a bubble",
+              visual: (
+                <span
+                  className="grid size-10 place-items-center rounded-full text-white"
+                  style={{ background: fill }}
+                >
+                  <Icon name="chat-wren" weight="fill" className="size-5" />
+                </span>
+              ),
+            },
+            {
               value: "logo",
               label: "Your logo",
               disabled: !values.logo,

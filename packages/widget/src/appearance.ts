@@ -8,8 +8,8 @@ export interface Appearance {
   /** Pixels from the side and from the bottom of the page. */
   offsetX: number;
   offsetY: number;
-  /** A chat bubble, or the install's logo when it has one. */
-  launcher: "chat" | "logo";
+  /** A chat bubble, a chat bubble with the wren in it, or the install's logo when it has one. */
+  launcher: "chat" | "logo" | "wren";
   /** The launcher's colour, as `#rrggbb`. */
   accent: string;
   /** A second colour the launcher fades to. */
@@ -82,7 +82,9 @@ export function parseAppearance(data: unknown, base: Appearance = defaultAppeara
     offsetX: offset(given.offsetX, base.offsetX),
     offsetY: offset(given.offsetY, base.offsetY),
     launcher:
-      given.launcher === "logo" || given.launcher === "chat" ? given.launcher : base.launcher,
+      given.launcher === "logo" || given.launcher === "chat" || given.launcher === "wren"
+        ? given.launcher
+        : base.launcher,
     accent: colours.accent,
     accentInk: colours.accentInk,
     ...(colours.accentTo ? { accentTo: colours.accentTo } : {}),

@@ -179,8 +179,15 @@ export function ConfirmDialog({
             {error}
           </p>
         )}
-        <DialogFooter>
-          <Button ref={cancelRef} variant="secondary" disabled={pending} onClick={cancel}>
+        {/* Side by side at every width: on a phone the action takes most of the row. */}
+        <DialogFooter className="flex-row">
+          <Button
+            ref={cancelRef}
+            variant="secondary"
+            disabled={pending}
+            className="max-sm:flex-1"
+            onClick={cancel}
+          >
             {cancelLabel}
           </Button>
           <Button
@@ -188,6 +195,7 @@ export function ConfirmDialog({
             variant={destructive ? "destructive" : "primary"}
             loading={pending}
             disabled={confirmDisabled}
+            className="max-sm:flex-[2]"
             onClick={() => {
               void confirm();
             }}

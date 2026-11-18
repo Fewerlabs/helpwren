@@ -227,7 +227,11 @@ export const styles = `
 }
 `;
 
-export const openIcon = `<svg data-icon="open" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128 24a104 104 0 0 0-91.8 152.9L25.4 209.3a16 16 0 0 0 20.3 20.3l32.4-10.8A104 104 0 1 0 128 24Zm0 192a88 88 0 0 1-44.1-11.8 8 8 0 0 0-6.5-.7L40.6 215.4l11.9-36.8a8 8 0 0 0-.7-6.5A88 88 0 1 1 128 216Z"/></svg>`;
+export const openIcon = `<svg data-icon="open" data-mark="chat" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128 24a104 104 0 0 0-91.8 152.9L25.4 209.3a16 16 0 0 0 20.3 20.3l32.4-10.8A104 104 0 1 0 128 24Zm0 192a88 88 0 0 1-44.1-11.8 8 8 0 0 0-6.5-.7L40.6 215.4l11.9-36.8a8 8 0 0 0-.7-6.5A88 88 0 1 1 128 216Z"/></svg>`;
+
+// A filled speech bubble with the wren cut out of it. The cut-out shape reads at 26px where a
+// line drawing of the bird would not.
+export const wrenIcon = `<svg data-icon="open" data-mark="wren" viewBox="0 0 256 256" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path d="M128 24a104 104 0 0 0-91.8 152.9L25.4 209.3a16 16 0 0 0 20.3 20.3l32.4-10.8A104 104 0 1 0 128 24ZM194.8 112.8 173.5 114.9C169.2 100.3 157 90.9 142.2 90.9 124.6 90.9 107.1 99 96.2 115.2 86.8 105.8 80.1 92.2 77.3 77.4L65.2 82.8C69.2 100.3 78.7 119.2 88.2 131.4 88.2 155.7 105.7 171.9 130 173.2 155.7 174.6 175.9 154.4 175.9 130.1 175.9 127.4 175.9 125.5 175.4 123.6ZM162.7 114.4A5.7 5.7 0 1 0 151.3 114.4 5.7 5.7 0 1 0 162.7 114.4Z"/></svg>`;
 
 export const closeIcon = `<svg data-icon="close" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M213.7 101.7 133.7 181.7a8 8 0 0 1-11.4 0l-80-80a8 8 0 0 1 11.4-11.4L128 164.7l74.3-74.4a8 8 0 0 1 11.4 11.4Z"/></svg>`;
 
