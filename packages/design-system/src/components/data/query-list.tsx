@@ -5,7 +5,9 @@ import { useEffect, useRef, useState, type Key, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 
+import { Wren } from "../../illustrations/wren";
 import { Button } from "../base/button/button";
+import { Spinner } from "../base/spinner/spinner";
 import {
   DefaultEmpty,
   DefaultError,
@@ -41,6 +43,9 @@ export interface QueryListMessages {
   error: ReactNode;
   retry: string;
   loadMore: string;
+  loadingMore: string;
+  /** Shown under the last item once every page has been loaded. */
+  end: ReactNode;
   previous: string;
   next: string;
   page: (page: number, pageCount: number | undefined) => string;
@@ -52,6 +57,8 @@ const defaultMessages: QueryListMessages = {
   error: "This could not be loaded.",
   retry: "Try again",
   loadMore: "Load more",
+  loadingMore: "Loading more",
+  end: "You've reached the end.",
   previous: "Previous",
   next: "Next",
   page: (page, pageCount) =>
@@ -78,6 +85,8 @@ export interface QueryListState<Item> {
   isFetching: boolean;
   isFetchingMore: boolean;
   hasMore: boolean;
+  /** True in infinite mode once more than one page was loaded and no pages remain. */
+  isEnd: boolean;
   loadMore: () => void;
   retry: () => void;
   refetch: () => void;
@@ -113,6 +122,8 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   renderEmpty?: () => ReactNode;
   renderError?: (context: QueryErrorContext) => ReactNode;
   renderPagination?: (pagination: QueryListPagination) => ReactNode;
+  /** Replaces the end-of-list marker shown in infinite mode. Return `null` for none. */
+  renderEnd?: () => ReactNode;
   /** Content above and below the items, shown once there are items. */
   header?: ReactNode;
   footer?: ReactNode;
@@ -170,6 +181,7 @@ function ListView<Item, Cursor>({
   renderEmpty,
   renderError,
   renderPagination,
+  renderEnd,
   header,
   footer,
   loadingRows = 3,
@@ -182,7 +194,8 @@ function ListView<Item, Cursor>({
 }: ViewProps<Item, Cursor>) {
   const messages = { ...defaultMessages, ...overrides };
   const sentinel = useRef<HTMLDivElement | null>(null);
-  const { hasMore, loadMore, items, status, isFetching, isFetchingMore, retry, error } = state;
+  const { hasMore, loadMore, items, status, isFetching, isFetchingMore, isEnd, retry, error } =
+    state;
   const autoLoad = mode === "infinite" && loadMoreOn === "scroll";
 
   useEffect(() => {
@@ -263,12 +276,37 @@ function ListView<Item, Cursor>({
           : null}
         {mode === "infinite" && hasMore && !hasError ? (
           autoLoad ? (
-            <div ref={sentinel} aria-hidden="true" className="h-px" />
+            <>
+              <div ref={sentinel} aria-hidden="true" className="h-px" />
+              {/* The next page arrives at the bottom, so that is where loading shows. */}
+              {isFetchingMore ? (
+                <p
+                  role="status"
+                  className="text-muted-foreground flex items-center justify-center gap-2 py-4 text-sm"
+                >
+                  <Spinner label="" aria-hidden="true" />
+                  {messages.loadingMore}
+                </p>
+              ) : null}
+            </>
           ) : (
             <div className="flex justify-center py-3">
               <Button variant="secondary" size="sm" onClick={loadMore} loading={isFetchingMore}>
                 {messages.loadMore}
               </Button>
+            </div>
+          )
+        ) : null}
+        {isEnd && !hasError ? (
+          renderEnd ? (
+            renderEnd()
+          ) : (
+            <div
+              data-slot="query-list-end"
+              className="text-muted-foreground flex flex-col items-center gap-1 py-6 text-sm"
+            >
+              <Wren scene="all-caught-up" decorative className="max-w-28" />
+              <p>{messages.end}</p>
             </div>
           )
         ) : null}
@@ -290,7 +328,11 @@ function ListView<Item, Cursor>({
       className={cn("relative", className)}
     >
       {/* With items on screen, loading shows as a bar along the top so the list does not jump. */}
-      <StickyProgress active={isFetching && status === "ready"} label={messages.loading} />
+      <StickyProgress
+        // Loading the next page shows at the bottom instead; the bar is for refreshes.
+        active={isFetching && status === "ready" && !isFetchingMore}
+        label={messages.loading}
+      />
       <div data-slot="query-list-content" className={contentClassName}>
         {body()}
       </div>
@@ -363,6 +405,7 @@ function InfiniteQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
     error: query.error,
     isFetching: query.isFetching,
     isFetchingMore: isFetchingNextPage,
+    isEnd: pages.length > 1 && !hasNextPage,
     hasMore: hasNextPage,
     loadMore: () => {
       if (hasNextPage && !isFetchingNextPage) {
@@ -414,6 +457,7 @@ function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
     error: query.error,
     isFetching: query.isFetching,
     isFetchingMore: false,
+    isEnd: false,
     hasMore: false,
     loadMore: () => undefined,
     retry: () => {

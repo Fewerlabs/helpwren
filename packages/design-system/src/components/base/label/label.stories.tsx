@@ -18,7 +18,7 @@ function Showcase() {
   return (
     <div className="grid max-w-sm gap-2">
       <Label htmlFor="label-story-input">Brand name</Label>
-      <Input id="label-story-input" defaultValue="Glown" />
+      <Input id="label-story-input" defaultValue="Acme" />
     </div>
   );
 }

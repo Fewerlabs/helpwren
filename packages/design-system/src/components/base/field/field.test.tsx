@@ -25,7 +25,7 @@ describe("Field", () => {
     expect(input).not.toBeInvalid();
   });
 
-  it("marks the control invalid and announces the error", () => {
+  it("marks the control invalid, announces the error and shows it in place of the hint", () => {
     render(
       <Field label="Allowed domain" hint="One domain per line." error="Enter a domain.">
         <Input />
@@ -33,7 +33,8 @@ describe("Field", () => {
     );
     const input = screen.getByRole("textbox", { name: "Allowed domain" });
     expect(input).toBeInvalid();
-    expect(input).toHaveAccessibleDescription("One domain per line. Enter a domain.");
+    expect(input).toHaveAccessibleDescription("Enter a domain.");
+    expect(screen.queryByText("One domain per line.")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a domain.");
   });
 

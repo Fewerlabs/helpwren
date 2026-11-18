@@ -156,7 +156,9 @@ function InlineField<Values extends FieldValues>({
   }) => ReactNode;
 }) {
   const id = useId();
-  const hintId = item.hint === undefined ? undefined : `${id}-hint`;
+  // An error takes the hint's place.
+  const hint = error === undefined ? item.hint : undefined;
+  const hintId = hint === undefined ? undefined : `${id}-hint`;
   const errorId = error === undefined ? undefined : `${id}-error`;
 
   return (
@@ -176,7 +178,7 @@ function InlineField<Values extends FieldValues>({
           ) : null}
         </Label>
       </div>
-      {item.hint === undefined ? null : <FieldHint id={hintId}>{item.hint}</FieldHint>}
+      {hint === undefined ? null : <FieldHint id={hintId}>{hint}</FieldHint>}
       <FieldError id={errorId}>{error}</FieldError>
     </div>
   );
@@ -355,7 +357,9 @@ function FieldControl<Values extends FieldValues>({
               </Label>
             ))}
           </RadioGroup>
-          {item.hint === undefined ? null : <FieldHint>{item.hint}</FieldHint>}
+          {item.hint === undefined || error !== undefined ? null : (
+            <FieldHint>{item.hint}</FieldHint>
+          )}
           <FieldError>{error}</FieldError>
         </fieldset>
       );

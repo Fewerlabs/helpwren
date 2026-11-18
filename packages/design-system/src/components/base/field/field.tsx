@@ -40,8 +40,9 @@ export function Field({
 }: FieldProps) {
   const generatedId = useId();
   const id = idProp ?? generatedId;
-  const hasHint = hint !== undefined && hint !== null && hint !== false;
   const hasError = error !== undefined && error !== null && error !== false && error !== "";
+  // An error takes the hint's place, so the field never shows two lines of small text.
+  const hasHint = !hasError && hint !== undefined && hint !== null && hint !== false;
   const hintId = hasHint ? `${id}-hint` : undefined;
   const errorId = hasError ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(" ");

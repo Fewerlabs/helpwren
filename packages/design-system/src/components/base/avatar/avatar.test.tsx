@@ -6,7 +6,7 @@ import { Avatar, initials } from "./avatar";
 describe("initials", () => {
   it.each([
     ["Ada Lovelace", "AL"],
-    ["Glown", "G"],
+    ["Acme", "A"],
     ["  ada   king  lovelace ", "AL"],
     ["", ""],
   ])("turns %j into %j", (name, expected) => {

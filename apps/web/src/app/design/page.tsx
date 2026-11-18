@@ -253,7 +253,7 @@ export default function DesignPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
-                <Avatar name="Glown" size="sm" />
+                <Avatar name="Acme" size="sm" />
                 Install the widget
               </CardTitle>
               <CardDescription>Paste this once, before the closing body tag.</CardDescription>
@@ -261,7 +261,7 @@ export default function DesignPage() {
             <CardContent>
               <CodeSnippet
                 language="HTML"
-                code={'<script src="https://support.glown.io/widget.js"></script>'}
+                code={'<script src="https://support.acme.example/widget.js"></script>'}
               />
             </CardContent>
           </Card>

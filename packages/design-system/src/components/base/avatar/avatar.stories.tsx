@@ -25,7 +25,7 @@ function Showcase() {
     <div className="flex flex-wrap items-center gap-4">
       <Avatar name="Ada Lovelace" size="sm" />
       <Avatar name="Grace Hopper" />
-      <Avatar name="Glown" size="lg" />
+      <Avatar name="Acme" size="lg" />
       <Avatar name="Ada Lovelace" src={picture} size="lg" />
     </div>
   );

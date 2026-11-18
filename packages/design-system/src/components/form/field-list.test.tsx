@@ -168,7 +168,7 @@ describe("FieldList", () => {
     expect(name).toBeInvalid();
     expect(name).toHaveAccessibleDescription("Enter a name.");
     expect(screen.getByRole("textbox", { name: "Email" })).toHaveAccessibleDescription(
-      "For replies. Enter an email address.",
+      "Enter an email address.",
     );
     expect(screen.getByRole("combobox", { name: "Plan" })).toBeInvalid();
     expect(screen.getByRole("combobox", { name: "Category" })).toBeInvalid();

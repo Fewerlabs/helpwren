@@ -181,7 +181,7 @@ describe("Combobox with a fixed list", () => {
     );
     const input = screen.getByRole("combobox", { name: "Fruit" });
     expect(input).toBeInvalid();
-    expect(input).toHaveAccessibleDescription("Pick one. Choose a fruit.");
+    expect(input).toHaveAccessibleDescription("Choose a fruit.");
   });
 
   it("submits its value with a form", () => {

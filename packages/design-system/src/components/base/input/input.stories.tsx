@@ -54,7 +54,7 @@ function Addons() {
         />
       </Field>
       <Field label="Help center address">
-        <Input defaultValue="glown" prepend="https://" append=".helpwren.app" />
+        <Input defaultValue="acme" prepend="https://" append=".helpwren.app" />
       </Field>
       <Field label="Signing secret">
         <Input

@@ -197,7 +197,8 @@ actions.
 ### Forms
 
 **Field** wraps one control with its label, hint and error, and connects them: the label points at
-the control, the hint and error describe it, and an error marks it invalid and is announced. Use
+the control, the hint describes it, and an error marks it invalid, is announced, and takes the
+hint's place so only one line shows under the control. Use
 it for every `Input`, `Textarea`, `TagsInput`, `Combobox` and `Select`. For a `Select`, put the
 `Field` inside it, around `SelectTrigger`. `required` marks the control and shows an asterisk.
 
@@ -503,14 +504,19 @@ padding on `contentClassName`; padding on `className` would push the bar down.
 
 States it draws for you, each replaceable:
 
-| State                                 | Default                                    | Replace with       |
-| ------------------------------------- | ------------------------------------------ | ------------------ |
-| First load                            | Skeleton rows (`loadingRows`)              | `renderLoading`    |
-| No items                              | `EmptyState` with `messages.empty`         | `renderEmpty`      |
-| Failed with nothing to show           | A message and a "Try again" button         | `renderError`      |
-| Failed with items showing (load more) | A compact message and retry under the list | `renderError`      |
-| Refreshing with items showing         | `LinearProgress` pinned to the top         |                    |
-| Paging controls                       | Previous, "Page x of y", Next              | `renderPagination` |
+| State                                 | Default                                    | Replace with                |
+| ------------------------------------- | ------------------------------------------ | --------------------------- |
+| First load                            | Skeleton rows (`loadingRows`)              | `renderLoading`             |
+| No items                              | `EmptyState` with `messages.empty`         | `renderEmpty`               |
+| Failed with nothing to show           | A message and a "Try again" button         | `renderError`               |
+| Failed with items showing (load more) | A compact message and retry under the list | `renderError`               |
+| Refreshing with items showing         | `LinearProgress` pinned to the top         |                             |
+| Loading the next page (infinite)      | A spinner under the last item              | `messages.loadingMore`      |
+| Nothing more to load (infinite)       | The wren and "You\'ve reached the end."    | `renderEnd`, `messages.end` |
+| Paging controls                       | Previous, "Page x of y", Next              | `renderPagination`          |
+
+The end marker appears only after more than one page has loaded, so a list that fits on one page
+is not followed by it. Return `null` from `renderEnd` to turn it off.
 
 Also: `header` and `footer` around the items, `messages` for every piece of text, and
 `listClassName` and `itemClassName`. For a table, a grid or anything that is not a list, pass

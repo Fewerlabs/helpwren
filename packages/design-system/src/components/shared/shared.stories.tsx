@@ -91,7 +91,7 @@ export const CodeSnippets: Story = {
     <div className="grid max-w-xl gap-4">
       <CodeSnippet
         language="HTML"
-        code={`<script src="https://support.glown.io/widget.js"></script>\n<script>\n  Helpwren.init({ source: "web" });\n</script>`}
+        code={`<script src="https://support.acme.example/widget.js"></script>\n<script>\n  Helpwren.init({ source: "web" });\n</script>`}
       />
       <CodeSnippet
         language="Shell"

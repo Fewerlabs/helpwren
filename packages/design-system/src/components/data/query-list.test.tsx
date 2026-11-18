@@ -140,6 +140,73 @@ describe("QueryList", () => {
     expect(queryFn).toHaveBeenCalledTimes(3);
   });
 
+  it("shows a spinner at the bottom while the next page loads, then marks the end", async () => {
+    let release: () => void = () => undefined;
+    const queryFn = vi.fn(async ({ page }: QueryListRequest<number>) => {
+      if (page === 2) {
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+      }
+      const start = (page - 1) * 20;
+      return {
+        items: tickets.slice(start, start + 20),
+        nextCursor: start + 20 < tickets.length ? start + 20 : undefined,
+      };
+    });
+    const { container } = render(
+      <QueryProvider>
+        <QueryList queryKey={["tickets", "end"]} queryFn={queryFn} {...item} />
+      </QueryProvider>,
+    );
+    await screen.findByText("Ticket 20");
+    expect(screen.queryByText("You've reached the end.")).not.toBeInTheDocument();
+
+    await scrollToEnd();
+    expect(await screen.findByText("Loading more")).toBeInTheDocument();
+    // The top bar is for refreshes; a next page loads at the bottom.
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+    act(() => {
+      release();
+    });
+    expect(await screen.findByText("Ticket 25")).toBeInTheDocument();
+    expect(screen.queryByText("Loading more")).not.toBeInTheDocument();
+    expect(screen.getByText("You've reached the end.")).toBeInTheDocument();
+    expect(
+      container.querySelector("[data-slot='query-list-end'] [data-slot='wren']"),
+    ).not.toBeNull();
+  });
+
+  it("does not mark the end of a list that fits in one page, and lets the marker be replaced", async () => {
+    const { unmount } = render(
+      <QueryProvider>
+        <QueryList
+          queryKey={["tickets", "short"]}
+          queryFn={() => Promise.resolve({ items: tickets.slice(0, 3) })}
+          {...item}
+        />
+      </QueryProvider>,
+    );
+    await screen.findByText("Ticket 3");
+    expect(screen.queryByText("You've reached the end.")).not.toBeInTheDocument();
+    unmount();
+
+    render(
+      <QueryProvider>
+        <QueryList
+          queryKey={["tickets", "custom-end"]}
+          queryFn={pagedBy(20)}
+          renderEnd={() => <p>No more tickets</p>}
+          {...item}
+        />
+      </QueryProvider>,
+    );
+    await screen.findByText("Ticket 20");
+    await scrollToEnd();
+    expect(await screen.findByText("No more tickets")).toBeInTheDocument();
+  });
+
   it("can load more with a button instead of on scroll", async () => {
     render(
       <QueryProvider>

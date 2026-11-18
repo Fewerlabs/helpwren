@@ -141,9 +141,9 @@ const fields: FieldItem<Settings>[] = [
 ];
 
 const defaults: Settings = {
-  brand: "Glown",
+  brand: "Acme",
   email: "",
-  domains: ["glown.io"],
+  domains: ["acme.example"],
   audience: "",
   categories: ["billing"],
   monthlyBudget: "2500",

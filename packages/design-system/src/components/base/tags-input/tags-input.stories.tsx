@@ -29,7 +29,7 @@ export const WithValues: Story = {
 };
 
 function Domains() {
-  const [domains, setDomains] = useState(["glown.io", "app.glown.io"]);
+  const [domains, setDomains] = useState(["acme.example", "app.acme.example"]);
   return (
     <Field
       label="Allowed domains"

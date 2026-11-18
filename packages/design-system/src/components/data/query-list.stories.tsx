@@ -97,6 +97,26 @@ export const InfiniteScroll: Story = {
   ),
 };
 
+/**
+ * A short list, so the end is easy to reach: a spinner shows at the bottom while
+ * the next page loads, and the wren marks the end once there is nothing more.
+ */
+export const EndOfList: Story = {
+  render: () => (
+    <QueryList
+      queryKey={["stories", "end"]}
+      queryFn={async (request: QueryListRequest<number>) => {
+        const page = await fetchConversations({ ...request, pageSize: 6 });
+        const loaded = request.page * 6;
+        return loaded >= 18 ? { ...page, nextCursor: undefined } : page;
+      }}
+      className="border-line bg-card h-96 overflow-y-auto rounded-xl"
+      contentClassName="px-4"
+      {...list}
+    />
+  ),
+};
+
 export const LoadMoreButton: Story = {
   render: () => (
     <QueryList

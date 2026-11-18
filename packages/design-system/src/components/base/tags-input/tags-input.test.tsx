@@ -45,8 +45,8 @@ describe("TagsInput", () => {
       transform: (text) => text.trim().toLowerCase(),
       validate: (value) => value.includes("."),
     });
-    await userEvent.type(input, "  Glown.IO {Enter}");
-    expect(onValueChange).toHaveBeenLastCalledWith(["glown.io"]);
+    await userEvent.type(input, "  Acme.Example {Enter}");
+    expect(onValueChange).toHaveBeenLastCalledWith(["acme.example"]);
 
     await userEvent.type(input, "nodot{Enter}");
     expect(onValueChange).toHaveBeenCalledTimes(1);
