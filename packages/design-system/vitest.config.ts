@@ -39,6 +39,7 @@ export default defineConfig({
             "libphonenumber-js/min",
             "radix-ui",
             "react-hook-form",
+            "sonner",
             "tailwind-merge",
             "zod",
           ],

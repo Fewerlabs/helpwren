@@ -185,7 +185,7 @@ switches extend their hit area invisibly to 44px. Each has a story under
 
 **Button** starts an action. Variants: `primary` (the one filled element; one per view),
 `secondary` (outlined, the default choice for everything else), `ghost` (low emphasis, toolbars),
-`destructive` (outlined in red pen; confirm with a `Dialog`) and `link`. Sizes: `md` (40px, the
+`destructive` (outlined in red pen; confirm with a `ConfirmDialog`) and `link`. Sizes: `md` (40px, the
 same height as an input), `sm` (32px), `icon` and `icon-sm`. An icon size requires `aria-label`; TypeScript enforces it.
 `loading` shows a spinner and blocks clicks. `asChild` styles a child element, such as a router
 link, as a button. Use `Link` instead when the result is navigation and it should look like text.
@@ -372,6 +372,42 @@ brought to the centre. Give `TabsList` an `aria-label`. Use links, not tabs, to 
 `DialogDescription`, `DialogFooter`, `DialogClose`) interrupts the page for a decision or a short
 task. It needs a `DialogTitle`. Put the primary action last in `DialogFooter`. Use a `Sheet` for
 longer, secondary content, and a `Popover` for something small that should not block the page.
+
+**ConfirmDialog** asks the person to confirm an action before it happens: something that cannot
+be undone, or that other people will notice. It is an alert dialog, so a click outside does not
+dismiss it; Cancel and Escape do.
+
+- `title`, `description`, and `children` for anything more to ask, such as a checkbox;
+  `confirmDisabled` holds the button until that is answered.
+- `confirmLabel` and `cancelLabel`. Name the action ("Delete", "Resolve"), not "OK".
+- `tone="destructive"` turns the confirm button red and puts the focus on Cancel, so Enter cannot
+  destroy anything by accident. `icon` shows beside the title in the tone's colour.
+- `onConfirm` may return a promise. The button shows `loading` until it settles; the dialog closes
+  when it resolves, and stays open with an error line when it rejects. The line is the rejection's
+  own message, or `errorMessage`.
+- Open it with a `trigger` element, or control it with `open` and `onOpenChange`.
+
+From code, `useConfirm` needs no markup. It resolves to `true` or `false`:
+
+```tsx
+const confirm = useConfirm();
+
+if (await confirm({ title: "Resolve this conversation?", confirmLabel: "Resolve" })) {
+  resolve();
+}
+```
+
+It takes the same options as the component, and needs one `ConfirmProvider` above it; the
+dashboard has one. Use a `Dialog` when the person has something to fill in, not only to agree to.
+
+**Toast** tells the person something happened, without interrupting them: `toast.success("Changes
+saved")`, `toast.error(...)`, `toast.message(...)` for a plain line, and `toast.promise(promise,
+{ loading, success, error })` for one toast that follows a request. Each takes a `description`,
+an `action` (`{ label, onClick }`, such as "Undo"), a `duration` and an `id`; a toast shown with
+the id of one on screen replaces it. `toast.dismiss(id)` closes one early. Mount one `Toaster`
+on the screen (the dashboard has one); it sits bottom right unless given a `position`. Keep a
+toast to a few words and never put the only copy of something important in one, because it
+leaves by itself: an error the person must act on in a form belongs beside the form too.
 
 **Sheet** (`Sheet`, `SheetTrigger`, `SheetContent`, `SheetHeader`, `SheetTitle`,
 `SheetDescription`, `SheetFooter`, `SheetClose`) slides a panel in from an edge (`side`), for
@@ -637,7 +673,7 @@ through tokens only and kept in upstream formatting: the folder is excluded from
 style-only lint rules are off there, so an update produces a clean diff.
 
 Components present: avatar, badge, button, card, checkbox, dialog, field, input, kbd, label,
-popover, radio-group, select, separator, sheet, skeleton, spinner, switch, tabs, textarea,
+popover, radio-group, select, separator, sheet, skeleton, sonner, spinner, switch, tabs, textarea,
 tooltip.
 
 ### Adding or updating a `ui` component
@@ -660,15 +696,21 @@ The script runs the shadcn CLI and then reapplies two mechanical edits to every 
 direct Phosphor imports, which lint rejects; replace them with `Icon`. The script lists the files
 that need it. Files changed so far:
 
-| File           | Upstream                                                | Ours                                                  |
-| -------------- | ------------------------------------------------------- | ----------------------------------------------------- |
-| `checkbox.tsx` | `<CheckIcon />`                                         | `<Icon name="check" />`                               |
-| `dialog.tsx`   | `<XIcon />`                                             | `<Icon name="x" />`                                   |
-| `sheet.tsx`    | `<XIcon />`                                             | `<Icon name="x" />`                                   |
-| `select.tsx`   | `<CaretDownIcon />`, `<CaretUpIcon />`, `<CheckIcon />` | `<Icon name="caret-down" />`, `"caret-up"`, `"check"` |
-| `spinner.tsx`  | `<SpinnerIcon aria-label="Loading" {...props} />`       | `<Icon label="Loading" {...props} name="spinner" />`  |
+| File           | Upstream                                                | Ours                                                                             |
+| -------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `checkbox.tsx` | `<CheckIcon />`                                         | `<Icon name="check" />`                                                          |
+| `dialog.tsx`   | `<XIcon />`                                             | `<Icon name="x" />`                                                              |
+| `sheet.tsx`    | `<XIcon />`                                             | `<Icon name="x" />`                                                              |
+| `select.tsx`   | `<CaretDownIcon />`, `<CaretUpIcon />`, `<CheckIcon />` | `<Icon name="caret-down" />`, `"caret-up"`, `"check"`                            |
+| `spinner.tsx`  | `<SpinnerIcon aria-label="Loading" {...props} />`       | `<Icon label="Loading" {...props} name="spinner" />`                             |
+| `sonner.tsx`   | `<CheckCircleIcon />`, `<InfoIcon />` and the rest      | `<Icon name="check-circle" />`, `"info"`, `"warning"`, `"x-circle"`, `"spinner"` |
 
 In each file the import line becomes `import { Icon } from "#components/base/icon/icon"`.
+
+`sonner.tsx` needs one more edit. Upstream reads the theme from `next-themes`, which the CLI
+installs; remove the `useTheme` import, the `theme` prop and the package
+(`pnpm --filter @helpwren/design-system remove next-themes`). Our toasts are drawn with tokens,
+which already follow the `dark` class, so Sonner does not need to know the theme.
 
 ### Imports inside the package
 

@@ -59,6 +59,7 @@ import {
   UsersIcon,
   WarningIcon,
   WarningCircleIcon,
+  XCircleIcon,
   XIcon,
 } from "@phosphor-icons/react/ssr";
 
@@ -121,6 +122,7 @@ export const registry = {
   warning: WarningIcon,
   "warning-circle": WarningCircleIcon,
   x: XIcon,
+  "x-circle": XCircleIcon,
 } as const;
 
 export type IconName = keyof typeof registry;
