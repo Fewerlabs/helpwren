@@ -43,7 +43,13 @@ pnpm db:start     # start the stack; the first run downloads the images and take
 pnpm db:status    # print the local URLs and keys
 pnpm db:reset     # rebuild the database from supabase/migrations and the seed data
 pnpm db:stop      # stop the stack and keep its data
+pnpm db:test      # run the access-rule tests in supabase/tests
+pnpm db:lint      # check the schema for mistakes
+pnpm db:types     # regenerate packages/core/src/database.types.ts after a schema change
 ```
+
+`pnpm db:reset` loads demo data from `supabase/seed.sql`: two team members (`ada@example.com`, an
+admin, and `sam@example.com`), a few contacts and some conversations.
 
 `pnpm db:status` also prints the address of Supabase Studio, a browser interface for the local
 database, and of Mailpit, which catches every email the local stack sends. Local settings live in

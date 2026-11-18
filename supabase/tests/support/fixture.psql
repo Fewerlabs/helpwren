@@ -1,0 +1,121 @@
+-- Shared setup for the access tests. Each test file includes this inside its own transaction
+-- and rolls back, so nothing here reaches the database.
+--
+-- The cast:
+--   guest_a, guest_b   two unrelated guests
+--   member             a verified user in the organisation "acme"
+--   teammate           another verified user in "acme"
+--   pretender          an unverified user who claims to be in "acme"
+--   stranger           signed in, but neither a contact nor an agent
+--   agent, admin       active team members
+--   former_agent       a team member who has been deactivated
+
+create extension if not exists pgtap with schema extensions;
+
+-- Start from empty tables, so the tests give the same result with or without the demo data.
+-- Like everything else here, this is undone by the rollback.
+truncate public.settings, public.notes, public.messages, public.conversations, public.agents,
+  public.contacts;
+
+create schema tests;
+grant usage on schema tests to anon, authenticated, service_role;
+
+create table tests.people (name text primary key, id uuid not null default gen_random_uuid());
+create table tests.things (name text primary key, id uuid not null);
+
+insert into tests.people (name) values
+  ('guest_a'), ('guest_b'), ('member'), ('teammate'), ('pretender'), ('stranger'),
+  ('agent'), ('admin'), ('former_agent');
+
+create function tests.uid(person text) returns uuid
+language sql stable security definer set search_path = ''
+as $$ select id from tests.people where name = person; $$;
+
+create function tests.thing(thing_name text) returns uuid
+language sql stable security definer set search_path = ''
+as $$ select id from tests.things where name = thing_name; $$;
+
+-- Become a signed-in person, exactly as the Data API would set things up for their request.
+create function tests.act_as(person text) returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'authenticated', true);
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', tests.uid(person), 'role', 'authenticated')::text,
+    true
+  );
+end;
+$$;
+
+-- Become a visitor with no session at all.
+create function tests.act_as_visitor() returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+end;
+$$;
+
+-- Become the app's server, which uses the secret key.
+create function tests.act_as_server() returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'service_role', true);
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+end;
+$$;
+
+-- Step outside the access rules to check what really happened.
+create function tests.act_as_owner() returns void
+language plpgsql
+as $$
+begin
+  perform set_config('role', 'postgres', true);
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;
+
+insert into auth.users (id, email)
+select id, name || '@example.test' from tests.people;
+
+insert into public.contacts (id, kind, verified, org_id, org_name, name) values
+  (tests.uid('guest_a'),   'guest', false, null,   null,   'Guest A'),
+  (tests.uid('guest_b'),   'guest', false, null,   null,   'Guest B'),
+  (tests.uid('member'),    'user',  true,  'acme', 'Acme', 'Member'),
+  (tests.uid('teammate'),  'user',  true,  'acme', 'Acme', 'Teammate'),
+  (tests.uid('pretender'), 'user',  false, 'acme', 'Acme', 'Pretender');
+
+insert into public.agents (user_id, name, email, role, active) values
+  (tests.uid('agent'),        'Agent',        'agent@example.test',        'agent', true),
+  (tests.uid('admin'),        'Admin',        'admin@example.test',        'admin', true),
+  (tests.uid('former_agent'), 'Former agent', 'former_agent@example.test', 'agent', false);
+
+with created as (
+  insert into public.conversations (contact_id, source, subject)
+  select tests.uid(owner), 'web', owner || ' conversation'
+  from unnest(array['guest_a', 'guest_b', 'member', 'pretender']) as owner
+  returning id, subject
+)
+insert into tests.things (name, id)
+select replace(subject, ' ', '_'), id from created;
+
+insert into public.messages (conversation_id, sender_id, sender_role, body)
+select c.id, c.contact_id, k.kind, 'Hello from ' || k.name
+from public.conversations c join public.contacts k on k.id = c.contact_id;
+
+with created as (
+  insert into public.notes (conversation_id, author_id, body)
+  values (tests.thing('guest_a_conversation'), tests.uid('agent'), 'Internal note')
+  returning id
+)
+insert into tests.things (name, id) select 'agent_note', id from created;
+
+insert into public.settings (key, value, is_public) values
+  ('brand', '{"name": "Test"}', true),
+  ('signing_secret', '"hidden"', false);
+
+grant execute on all functions in schema tests to anon, authenticated, service_role;

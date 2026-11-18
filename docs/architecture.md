@@ -24,9 +24,23 @@ published. See [ADR 0001](decisions/0001-tooling.md).
 
 ## The database: `supabase/`
 
-Helpwren runs on Supabase: Postgres, Auth, Realtime and Storage. `supabase/config.toml` configures
-the local stack that the Supabase CLI runs in Docker; migrations, seed data and database tests go
-under `supabase/` alongside it. See [Setup](contributing/setup.md#local-database) for the commands.
+Helpwren runs on Supabase: Postgres, Auth, Realtime and Storage.
+
+| Path                   | Holds                                                           |
+| ---------------------- | --------------------------------------------------------------- |
+| `supabase/config.toml` | Settings for the local stack the Supabase CLI runs in Docker    |
+| `supabase/migrations`  | Tables, access rules and triggers, as plain SQL in order        |
+| `supabase/tests`       | pgTAP tests of the access rules, one file per table             |
+| `supabase/seed.sql`    | Demo data for local development; never loaded by a real install |
+
+The browser reaches the database with a public key, so Row Level Security decides who can read
+and write each row, and the tests are the proof. Anything the rules do not allow goes through the
+app's server. See [ADR 0006](decisions/0006-database-and-access-rules.md) for the rules and
+[Setup](contributing/setup.md#local-database) for the commands.
+
+To change the schema, add a migration with `pnpm exec supabase migration new <name>`, give any
+new table its grants, policies and a test file, then run `pnpm db:reset`, `pnpm db:test` and
+`pnpm db:types`.
 
 ## The app: `apps/web`
 

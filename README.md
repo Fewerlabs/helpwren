@@ -58,7 +58,7 @@ packages/
   adapters/            Identity, push, email and storage adapters (stub)
   cli/                 Installer and upgrader (stub)
   config/              Shared TypeScript, ESLint and Prettier configuration
-supabase/              Local Supabase configuration; migrations and database tests come next
+supabase/              Database migrations, access-rule tests, demo data and local configuration
 docs/
   brand/               Brand boards: logo, colour palette, illustrations
   decisions/           Architecture decision records
