@@ -19,8 +19,8 @@ export interface EmptyStateProps extends Omit<ComponentProps<"div">, "title"> {
   /** Draws the wren in when it appears. Default true. */
   animate?: boolean;
   size?: "sm" | "md";
-  /** The level of the title's heading, to fit the page outline. Default 2. */
-  headingLevel?: 2 | 3 | 4 | 5 | 6;
+  /** The level of the title's heading, to fit the page outline; 1 when it is the whole page. Default 2. */
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 /**
