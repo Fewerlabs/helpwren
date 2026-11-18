@@ -202,6 +202,9 @@ hue, and a hex box. The value is `{ color, to? }`, where `to` is the colour a gr
 and it is always a real colour, so there is nothing to validate. `colorBackground(value)` gives
 the CSS that paints it. Use it for a brand or theme colour, not a bare text input.
 
+**MessageBubble** takes `attachments`: the files sent with a message, drawn under its words. A
+message that is only files has no bubble.
+
 **ChoiceCards** chooses one of two to four options that are easier to recognise by sight than by
 name: each is a card with a small `visual` above its label. Underneath it is a radio group, so
 the arrow keys work. A card can be `disabled` with a `description` saying why.

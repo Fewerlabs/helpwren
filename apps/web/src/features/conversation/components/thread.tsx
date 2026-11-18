@@ -9,6 +9,7 @@ import { formatMessageTime } from "@/lib/format-time";
 import { describeEvent } from "../describe-event";
 import { useEvents, useLiveThread, useMessages, useNotes } from "../hooks/use-thread";
 import { Composer } from "./composer";
+import { MessageAttachments } from "./message-attachments";
 
 export interface ThreadProps {
   conversationId: string;
@@ -165,6 +166,16 @@ export function Thread({
                       : {})}
                     author={otherName}
                     time={formatMessageTime(entry.item.createdAt)}
+                    {...(entry.item.attachments.length > 0
+                      ? {
+                          attachments: (
+                            <MessageAttachments
+                              attachments={entry.item.attachments}
+                              compact={compact}
+                            />
+                          ),
+                        }
+                      : {})}
                   >
                     {entry.item.body}
                   </MessageBubble>

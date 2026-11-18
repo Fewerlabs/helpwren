@@ -54,6 +54,17 @@ function collector<Item>() {
 
 afterAll(async () => {
   const admin = serverClient();
+  // The files these tests uploaded go with the conversations they were in.
+  const { data: conversations } = await admin
+    .from("conversations")
+    .select("id")
+    .in("contact_id", guestIds);
+  for (const { id } of conversations ?? []) {
+    const { data: files } = await admin.storage.from("attachments").list(id);
+    if (files?.length) {
+      await admin.storage.from("attachments").remove(files.map((file) => `${id}/${file.name}`));
+    }
+  }
   await admin.from("conversations").delete().in("contact_id", guestIds);
   await Promise.all(guestIds.map((id) => admin.auth.admin.deleteUser(id)));
 });
@@ -212,6 +223,82 @@ describe("messages", () => {
       ok: false,
       reason: "rate_limited",
     });
+  });
+});
+
+describe("attachments", () => {
+  // The smallest PNG there is: one transparent pixel.
+  const pixel = Uint8Array.from(
+    atob(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+    ),
+    (character) => character.charCodeAt(0),
+  );
+  const png = () => new Blob([pixel], { type: "image/png" });
+
+  it("sends a file with a message, and lets both sides open it", async () => {
+    const guest = await newGuest();
+    const conversationId = await startConversation(guest.session.id);
+
+    const uploaded = await guest.client.attachments.upload(conversationId, png(), "my screen.png");
+    if (!uploaded.ok) throw new Error(`The upload was refused: ${uploaded.reason}`);
+    const sent = await guest.client.messages.send(conversationId, "", [uploaded.attachment]);
+    if (!sent.ok) throw new Error("The message was refused.");
+
+    expect(sent.message.body).toBe("");
+    expect(sent.message.attachments).toEqual([
+      {
+        path: uploaded.attachment.path,
+        name: "my screen.png",
+        type: "image/png",
+        size: pixel.length,
+      },
+    ]);
+
+    // The team reads the same message and gets a link that works.
+    const { client: agent } = await signedInAgent();
+    const { items } = await agent.messages.list(conversationId);
+    expect(items.at(-1)?.attachments[0]?.name).toBe("my screen.png");
+    const links = await agent.attachments.urls([uploaded.attachment.path]);
+    const opened = await fetch(links[uploaded.attachment.path] ?? "");
+    expect(opened.status).toBe(200);
+    expect(opened.headers.get("content-type")).toBe("image/png");
+
+    const conversation = await agent.conversations.get(conversationId);
+    expect(conversation?.lastMessagePreview).toBe("Sent a file: my screen.png");
+  });
+
+  it("keeps a conversation's files from everyone outside it", async () => {
+    const owner = await newGuest();
+    const conversationId = await startConversation(owner.session.id);
+    const uploaded = await owner.client.attachments.upload(conversationId, png(), "private.png");
+    if (!uploaded.ok) throw new Error(`The upload was refused: ${uploaded.reason}`);
+
+    const stranger = await newGuest();
+    await expect(stranger.client.attachments.urls([uploaded.attachment.path])).resolves.toEqual({});
+    await expect(
+      stranger.client.attachments.upload(conversationId, png(), "planted.png"),
+    ).resolves.toEqual({ ok: false, reason: "forbidden" });
+  });
+
+  it("refuses a file that is too large or of a kind it does not take", async () => {
+    const guest = await newGuest();
+    const conversationId = await startConversation(guest.session.id);
+
+    await expect(
+      guest.client.attachments.upload(
+        conversationId,
+        new Blob(["<script>"], { type: "text/html" }),
+        "page.html",
+      ),
+    ).resolves.toEqual({ ok: false, reason: "unsupported" });
+    await expect(
+      guest.client.attachments.upload(
+        conversationId,
+        new Blob([new Uint8Array(10 * 1024 * 1024 + 1)], { type: "image/png" }),
+        "huge.png",
+      ),
+    ).resolves.toEqual({ ok: false, reason: "too_large" });
   });
 });
 

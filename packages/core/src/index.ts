@@ -1,4 +1,13 @@
 export {
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_TYPES,
+  ATTACHMENTS_MAX,
+  attachmentSchema,
+  isImage,
+  type Attachment,
+  type UploadAttachmentResult,
+} from "./attachments";
+export {
   agentRoleSchema,
   agentSchema,
   teamMemberSchema,

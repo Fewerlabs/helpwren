@@ -1,4 +1,10 @@
-import { type ConversationEvent, type Message, type Note, type Page } from "@helpwren/core";
+import {
+  type Attachment,
+  type ConversationEvent,
+  type Message,
+  type Note,
+  type Page,
+} from "@helpwren/core";
 import {
   useInfiniteQuery,
   useMutation,
@@ -41,7 +47,8 @@ export function useSendMessage(conversationId: string) {
   const getClient = useHelpwren();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: string) => getClient().messages.send(conversationId, body),
+    mutationFn: ({ body, attachments }: { body: string; attachments: readonly Attachment[] }) =>
+      getClient().messages.send(conversationId, body, attachments),
     onSuccess: (result) => {
       if (result.ok) addMessage(queryClient, result.message);
     },
@@ -219,5 +226,21 @@ export function useEvents(
   return useQuery({
     queryKey: eventsKey(conversationId),
     queryFn: () => getClient().events.list(conversationId),
+  });
+}
+
+/**
+ * Links to a message's files. The files are private and each link lasts an hour, so they are
+ * asked for again well before that.
+ */
+export function useAttachmentUrls(attachments: readonly Attachment[]) {
+  const getClient = useHelpwren();
+  const paths = attachments.map((attachment) => attachment.path);
+  return useQuery({
+    queryKey: ["conversation", "attachment-urls", ...paths],
+    queryFn: () => getClient().attachments.urls(paths),
+    enabled: paths.length > 0,
+    staleTime: 45 * 60_000,
+    refetchInterval: 45 * 60_000,
   });
 }

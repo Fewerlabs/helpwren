@@ -16,3 +16,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0009 | [The widget script](0009-widget.md)                                    |
 | 0010 | [The dashboard, settings and the team](0010-dashboard-and-settings.md) |
 | 0011 | [Tickets, assignment and internal notes](0011-tickets-and-notes.md)    |
+| 0012 | [File attachments](0012-attachments.md)                                |

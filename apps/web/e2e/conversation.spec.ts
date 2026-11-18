@@ -62,6 +62,46 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await expect(agentMessages.getByText("12 Harbour Road, please.")).toBeVisible();
   await expect(row).toContainText("12 Harbour Road, please.");
 
+  // A picture from the team, sent on its own, shows on the visitor's side.
+  await inbox.getByLabel("Files to attach").setInputFiles({
+    name: "label.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  const toSend = inbox.getByRole("list", { name: "Files to send" });
+  await expect(toSend.getByText("label.png")).toBeVisible();
+  await inbox.getByRole("button", { name: "Send" }).click();
+  await expect(toSend).toHaveCount(0);
+  await expect(visitorMessages.getByRole("img", { name: "label.png" })).toBeVisible();
+  await expect(agentMessages.getByRole("img", { name: "label.png" })).toBeVisible();
+
+  // A document from the visitor, with a few words, reaches the team as a link.
+  await chat.getByLabel("Files to attach").setInputFiles({
+    name: "address.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("12 Harbour Road"),
+  });
+  await expect(chat.getByRole("list", { name: "Files to send" })).toContainText("address.txt");
+  await answer.fill("Here it is in writing.");
+  // Sending waits for the upload: the button is off until the file is in.
+  await expect(chat.getByRole("button", { name: "Send" })).toBeEnabled();
+  await answer.press("Enter");
+  await expect(agentMessages.getByText("Here it is in writing.")).toBeVisible();
+  await expect(agentMessages.getByRole("link", { name: /address\.txt/ })).toHaveAttribute(
+    "href",
+    /\/storage\/v1\/object\/sign\/attachments\//,
+  );
+  // A kind of file that cannot be sent is refused before anything is uploaded.
+  await chat.getByLabel("Files to attach").setInputFiles({
+    name: "page.html",
+    mimeType: "text/html",
+    buffer: Buffer.from("<p>hi</p>"),
+  });
+  await expect(chat.getByText(/That kind of file cannot be sent/)).toBeVisible();
+
   // The team makes it a ticket. The visitor sees that, and where it stands, without reloading.
   await inbox.getByRole("button", { name: "Convert to ticket" }).click();
   const dialog = inbox.getByRole("dialog", { name: "Convert to ticket" });

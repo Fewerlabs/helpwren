@@ -162,6 +162,25 @@ describe("MessageBubble", () => {
     expect(screen.queryByText("Ada")).not.toBeInTheDocument();
   });
 
+  it("shows files under the words, and no bubble when there are only files", () => {
+    const { rerender } = render(
+      <MessageBubble from="other" author="Ada" attachments={<a href="/invoice.pdf">invoice.pdf</a>}>
+        Here it is
+      </MessageBubble>,
+    );
+    expect(screen.getByText("Here it is")).toHaveClass("bg-muted");
+    expect(screen.getByRole("link", { name: "invoice.pdf" })).toBeInTheDocument();
+
+    rerender(
+      <MessageBubble from="other" author="Ada" attachments={<a href="/invoice.pdf">invoice.pdf</a>}>
+        {""}
+      </MessageBubble>,
+    );
+    expect(document.querySelector(".bg-muted")).toBeNull();
+    // Who sent it is still read out, with the files.
+    expect(screen.getByText("Ada:", { exact: false })).toBeInTheDocument();
+  });
+
   it("labels an internal note", () => {
     render(
       <MessageBubble from="self" note>

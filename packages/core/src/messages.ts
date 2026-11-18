@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { RATE_LIMITED_SQLSTATE } from "./api";
+import { attachmentSchema, ATTACHMENTS_MAX, type Attachment } from "./attachments";
 import { messageBodySchema, type Page } from "./conversations";
 import { HelpwrenError } from "./errors";
 import { listenForRows, type Unsubscribe } from "./realtime";
@@ -12,6 +13,7 @@ const messageRowSchema = z.object({
   sender_id: z.uuid(),
   sender_role: z.enum(["guest", "user", "agent", "system"]),
   body: z.string().nullable(),
+  attachments: z.array(attachmentSchema).default([]),
   created_at: z.string(),
 });
 
@@ -21,12 +23,14 @@ export const messageSchema = messageRowSchema.transform((row) => ({
   senderId: row.sender_id,
   senderRole: row.sender_role,
   body: row.body ?? "",
+  attachments: row.attachments,
   createdAt: row.created_at,
 }));
 
 export type Message = z.infer<typeof messageSchema>;
 
-const MESSAGE_COLUMNS = "id, conversation_id, sender_id, sender_role, body, created_at";
+const MESSAGE_COLUMNS =
+  "id, conversation_id, sender_id, sender_role, body, attachments, created_at";
 
 export interface ListMessagesOptions {
   /** `nextCursor` from the previous page, to load older messages. */
@@ -63,8 +67,19 @@ export function createMessages(supabase: HelpwrenSupabaseClient) {
       return { items: newestFirst.reverse(), nextCursor: oldest?.createdAt };
     },
 
-    /** Sends a message as whoever is signed in. */
-    async send(conversationId: string, body: string): Promise<SendMessageResult> {
+    /**
+     * Sends a message as whoever is signed in: words, files already uploaded with
+     * `attachments.upload`, or both.
+     */
+    async send(
+      conversationId: string,
+      body: string,
+      attachments: readonly Attachment[] = [],
+    ): Promise<SendMessageResult> {
+      const files = z.array(attachmentSchema).max(ATTACHMENTS_MAX).parse(attachments);
+      // With a file, the words are optional.
+      const text = files.length > 0 && body.trim() === "" ? null : messageBodySchema.parse(body);
+
       const { data: claims } = await supabase.auth.getClaims();
       if (!claims) throw new HelpwrenError("Sign in before sending a message.");
 
@@ -75,7 +90,8 @@ export function createMessages(supabase: HelpwrenSupabaseClient) {
           sender_id: claims.claims.sub,
           // The column is required, but the database replaces this with the sender's real role.
           sender_role: "guest",
-          body: messageBodySchema.parse(body),
+          body: text,
+          attachments: files,
         })
         .select(MESSAGE_COLUMNS)
         .single();

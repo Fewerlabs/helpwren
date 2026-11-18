@@ -248,6 +248,7 @@ export type Database = {
       };
       messages: {
         Row: {
+          attachments: NonNullable<Json>;
           body: string | null;
           channel: string;
           conversation_id: string;
@@ -258,6 +259,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          attachments?: NonNullable<Json>;
           body?: string | null;
           channel?: string;
           conversation_id: string;
@@ -267,6 +269,7 @@ export type Database = {
           sender_role: string;
         };
         Update: {
+          attachments?: NonNullable<Json>;
           body?: string | null;
           channel?: string;
           conversation_id?: string;

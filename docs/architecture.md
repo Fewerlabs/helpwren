@@ -131,6 +131,13 @@ The layouts follow a common shape for support tools, which people already know h
 chat opens on a home screen with tabs along the bottom, and the inbox is three panels side by
 side. The look is Helpwren's own.
 
+### Attachments
+
+A message can carry up to five files. The reply box uploads each one to the private
+`attachments` bucket as it is chosen (`attachments.upload` in the client library) and sends their
+paths with the message; the thread asks for signed links to show them. Who may read a file
+follows who may read its conversation. See [ADR 0012](decisions/0012-attachments.md).
+
 ### The widget
 
 A site shows the chat by loading `/widget.js`, which the app builds from `packages/widget` when

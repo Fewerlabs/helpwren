@@ -20,6 +20,11 @@ export interface MessageBubbleProps extends ComponentProps<"div"> {
    * Usually a small `Avatar`.
    */
   avatar?: ReactNode;
+  /**
+   * Files sent with the message, drawn under its words: pictures, links to documents. A message
+   * that is only files has no bubble, so leave `children` empty for one.
+   */
+  attachments?: ReactNode;
 }
 
 /**
@@ -35,11 +40,18 @@ export function MessageBubble({
   footer,
   size = "md",
   avatar,
+  attachments,
   className,
   children,
   ...props
 }: MessageBubbleProps) {
   const self = from === "self";
+  const hasWords = children !== undefined && children !== null && children !== "";
+  const speaker = self
+    ? "You: "
+    : author === undefined
+      ? ""
+      : `${typeof author === "string" ? author : "They"}: `;
 
   return (
     <div
@@ -61,27 +73,35 @@ export function MessageBubble({
       ) : null}
       <div className="flex max-w-full items-end gap-2">
         {self ? null : avatar}
-        <div
-          className={cn(
-            "leading-relaxed break-words whitespace-pre-wrap",
-            size === "sm"
-              ? "rounded-xl px-3 py-1.5 text-[0.8125rem]"
-              : "rounded-2xl px-3.5 py-2 text-sm",
-            self
-              ? "bg-primary text-primary-foreground rounded-br-md"
-              : "bg-muted text-foreground rounded-bl-md",
-            note && "border-line border-biro bg-card text-card-foreground border-dashed",
+        <div className={cn("flex min-w-0 flex-col gap-1.5", self ? "items-end" : "items-start")}>
+          {hasWords ? (
+            <div
+              className={cn(
+                "leading-relaxed break-words whitespace-pre-wrap",
+                size === "sm"
+                  ? "rounded-xl px-3 py-1.5 text-[0.8125rem]"
+                  : "rounded-2xl px-3.5 py-2 text-sm",
+                self
+                  ? "bg-primary text-primary-foreground rounded-br-md"
+                  : "bg-muted text-foreground rounded-bl-md",
+                note && "border-line border-biro bg-card text-card-foreground border-dashed",
+              )}
+            >
+              {/* Position and fill are visual only, so say who is speaking. */}
+              <span className="sr-only">{speaker}</span>
+              {children}
+            </div>
+          ) : null}
+          {attachments === undefined ? null : (
+            <div
+              data-slot="message-attachments"
+              className={cn("flex max-w-full flex-col gap-1.5", self ? "items-end" : "items-start")}
+            >
+              {/* With no words above, the files are what says who is speaking. */}
+              {hasWords ? null : <span className="sr-only">{speaker}</span>}
+              {attachments}
+            </div>
           )}
-        >
-          {/* Position and fill are visual only, so say who is speaking. */}
-          <span className="sr-only">
-            {self
-              ? "You: "
-              : author === undefined
-                ? ""
-                : `${typeof author === "string" ? author : "They"}: `}
-          </span>
-          {children}
         </div>
       </div>
       {time !== undefined || footer !== undefined ? (
