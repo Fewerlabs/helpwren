@@ -26,9 +26,14 @@ select is_empty(
   $$
     select table_name, privilege_type from information_schema.role_table_grants
     where table_schema = 'public' and grantee = 'anon'
-      and (table_name, privilege_type) <> ('settings', 'SELECT')
+      and (table_name, privilege_type) not in (
+        ('settings', 'SELECT'),
+        ('collections', 'SELECT'),
+        ('articles', 'SELECT'),
+        ('article_feedback', 'INSERT')
+      )
   $$,
-  'visitors with no session are granted nothing except reading settings'
+  'visitors with no session may only read settings and the help center, and rate an article'
 );
 
 select is_empty(

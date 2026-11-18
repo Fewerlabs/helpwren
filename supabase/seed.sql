@@ -121,3 +121,178 @@ insert into public.settings (key, value, is_public) values
   ('audiences', '["customer", "business"]', false),
   ('sources', '["web", "web_app"]', false),
   ('guest_details', '"email_or_phone"', true);
+
+-- The knowledge base: three collections and a handful of articles, one of them a draft, so the
+-- help center, its search and the editor all have something to show.
+insert into public.collections (id, name, slug, description, icon) values
+  ('f0000000-0000-4000-8000-000000000001', 'Getting started', 'getting-started',
+   'Set up your account and add the chat to your site.', 'rocket-launch'),
+  ('f0000000-0000-4000-8000-000000000002', 'Account and billing', 'account-and-billing',
+   'Plans, invoices and who can sign in.', 'credit-card'),
+  ('f0000000-0000-4000-8000-000000000003', 'Troubleshooting', 'troubleshooting',
+   'What to check when something is not working.', 'wrench');
+
+insert into public.articles (id, collection_id, title, slug, summary, status, author_id, body)
+values
+  ('f1000000-0000-4000-8000-000000000001', 'f0000000-0000-4000-8000-000000000001',
+   'Add the chat to your website', 'add-the-chat-to-your-website',
+   'Paste one snippet and the chat appears on every page.', 'published',
+   'a0000000-0000-4000-8000-000000000001',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "The chat is one small script. Add it once and it shows on every page that loads it."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Before you start"}]},
+     {"type": "bulletList", "content": [
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "You can edit your site's HTML, or its layout template."}]}]},
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "You are signed in as an "},
+         {"type": "text", "marks": [{"type": "bold"}], "text": "admin"},
+         {"type": "text", "text": "."}]}]}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Add the snippet"}]},
+     {"type": "orderedList", "attrs": {"start": 1}, "content": [
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "Open "},
+         {"type": "text", "marks": [{"type": "bold"}], "text": "Settings, then Installation"},
+         {"type": "text", "text": "."}]}]},
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "Copy the snippet."}]}]},
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "Paste it just before the closing "},
+         {"type": "text", "marks": [{"type": "code"}], "text": "</body>"},
+         {"type": "text", "text": " tag."}]}]}]},
+     {"type": "codeBlock", "attrs": {"language": "html"}, "content": [
+       {"type": "text", "text": "<script src=\"https://support.example.com/widget.js\" async></script>"}]},
+     {"type": "callout", "attrs": {"tone": "tip"}, "content": [{"type": "paragraph", "content": [
+       {"type": "text", "text": "Using a tag manager? Add the same snippet as a custom HTML tag that fires on every page."}]}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Check it works"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Reload your site. A round button appears in the bottom corner. Send a message and it arrives in your inbox."}]},
+     {"type": "heading", "attrs": {"level": 3}, "content": [{"type": "text", "text": "If the button does not appear"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "See "},
+       {"type": "text", "marks": [{"type": "link", "attrs": {"href": "/help/troubleshooting/the-chat-does-not-appear"}}], "text": "The chat does not appear"},
+       {"type": "text", "text": "."}]}]}$json$),
+
+  ('f1000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
+   'Invite your team', 'invite-your-team',
+   'Add the people who will answer, and choose who can change settings.', 'published',
+   'a0000000-0000-4000-8000-000000000001',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Everyone who answers conversations needs their own sign-in. There is no limit on how many people you add."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Add someone"}]},
+     {"type": "orderedList", "attrs": {"start": 1}, "content": [
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "Open "},
+         {"type": "text", "marks": [{"type": "bold"}], "text": "Settings, then Team"},
+         {"type": "text", "text": "."}]}]},
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "Choose "},
+         {"type": "text", "marks": [{"type": "bold"}], "text": "Add team member"},
+         {"type": "text", "text": " and enter their name and email address."}]}]},
+       {"type": "listItem", "content": [{"type": "paragraph", "content": [
+         {"type": "text", "text": "Tell them to sign in. A code is emailed to them each time."}]}]}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Admins and agents"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "An agent answers conversations and writes articles. An admin can also change settings and the team."}]},
+     {"type": "callout", "attrs": {"tone": "warning"}, "content": [{"type": "paragraph", "content": [
+       {"type": "text", "text": "Keep at least two admins, so one of you can always get in."}]}]}]}$json$),
+
+  ('f1000000-0000-4000-8000-000000000003', 'f0000000-0000-4000-8000-000000000001',
+   'Make the chat match your brand', 'make-the-chat-match-your-brand',
+   'Set your logo, colours and the words visitors read first.', 'published',
+   'a0000000-0000-4000-8000-000000000002',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Visitors should feel they are talking to you, not to a tool. Everything they see can carry your brand."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Logo and colours"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Open "},
+       {"type": "text", "marks": [{"type": "bold"}], "text": "Settings, then Branding"},
+       {"type": "text", "text": ". Upload a logo and pick a colour, or a gradient of two. The preview beside the form shows the result before you save."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Greeting and quick replies"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "On the Widget tab, write the greeting a visitor reads when the chat opens, and up to five replies they can send with one tap."}]},
+     {"type": "blockquote", "content": [{"type": "paragraph", "content": [
+       {"type": "text", "text": "Short greetings work best. Say who you are and how quickly you usually reply."}]}]}]}$json$),
+
+  ('f1000000-0000-4000-8000-000000000004', 'f0000000-0000-4000-8000-000000000002',
+   'Read your invoice', 'read-your-invoice',
+   'What each line on an invoice means, and where to download it.', 'published',
+   'a0000000-0000-4000-8000-000000000002',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "An invoice is issued on the first day of each billing period and emailed to the billing contact."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Download an invoice"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Open "},
+       {"type": "text", "marks": [{"type": "bold"}], "text": "Billing, then Invoices"},
+       {"type": "text", "text": " and choose the month. Invoices are PDF files."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Change the billing address"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "A new address applies to future invoices. To correct one already issued, start a chat and tell us its number."}]},
+     {"type": "callout", "attrs": {"tone": "info"}, "content": [{"type": "paragraph", "content": [
+       {"type": "text", "text": "Invoices are numbered in order and cannot be deleted, only corrected with a credit note."}]}]}]}$json$),
+
+  ('f1000000-0000-4000-8000-000000000005', 'f0000000-0000-4000-8000-000000000002',
+   'Change who can sign in', 'change-who-can-sign-in',
+   'Deactivate someone who has left, or make a colleague an admin.', 'published',
+   'a0000000-0000-4000-8000-000000000001',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Only admins change the team. Open "},
+       {"type": "text", "marks": [{"type": "bold"}], "text": "Settings, then Team"},
+       {"type": "text", "text": "."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "When someone leaves"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Choose "},
+       {"type": "text", "marks": [{"type": "bold"}], "text": "Deactivate"},
+       {"type": "text", "text": " beside their name. They lose access at once. Their replies and notes stay in every conversation."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Make someone an admin"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Choose "},
+       {"type": "text", "marks": [{"type": "bold"}], "text": "Make admin"},
+       {"type": "text", "text": ". You cannot change your own role, so nobody locks themselves out by accident."}]}]}$json$),
+
+  ('f1000000-0000-4000-8000-000000000006', 'f0000000-0000-4000-8000-000000000003',
+   'The chat does not appear', 'the-chat-does-not-appear',
+   'Three things to check when the button is missing from your site.', 'published',
+   'a0000000-0000-4000-8000-000000000002',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Work through these in order. The first is the cause nine times in ten."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "1. The site is not on the allowed list"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Under "},
+       {"type": "text", "marks": [{"type": "bold"}], "text": "Settings, then Installation"},
+       {"type": "text", "text": ", check that your site's address is listed, for example "},
+       {"type": "text", "marks": [{"type": "code"}], "text": "example.com"},
+       {"type": "text", "text": " or "},
+       {"type": "text", "marks": [{"type": "code"}], "text": "*.example.com"},
+       {"type": "text", "text": ". An empty list allows every site."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "2. The snippet is missing from the page"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "View the page's source and search for "},
+       {"type": "text", "marks": [{"type": "code"}], "text": "widget.js"},
+       {"type": "text", "text": ". If it is not there, the template you edited is not the one this page uses."}]},
+     {"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "3. Something is blocking it"}]},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Ad blockers and strict content security policies can stop the script. Try a private window with extensions off."}]},
+     {"type": "horizontalRule"},
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Still stuck? Start a chat and tell us the address of the page."}]}]}$json$),
+
+  ('f1000000-0000-4000-8000-000000000007', 'f0000000-0000-4000-8000-000000000003',
+   'Messages arrive late', 'messages-arrive-late',
+   'A draft about slow connections. Not published yet.', 'draft',
+   'a0000000-0000-4000-8000-000000000001',
+   $json${"type": "doc", "content": [
+     {"type": "paragraph", "content": [
+       {"type": "text", "text": "Messages are delivered live. If they arrive in bursts, the connection is being interrupted."}]}]}$json$);
+
+insert into public.article_feedback (article_id, helpful) values
+  ('f1000000-0000-4000-8000-000000000001', true),
+  ('f1000000-0000-4000-8000-000000000001', true),
+  ('f1000000-0000-4000-8000-000000000001', false),
+  ('f1000000-0000-4000-8000-000000000006', true);
