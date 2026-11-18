@@ -2,6 +2,10 @@
  * Maps the tokens onto Tailwind CSS v4 utilities. Import after "tailwindcss".
  */
 
+/* Enter and exit animations, and the data-state variants shadcn/ui components use. */
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @source "../components";

@@ -126,6 +126,84 @@ reaches 3:1 against the page background. Helpwren tests its own defaults, not yo
 ESLint enforces the boundaries. The reasoning is in
 [ADR 0002](decisions/0002-component-layers.md).
 
+## Icon
+
+`Icon` is the only way to render an icon. Nothing else imports the icon library.
+
+```tsx
+<Icon name="heart" className="size-4" />
+<Icon name="check-circle" weight="fill" className="size-5 text-moss" />
+<Icon name="trash" label="Delete conversation" />
+```
+
+- **Size and colour:** an icon is `1em` and `currentColor`, so it follows the text around it. Add
+  a class such as `size-4` or `text-pencil` to override.
+- **Weight:** `regular` by default, which matches the 1.5px line at 24px. Also `thin`, `light`,
+  `bold`, `fill` and `duotone`.
+- **Accessibility:** decorative by default (`aria-hidden`, not focusable). Pass `label` when the
+  icon carries meaning on its own; it is then announced as an image. For an icon-only button, put
+  the label on the button, not on the icon.
+- **`mirrored`** flips the icon for right-to-left layouts.
+
+Use `Icon` for interface icons. Use an illustration, not an icon, for empty states and anything
+with personality.
+
+### Adding an icon
+
+1. Find the icon on [phosphoricons.com](https://phosphoricons.com) and note its kebab-case name.
+2. In `src/components/base/icon/registry.ts`, add one import (`HeartIcon`) and one registry entry
+   (`heart: HeartIcon`), both in alphabetical order.
+
+That is all. `IconName` is derived from the registry, so the new name autocompletes and a typo is
+a type error. A test renders every registered icon, and the **Base / Icon / All Icons** story
+lists them with a search box. Only registered icons end up in the bundle.
+
+## The `ui` layer
+
+`src/components/ui` holds shadcn/ui components (style `radix-nova`, on Radix). They are restyled
+through tokens only and kept in upstream formatting: the folder is excluded from Prettier, and
+style-only lint rules are off there, so an update produces a clean diff.
+
+Components present: avatar, badge, button, card, checkbox, dialog, field, input, kbd, label,
+popover, radio-group, select, separator, sheet, skeleton, spinner, switch, tabs, textarea,
+tooltip.
+
+### Adding or updating a `ui` component
+
+```bash
+pnpm --filter @helpwren/design-system ui:add <component...>
+pnpm --filter @helpwren/design-system ui:add <component...> --overwrite   # to update
+```
+
+The script runs the shadcn CLI and then reapplies two mechanical edits to every `ui` file:
+
+- `import { cn } from "cn"` becomes `import { cn } from "#lib/cn"`. Upstream now ships `cn` as an
+  npm package; ours is configured for the custom utilities in `theme.css`, and the script removes
+  the upstream package again. Lint forbids importing `cn` from anywhere else.
+- `.tsx` is dropped from `#components/...` imports, because the package's import map adds it.
+
+### Icon edits to reapply after an update
+
+`components.json` sets `iconLibrary` to `phosphor`, so the CLI never installs Lucide. It writes
+direct Phosphor imports, which lint rejects; replace them with `Icon`. The script lists the files
+that need it. Files changed so far:
+
+| File           | Upstream                                                | Ours                                                  |
+| -------------- | ------------------------------------------------------- | ----------------------------------------------------- |
+| `checkbox.tsx` | `<CheckIcon />`                                         | `<Icon name="check" />`                               |
+| `dialog.tsx`   | `<XIcon />`                                             | `<Icon name="x" />`                                   |
+| `sheet.tsx`    | `<XIcon />`                                             | `<Icon name="x" />`                                   |
+| `select.tsx`   | `<CaretDownIcon />`, `<CaretUpIcon />`, `<CheckIcon />` | `<Icon name="caret-down" />`, `"caret-up"`, `"check"` |
+| `spinner.tsx`  | `<SpinnerIcon aria-label="Loading" {...props} />`       | `<Icon label="Loading" {...props} name="spinner" />`  |
+
+In each file the import line becomes `import { Icon } from "#components/base/icon/icon"`.
+
+### Imports inside the package
+
+The package uses Node subpath imports (`package.json#imports`) instead of TypeScript path aliases,
+so the same specifiers resolve in the app, in Storybook and in tests: `#components/...` and
+`#lib/...`.
+
 ## Adding a component
 
 1. Decide the layer. A primitive goes in `base`; something composed from primitives goes in
