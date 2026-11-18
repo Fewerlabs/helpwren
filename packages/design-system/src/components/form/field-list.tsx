@@ -19,6 +19,7 @@ import { Field } from "../base/field/field";
 import { FieldError, FieldHint } from "../base/field/field-message";
 import { Input, type InputProps } from "../base/input/input";
 import { Label } from "../base/label/label";
+import { PhoneInput, type PhoneInputProps } from "../base/phone-input/phone-input";
 import { Radio, RadioGroup } from "../base/radio-group/radio-group";
 import {
   Select,
@@ -54,6 +55,8 @@ export interface FieldTypes {
   /** A single-line `Input`. Pass `type`, `prepend`, `append`, `currency` or `formatter` in `props`. */
   input: Omit<InputProps, Controlled>;
   textarea: Omit<TextareaProps, Controlled>;
+  /** A `PhoneInput`. The value is the full international number, such as `+442079460958`. */
+  phone: Omit<PhoneInputProps, Controlled>;
   /** A `Select` for a short fixed list. */
   select: { options: readonly FieldOption[]; placeholder?: string; disabled?: boolean };
   /** A searchable `Combobox`: fixed or server-loaded options. Add `multiple` for several values. */
@@ -214,6 +217,22 @@ function FieldControl<Values extends FieldValues>({
             name={field.name}
             value={text(field.value)}
             onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            disabled={off || item.props?.disabled === true}
+          />
+        </Field>
+      );
+    case "phone":
+      return (
+        <Field {...wrapper}>
+          <PhoneInput
+            {...item.props}
+            ref={controlRef}
+            name={field.name}
+            value={text(field.value)}
+            onValueChange={(value) => {
+              field.onChange(value);
+            }}
             onBlur={field.onBlur}
             disabled={off || item.props?.disabled === true}
           />

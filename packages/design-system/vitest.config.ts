@@ -36,6 +36,7 @@ export default defineConfig({
             "@tanstack/react-query",
             "class-variance-authority",
             "clsx",
+            "libphonenumber-js/min",
             "radix-ui",
             "react-hook-form",
             "tailwind-merge",

@@ -216,6 +216,20 @@ nothing when empty.
 Use `Textarea` for more than one line, `TagsInput` for several values, and `Combobox`, `Select` or
 `RadioGroup` when the answers are known in advance.
 
+**PhoneInput** is an input for phone numbers. In front of the number is a country selector
+showing a flag and dialling code; pick another country there, or type or paste a number with its
+country code (`+44…`, or `0044…`) and the country is recognised for you. The number is formatted
+for its country as it is typed.
+
+- The value, and what a form submits, is always the full international number, such as
+  `+442079460958`. `onValueChange` also receives `{ country, nationalNumber, isValid }`.
+- `defaultCountry` sets the starting country (default `US`), `countries` limits the list,
+  `preferredCountries` puts some at the top, and `locale` sets the language of the country names.
+- In the country list, typing a country's name jumps to it.
+
+Validate the number in your schema as well; `isValid` is there for immediate feedback. Parsing and
+formatting come from `libphonenumber-js`. Flags are emoji, which Windows shows as two letters.
+
 **TagsInput** holds several free-text values in a box that grows. Enter or comma adds a value,
 Backspace in an empty box removes the last one, and pasting a list adds every item. Customise it
 with `transform` (clean each value), `validate` (reject a value), `separators`, `max`,
@@ -326,7 +340,9 @@ whole row clickable, so it works from the keyboard.
 by data.
 
 **Tabs** (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`) switch between views of the same
-context. Give `TabsList` an `aria-label`. Use links, not tabs, to move between pages.
+context. One indicator sits behind the active tab and slides to the next one when the
+selection changes. When the tabs do not fit, the row scrolls sideways and the chosen tab is
+brought to the centre. Give `TabsList` an `aria-label`. Use links, not tabs, to move between pages.
 
 ### Overlays
 
@@ -554,6 +570,7 @@ Each item has:
 | ---------- | ------------ | ----------------------------------------------------------------------------- |
 | `input`    | `Input`      | Any `Input` prop: `type`, `prepend`, `append`, `currency`, `formatter`        |
 | `textarea` | `Textarea`   | Any `Textarea` prop                                                           |
+| `phone`    | `PhoneInput` | Any `PhoneInput` prop: `defaultCountry`, `countries`, `preferredCountries`    |
 | `select`   | `Select`     | `options` (required), `placeholder`                                           |
 | `combobox` | `Combobox`   | Any `Combobox` prop: `options` or `loadOptions`, `resolveOptions`, `multiple` |
 | `tags`     | `TagsInput`  | Any `TagsInput` prop                                                          |

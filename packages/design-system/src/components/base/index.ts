@@ -131,3 +131,5 @@ export {
   TableRow,
   type TableProps,
 } from "./table/table";
+export { PhoneInput, type PhoneDetails, type PhoneInputProps } from "./phone-input/phone-input";
+export type { CountryCode } from "./phone-input/countries";

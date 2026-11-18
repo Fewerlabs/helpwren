@@ -21,6 +21,7 @@ const schema = z.object({
   terms: z.boolean().refine((value) => value, "Accept the terms."),
   notify: z.boolean(),
   code: z.string(),
+  phone: z.string(),
 });
 type Values = z.infer<typeof schema>;
 
@@ -37,6 +38,7 @@ const defaults: Values = {
   terms: false,
   notify: false,
   code: "",
+  phone: "",
 };
 
 const categories = [
@@ -49,6 +51,7 @@ const fields: FieldItem<Values>[] = [
   { name: "email", label: "Email", type: "input", hint: "For replies.", props: { type: "email" } },
   { name: "budget", label: "Budget", type: "input", props: { currency: true, prepend: "$" } },
   { name: "notes", label: "Notes", type: "textarea" },
+  { name: "phone", label: "Phone", type: "phone", props: { defaultCountry: "GB" } },
   {
     name: "plan",
     label: "Plan",
@@ -189,6 +192,7 @@ describe("FieldList", () => {
     await user.type(screen.getByRole("textbox", { name: "Budget" }), "12500");
     expect(screen.getByRole("textbox", { name: "Budget" })).toHaveValue("12,500");
     await user.type(screen.getByRole("textbox", { name: "Notes" }), "Call first");
+    await user.type(screen.getByRole("textbox", { name: "Phone" }), "02079460958");
 
     await user.click(screen.getByRole("combobox", { name: "Plan" }));
     await user.click(await screen.findByRole("option", { name: "Pro" }));
@@ -224,6 +228,7 @@ describe("FieldList", () => {
       terms: true,
       notify: true,
       code: "WREN",
+      phone: "+442079460958",
     });
   });
 

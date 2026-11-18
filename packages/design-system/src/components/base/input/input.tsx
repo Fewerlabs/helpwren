@@ -44,9 +44,12 @@ export interface InputProps extends Omit<ComponentProps<"input">, "value" | "def
   inputClassName?: string;
 }
 
-function sameValue(first: string, second: string): boolean {
+function sameValue(first: string, second: string, numeric: boolean): boolean {
   if (first === second) {
     return true;
+  }
+  if (!numeric) {
+    return false;
   }
   // "1000" and "1000." are the same number; do not wipe the dot the person just typed.
   return first !== "" && second !== "" && Number(first) === Number(second);
@@ -103,7 +106,11 @@ export function Input({
     formatter ? formatter.parse(formatter.format(String(value ?? defaultValue ?? ""))) : "",
   );
   // A controlled value that really changed replaces what was typed.
-  if (formatter && value !== undefined && !sameValue(String(value), raw)) {
+  if (
+    formatter &&
+    value !== undefined &&
+    !sameValue(String(value), raw, customFormatter === undefined)
+  ) {
     setRaw(formatter.parse(formatter.format(String(value))));
   }
 
