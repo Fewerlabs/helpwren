@@ -74,7 +74,8 @@ export function Contacts() {
           <SearchField
             aria-label="Search contacts"
             placeholder="Search by name, email or phone"
-            className="w-72 max-sm:w-44"
+            // Quiet, like the inbox search: a tint with no edge.
+            className="bg-muted dark:bg-muted min-h-8 w-72 border-transparent max-sm:w-44"
             value={search}
             onValueChange={setSearch}
             loading={contacts.isFetching && searchText.length > 0}
