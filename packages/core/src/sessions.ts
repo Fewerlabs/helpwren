@@ -46,6 +46,7 @@ export function createSessions(supabase: HelpwrenSupabaseClient, api: Api) {
         if (result.code === "token_expired") return { ok: false, reason: "expired" };
         if (result.code === "token_rejected") return { ok: false, reason: "rejected" };
         if (result.code === "forbidden") return { ok: false, reason: "off" };
+        if (result.code === "identity_unavailable") return { ok: false, reason: "unavailable" };
         throw new HelpwrenError(`Could not identify the user: ${result.message}`);
       }
 

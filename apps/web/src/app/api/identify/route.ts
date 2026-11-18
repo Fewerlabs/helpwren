@@ -57,8 +57,13 @@ export async function POST(request: Request): Promise<Response> {
   try {
     identity = await verifyIdentity(input.data.token);
   } catch (error) {
-    if (!(error instanceof IdentityError) || error.reason === "unavailable") throw error;
-    return apiError(error.reason === "expired" ? "token_expired" : "token_rejected", error.message);
+    if (!(error instanceof IdentityError)) throw error;
+    const codes = {
+      expired: "token_expired",
+      rejected: "token_rejected",
+      unavailable: "identity_unavailable",
+    } as const;
+    return apiError(codes[error.reason], error.message);
   }
   if (!identity) return apiError("forbidden", "This install does not identify its users.");
 

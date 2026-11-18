@@ -15,6 +15,7 @@ export const apiErrorSchema = z.object({
       "rate_limited",
       "token_expired",
       "token_rejected",
+      "identity_unavailable",
     ]),
     message: z.string(),
   }),

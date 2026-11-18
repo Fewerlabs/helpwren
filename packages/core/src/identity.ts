@@ -24,8 +24,9 @@ export type IdentifyResponse = z.infer<typeof identifyResponseSchema>;
 /**
  * Why the chat could not be signed in as a user. `expired`: the token was good once, and a
  * fresh one will work. `rejected`: this token never will. `off`: the install identifies nobody.
+ * `unavailable`: the host product could not be asked just now.
  */
-export type IdentifyFailure = "expired" | "rejected" | "off";
+export type IdentifyFailure = "expired" | "rejected" | "off" | "unavailable";
 
 export type IdentifyResult =
   | { ok: true; userId: string; mergedConversations: number }

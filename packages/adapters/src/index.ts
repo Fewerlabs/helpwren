@@ -1,4 +1,13 @@
-export { identitySettingsSchema, type IdentitySettings } from "./identity/settings";
+export {
+  profileEndpoint,
+  profileEndpointConfigSchema,
+  type ProfileEndpointConfig,
+} from "./identity/profile-endpoint";
+export {
+  identitySettingsSchema,
+  type IdentityMode,
+  type IdentitySettings,
+} from "./identity/settings";
 export {
   TOKEN_MAX_LIFETIME_SECONDS,
   signedToken,

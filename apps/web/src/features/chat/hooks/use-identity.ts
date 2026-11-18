@@ -38,6 +38,8 @@ export function useIdentity() {
         try {
           const result = await getClient().sessions.identify(token);
           if (!result.ok) {
+            // Unable to ask is not the same as being told no: whoever is signed in stays.
+            if (result.reason === "unavailable") return { state: "failed", reason: "error" };
             await dropUser();
             return { state: "failed", reason: result.reason };
           }
