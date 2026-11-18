@@ -8,6 +8,10 @@ export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   /** The public address of this install, e.g. https://support.example.com */
   NEXT_PUBLIC_APP_URL: z.url().default("http://localhost:3000"),
+  /** The address of the Supabase project this install stores its data in. */
+  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  /** Supabase's publishable key. Safe in the browser: the access rules decide what it can do. */
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -23,4 +27,6 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
 export const env = parseEnv({
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 });

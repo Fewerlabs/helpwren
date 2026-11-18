@@ -60,6 +60,21 @@ Logic, state and data access live in a feature.
 server start through `src/instrumentation.ts`, so a missing or malformed variable stops the app
 with a message naming it. Add a variable to the schema and to `.env.example` in the same change.
 
+### Talking to the database
+
+Screens never read tables. They call `@helpwren/core`, and the app's only job is to give it a
+Supabase client that knows whose request this is.
+
+| File                                 | Role                                                          |
+| ------------------------------------ | ------------------------------------------------------------- |
+| `src/lib/supabase/server.ts`         | A Supabase client for the current request, from its cookies   |
+| `src/lib/helpwren.ts`                | `getHelpwren()`: the client library on top of that client     |
+| `src/proxy.ts`                       | Refreshes the session before a page renders. Runs on `/inbox` |
+| `src/features/agent-auth/session.ts` | `requireAgent()`, which every team-only page calls first      |
+
+These are server-only. Client components reach the server through Server Actions, as the sign-in
+form does. See [ADR 0007](decisions/0007-agent-sign-in.md).
+
 ### Features
 
 Each folder in `src/features` is one feature. `features/example` is a complete, working one
@@ -116,13 +131,14 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route         | What it is                                                                   |
-| ------------- | ---------------------------------------------------------------------------- |
-| `/design`     | The design system running in the app, with the example feature at the bottom |
-| `/embed`      | Chat, tickets and help for visitors and users (placeholder)                  |
-| `/help`       | The public help center (placeholder)                                         |
-| `/inbox`      | The agent inbox (placeholder)                                                |
-| `/api/health` | Returns `{ "status": "ok" }`                                                 |
+| Route          | What it is                                                                   |
+| -------------- | ---------------------------------------------------------------------------- |
+| `/design`      | The design system running in the app, with the example feature at the bottom |
+| `/embed`       | Chat, tickets and help for visitors and users (placeholder)                  |
+| `/help`        | The public help center (placeholder)                                         |
+| `/inbox`       | The agent inbox, for signed-in team members (the inbox itself is not built)  |
+| `/inbox/login` | Sign-in for team members                                                     |
+| `/api/health`  | Returns `{ "status": "ok" }`                                                 |
 
 ## The design system
 

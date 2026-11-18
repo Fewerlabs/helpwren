@@ -23,6 +23,7 @@ You need Node 26 (see `.nvmrc`), pnpm 12 and Docker, for the local database.
 pnpm install
 pnpm exec playwright install chromium   # once, for the Storybook story tests
 pnpm db:start                           # the local Supabase stack, in Docker
+pnpm db:env                             # once: point the app at the local stack
 pnpm dev                                # the app on http://localhost:3000
 pnpm storybook                          # the design system on http://localhost:6006
 ```
@@ -40,8 +41,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 - **A design system** (`packages/design-system`): design tokens for light and dark, more than
   thirty components, the wren illustrations, and components for data fetching and forms. Browse it
   with `pnpm storybook`.
-- **The app shell** (`apps/web`): a Next.js app with placeholder routes, and `/design`, which shows
-  the design system running in the app together with a worked example feature.
+- **The app** (`apps/web`): a Next.js app with sign-in for team members at `/inbox`, placeholder
+  routes for the rest, and `/design`, which shows the design system running in the app together
+  with a worked example feature.
 - **The database** (`supabase/`): the first tables, the rules for who can read and write each
   row, and tests that prove them.
 - **The start of the client library** (`packages/core`): sign-in for team members and settings.
