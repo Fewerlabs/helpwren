@@ -19,6 +19,7 @@ import {
 import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { usePreviewSettings } from "../hooks/use-preview-settings";
 import { usePreview, useScreen, useSetPreview, useShowScreen, useTab } from "../store/chat-store";
+import { ArticleScreen, HelpScreen } from "./help-screen";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
 import { RatingPrompt } from "./rating-prompt";
@@ -101,6 +102,10 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     );
   }
 
+  if (screen.name === "article") {
+    return <ArticleScreen slug={screen.slug} onBack={back} onClose={onClose} />;
+  }
+
   if (screen.name === "start") {
     return (
       <>
@@ -121,6 +126,8 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     <>
       {screen.name === "messages" ? (
         <MessagesScreen conversations={earlier} teamName={teamName} onClose={onClose} />
+      ) : screen.name === "help" ? (
+        <HelpScreen onClose={onClose} />
       ) : (
         <HomeScreen
           greeting={settings.widget.greeting}
@@ -129,7 +136,10 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           onClose={onClose}
         />
       )}
-      <TabBar current={screen.name === "messages" ? "messages" : "home"} unread={unread} />
+      <TabBar
+        current={screen.name === "messages" || screen.name === "help" ? screen.name : "home"}
+        unread={unread}
+      />
     </>
   );
 }

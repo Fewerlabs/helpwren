@@ -6,6 +6,7 @@ import { cn, Icon, Wren } from "@helpwren/design-system";
 import { BrandMark } from "../brand";
 import { useShowScreen } from "../store/chat-store";
 import { ConversationRow } from "./conversation-row";
+import { SuggestedArticles } from "./help-screen";
 import { CloseButton } from "./screen-header";
 
 export interface HomeScreenProps {
@@ -56,6 +57,8 @@ export function HomeScreen({ greeting, intro, recent, onClose }: HomeScreenProps
           <Icon name="caret-right" className="text-muted-foreground" />
         </button>
       </div>
+
+      <SuggestedArticles />
 
       {recent ? (
         <section aria-labelledby="recent-message" className="px-1 pt-5">

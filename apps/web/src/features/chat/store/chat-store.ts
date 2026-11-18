@@ -1,10 +1,13 @@
 import { create } from "zustand";
 
-/** Which screen of the chat is showing. Home and Messages are the two tabs. */
+/** Which screen of the chat is showing. Home, Messages and Help are the tabs. */
 export type Screen =
   | { name: "home" }
   | { name: "messages" }
+  | { name: "help" }
   | { name: "start" }
+  /** A help article, read without leaving the chat. */
+  | { name: "article"; slug: string }
   | { name: "conversation"; id: string };
 
 /** The page the chat is embedded in, as its widget script reported it. */
@@ -24,7 +27,7 @@ interface ChatState {
   pendingReply: string | null;
   setPendingReply: (reply: string | null) => void;
   /** The tab a sub-screen was opened from, which is where its back arrow returns to. */
-  tab: "home" | "messages";
+  tab: "home" | "messages" | "help";
   show: (screen: Screen) => void;
 }
 
@@ -49,7 +52,7 @@ const useChatStore = create<ChatState>()((set) => ({
   },
   show: (screen) => {
     set(
-      screen.name === "home" || screen.name === "messages"
+      screen.name === "home" || screen.name === "messages" || screen.name === "help"
         ? { screen, tab: screen.name }
         : { screen },
     );

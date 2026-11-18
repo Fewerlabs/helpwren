@@ -170,3 +170,25 @@ test("an admin brands the help center, and visitors see it at once", async ({ pa
   expect(overflow).toBe(0);
   await expect(page.getByText("On this page")).toBeVisible();
 });
+
+test("a visitor finds and reads an article inside the chat", async ({ page }) => {
+  await page.goto("/chat");
+
+  // The home screen suggests the articles the team put forward.
+  const suggested = page.getByRole("region", { name: "Suggested articles" });
+  await expect(suggested.getByRole("button", { name: /The chat does not appear/ })).toBeVisible();
+
+  await page
+    .getByRole("navigation", { name: "Chat" })
+    .getByRole("button", { name: "Help" })
+    .click();
+  await page.getByRole("searchbox", { name: "Search for help" }).fill("invoice");
+  await page.getByRole("button", { name: /Read your invoice/ }).click();
+
+  await expect(page.getByRole("heading", { name: "Read your invoice" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Download an invoice" })).toBeVisible();
+  // Still in the chat, with the way to a person one tap away.
+  await expect(page).toHaveURL(/\/chat$/);
+  await page.getByRole("button", { name: /Still need help/ }).click();
+  await expect(page.getByRole("heading", { name: "New conversation" })).toBeVisible();
+});

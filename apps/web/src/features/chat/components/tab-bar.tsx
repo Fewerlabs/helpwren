@@ -7,6 +7,7 @@ import { useShowScreen } from "../store/chat-store";
 const tabs = [
   { name: "home", label: "Home", icon: "house" },
   { name: "messages", label: "Messages", icon: "chat-circle" },
+  { name: "help", label: "Help", icon: "book-open" },
 ] as const satisfies readonly { name: string; label: string; icon: IconName }[];
 
 export interface TabBarProps {
@@ -21,7 +22,7 @@ export function TabBar({ current, unread }: TabBarProps) {
 
   return (
     <footer className="border-rule shrink-0 border-t">
-      <nav aria-label="Chat" className="grid grid-cols-2 px-6 pt-2">
+      <nav aria-label="Chat" className="grid grid-cols-3 px-6 pt-2">
         {tabs.map((tab) => {
           const active = tab.name === current;
           const hasUnread = tab.name === "messages" && unread > 0;

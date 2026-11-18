@@ -1,5 +1,6 @@
 // The public help center's screens. Code outside this folder imports only from here. Its data
 // comes from `@/lib/help-center-data`, which only the server may load.
+export { ArticleFeedback } from "./components/article-feedback";
 export { ArticleView, type ArticleViewProps } from "./components/article-view";
 export { Breadcrumbs, type Crumb } from "./components/breadcrumbs";
 export { ArticleList, CollectionGrid, iconOf } from "./components/collection-grid";
