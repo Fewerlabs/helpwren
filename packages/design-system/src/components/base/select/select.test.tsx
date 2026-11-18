@@ -40,7 +40,7 @@ describe("Select", () => {
     expect(trigger).toHaveTextContent("Grace Hopper");
   });
 
-  it("is full width and 44px tall by default, and merges className", () => {
+  it("is full width and 40px tall by default, and merges className", () => {
     render(
       <Select>
         <SelectTrigger aria-label="Assignee" className="w-40">
@@ -49,7 +49,7 @@ describe("Select", () => {
       </Select>,
     );
     const trigger = screen.getByRole("combobox", { name: "Assignee" });
-    expect(trigger).toHaveClass("w-40", "data-[size=default]:h-11");
+    expect(trigger).toHaveClass("w-40", "data-[size=default]:h-10");
     expect(trigger).not.toHaveClass("w-full");
   });
 

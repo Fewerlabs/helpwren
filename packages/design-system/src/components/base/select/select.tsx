@@ -29,7 +29,7 @@ export function SelectTrigger({ className, ...props }: SelectTriggerProps) {
   return (
     <UiSelectTrigger
       className={cn(
-        "dark:hover:bg-card w-full px-3 data-[size=default]:h-11",
+        "dark:hover:bg-card w-full px-3 data-[size=default]:h-10",
         controlSurface,
         focusRing,
         controlInvalid,

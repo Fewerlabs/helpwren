@@ -3,13 +3,10 @@
 import { Slot } from "radix-ui";
 import { useId, type ComponentProps, type ReactElement, type ReactNode } from "react";
 
-import {
-  Field as UiField,
-  FieldDescription as UiFieldDescription,
-  FieldError as UiFieldError,
-  FieldLabel as UiFieldLabel,
-} from "#components/ui/field";
+import { Field as UiField, FieldLabel as UiFieldLabel } from "#components/ui/field";
 import { cn } from "#lib/cn";
+
+import { FieldError, FieldHint } from "./field-message";
 
 export interface FieldProps extends Omit<ComponentProps<"div">, "children"> {
   /** The visible name of the control. */
@@ -21,8 +18,8 @@ export interface FieldProps extends Omit<ComponentProps<"div">, "children"> {
   /** Marks the control as required, visually and for assistive technology. */
   required?: boolean;
   /**
-   * Exactly one control element, such as an `Input`, `Textarea` or `SelectTrigger`.
-   * For a select, put the `Field` inside `Select`, around the trigger.
+   * Exactly one control element, such as an `Input`, `Textarea`, `TagsInput`, `Combobox`
+   * or `SelectTrigger`. For a `Select`, put the `Field` inside it, around the trigger.
    */
   children: ReactElement;
 }
@@ -50,7 +47,7 @@ export function Field({
   const describedBy = [hintId, errorId].filter(Boolean).join(" ");
 
   return (
-    <UiField data-invalid={hasError || undefined} className={cn("gap-2", className)} {...props}>
+    <UiField data-invalid={hasError || undefined} className={cn("gap-1.5", className)} {...props}>
       <UiFieldLabel htmlFor={id} className="text-foreground text-sm font-medium">
         {label}
         {required ? (
@@ -67,8 +64,8 @@ export function Field({
       >
         {children}
       </Slot.Root>
-      {hasHint ? <UiFieldDescription id={hintId}>{hint}</UiFieldDescription> : null}
-      {hasError ? <UiFieldError id={errorId}>{error}</UiFieldError> : null}
+      {hasHint ? <FieldHint id={hintId}>{hint}</FieldHint> : null}
+      {hasError ? <FieldError id={errorId}>{error}</FieldError> : null}
     </UiField>
   );
 }

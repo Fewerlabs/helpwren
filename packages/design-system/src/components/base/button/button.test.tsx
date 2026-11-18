@@ -58,8 +58,8 @@ describe("Button", () => {
     const button = screen.getByRole("button", { name: "Delete" });
     expect(button).toHaveAttribute("data-variant", "destructive");
     expect(button).toHaveAttribute("data-size", "sm");
-    expect(button).toHaveClass("w-full", "h-9");
-    expect(button).not.toHaveClass("h-11");
+    expect(button).toHaveClass("w-full", "h-8");
+    expect(button).not.toHaveClass("h-10");
   });
 
   it("takes its name from aria-label when it only contains an icon", () => {
@@ -68,7 +68,7 @@ describe("Button", () => {
         <svg aria-hidden="true" />
       </Button>,
     );
-    expect(screen.getByRole("button", { name: "Attach a file" })).toHaveClass("size-11");
+    expect(screen.getByRole("button", { name: "Attach a file" })).toHaveClass("size-10");
   });
 
   it("renders its child with button styles when asChild is set", () => {

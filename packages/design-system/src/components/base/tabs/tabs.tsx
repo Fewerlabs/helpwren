@@ -20,7 +20,7 @@ export const Tabs = UiTabs;
 
 export function TabsList({ className, ...props }: TabsListProps) {
   return (
-    <UiTabsList className={cn("gap-1 p-1 group-data-horizontal/tabs:h-11", className)} {...props} />
+    <UiTabsList className={cn("gap-1 p-1 group-data-horizontal/tabs:h-10", className)} {...props} />
   );
 }
 

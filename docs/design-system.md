@@ -165,16 +165,17 @@ import { Button, Field, Input } from "@helpwren/design-system";
 ```
 
 Every control shares the same rules: a 1.5px edge on a card surface, a 10px radius, a solid 2px
-biro outline when focused with the keyboard, a red-pen edge when `aria-invalid`, and a touch
-target of at least 44px (smaller controls extend their hit area invisibly). Each has a story under
+biro outline when focused with the keyboard, and a red-pen edge when `aria-invalid`. Buttons and
+inputs are 40px tall so they line up in a row; buttons, checkboxes, radios and switches extend
+their hit area invisibly to 44px. Each has a story under
 **Base** in Storybook and a test beside it.
 
 ### Actions and navigation
 
 **Button** starts an action. Variants: `primary` (the one filled element; one per view),
 `secondary` (outlined, the default choice for everything else), `ghost` (low emphasis, toolbars),
-`destructive` (outlined in red pen; confirm with a `Dialog`) and `link`. Sizes: `md` (44px), `sm`
-(36px), `icon` and `icon-sm`. An icon size requires `aria-label`; TypeScript enforces it.
+`destructive` (outlined in red pen; confirm with a `Dialog`) and `link`. Sizes: `md` (40px, the
+same height as an input), `sm` (32px), `icon` and `icon-sm`. An icon size requires `aria-label`; TypeScript enforces it.
 `loading` shows a spinner and blocks clicks. `asChild` styles a child element, such as a router
 link, as a button. Use `Link` instead when the result is navigation and it should look like text.
 
@@ -186,11 +187,66 @@ actions.
 
 **Field** wraps one control with its label, hint and error, and connects them: the label points at
 the control, the hint and error describe it, and an error marks it invalid and is announced. Use
-it for every `Input`, `Textarea` and select. For a select, put the `Field` inside `Select`, around
-`SelectTrigger`. `required` marks the control and shows an asterisk.
+it for every `Input`, `Textarea`, `TagsInput`, `Combobox` and `Select`. For a `Select`, put the
+`Field` inside it, around `SelectTrigger`. `required` marks the control and shows an asterisk.
 
-**Input** is a single-line text input. Use `Textarea` for more than one line, and `Select` or
+**FieldHint** and **FieldError** are the small help and error lines that `Field` renders. Use them
+directly when you lay out a control yourself, for example beside a `Checkbox`, and point the
+control's `aria-describedby` at their id. `FieldError` is announced when it appears and renders
+nothing when empty.
+
+**Input** is a single-line text input.
+
+- `prepend` and `append` put anything inside the box, before and after the text: an icon, a unit,
+  a `Kbd`, a button. Clicking a plain addon focuses the input.
+- `currency` groups digits as they are typed, so 1000 shows as 1,000. Pass options for the locale
+  (`{ locale: "de-DE" }` shows 1.234,56), the number of decimals, or negatives. The currency
+  symbol is yours to add with `prepend` or `append`.
+- `formatter` handles any other shape of value. It is a pair of functions, `format` (raw value to
+  display text) and `parse` (typed text to raw value); the caret stays in place while the text is
+  reformatted. `createNumberFormatter` is the one behind `currency`.
+- `onValueChange` always receives the raw value (`"1000.5"`, never `"1,000.5"`), and with a `name`
+  the raw value is what a form submits. `value` accepts a string or a number.
+- `className` styles the outer box and `inputClassName` the inner `<input>`.
+
+Use `Textarea` for more than one line, `TagsInput` for several values, and `Combobox`, `Select` or
 `RadioGroup` when the answers are known in advance.
+
+**TagsInput** holds several free-text values in a box that grows. Enter or comma adds a value,
+Backspace in an empty box removes the last one, and pasting a list adds every item. Customise it
+with `transform` (clean each value), `validate` (reject a value), `separators`, `max`,
+`allowDuplicates`, `renderTag` (replace the chip) and `prepend` or `append`. Use `Combobox` with
+`multiple` when the values must come from a list.
+
+**Combobox** is the select for anything beyond a short fixed list. It is a searchable box that:
+
+- filters a fixed list (`options`), or loads from a server (`loadOptions`), which receives the
+  search text, a cursor and an `AbortSignal`, and returns a page of options
+- scrolls infinitely: return `nextCursor` from `loadOptions` and the next page loads when the end
+  of the list is reached. The cursor can be a page number, an offset or an opaque token
+- debounces typing (`debounceMs`) and aborts the previous request, so a slow early response never
+  overwrites a later one
+- takes one value or, with `multiple`, several, shown as removable chips in a box that grows
+- shows loading, empty and error states, with a retry
+
+Its value is the option's id, which is what a form stores. When a form is prefilled with an id
+whose option is not in the loaded page, the box needs the label from somewhere:
+
+- `resolveOptions(values, signal)` is called once with every selected value it does not know, in
+  one batch. Point it at an endpoint such as `GET /contacts?ids=3,77,120`. While it runs the box
+  shows "Loading…"; if it fails the raw value is shown and stays selected.
+- `selectedOptions` skips the request when you already hold the option objects, for example
+  because the record you are editing embeds them.
+
+Options chosen during a search are remembered, so their labels survive the next search.
+
+Everything visible can be replaced: `getOptionValue` and `getOptionLabel` (any option shape),
+`renderOption`, `renderValue`, `filter`, `isOptionDisabled`, `prepend`, `footer` (for example a
+"Create new" button), `messages` (every piece of text), and `clearable`, `searchable`, `name`,
+`className` and `listClassName`. Keyboard: arrows move, Enter chooses, Escape closes, Backspace
+removes the last value in `multiple`.
+
+Use `Select` for a short fixed list that needs no search, and `RadioGroup` for four or fewer.
 
 **Textarea** is a multi-line input that grows with its content. Use it for replies and notes.
 
@@ -198,8 +254,9 @@ it for every `Input`, `Textarea` and select. For a select, put the `Field` insid
 `Checkbox`, `Radio` or `Switch`.
 
 **Select** (`Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem`,
-`SelectGroup`, `SelectLabel`, `SelectSeparator`) chooses one option from a list of five or more.
-With four or fewer, use `RadioGroup` so every option is visible.
+`SelectGroup`, `SelectLabel`, `SelectSeparator`) chooses one option from a short fixed list. With
+four or fewer, use `RadioGroup` so every option is visible. For search, server data, infinite
+scrolling or several values, use `Combobox`.
 
 **Checkbox** is an independent yes or no that takes effect when a form is saved. Use `Switch` when
 the change applies immediately, and `RadioGroup` when only one of several may be chosen.
@@ -232,6 +289,13 @@ cards; use a `Separator` inside one.
 
 **Separator** is a thin divider in the rule colour, horizontal or vertical. It is decorative by
 default. Prefer spacing; use a separator when spacing alone is not enough.
+
+**Expandable** shows and hides content with a smooth size animation done in CSS grid alone (the
+track moves between `0fr` and `1fr`), so nothing is measured in JavaScript and it works with
+content of any height. Props: `open`, `orientation` (`vertical` or `horizontal`), `duration` in
+milliseconds, `easing`, `fade`, and `contentClassName`. While closed its content is `inert`. It
+only animates: put `aria-expanded` and `aria-controls` on your own trigger. Use `Dialog` or
+`Sheet` when the content should sit above the page instead of pushing it.
 
 **Tabs** (`Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`) switch between views of the same
 context. Give `TabsList` an `aria-label`. Use links, not tabs, to move between pages.

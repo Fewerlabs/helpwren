@@ -12,6 +12,19 @@ export {
   CardTitle,
   type CardProps,
 } from "./card/card";
+export {
+  Combobox,
+  type ComboboxMessages,
+  type ComboboxOption,
+  type ComboboxOptionState,
+  type ComboboxProps,
+} from "./combobox/combobox";
+export type {
+  ComboboxLoader,
+  ComboboxLoadRequest,
+  ComboboxPage,
+} from "./combobox/use-async-options";
+export type { ComboboxResolver } from "./combobox/use-resolved-options";
 export { Checkbox, type CheckboxProps } from "./checkbox/checkbox";
 export {
   Dialog,
@@ -25,10 +38,17 @@ export {
   type DialogContentProps,
   type DialogProps,
 } from "./dialog/dialog";
+export { Expandable, type ExpandableProps } from "./expandable/expandable";
 export { Field, type FieldProps } from "./field/field";
+export { FieldError, FieldHint } from "./field/field-message";
 export { Icon, type IconProps, type IconWeight } from "./icon/icon";
 export { iconNames, type IconName } from "./icon/registry";
 export { Input, type InputProps } from "./input/input";
+export {
+  createNumberFormatter,
+  type InputFormatter,
+  type NumberFormatOptions,
+} from "./input/format";
 export { Kbd, type KbdProps } from "./kbd/kbd";
 export { Label, type LabelProps } from "./label/label";
 export { Link, type LinkProps } from "./link/link";
@@ -87,5 +107,6 @@ export {
   type TabsProps,
   type TabsTriggerProps,
 } from "./tabs/tabs";
+export { TagsInput, type TagRenderContext, type TagsInputProps } from "./tags-input/tags-input";
 export { Textarea, type TextareaProps } from "./textarea/textarea";
 export { Tooltip, TooltipProvider, type TooltipProps } from "./tooltip/tooltip";

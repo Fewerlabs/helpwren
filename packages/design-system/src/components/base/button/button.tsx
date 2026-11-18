@@ -25,11 +25,12 @@ const buttonVariants = cva(
         link: "text-biro hover:text-foreground h-auto border-transparent px-0 underline underline-offset-4",
       },
       size: {
-        md: "h-11 px-4",
-        // 36px tall, with the hit area extended to 44px.
-        sm: "h-9 px-3 after:absolute after:-inset-x-0 after:-inset-y-1",
-        icon: "size-11 [&_svg:not([class*='size-'])]:size-5",
-        "icon-sm": "size-9 after:absolute after:-inset-1 [&_svg:not([class*='size-'])]:size-4.5",
+        // 40px tall, with the hit area extended to 44px.
+        md: "h-10 px-4 after:absolute after:-inset-x-0 after:-inset-y-0.5",
+        // 32px tall, with the hit area extended to 44px.
+        sm: "h-8 px-3 after:absolute after:-inset-x-0 after:-inset-y-1.5",
+        icon: "size-10 after:absolute after:-inset-0.5 [&_svg:not([class*='size-'])]:size-5",
+        "icon-sm": "size-8 after:absolute after:-inset-1.5 [&_svg:not([class*='size-'])]:size-4",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },
