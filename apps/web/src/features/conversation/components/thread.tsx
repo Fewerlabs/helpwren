@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 
 import { formatMessageTime } from "@/lib/format-time";
 
-import { useLiveThread, useMessages } from "../hooks/use-thread";
+import { useLiveThread, useMessages, useNotes } from "../hooks/use-thread";
 import { Composer } from "./composer";
 
 export interface ThreadProps {
@@ -22,6 +22,11 @@ export interface ThreadProps {
    * for the chat on a phone.
    */
   density?: "comfortable" | "compact";
+  /**
+   * Turns on internal notes, for the team's side: they are shown among the messages and can be
+   * written from the reply box. The function names a note's author from their id.
+   */
+  noteAuthor?: (authorId: string) => string;
 }
 
 /**
@@ -34,13 +39,20 @@ export function Thread({
   otherName,
   onRead,
   density = "comfortable",
+  noteAuthor,
 }: ThreadProps) {
   const compact = density === "compact";
   const messages = useMessages(conversationId);
+  const notes = useNotes(conversationId, noteAuthor !== undefined);
   useLiveThread(conversationId, { isOwn, onRead });
 
   const end = useRef<HTMLDivElement | null>(null);
-  const latestId = messages.data?.at(-1)?.id;
+  // Messages and notes together, in the order they were written.
+  const entries = [
+    ...(messages.data ?? []).map((message) => ({ kind: "message" as const, ...message })),
+    ...(notes.data ?? []).map((note) => ({ kind: "note" as const, ...note })),
+  ].sort((first, second) => first.createdAt.localeCompare(second.createdAt));
+  const latestId = entries.at(-1)?.id;
   useEffect(() => {
     // Keep the newest message in view, on opening and as each one arrives.
     end.current?.scrollIntoView({ block: "end" });
@@ -92,29 +104,47 @@ export function Thread({
               aria-label="Messages"
               className={compact ? "flex flex-col gap-2.5" : "flex flex-col gap-3"}
             >
-              {messages.data.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  from={isOwn(message) ? "self" : "other"}
-                  size={compact ? "sm" : "md"}
-                  {...(compact
-                    ? {
-                        className: "max-w-[72%]",
-                        avatar: <Avatar name={otherName} size="sm" className="text-2xs size-6" />,
-                      }
-                    : {})}
-                  author={otherName}
-                  time={formatMessageTime(message.createdAt)}
-                >
-                  {message.body}
-                </MessageBubble>
-              ))}
+              {entries.map((entry) =>
+                entry.kind === "note" ? (
+                  <MessageBubble
+                    key={entry.id}
+                    from="self"
+                    note
+                    size={compact ? "sm" : "md"}
+                    time={formatMessageTime(entry.createdAt)}
+                    footer={noteAuthor?.(entry.authorId)}
+                    {...(compact ? { className: "max-w-[72%]" } : {})}
+                  >
+                    {entry.body}
+                  </MessageBubble>
+                ) : (
+                  <MessageBubble
+                    key={entry.id}
+                    from={isOwn(entry) ? "self" : "other"}
+                    size={compact ? "sm" : "md"}
+                    {...(compact
+                      ? {
+                          className: "max-w-[72%]",
+                          avatar: <Avatar name={otherName} size="sm" className="text-2xs size-6" />,
+                        }
+                      : {})}
+                    author={otherName}
+                    time={formatMessageTime(entry.createdAt)}
+                  >
+                    {entry.body}
+                  </MessageBubble>
+                ),
+              )}
             </div>
           </>
         )}
         <div ref={end} />
       </div>
-      <Composer conversationId={conversationId} variant={compact ? "card" : "bar"} />
+      <Composer
+        conversationId={conversationId}
+        variant={compact ? "card" : "bar"}
+        allowNotes={noteAuthor !== undefined}
+      />
     </div>
   );
 }

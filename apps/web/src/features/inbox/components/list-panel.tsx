@@ -1,6 +1,6 @@
 "use client";
 
-import { type ConversationStatus, type ConversationWithContact } from "@helpwren/core";
+import { type ConversationWithContact } from "@helpwren/core";
 import {
   Avatar,
   Button,
@@ -9,7 +9,6 @@ import {
   SearchField,
   Skeleton,
   StatusChip,
-  type StatusName,
 } from "@helpwren/design-system";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
@@ -17,13 +16,7 @@ import { formatTimeAgo } from "@/lib/format-time";
 
 import { contactName } from "../contact-name";
 import { type InboxView } from "../hooks/use-inbox";
-
-const chipFor: Record<ConversationStatus, StatusName> = {
-  open: "open",
-  pending: "waiting",
-  resolved: "resolved",
-  closed: "closed",
-};
+import { statuses, ticketLabel } from "../labels";
 
 interface RowProps {
   conversation: ConversationWithContact;
@@ -66,7 +59,14 @@ function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
               unread > 0 ? "text-foreground" : "text-muted-foreground",
             )}
           >
-            {conversation.lastMessagePreview}
+            {conversation.type === "ticket" ? (
+              <span className="text-muted-foreground mr-1.5 font-mono">
+                {ticketLabel(conversation)}
+              </span>
+            ) : null}
+            {conversation.type === "ticket" && conversation.subject
+              ? conversation.subject
+              : conversation.lastMessagePreview}
           </span>
           {unread > 0 ? (
             <span className="bg-primary text-primary-foreground text-2xs grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 font-medium">
@@ -74,7 +74,11 @@ function Row({ conversation, selected, showStatus, onSelect }: RowProps) {
               <span className="sr-only"> unread</span>
             </span>
           ) : showStatus ? (
-            <StatusChip status={chipFor[conversation.status]} size="sm" className="shrink-0" />
+            <StatusChip
+              status={statuses[conversation.status].chip}
+              size="sm"
+              className="shrink-0"
+            />
           ) : null}
         </span>
       </span>
@@ -171,7 +175,7 @@ export function ListPanel({
                 ? "Try a name, an email address, or words from a message."
                 : view.id === "open"
                   ? "Nothing is waiting for the team."
-                  : `No conversations are in ${view.label.toLowerCase()}.`
+                  : `Nothing is in ${view.label} right now.`
             }
           />
         ) : (

@@ -1,33 +1,79 @@
-import { type ConversationStatus } from "@helpwren/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type ConversationChanges,
+  type ConversationFilter,
+  type ConversationStatus,
+} from "@helpwren/core";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
-/** The inbox's views, in the order its navigation shows them. */
+/** Statuses that still need the team: not yet resolved or closed. */
+const ACTIVE: readonly ConversationStatus[] = ["open", "pending"];
+
+/**
+ * The inbox's views, in the order its navigation shows them. Each is a filter; `mine` needs to
+ * know who is asking.
+ */
 export const inboxViews = [
-  { id: "open", label: "Open", icon: "tray", statuses: ["open"] },
-  { id: "waiting", label: "Waiting", icon: "clock", statuses: ["pending"] },
-  { id: "resolved", label: "Resolved", icon: "check-circle", statuses: ["resolved", "closed"] },
-  { id: "all", label: "All", icon: "archive", statuses: undefined },
+  {
+    id: "mine",
+    label: "My inbox",
+    icon: "user",
+    filter: (agentId: string): ConversationFilter => ({ assigneeId: agentId, status: ACTIVE }),
+  },
+  {
+    id: "unassigned",
+    label: "Unassigned",
+    icon: "tray",
+    filter: (): ConversationFilter => ({ assigneeId: null, status: ACTIVE }),
+  },
+  {
+    id: "open",
+    label: "Open",
+    icon: "chat-circle",
+    filter: (): ConversationFilter => ({ status: ["open"] }),
+  },
+  {
+    id: "waiting",
+    label: "Waiting",
+    icon: "clock",
+    filter: (): ConversationFilter => ({ status: ["pending"] }),
+  },
+  {
+    id: "tickets",
+    label: "Tickets",
+    icon: "ticket",
+    filter: (): ConversationFilter => ({ type: "ticket", status: ACTIVE }),
+  },
+  {
+    id: "resolved",
+    label: "Resolved",
+    icon: "check-circle",
+    filter: (): ConversationFilter => ({ status: ["resolved", "closed"] }),
+  },
+  { id: "all", label: "All", icon: "archive", filter: (): ConversationFilter => ({}) },
 ] as const satisfies readonly {
   id: string;
   label: string;
   icon: string;
-  statuses: readonly ConversationStatus[] | undefined;
+  filter: (agentId: string) => ConversationFilter;
 }[];
 
 export type InboxView = (typeof inboxViews)[number];
 
+/** The view shown when the address names none. */
+const DEFAULT_VIEW = inboxViews[2];
+
 const inboxKey = ["inbox"] as const;
 
-export function useInboxConversations(view: InboxView) {
+export function useInboxConversations(view: InboxView, agentId: string) {
   const getClient = useHelpwren();
   return useQuery({
-    queryKey: [...inboxKey, "conversations", view.id],
+    queryKey: [...inboxKey, "conversations", view.id, agentId],
     queryFn: async () =>
-      (await getClient().conversations.list({ limit: 50, status: view.statuses })).items,
+      (await getClient().conversations.list({ limit: 50, ...view.filter(agentId) })).items,
   });
 }
 
@@ -45,22 +91,62 @@ export function useConversationSearch(text: string) {
   });
 }
 
+/**
+ * The open conversation, loaded by its id and not looked up in the list on screen. It stays
+ * open when a change, such as resolving it, takes it out of the current view, and it opens
+ * from a link whichever view that link lands on.
+ */
+export function useOpenConversation(id: string | null) {
+  const getClient = useHelpwren();
+  return useQuery({
+    queryKey: [...inboxKey, "open", id],
+    queryFn: () => getClient().conversations.get(id ?? ""),
+    enabled: id !== null,
+    // The previous conversation stays on screen until the next one has loaded.
+    placeholderData: (previous) => previous,
+  });
+}
+
 /** How many conversations each view holds. */
-export function useViewCounts(): Partial<Record<InboxView["id"], number>> {
+export function useViewCounts(agentId: string): Partial<Record<InboxView["id"], number>> {
   const getClient = useHelpwren();
   const counts = useQuery({
-    queryKey: [...inboxKey, "counts"],
-    queryFn: () => getClient().conversations.countByStatus(),
+    queryKey: [...inboxKey, "counts", agentId],
+    queryFn: async () => {
+      const client = getClient();
+      const entries = await Promise.all(
+        inboxViews.map(
+          async (view) =>
+            [view.id, await client.conversations.count(view.filter(agentId))] as const,
+        ),
+      );
+      return Object.fromEntries(entries) as Record<InboxView["id"], number>;
+    },
   });
-  if (!counts.data) return {};
+  return counts.data ?? {};
+}
 
-  const { open, pending, resolved, closed } = counts.data;
-  return {
-    open,
-    waiting: pending,
-    resolved: resolved + closed,
-    all: open + pending + resolved + closed,
-  };
+/** Everyone on the team, for choosing an assignee and naming who wrote a note. */
+export function useTeam() {
+  const getClient = useHelpwren();
+  return useQuery({
+    queryKey: ["team"],
+    queryFn: () => getClient().agents.list(),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** Changes a conversation, then refreshes every list and count it might now belong to. */
+export function useChangeConversation(conversationId: string) {
+  const getClient = useHelpwren();
+  const refresh = useRefreshInbox();
+  return useMutation({
+    mutationFn: (change: ConversationChanges | { ticketSubject: string }) =>
+      "ticketSubject" in change
+        ? getClient().conversations.convertToTicket(conversationId, change.ticketSubject)
+        : getClient().conversations.update(conversationId, change),
+    onSettled: refresh,
+  });
 }
 
 /** Reloads the inbox's conversations and counts, for when a conversation has changed. */
@@ -105,12 +191,12 @@ const SELECTED = "c";
 /** The view in the address (`/dashboard/inbox?view=waiting`). Open, unless it says otherwise. */
 export function useInboxView(): InboxView {
   const id = useSearchParams().get(VIEW);
-  return inboxViews.find((view) => view.id === id) ?? inboxViews[0];
+  return inboxViews.find((view) => view.id === id) ?? DEFAULT_VIEW;
 }
 
 /** The address of a view, for its link in the navigation. */
 export function viewHref(view: InboxView): string {
-  return view.id === "open" ? "/dashboard/inbox" : `/dashboard/inbox?${VIEW}=${view.id}`;
+  return view.id === DEFAULT_VIEW.id ? "/dashboard/inbox" : `/dashboard/inbox?${VIEW}=${view.id}`;
 }
 
 /**

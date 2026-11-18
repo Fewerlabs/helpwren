@@ -13,6 +13,10 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
     id: "11111111-1111-4111-8111-111111111111",
     contactId: "22222222-2222-4222-8222-222222222222",
     status: "open",
+    type: "chat",
+    ticketNumber: null,
+    subject: null,
+    priority: "normal",
     source: "web",
     context: {},
     assigneeId: null,
@@ -33,7 +37,8 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
   };
 }
 
-const all = inboxViews[3];
+const all = inboxViews[6];
+const open = inboxViews[2];
 
 function renderList(props: Partial<ListPanelProps> = {}) {
   const handlers = { onRetry: vi.fn(), onSelect: vi.fn() };
@@ -41,7 +46,7 @@ function renderList(props: Partial<ListPanelProps> = {}) {
     <ListPanel
       conversations={[conversation()]}
       failed={false}
-      view={inboxViews[0]}
+      view={open}
       search=""
       onSearchChange={vi.fn()}
       searching={false}
@@ -108,7 +113,7 @@ describe("ListPanel", () => {
 
 describe("DetailsPanel", () => {
   it("shows how to reach the contact, and says what was not given", () => {
-    render(<DetailsPanel conversation={conversation()} />);
+    render(<DetailsPanel conversation={conversation()} team={[]} onChange={vi.fn()} />);
     const details = screen.getByRole("region", { name: "Details" });
 
     expect(within(details).getByRole("link", { name: "priya@example.org" })).toHaveAttribute(
@@ -122,6 +127,8 @@ describe("DetailsPanel", () => {
   it("links to the page the visitor wrote from, by its title", () => {
     render(
       <DetailsPanel
+        team={[]}
+        onChange={vi.fn()}
         conversation={conversation({
           context: { url: "https://example.com/pricing", title: "Pricing" },
         })}
@@ -137,6 +144,8 @@ describe("DetailsPanel", () => {
     const { contact } = conversation();
     const { rerender } = render(
       <DetailsPanel
+        team={[]}
+        onChange={vi.fn()}
         conversation={conversation({ contact: { ...contact, kind: "user", verified: true } })}
       />,
     );
@@ -144,6 +153,8 @@ describe("DetailsPanel", () => {
 
     rerender(
       <DetailsPanel
+        team={[]}
+        onChange={vi.fn()}
         conversation={conversation({ contact: { ...contact, kind: "user", verified: false } })}
       />,
     );

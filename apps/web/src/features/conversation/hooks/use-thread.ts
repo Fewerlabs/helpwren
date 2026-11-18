@@ -1,7 +1,8 @@
-import { type Message, type Page } from "@helpwren/core";
+import { type Message, type Note, type Page } from "@helpwren/core";
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
   type InfiniteData,
   type QueryClient,
@@ -103,4 +104,63 @@ export function useLiveThread(conversationId: string, options: LiveThreadOptions
       void stop?.();
     };
   }, [conversationId, getClient, queryClient]);
+}
+
+const notesKey = (conversationId: string) => ["conversation", "notes", conversationId];
+
+function addNote(queryClient: QueryClient, note: Note) {
+  queryClient.setQueryData<Note[]>(notesKey(note.conversationId), (notes = []) =>
+    notes.some((item) => item.id === note.id) ? notes : [...notes, note],
+  );
+}
+
+/**
+ * A conversation's internal notes, kept current as teammates add them. Only ask for them on the
+ * team's side: `enabled` is false in the visitor's chat, which could not read them anyway.
+ */
+export function useNotes(conversationId: string, enabled: boolean) {
+  const getClient = useHelpwren();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    let stopped = false;
+    let stop: (() => Promise<void>) | undefined;
+
+    void getClient()
+      .notes.subscribe(conversationId, (note) => {
+        addNote(queryClient, note);
+      })
+      .then((unsubscribe) => {
+        if (stopped) {
+          void unsubscribe();
+        } else {
+          stop = unsubscribe;
+        }
+      })
+      // Without live updates, a teammate's note shows on the next load.
+      .catch(() => undefined);
+
+    return () => {
+      stopped = true;
+      void stop?.();
+    };
+  }, [conversationId, enabled, getClient, queryClient]);
+
+  return useQuery({
+    queryKey: notesKey(conversationId),
+    queryFn: () => getClient().notes.list(conversationId),
+    enabled,
+  });
+}
+
+export function useAddNote(conversationId: string) {
+  const getClient = useHelpwren();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => getClient().notes.add(conversationId, body),
+    onSuccess: (note) => {
+      addNote(queryClient, note);
+    },
+  });
 }

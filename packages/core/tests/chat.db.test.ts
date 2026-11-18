@@ -129,14 +129,13 @@ describe("conversations", () => {
     expect(active.items.some((item) => item.status === "resolved")).toBe(false);
   });
 
-  it("counts conversations in each status", async () => {
+  it("counts conversations that match a filter", async () => {
     const { client } = await signedInAgent();
-    const counts = await client.conversations.countByStatus();
 
-    expect(counts.resolved).toBeGreaterThan(0);
-    expect(counts.closed).toBe(0);
     const all = await client.conversations.list({ limit: 100 });
-    expect(counts.open + counts.pending + counts.resolved + counts.closed).toBe(all.items.length);
+    await expect(client.conversations.count()).resolves.toBe(all.items.length);
+    await expect(client.conversations.count({ status: ["closed"] })).resolves.toBe(0);
+    expect(await client.conversations.count({ status: ["resolved"] })).toBeGreaterThan(0);
   });
 
   it("counts unread messages for each side", async () => {

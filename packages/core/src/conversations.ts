@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { type Api } from "./api";
+import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
 import { listenForRows, type Unsubscribe } from "./realtime";
 import { type GuestDetails } from "./settings";
@@ -55,11 +56,24 @@ export function hasRequiredGuestDetails(
 export const conversationStatusSchema = z.enum(["open", "pending", "resolved", "closed"]);
 export type ConversationStatus = z.infer<typeof conversationStatusSchema>;
 
+export const conversationPrioritySchema = z.enum(["low", "normal", "high"]);
+export type ConversationPriority = z.infer<typeof conversationPrioritySchema>;
+
+/** A ticket is a conversation that is being tracked: it has a number, and usually a subject. */
+export const conversationTypeSchema = z.enum(["chat", "ticket"]);
+export type ConversationType = z.infer<typeof conversationTypeSchema>;
+
+export const ticketSubjectSchema = z.string().trim().min(1).max(200);
+
 /** A conversation as the database stores it. Also the shape of a live update. */
 const conversationRowSchema = z.object({
   id: z.uuid(),
   contact_id: z.uuid(),
   status: conversationStatusSchema,
+  type: conversationTypeSchema,
+  ticket_number: z.number().int().nullable(),
+  subject: z.string().nullable(),
+  priority: conversationPrioritySchema,
   source: z.string(),
   context: z.record(z.string(), z.unknown()),
   assignee_id: z.uuid().nullable(),
@@ -74,6 +88,11 @@ export const conversationSchema = conversationRowSchema.transform((row) => ({
   id: row.id,
   contactId: row.contact_id,
   status: row.status,
+  type: row.type,
+  /** Set once a conversation becomes a ticket. People quote it, so it never changes. */
+  ticketNumber: row.ticket_number,
+  subject: row.subject,
+  priority: row.priority,
   source: row.source,
   /** Where the chat was opened from: page URL, title, browser. */
   context: row.context,
@@ -106,7 +125,8 @@ const conversationWithContactSchema = conversationRowSchema
 export type ConversationWithContact = z.infer<typeof conversationWithContactSchema>;
 
 const CONVERSATION_COLUMNS =
-  "id, contact_id, status, source, context, assignee_id, last_message_preview, last_message_at, " +
+  "id, contact_id, status, type, ticket_number, subject, priority, source, context, assignee_id, " +
+  "last_message_preview, last_message_at, " +
   "unread_for_contact, unread_for_agents, created_at";
 const WITH_CONTACT = `${CONVERSATION_COLUMNS}, contact:contacts!inner(id, kind, verified, name, email, phone)`;
 
@@ -116,16 +136,40 @@ export interface Page<Item> {
   nextCursor: string | undefined;
 }
 
-export interface ListConversationsOptions {
+/** Which conversations to list or count. Everything given must match. */
+export interface ConversationFilter {
+  /** Only conversations in one of these statuses. Default: any status. */
+  status?: readonly ConversationStatus[] | undefined;
+  /** Only tickets, or only chats. */
+  type?: ConversationType | undefined;
+  /** Only those assigned to this team member, or `null` for those assigned to nobody. */
+  assigneeId?: string | null | undefined;
+  /** Only one contact's conversations. */
+  contactId?: string | undefined;
+}
+
+export interface ListConversationsOptions extends ConversationFilter {
   /** `nextCursor` from the previous page. */
   cursor?: string | undefined;
   /** How many to return. Default 25. */
   limit?: number | undefined;
-  /** Only conversations in one of these statuses. Default: any status. */
-  status?: readonly ConversationStatus[] | undefined;
-  /** Only one contact's conversations. */
-  contactId?: string | undefined;
 }
+
+/** What a team member may change about a conversation. */
+export const conversationChangesSchema = z
+  .object({
+    status: conversationStatusSchema,
+    priority: conversationPrioritySchema,
+    /** A team member's id, or `null` to leave it with nobody. */
+    assigneeId: z.uuid().nullable(),
+    subject: ticketSubjectSchema,
+  })
+  .partial();
+
+export type ConversationChanges = z.input<typeof conversationChangesSchema>;
+
+export type ChangeConversationResult =
+  { ok: true; conversation: ConversationWithContact } | { ok: false; reason: "not_found" };
 
 export type StartConversationResult =
   | { ok: true; conversation: ConversationWithContact }
@@ -149,6 +193,22 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
     return data ? conversationWithContactSchema.parse(data) : null;
   }
 
+  async function change(
+    id: string,
+    values: Database["public"]["Tables"]["conversations"]["Update"],
+  ): Promise<ChangeConversationResult> {
+    const { data, error } = await supabase
+      .from("conversations")
+      .update(values)
+      .eq("id", id)
+      .select(WITH_CONTACT)
+      .maybeSingle();
+    if (error) throw unexpected("change the conversation", error);
+    // The access rules hide what the caller may not change, so "not allowed" looks like this too.
+    if (!data) return { ok: false, reason: "not_found" };
+    return { ok: true, conversation: conversationWithContactSchema.parse(data) };
+  }
+
   return {
     /** One conversation, or `null` if it does not exist or is not the caller's to read. */
     get,
@@ -166,7 +226,10 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
         .limit(limit + 1);
       if (options.cursor) query = query.lt("last_message_at", options.cursor);
       if (options.status) query = query.in("status", options.status);
+      if (options.type) query = query.eq("type", options.type);
       if (options.contactId) query = query.eq("contact_id", options.contactId);
+      if (options.assigneeId === null) query = query.is("assignee_id", null);
+      else if (options.assigneeId) query = query.eq("assignee_id", options.assigneeId);
 
       const { data, error } = await query;
       if (error) throw unexpected("load the conversations", error);
@@ -212,19 +275,40 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
       return z.array(conversationWithContactSchema).parse(data);
     },
 
-    /** How many conversations the caller may read are in each status. */
-    async countByStatus(): Promise<Record<ConversationStatus, number>> {
-      const counts = await Promise.all(
-        conversationStatusSchema.options.map(async (status) => {
-          const { count, error } = await supabase
-            .from("conversations")
-            .select("id", { count: "exact", head: true })
-            .eq("status", status);
-          if (error) throw unexpected("count the conversations", error);
-          return [status, count ?? 0] as const;
-        }),
-      );
-      return Object.fromEntries(counts) as Record<ConversationStatus, number>;
+    /** How many conversations the caller may read match a filter. */
+    async count(filter: ConversationFilter = {}): Promise<number> {
+      let query = supabase.from("conversations").select("id", { count: "exact", head: true });
+      if (filter.status) query = query.in("status", filter.status);
+      if (filter.type) query = query.eq("type", filter.type);
+      if (filter.contactId) query = query.eq("contact_id", filter.contactId);
+      if (filter.assigneeId === null) query = query.is("assignee_id", null);
+      else if (filter.assigneeId) query = query.eq("assignee_id", filter.assigneeId);
+
+      const { count, error } = await query;
+      if (error) throw unexpected("count the conversations", error);
+      return count ?? 0;
+    },
+
+    /**
+     * Changes a conversation's status, priority, assignee or subject. For team members: for
+     * anyone else, and for a conversation that does not exist, nothing is found to change.
+     */
+    async update(id: string, changes: ConversationChanges): Promise<ChangeConversationResult> {
+      const { status, priority, assigneeId, subject } = conversationChangesSchema.parse(changes);
+      return change(id, {
+        ...(status === undefined ? {} : { status }),
+        ...(priority === undefined ? {} : { priority }),
+        ...(assigneeId === undefined ? {} : { assignee_id: assigneeId }),
+        ...(subject === undefined ? {} : { subject }),
+      });
+    },
+
+    /**
+     * Turns a conversation into a ticket, which gives it a number. It stays the same thread,
+     * and it cannot be turned back.
+     */
+    async convertToTicket(id: string, subject: string): Promise<ChangeConversationResult> {
+      return change(id, { type: "ticket", subject: ticketSubjectSchema.parse(subject) });
     },
 
     /** Clears the unread count for the caller's side of a conversation. */

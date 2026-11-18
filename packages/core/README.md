@@ -29,6 +29,12 @@ await helpwren.auth.verifyLoginCode(email, code);
 await helpwren.agents.me();
 await helpwren.conversations.list(); // every conversation
 await helpwren.conversations.subscribe({ inbox: true }, (conversation) => {});
+await helpwren.conversations.search("refund"); // by who it is with, or what was said
+await helpwren.conversations.update(id, { assigneeId, status: "resolved", priority: "high" });
+await helpwren.conversations.convertToTicket(id, "Refund for a damaged order");
+await helpwren.notes.add(id, "Courier confirmed the damage."); // only the team sees notes
+await helpwren.contacts.list({ search: "northwind", kind: "user" });
+await helpwren.settings.update({ brand: { name: "Acme" } }); // admins only
 await helpwren.auth.signOut();
 
 // Anyone

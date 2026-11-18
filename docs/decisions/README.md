@@ -15,3 +15,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0008 | [How guest chat reaches the server](0008-guest-chat-server.md)         |
 | 0009 | [The widget script](0009-widget.md)                                    |
 | 0010 | [The dashboard, settings and the team](0010-dashboard-and-settings.md) |
+| 0011 | [Tickets, assignment and internal notes](0011-tickets-and-notes.md)    |

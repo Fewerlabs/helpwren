@@ -101,6 +101,12 @@ update public.conversations set unread_for_contact = 0, unread_for_agents = case
 update public.conversations set status = 'resolved'
 where id = 'd0000000-0000-4000-8000-000000000004';
 
+-- One conversation is a ticket, assigned to Ada, so the demo shows tickets and assignment.
+update public.conversations
+set type = 'ticket', subject = 'Wrong billing address on an invoice', priority = 'high',
+    assignee_id = 'a0000000-0000-4000-8000-000000000001'
+where id = 'd0000000-0000-4000-8000-000000000003';
+
 insert into public.notes (conversation_id, author_id, body) values
   ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001',
    'Billing address was changed in February. Check whether the March invoice was issued first.');

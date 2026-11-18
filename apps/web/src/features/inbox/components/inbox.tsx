@@ -1,5 +1,6 @@
 "use client";
 
+import { type Agent } from "@helpwren/core";
 import { cn, EmptyState } from "@helpwren/design-system";
 import { useState } from "react";
 
@@ -9,12 +10,15 @@ import { useDebounced } from "@/lib/use-debounced";
 import {
   inboxViews,
   MIN_SEARCH_LENGTH,
+  useChangeConversation,
   useConversationSearch,
   useInboxConversations,
   useInboxView,
+  useOpenConversation,
   useLiveInbox,
   useRefreshInbox,
   useSelectedConversation,
+  useTeam,
   useViewCounts,
   viewHref,
 } from "../hooks/use-inbox";
@@ -27,21 +31,34 @@ import { ListPanel } from "./list-panel";
  * details about who it is with, as columns of one surface. Narrower screens drop the details,
  * then show one column at a time.
  */
-export function Inbox() {
+export interface InboxProps {
+  /** The signed-in team member, for the view of what is assigned to them. */
+  agent: Agent;
+}
+
+export function Inbox({ agent }: InboxProps) {
   const view = useInboxView();
-  const counts = useViewCounts();
+  const counts = useViewCounts(agent.id);
+  const team = useTeam().data ?? [];
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [selectedId, select] = useSelectedConversation();
   const [search, setSearch] = useState("");
   const searchText = useDebounced(search);
   const searching = searchText.trim().length >= MIN_SEARCH_LENGTH;
-  const inView = useInboxConversations(view);
+  const inView = useInboxConversations(view, agent.id);
   const found = useConversationSearch(searchText);
   const conversations = searching ? found : inView;
   const refresh = useRefreshInbox();
   useLiveInbox();
 
-  const selected = conversations.data?.find((item) => item.id === selectedId);
+  // From the list while it is there, for an instant open; otherwise loaded by its id.
+  const loaded = useOpenConversation(selectedId).data;
+  const selected =
+    selectedId === null
+      ? undefined
+      : (conversations.data?.find((item) => item.id === selectedId) ??
+        (loaded?.id === selectedId ? loaded : undefined));
+  const change = useChangeConversation(selectedId ?? "");
 
   return (
     <DashboardPage
@@ -81,6 +98,7 @@ export function Inbox() {
         <>
           <ConversationPanel
             conversation={selected}
+            team={team}
             onRead={refresh}
             onBack={() => {
               select(null);
@@ -90,7 +108,14 @@ export function Inbox() {
               setDetailsOpen((open) => !open);
             }}
           />
-          {detailsOpen ? <DetailsPanel conversation={selected} className="max-xl:hidden" /> : null}
+          {detailsOpen ? (
+            <DetailsPanel
+              conversation={selected}
+              team={team}
+              onChange={change.mutate}
+              className="max-xl:hidden"
+            />
+          ) : null}
         </>
       ) : (
         <Panel aria-label="Conversation">

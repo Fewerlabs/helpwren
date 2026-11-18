@@ -15,8 +15,17 @@ export {
 export { apiErrorSchema, RATE_LIMITED_SQLSTATE, type ApiErrorCode, type ApiOptions } from "./api";
 export {
   contactDetailsSchema,
+  conversationChangesSchema,
+  conversationPrioritySchema,
   conversationSchema,
   conversationStatusSchema,
+  conversationTypeSchema,
+  ticketSubjectSchema,
+  type ChangeConversationResult,
+  type ConversationChanges,
+  type ConversationFilter,
+  type ConversationPriority,
+  type ConversationType,
   hasRequiredGuestDetails,
   MESSAGE_MAX_LENGTH,
   messageBodySchema,
@@ -40,6 +49,7 @@ export {
   type Message,
   type SendMessageResult,
 } from "./messages";
+export { noteBodySchema, noteSchema, type Note } from "./notes";
 export { type Unsubscribe } from "./realtime";
 export { type Session } from "./sessions";
 export {
