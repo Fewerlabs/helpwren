@@ -106,7 +106,12 @@ function AccountMenu({ agent, signOut }: SidebarProps) {
           <Avatar name={agent.name} src={agent.photo} size="sm" />
         </button>
       </PopoverTrigger>
-      <PopoverContent side="right" align="end" className="w-64 p-1.5" aria-label="Your account">
+      <PopoverContent
+        side="right"
+        align="end"
+        className="grid w-64 gap-0.5 p-1.5"
+        aria-label="Your account"
+      >
         <Link
           href="/dashboard/settings/profile"
           className="hover:bg-muted focus-visible:outline-ring flex items-center gap-3 rounded-lg p-2 transition-colors focus-visible:outline-2"
