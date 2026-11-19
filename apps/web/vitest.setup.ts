@@ -24,3 +24,13 @@ globalThis.ResizeObserver = ResizeObserverStub;
 Element.prototype.hasPointerCapture = () => false;
 Element.prototype.releasePointerCapture = () => undefined;
 Element.prototype.scrollIntoView = () => undefined;
+
+// The theme follows the device's preference, which jsdom has no way to report: always light.
+window.matchMedia = (query: string) =>
+  // The app listens with addEventListener, which EventTarget gives; the deprecated
+  // addListener and removeListener the type still lists are never called.
+  Object.assign(new EventTarget(), {
+    matches: false,
+    media: query,
+    onchange: null,
+  }) as MediaQueryList;

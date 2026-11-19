@@ -3,10 +3,10 @@ import { cn, Icon, Logo } from "@helpwren/design-system";
 import Link from "next/link";
 import { type ReactNode } from "react";
 
+import { ThemeMenu } from "@/features/theme";
 import { embedQuery, type HelpEmbed } from "@/lib/help-embed";
 
 import { HELP_PATH } from "../urls";
-import { ThemeToggle } from "./theme-toggle";
 
 const DEFAULT_PLACEHOLDER = "Search for articles";
 
@@ -108,7 +108,7 @@ export function HelpHeader({ settings, query, search = true, browse }: HelpHeade
           {search ? (
             <SearchBox settings={settings} query={query} size="sm" className="w-64 max-md:hidden" />
           ) : null}
-          <ThemeToggle />
+          <ThemeMenu className="size-9 rounded-lg opacity-80 hover:opacity-100" />
         </div>
       </div>
     </header>
