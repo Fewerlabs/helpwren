@@ -4,11 +4,13 @@ import { Entry } from "@/components/journal";
 
 import { AnatomySketch } from "./anatomy-sketch";
 import { anatomyLayers } from "./layers";
+import { AnatomyMotion } from "./motion";
 
 /** Entry 07: how it is built, drawn as an exploded study of its layers. */
 export function Anatomy() {
   return (
     <Entry
+      motion={<AnatomyMotion />}
       id="anatomy"
       number="07"
       subject="Anatomy"

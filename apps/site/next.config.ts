@@ -11,6 +11,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The stylesheet goes into the page, so the first paint does not wait for a second request.
+  experimental: { inlineCss: true },
   transpilePackages: ["@helpwren/design-system"],
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
 };

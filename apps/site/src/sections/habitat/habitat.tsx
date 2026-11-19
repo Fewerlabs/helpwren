@@ -1,9 +1,14 @@
+import { Sketch } from "@helpwren/design-system";
+
 import { Entry, Perch } from "@/components/journal";
+
+import { HabitatMotion } from "./motion";
 
 /** Entry 02: why a team looks for something else. Fair and general: no products, no prices. */
 export function Habitat() {
   return (
     <Entry
+      motion={<HabitatMotion />}
       id="habitat"
       number="02"
       subject="Habitat under threat"
@@ -32,25 +37,15 @@ export function Habitat() {
 /** A price tag hanging from a nail, struck out in red pen. */
 function PriceTag() {
   return (
-    <svg
-      viewBox="0 0 220 170"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      data-sketch="habitat"
-      className="sketch h-auto w-full"
-    >
-      <circle data-draw cx="114" cy="22" r="3" />
-      <path data-draw d="M114 25 96 62M114 25 136 60" />
-      <g data-swing style={{ transformOrigin: "114px 22px" }}>
+    <Sketch viewBox="0 0 220 170" data-sketch="habitat">
+      <circle pathLength={1} cx="114" cy="22" r="3" />
+      <path pathLength={1} d="M114 25 96 62M114 25 136 60" />
+      <g className="hw-settle" style={{ transformOrigin: "114px 22px" }}>
         <path
-          data-draw
+          pathLength={1}
           d="M70 66H160C166 66 170 70 170 76V132C170 138 166 142 160 142H70C64 142 60 138 60 132V76C60 70 64 66 70 66Z"
         />
-        <circle data-draw cx="115" cy="78" r="4" />
+        <circle pathLength={1} cx="115" cy="78" r="4" />
         <text
           x="115"
           y="108"
@@ -72,12 +67,13 @@ function PriceTag() {
           / month
         </text>
         <path
-          data-mark="pen"
+          className="hw-pen"
+          pathLength={1}
           d="M72 112C92 100 104 122 124 106 140 94 150 118 162 100M74 128C96 114 120 134 158 118"
           stroke="var(--pen)"
           strokeWidth={2}
         />
       </g>
-    </svg>
+    </Sketch>
   );
 }

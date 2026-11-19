@@ -1,3 +1,5 @@
+import { Sketch } from "@helpwren/design-system";
+
 import { ANATOMY_VIEWBOX, anatomyLayers, PLANE } from "./layers";
 
 /** The four corners of a plane seen from above at an angle: left, back, right, front. */
@@ -36,31 +38,24 @@ function contents(index: number, centreY: number): string {
 /** The exploded stack, still: the version shown without WebGL, and on phones. */
 export function AnatomySketch() {
   return (
-    <svg
+    <Sketch
       viewBox={`0 0 ${String(ANATOMY_VIEWBOX.width)} ${String(ANATOMY_VIEWBOX.height)}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      role="img"
-      aria-label="Four layers drawn as stacked planes: the widget script on top, then the chat page, the client library, and your Supabase at the bottom."
+      label="Four layers drawn as stacked planes: the widget script on top, then the chat page, the client library, and your Supabase at the bottom."
       data-sketch="anatomy"
-      className="sketch h-auto w-full"
     >
       {anatomyLayers.map((layer, index) => {
         const y = PLANE.firstY + index * PLANE.gap;
         const labelX = PLANE.centreX + PLANE.width / 2;
         return (
           <g key={layer.id} data-plane={layer.id}>
-            <polygon data-draw points={rhombus(y)} fill="var(--card)" />
+            <polygon pathLength={1} points={rhombus(y)} fill="var(--card)" />
             <path
-              data-draw
+              pathLength={1}
               d={contents(index, y)}
               stroke={index === 3 ? "var(--moss)" : undefined}
             />
             <path
-              data-draw
+              pathLength={1}
               d={`M${String(labelX)} ${String(y)}H${String(labelX + 26)}`}
               strokeWidth={1}
               stroke="var(--muted-foreground)"
@@ -77,6 +72,6 @@ export function AnatomySketch() {
           </g>
         );
       })}
-    </svg>
+    </Sketch>
   );
 }

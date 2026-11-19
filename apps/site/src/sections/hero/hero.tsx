@@ -52,7 +52,7 @@ export function Hero({ stars }: { stars: number | null }) {
         </div>
         <div className="@container relative mx-auto w-full max-w-md">
           <HeroSketch />
-          <Perch name="first-sighting" x={47} y={63} size={24} />
+          <Perch name="first-sighting" x={47} y={63} size={24} animate />
         </div>
       </div>
     </section>

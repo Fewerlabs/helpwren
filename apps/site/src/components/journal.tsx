@@ -1,4 +1,4 @@
-import { cn, Logo } from "@helpwren/design-system";
+import { cn, WrenBird, type IllustrationMotion, type WrenPose } from "@helpwren/design-system";
 import type { CSSProperties, ReactNode } from "react";
 
 /*
@@ -28,6 +28,8 @@ export interface EntryProps {
   sheetClassName?: string;
   /** Behind the sheet, such as the halftone. */
   backdrop?: ReactNode;
+  /** The entry's motion component, which loads its animation once motion is allowed. */
+  motion?: ReactNode;
 }
 
 /** One journal entry: a white sheet, a spread on a wide screen, with its header in the margin. */
@@ -43,6 +45,7 @@ export function Entry({
   className,
   sheetClassName,
   backdrop,
+  motion,
 }: EntryProps) {
   const headingId = `${id}-title`;
   return (
@@ -53,6 +56,7 @@ export function Entry({
       className={cn("relative isolate px-4 py-10 sm:py-14", className)}
     >
       {backdrop}
+      {motion}
       <div
         className={cn(
           "bg-card border-rule border-line relative mx-auto max-w-6xl rounded-2xl",
@@ -126,6 +130,7 @@ export function PenCircle({ children }: { children: ReactNode }) {
       >
         <path
           data-mark="pen"
+          pathLength={1}
           d="M8 22C6 8 40 3 70 5 95 7 99 20 92 30 82 39 30 40 12 33 4 29 3 20 14 13"
           stroke="var(--pen)"
           strokeWidth={1.8}
@@ -211,6 +216,9 @@ export function Perch({
   y,
   size = 20,
   facing = "right",
+  pose = "perched",
+  react,
+  animate = "in-view",
 }: {
   name: string;
   /** Across the parent, in percent. */
@@ -220,6 +228,12 @@ export function Perch({
   /** The wren's width, in percent of the parent's width. */
   size?: number;
   facing?: "left" | "right";
+  /** How the still wren stands here. */
+  pose?: WrenPose;
+  /** Change it to make the still wren hop, as a reaction. */
+  react?: number;
+  /** How the still wren draws itself: with its drawing as it scrolls into view, by default. */
+  animate?: IllustrationMotion;
 }) {
   const style: CSSProperties = { left: `${String(x)}%`, top: `${String(y)}%` };
   return (
@@ -232,7 +246,7 @@ export function Perch({
     >
       <span
         data-still-wren
-        className="absolute block [&_svg]:size-full"
+        className="absolute block"
         style={{
           width: `${String(size)}cqw`,
           height: `${String(size)}cqw`,
@@ -242,7 +256,7 @@ export function Perch({
           transform: facing === "left" ? "scaleX(-1)" : undefined,
         }}
       >
-        <Logo size={64} label="" className="size-full" />
+        <WrenBird pose={pose} animate={animate} react={react} className="size-full" />
       </span>
     </span>
   );

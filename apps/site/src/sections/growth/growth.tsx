@@ -1,4 +1,8 @@
+import { Sketch } from "@helpwren/design-system";
+
 import { Entry, Perch, SpecimenTag } from "@/components/journal";
+
+import { GrowthMotion } from "./motion";
 
 export const levels = [
   {
@@ -30,6 +34,7 @@ const branchHeights = [86, 64, 42, 20] as const;
 export function Growth() {
   return (
     <Entry
+      motion={<GrowthMotion />}
       id="growth"
       number="04"
       subject="Growth stages"
@@ -66,29 +71,19 @@ export function Growth() {
 /** Four branches at rising heights, one per level, on one trunk. */
 function Branches() {
   return (
-    <svg
-      viewBox="0 0 200 200"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      data-sketch="growth"
-      className="sketch h-auto w-full"
-    >
-      <path data-draw d="M188 198C184 150 190 90 182 16" />
+    <Sketch viewBox="0 0 200 200" data-sketch="growth">
+      <path pathLength={1} d="M188 198C184 150 190 90 182 16" />
       {branchHeights.map((height, index) => {
         const y = height * 2;
         const x = 28 + index * 48;
         return (
           <g key={height}>
             <path
-              data-draw
+              pathLength={1}
               d={`M${String(x - 22)} ${String(y + 2)}C${String(x + 30)} ${String(y - 2)} ${String(150)} ${String(y + 4)} 186 ${String(y - 6)}`}
             />
             <path
-              data-draw
+              pathLength={1}
               stroke="var(--moss)"
               d={`M${String(x + 26)} ${String(y + 1)}C${String(x + 30)} ${String(y - 8)} ${String(x + 38)} ${String(y - 10)} ${String(x + 44)} ${String(y - 6)} ${String(x + 40)} ${String(y)} ${String(x + 32)} ${String(y + 2)} ${String(x + 26)} ${String(y + 1)}Z`}
             />
@@ -104,6 +99,6 @@ function Branches() {
           </g>
         );
       })}
-    </svg>
+    </Sketch>
   );
 }

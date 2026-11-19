@@ -1,8 +1,10 @@
-import { themeScript, TooltipProvider } from "@helpwren/design-system";
+import { themeScript } from "@helpwren/design-system";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/content/site";
+import { MotionLayer } from "@/motion/motion-layer";
+import { motionScript } from "@/motion/script";
 
 import { fontVariables } from "./fonts";
 
@@ -40,9 +42,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript() }} />
+        <script dangerouslySetInnerHTML={{ __html: motionScript }} />
       </head>
       <body>
-        <TooltipProvider>{children}</TooltipProvider>
+        {children}
+        <MotionLayer />
       </body>
     </html>
   );

@@ -49,7 +49,41 @@
   mask-image: radial-gradient(60% 60% at 50% 50%, #000 0%, rgb(0 0 0 / 0.4) 45%, transparent 80%);
 }
 
-/* The drawings' ink is the text colour; sketches sit in the foreground colour. */
-.sketch {
-  color: var(--foreground);
+/*
+ * The hero's marks are written on as the page opens: the highlighter first, then the red pen.
+ * CSS only, so they need no JavaScript and cost the main thread nothing.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion-pref="off"]) [data-entry="first-sighting"] [data-mark="highlighter"] {
+    animation: site-swipe 0.45s 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  html:not([data-motion-pref="off"]) [data-entry="first-sighting"] [data-mark="pen"] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: hw-draw 0.7s 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+@keyframes site-swipe {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+/*
+ * With the footer's "Animations" switch off, drawings are shown finished and still, exactly as
+ * they are for people who prefer reduced motion.
+ */
+html[data-motion-pref="off"] :is([data-slot="wren"], [data-slot="sketch"]) * {
+  animation: none !important;
+  stroke-dashoffset: 0 !important;
+  opacity: 1 !important;
+}
+
+html[data-motion-pref="off"] :is([data-slot="wren"], [data-slot="sketch"]) .hw-spark {
+  opacity: 0 !important;
 }

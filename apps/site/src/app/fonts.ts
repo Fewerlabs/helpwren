@@ -1,11 +1,15 @@
 import { Caveat, Figtree, JetBrains_Mono } from "next/font/google";
 
-/** Interface text and the hero headline, which is the largest thing on the first screen. */
+/**
+ * Interface text and the hero headline, which is the largest thing on the first screen. It is
+ * preloaded; if it has not arrived by the first paint, the size-matched fallback stays for this
+ * visit instead of swapping later, so the headline never re-renders or shifts.
+ */
 const figtree = Figtree({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-figtree",
-  display: "swap",
+  display: "optional",
 });
 
 /** Entry headers, tags and code. Not needed for the first paint. */

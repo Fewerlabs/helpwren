@@ -1,11 +1,13 @@
 import { Entry, Perch, Taped } from "@/components/journal";
 
 import { DemoWidget } from "./demo-widget";
+import { WildMotion } from "./motion";
 
 /** Entry 05: the widget, as a visitor meets it. A demo built from the design system. */
 export function Wild() {
   return (
     <Entry
+      motion={<WildMotion />}
       id="wild"
       number="05"
       subject="Observed in the wild"

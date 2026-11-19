@@ -1,6 +1,8 @@
-import { Wren, type WrenScene } from "@helpwren/design-system";
+import { Sketch, Wren, type WrenScene } from "@helpwren/design-system";
 
 import { EntryHeader, HandLabel, SpecimenTag } from "@/components/journal";
+
+import { FieldGuideMotion } from "./motion";
 
 interface Specimen {
   id: string;
@@ -63,6 +65,7 @@ export function FieldGuide() {
       data-entry="field-guide"
       className="relative isolate px-4 py-10 sm:py-14"
     >
+      <FieldGuideMotion />
       <div
         aria-hidden="true"
         className="halftone top-0 left-1/2 h-full w-full -translate-x-1/2"
@@ -90,7 +93,7 @@ export function FieldGuide() {
                   <Wren
                     scene={specimen.scene}
                     bird={false}
-                    animate={false}
+                    animate="in-view"
                     decorative
                     className="mx-auto max-w-56"
                   />
@@ -115,28 +118,19 @@ export function FieldGuide() {
 /** A phone with a chat on its screen, drawn in the same line as the wren scenes. */
 function PhoneSketch() {
   return (
-    <svg
-      viewBox="0 0 220 170"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="sketch mx-auto h-auto w-full max-w-56"
-    >
-      <rect data-draw x="78" y="14" width="64" height="130" rx="12" />
-      <path data-draw d="M100 24H120" />
+    <Sketch viewBox="0 0 220 170" className="mx-auto max-w-56">
+      <rect pathLength={1} x="78" y="14" width="64" height="130" rx="12" />
+      <path pathLength={1} d="M100 24H120" />
       <path
-        data-draw
+        pathLength={1}
         d="M90 52H124C127 52 129 54 129 57V66C129 69 127 71 124 71H98L92 76V71H90C87 71 85 69 85 66V57C85 54 87 52 90 52Z"
       />
       <path
-        data-draw
+        pathLength={1}
         stroke="var(--moss)"
         d="M100 84H130C133 84 135 86 135 89V98C135 101 133 103 130 103H128V108L122 103H100C97 103 95 101 95 98V89C95 86 97 84 100 84Z"
       />
-      <path data-draw d="M100 132H120" />
+      <path pathLength={1} d="M100 132H120" />
       <circle cx="140" cy="18" r="7" fill="var(--pen)" stroke="none" />
       <text
         x="140"
@@ -148,6 +142,6 @@ function PhoneSketch() {
       >
         1
       </text>
-    </svg>
+    </Sketch>
   );
 }

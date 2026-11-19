@@ -3,6 +3,8 @@ import { Button, Icon, type IconName, MarginNote } from "@helpwren/design-system
 import { EntryHeader } from "@/components/journal";
 import { links } from "@/content/site";
 
+import { JoinMotion } from "./motion";
+
 const routes: readonly { href: string; label: string; text: string; icon: IconName }[] = [
   {
     href: links.github,
@@ -33,6 +35,7 @@ export function Join() {
       data-entry="join"
       className="relative isolate overflow-hidden px-4 pt-10 pb-6 sm:pt-14"
     >
+      <JoinMotion />
       <div
         aria-hidden="true"
         className="halftone top-0 left-0 h-[26rem] w-full sm:w-[70%]"

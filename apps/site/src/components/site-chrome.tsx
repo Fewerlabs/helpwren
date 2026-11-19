@@ -1,11 +1,23 @@
-import { Logo, ThemeMenu } from "@helpwren/design-system";
-import type { ReactNode } from "react";
+import { Icon, Logo, Sketch } from "@helpwren/design-system";
 
+import { DeferredMotionToggle, DeferredThemeMenu } from "@/components/deferred";
 import { Perch } from "@/components/journal";
 import { links } from "@/content/site";
 
 const navLink =
-  "text-muted-foreground hover:text-foreground focus-visible:outline-ring rounded-md px-2 py-1 text-sm transition-colors focus-visible:outline-2";
+  "text-muted-foreground hover:text-foreground focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md px-3 text-sm transition-colors focus-visible:outline-2";
+
+const themeButton =
+  "text-muted-foreground hover:text-foreground hover:bg-muted grid size-11 place-items-center rounded-lg";
+
+/** The theme button as it looks before its menu's code has loaded: same size, same place. */
+function ThemeStandIn({ className }: { className: string }) {
+  return (
+    <span aria-hidden="true" className={className}>
+      <Icon name="desktop" className="size-[1.125rem]" />
+    </span>
+  );
+}
 
 /** The top of every page: the name, two links and the theme. */
 export function SiteHeader() {
@@ -20,7 +32,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4">
         <a
           href="/"
-          className="focus-visible:outline-ring rounded-md focus-visible:outline-2"
+          className="focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md focus-visible:outline-2"
           aria-label="Helpwren, home"
         >
           <Logo variant="lockup" size={28} label="" />
@@ -32,7 +44,10 @@ export function SiteHeader() {
           <a href={links.github} className={navLink}>
             GitHub
           </a>
-          <ThemeMenu className="text-muted-foreground hover:text-foreground hover:bg-muted size-9 rounded-lg" />
+          <DeferredThemeMenu
+            className={themeButton}
+            fallback={<ThemeStandIn className={themeButton} />}
+          />
         </nav>
       </div>
     </header>
@@ -40,29 +55,20 @@ export function SiteHeader() {
 }
 
 /** The foot of every page, where the wren ends its day on a branch. */
-export function SiteFooter({ motionToggle }: { motionToggle?: ReactNode }) {
+export function SiteFooter() {
   return (
     <footer className="px-4 pb-10">
       <div className="mx-auto max-w-6xl">
         <div className="@container relative mx-auto w-full max-w-xs">
-          <svg
-            viewBox="0 0 200 60"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            aria-hidden="true"
-            data-sketch="footer"
-            className="sketch h-auto w-full"
-          >
-            <path data-draw d="M4 40C50 34 96 42 140 36 164 33 182 34 196 28" />
+          <Sketch viewBox="0 0 200 60" data-sketch="footer">
+            <path pathLength={1} d="M4 40C50 34 96 42 140 36 164 33 182 34 196 28" />
             <path
-              data-draw
+              pathLength={1}
               stroke="var(--moss)"
               d="M150 35C156 26 165 23 174 24 170 32 160 36 150 35Z"
             />
-          </svg>
-          <Perch name="footer" x={46} y={62} size={22} />
+          </Sketch>
+          <Perch name="footer" x={46} y={62} size={22} pose="asleep" />
         </div>
         <div className="border-rule text-muted-foreground mt-6 flex flex-col gap-4 border-t pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p>
@@ -72,11 +78,12 @@ export function SiteFooter({ motionToggle }: { motionToggle?: ReactNode }) {
             </a>
             .
           </p>
-          <div className="flex items-center gap-3">
-            {motionToggle}
-            <ThemeMenu
+          <div className="flex items-center gap-6">
+            <DeferredMotionToggle fallback={<span className="block h-11 w-32" />} />
+            <DeferredThemeMenu
               side="top"
-              className="hover:text-foreground hover:bg-muted size-9 rounded-lg"
+              className={themeButton}
+              fallback={<ThemeStandIn className={themeButton} />}
             />
           </div>
         </div>
