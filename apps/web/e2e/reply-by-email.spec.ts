@@ -4,13 +4,13 @@ import { signWebhook } from "@helpwren/adapters";
 import { expect, test } from "@playwright/test";
 
 import { replyAddress, signReplyToken, type ReplyKey } from "../src/lib/email/reply-address";
-import { database, removeContactByEmail } from "./support/database";
+import { database, removeContactByEmail, RUN } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // A contact answers the team's email from their mail app, and the answer shows in the inbox and
 // in their chat. The provider is played by posting what the generic adapter takes. Runs against
 // the local Supabase stack, where Ada is an admin.
-const VISITOR = { name: "Tomás Ruiz", email: "tomas.e2e@example.org" };
+const VISITOR = { name: `Tomás Ruiz ${RUN}`, email: `tomas.${RUN}@example.org` };
 const REPLY_ADDRESS = "reply@support.e2e.example";
 const KEYS = "email_reply_keys";
 const SECRET = "inbound_email_secret";

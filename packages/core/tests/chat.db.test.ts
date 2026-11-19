@@ -262,7 +262,7 @@ describe("messages", () => {
 
     const { items } = await client.messages.list(id);
     expect(items.map((message) => message.channel)).toEqual(["chat", "email"]);
-    const { items: inbox } = await agent.client.conversations.list();
+    const { items: inbox } = await agent.client.conversations.list({ contactId: session.id });
     expect(inbox.find((conversation) => conversation.id === id)?.viaEmail).toBe(true);
   });
 
