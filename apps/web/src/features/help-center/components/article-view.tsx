@@ -93,7 +93,7 @@ export function ArticleView({
       ) : article.collection ? (
         <Link
           href={collectionPath(article.collection.slug)}
-          className="text-primary focus-visible:outline-ring mb-2 inline-block rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
+          className="text-brand focus-visible:outline-ring mb-2 inline-block rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
         >
           {article.collection.name}
         </Link>

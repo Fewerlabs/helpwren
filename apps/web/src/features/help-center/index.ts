@@ -15,7 +15,7 @@ export {
 } from "./components/help-home-preview";
 export { HelpShell, type HelpShellProps } from "./components/help-shell";
 export { bannerStyle } from "./hero";
-export { PageGrid } from "./components/page-grid";
+export { PageHalftone } from "./components/page-halftone";
 export { JsonLd } from "./components/json-ld";
 export { countArticles } from "./format";
 export { helpMetadata, type HelpPage } from "./metadata";

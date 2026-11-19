@@ -2,7 +2,7 @@ import { type PublicSettings } from "@helpwren/core";
 import { cn } from "@helpwren/design-system";
 import { type CSSProperties } from "react";
 
-import { bannerStyle, PageGrid } from "@/features/help-center";
+import { bannerStyle, PageHalftone } from "@/features/help-center";
 import { accentStyle } from "@/lib/accent";
 
 import { Chat } from "./chat";
@@ -75,7 +75,7 @@ export function ChatPage({ settings, preview = false, chatClassName }: ChatPageP
           />
         </div>
       ) : null}
-      {image ? null : <PageGrid className="inset-x-0 top-0 h-[28rem]" />}
+      {image ? null : <PageHalftone className="inset-x-0 top-0 h-[28rem]" />}
       {image ? (
         <div
           aria-hidden="true"
