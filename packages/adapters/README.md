@@ -1,6 +1,6 @@
 # @helpwren/adapters
 
-> **Status: early.** Identity adapters have begun; the rest is still to come.
+> **Status: early.** Identity and push adapters work; email and storage are still to come.
 
 Identity, push, email and storage adapters that connect Helpwren to a host product.
 
@@ -11,6 +11,11 @@ Identity, push, email and storage adapters that connect Helpwren to a host produ
   product's own "who am I" address, read through a mapping). The settings schemas are also on
   `@helpwren/adapters/settings`, which the browser can load. See
   [ADR 0014](../../docs/decisions/0014-identity-adapters.md).
+
+- **Push:** the `PushAdapter` interface, Expo, and Firebase Cloud Messaging (HTTP v1, signed
+  with the service account's key), plus a signed webhook (`createWebhookPush`, `verifyWebhook`).
+  See [ADR 0018](../../docs/decisions/0018-push-notifications.md) and
+  [ADR 0019](../../docs/decisions/0019-firebase-and-webhook-push.md).
 
 ## What it will contain
 

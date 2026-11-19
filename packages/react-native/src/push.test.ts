@@ -29,9 +29,27 @@ describe("push helpers for the app", () => {
     expect(init?.method).toBe("POST");
     expect(JSON.parse(init?.body as string)).toEqual({
       pushToken: "ExponentPushToken[abc]",
+      provider: "expo",
       platform: "ios",
       app: "customer_app",
       token: "users-own-token",
+    });
+  });
+
+  it("registers a Firebase token as one", async () => {
+    const fetch = answering(204);
+    await registerSupportDevice({
+      baseUrl: BASE,
+      pushToken: "fcm-registration-token",
+      provider: "fcm",
+      platform: "android",
+      source: "business_app",
+      token: "users-own-token",
+      fetch,
+    });
+    expect(JSON.parse(fetch.mock.calls[0]?.[1]?.body as string)).toMatchObject({
+      pushToken: "fcm-registration-token",
+      provider: "fcm",
     });
   });
 

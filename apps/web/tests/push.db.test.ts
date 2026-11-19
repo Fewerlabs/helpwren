@@ -1,4 +1,14 @@
-import { type PushAdapter, type PushMessage, type PushTicket } from "@helpwren/adapters";
+import { createServer } from "node:http";
+import { type AddressInfo } from "node:net";
+
+import {
+  createWebhookPush,
+  verifyWebhook,
+  type PushAdapter,
+  type PushEvent,
+  type PushMessage,
+  type PushTicket,
+} from "@helpwren/adapters";
 import { identifyResponseSchema } from "@helpwren/core";
 import { SignJWT } from "jose";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -32,10 +42,10 @@ function fakePush(gone: readonly string[] = []) {
     send: (messages) => {
       sent.push(...messages);
       return Promise.resolve(
-        messages.map((message, index): PushTicket =>
+        messages.map((message): PushTicket =>
           gone.includes(message.to)
             ? { ok: false, reason: "gone", detail: "DeviceNotRegistered" }
-            : { ok: true, id: `${run}-${String(sent.length)}-${String(index)}` },
+            : { ok: true, id: `${run}-${crypto.randomUUID()}` },
         ),
       );
     },
@@ -127,7 +137,7 @@ async function devicesWith(token: string) {
 beforeAll(async () => {
   await supabaseAdmin.from("settings").upsert([
     { key: IDENTITY_SETTING, value: { mode: "signed_token" } },
-    { key: PUSH_SETTING, value: { provider: "expo" } },
+    { key: PUSH_SETTING, value: { expo: true } },
   ]);
   await supabaseAdmin.from("secrets").upsert({ key: IDENTITY_KEYS_SECRET, value: [key] });
 });
@@ -243,7 +253,7 @@ describe("sending pushes", () => {
     await due(conversationId);
     const push = fakePush();
 
-    const result = await processPushQueue(push.adapter);
+    const result = await processPushQueue({ expo: push.adapter });
 
     expect(result).toMatchObject({ sent: 2, failed: 0 });
     expect(push.sent).toEqual([
@@ -280,7 +290,10 @@ describe("sending pushes", () => {
     await due(conversationId);
     const push = fakePush();
 
-    await expect(processPushQueue(push.adapter)).resolves.toMatchObject({ sent: 0, skipped: 1 });
+    await expect(processPushQueue({ expo: push.adapter })).resolves.toMatchObject({
+      sent: 0,
+      skipped: 1,
+    });
     expect(push.sent).toEqual([]);
   });
 
@@ -300,7 +313,7 @@ describe("sending pushes", () => {
     await due(conversationId);
     const push = fakePush([goneNow]);
 
-    await expect(processPushQueue(push.adapter)).resolves.toMatchObject({
+    await expect(processPushQueue({ expo: push.adapter })).resolves.toMatchObject({
       sent: 1,
       removedDevices: 1,
     });
@@ -324,21 +337,132 @@ describe("sending pushes", () => {
       detail: "DeviceNotRegistered",
     });
 
-    await expect(processPushQueue(push.adapter)).resolves.toMatchObject({ removedDevices: 1 });
+    await expect(processPushQueue({ expo: push.adapter })).resolves.toMatchObject({
+      removedDevices: 1,
+    });
     await expect(devicesWith(goneLater)).resolves.toEqual([]);
+  });
+
+  it("reaches each phone through its own service, and only when that channel is on", async () => {
+    const { conversationId } = await userWithConversation("two-apps");
+    const expoPhone = pushToken("two-apps-expo");
+    const fcmPhone = `fcm-${run}-${"x".repeat(40)}`;
+    pushTokens.add(fcmPhone);
+    const owner = await tokenFor("two-apps");
+    await call(register, { pushToken: expoPhone, platform: "ios", app: "web", token: owner });
+    const fcmRegistered = await call(register, {
+      pushToken: fcmPhone,
+      provider: "fcm",
+      platform: "android",
+      app: "web",
+      token: owner,
+    });
+    expect(fcmRegistered.status).toBe(204);
+    await reply(conversationId, "Both of your apps should hear this.");
+    await due(conversationId);
+    const expo = fakePush();
+    const fcm = fakePush();
+
+    await expect(processPushQueue({ expo: expo.adapter, fcm: fcm.adapter })).resolves.toMatchObject(
+      {
+        sent: 1,
+      },
+    );
+    expect(expo.sent.map((message) => message.to)).toEqual([expoPhone]);
+    expect(fcm.sent.map((message) => message.to)).toEqual([fcmPhone]);
+
+    // With Firebase off, its phones are not sent to.
+    await reply(conversationId, "Only the Expo app this time.");
+    await due(conversationId);
+    const expoOnly = fakePush();
+    await processPushQueue({ expo: expoOnly.adapter });
+    expect(expoOnly.sent.map((message) => message.to)).toEqual([expoPhone]);
+  });
+
+  it("turns away a Firebase token said to be an Expo one, and the other way round", async () => {
+    const owner = await tokenFor("mixed-up");
+    const asExpo = await call(register, {
+      pushToken: `fcm-${"y".repeat(40)}`,
+      platform: "android",
+      app: "web",
+      token: owner,
+    });
+    const asFcm = await call(register, {
+      pushToken: "ExponentPushToken[abc]",
+      provider: "fcm",
+      platform: "android",
+      app: "web",
+      token: owner,
+    });
+    expect([asExpo.status, asFcm.status]).toEqual([400, 400]);
+  });
+
+  it("posts each push to the product's own backend, signed, once per conversation", async () => {
+    const secret = "whsec_test_secret_for_push_tests";
+    const received: { body: string; signature: string }[] = [];
+    const backend = createServer((request, response) => {
+      let body = "";
+      request.on("data", (chunk: Buffer) => (body += chunk.toString()));
+      request.on("end", () => {
+        received.push({ body, signature: String(request.headers["helpwren-signature"]) });
+        response.writeHead(204).end();
+      });
+    });
+    await new Promise<void>((resolve) => {
+      backend.listen(0, "127.0.0.1", resolve);
+    });
+    const { port } = backend.address() as AddressInfo;
+
+    try {
+      const { userId, conversationId } = await userWithConversation("webhook");
+      await reply(conversationId, "First.");
+      await reply(conversationId, "And the newest.");
+      await due(conversationId);
+      const webhook = createWebhookPush({ url: `http://127.0.0.1:${String(port)}/push`, secret });
+
+      // No phones at all: the backend is still told.
+      await expect(processPushQueue({ webhook })).resolves.toMatchObject({ sent: 2 });
+
+      expect(received).toHaveLength(1);
+      const [request] = received;
+      expect(verifyWebhook(request?.body ?? "", request?.signature ?? "", secret)).toBe(true);
+      expect(JSON.parse(request?.body ?? "{}") as PushEvent).toMatchObject({
+        type: "push.reply",
+        conversationId,
+        contact: { id: userId, externalId: `${run}:webhook` },
+        preview: "And the newest.",
+        unreadCount: 2,
+      });
+    } finally {
+      backend.close();
+    }
+  });
+
+  it("tries again later when the only channel cannot be reached", async () => {
+    const { conversationId } = await userWithConversation("down");
+    await reply(conversationId, "Anyone?");
+    await due(conversationId);
+    // Nothing listens on port 9.
+    const webhook = createWebhookPush({ url: "http://127.0.0.1:9/push", secret: "s".repeat(20) });
+
+    await expect(processPushQueue({ webhook })).resolves.toMatchObject({ sent: 0, failed: 0 });
+    const { data } = await supabaseAdmin
+      .from("push_queue")
+      .select("done_at, claimed_at, attempts")
+      .eq("conversation_id", conversationId)
+      .single();
+    expect(data).toMatchObject({ done_at: null, claimed_at: null, attempts: 1 });
   });
 
   it("lets owed pushes go when push is off", async () => {
     const { conversationId } = await userWithConversation("off");
     await reply(conversationId, "Hello?");
     await due(conversationId);
-    await supabaseAdmin.from("settings").upsert({ key: PUSH_SETTING, value: { provider: "none" } });
+    await supabaseAdmin.from("settings").upsert({ key: PUSH_SETTING, value: { expo: false } });
     try {
       await expect(processPushQueue()).resolves.toMatchObject({ sent: 0, skipped: 1 });
     } finally {
-      await supabaseAdmin
-        .from("settings")
-        .upsert({ key: PUSH_SETTING, value: { provider: "expo" } });
+      await supabaseAdmin.from("settings").upsert({ key: PUSH_SETTING, value: { expo: true } });
     }
   });
 });

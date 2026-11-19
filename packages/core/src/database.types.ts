@@ -410,6 +410,7 @@ export type Database = {
           external_id: string | null;
           id: string;
           platform: string;
+          provider: string;
           push_token: string;
           updated_at: string;
         };
@@ -421,6 +422,7 @@ export type Database = {
           external_id?: string | null;
           id?: string;
           platform: string;
+          provider?: string;
           push_token: string;
           updated_at?: string;
         };
@@ -431,6 +433,7 @@ export type Database = {
           external_id?: string | null;
           id?: string;
           platform?: string;
+          provider?: string;
           push_token?: string;
           updated_at?: string;
         };

@@ -17,11 +17,12 @@ export interface PushMessage {
 }
 
 /**
- * What the push service said about each message, in order. `gone` means the device will never
+ * What the push service said about each message, in order. `id` is the ticket to ask for a
+ * receipt with, for a service that has receipts. `gone` means the device will never
  * receive anything again and should be forgotten; `failed` is anything else.
  */
 export type PushTicket =
-  { ok: true; id: string } | { ok: false; reason: "gone" | "failed"; detail: string };
+  { ok: true; id: string | null } | { ok: false; reason: "gone" | "failed"; detail: string };
 
 /** What happened to a message once the service has tried to deliver it. */
 export type PushReceipt = { ok: true } | { ok: false; reason: "gone" | "failed"; detail: string };

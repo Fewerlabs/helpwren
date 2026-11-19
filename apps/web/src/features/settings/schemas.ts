@@ -2,6 +2,7 @@ import {
   endpointUrlSchema,
   fieldPathSchema,
   identitySettingsSchema,
+  serviceAccountSchema,
   type IdentitySettings,
 } from "@helpwren/adapters/settings";
 import {
@@ -333,9 +334,43 @@ export function identityFromValues(values: IdentityValues): IdentitySettings | n
   return parsed.success ? parsed.data : null;
 }
 
-/** The Mobile page. An access token left empty keeps the one already saved. */
-export const mobileSchema = z.object({
-  provider: z.enum(["none", "expo"]),
-  accessToken: z.string().trim().max(200, "That is longer than an Expo access token."),
-});
+/**
+ * The Mobile page. A secret left empty keeps the one already saved: the Expo access token, and
+ * the Firebase service account's key file, pasted as the JSON Firebase gives.
+ */
+export const mobileSchema = z
+  .object({
+    expo: z.boolean(),
+    fcm: z.boolean(),
+    webhook: z.boolean(),
+    webhookUrl: z.string().trim(),
+    accessToken: z.string().trim().max(200, "That is longer than an Expo access token."),
+    serviceAccount: z.string().trim().max(20_000, "That is longer than a key file."),
+  })
+  .superRefine((values, context) => {
+    if (values.webhook && !endpointUrlSchema.safeParse(values.webhookUrl).success) {
+      context.addIssue({
+        code: "custom",
+        path: ["webhookUrl"],
+        message: "Enter an https:// address. Plain http:// works only for localhost.",
+      });
+    }
+    if (values.serviceAccount !== "" && serviceAccountFrom(values.serviceAccount) === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["serviceAccount"],
+        message: "Paste the whole key file Firebase gave you, as it is.",
+      });
+    }
+  });
 export type MobileValues = z.infer<typeof mobileSchema>;
+
+/** A pasted key file, if it is a service account's. */
+export function serviceAccountFrom(text: string): unknown {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    return serviceAccountSchema.safeParse(parsed).success ? parsed : null;
+  } catch {
+    return null;
+  }
+}

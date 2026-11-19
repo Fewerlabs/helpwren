@@ -1,5 +1,6 @@
 "use server";
 
+import { endpointUrlSchema } from "@helpwren/adapters/settings";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
@@ -12,7 +13,13 @@ import {
   testIdentityToken,
   type IdentityTestResult,
 } from "@/lib/identity";
-import { getPushSettings, savePushSettings } from "@/lib/push";
+import {
+  createWebhookSecret,
+  saveExpoAccessToken,
+  savePushSettings,
+  saveServiceAccount,
+  sendTestWebhook,
+} from "@/lib/push";
 
 import {
   brandingSchema,
@@ -23,6 +30,7 @@ import {
   identityFromValues,
   identitySchema,
   mobileSchema,
+  serviceAccountFrom,
   installationSchema,
   inviteSchema,
   memberChangeSchema,
@@ -213,22 +221,47 @@ export async function removeIdentityKey(id: string): Promise<SaveResult> {
   return { ok: true };
 }
 
-/** Saves how the install reaches phones. A new access token replaces the saved one. */
+/** Saves how the install reaches phones. A secret given replaces the saved one. */
 export async function saveMobile(values: MobileValues): Promise<SaveResult> {
   if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
   const parsed = mobileSchema.safeParse(values);
   if (!parsed.success) return { ok: false, reason: "invalid" };
+  const { expo, fcm, webhook, webhookUrl, accessToken, serviceAccount } = parsed.data;
 
-  const { provider, accessToken } = parsed.data;
-  await savePushSettings({ provider }, accessToken === "" ? undefined : accessToken);
+  if (accessToken !== "") await saveExpoAccessToken(accessToken);
+  if (serviceAccount !== "" && !(await saveServiceAccount(serviceAccountFrom(serviceAccount)))) {
+    return { ok: false, reason: "invalid" };
+  }
+  await savePushSettings({ expo, fcm, webhook: webhook ? { url: webhookUrl } : null });
   revalidatePath(SETTINGS_PATH, "layout");
   return { ok: true };
 }
 
-/** Forgets the saved Expo access token. */
-export async function removeExpoAccessToken(): Promise<SaveResult> {
+export type PushSecret = "expoAccessToken" | "serviceAccount";
+
+/** Forgets a saved push secret. */
+export async function removePushSecret(secret: PushSecret): Promise<SaveResult> {
   if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
-  await savePushSettings(await getPushSettings(), null);
+  if (secret === "expoAccessToken") await saveExpoAccessToken(null);
+  else await saveServiceAccount(null);
   revalidatePath(SETTINGS_PATH, "layout");
   return { ok: true };
+}
+
+export type WebhookSecretResult = { ok: true; secret: string } | { ok: false; reason: "forbidden" };
+
+/** Makes a new signing secret for the webhook, replacing the old one. Shown this once. */
+export async function makeWebhookSecret(): Promise<WebhookSecretResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  const secret = await createWebhookSecret();
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true, secret };
+}
+
+/** Sends a signed test event to a webhook address, to see the product's backend take it. */
+export async function testWebhook(url: string): Promise<TestEmailResult> {
+  if (!(await isAdmin())) return { ok: false, detail: "Only admins can send a test." };
+  const parsed = endpointUrlSchema.safeParse(url);
+  if (!parsed.success) return { ok: false, detail: "Enter the webhook's address first." };
+  return sendTestWebhook(parsed.data);
 }

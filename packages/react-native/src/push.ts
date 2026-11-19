@@ -1,8 +1,13 @@
 export interface SupportDevice {
   /** Where the Helpwren install is, such as `https://support.example.com`. */
   baseUrl: string;
-  /** The phone's Expo push token, from `getExpoPushTokenAsync`. */
+  /**
+   * The phone's push token: an Expo push token from `getExpoPushTokenAsync`, or a Firebase
+   * registration token from `messaging().getToken()` with `provider: "fcm"`.
+   */
   pushToken: string;
+  /** Which service the token is for. Default `expo`. */
+  provider?: "expo" | "fcm";
   platform: "ios" | "android";
   /** Which of the install's sources this app is, such as `customer_app`. */
   source: string;
@@ -53,6 +58,7 @@ export function registerSupportDevice(device: SupportDevice): Promise<SupportDev
     device.baseUrl,
     {
       pushToken: device.pushToken,
+      provider: device.provider ?? "expo",
       platform: device.platform,
       app: device.source,
       token: device.token,

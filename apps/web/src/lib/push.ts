@@ -1,20 +1,30 @@
 import "server-only";
 
+import { randomBytes, randomUUID } from "node:crypto";
+
 import {
   createExpoPush,
+  createFcmPush,
+  createWebhookPush,
   pushSettingsSchema,
+  serviceAccountSchema,
   type PushAdapter,
+  type PushEvent,
   type PushMessage,
   type PushSettings,
+  type WebhookPush,
+  type WebhookResult,
 } from "@helpwren/adapters";
 import { parseSettings } from "@helpwren/core";
 import { z } from "zod";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-/** The setting that says how the install sends pushes, and the secret Expo may need. */
+/** The setting that says how the install sends pushes, and the secrets each channel needs. */
 export const PUSH_SETTING = "push";
 export const EXPO_ACCESS_TOKEN_SECRET = "expo_access_token";
+export const FCM_SERVICE_ACCOUNT_SECRET = "fcm_service_account";
+export const PUSH_WEBHOOK_SECRET = "push_webhook_secret";
 
 /** How many pushes one run takes on, and how often one is tried before it is given up on. */
 const BATCH = 100;
@@ -36,47 +46,123 @@ async function stored(table: "settings" | "secrets", key: string): Promise<unkno
 }
 
 export async function getPushSettings(): Promise<PushSettings> {
-  return pushSettingsSchema.parse((await stored("settings", PUSH_SETTING)) ?? { provider: "none" });
+  return pushSettingsSchema.parse((await stored("settings", PUSH_SETTING)) ?? {});
 }
 
-/** Whether an Expo access token is kept. Its value never leaves the server. */
-export async function hasExpoAccessToken(): Promise<boolean> {
-  return typeof (await stored("secrets", EXPO_ACCESS_TOKEN_SECRET)) === "string";
+/** Only for a caller that has checked the person asking is an admin. */
+export async function savePushSettings(settings: PushSettings): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from("settings")
+    .upsert({ key: PUSH_SETTING, value: settings, is_public: false });
+  if (error) throw error;
+}
+
+async function keepSecret(key: string, value: unknown): Promise<void> {
+  const { error } =
+    value === null
+      ? await supabaseAdmin.from("secrets").delete().eq("key", key)
+      : await supabaseAdmin.from("secrets").upsert({ key, value: value as never });
+  if (error) throw error;
+}
+
+/** Keeps or, with `null`, removes the Expo access token. Only for an admin. */
+export function saveExpoAccessToken(token: string | null): Promise<void> {
+  return keepSecret(EXPO_ACCESS_TOKEN_SECRET, token);
 }
 
 /**
- * Only for a caller that has checked the person asking is an admin. `accessToken`: a new
- * value replaces the kept one, `null` removes it, and leaving it out keeps it.
+ * Keeps or, with `null`, removes the Firebase service account. The key file is checked first;
+ * `false` means it is not one. Only for an admin.
  */
-export async function savePushSettings(
-  settings: PushSettings,
-  accessToken?: string | null,
-): Promise<void> {
-  const saved = await supabaseAdmin
-    .from("settings")
-    .upsert({ key: PUSH_SETTING, value: settings, is_public: false });
-  if (saved.error) throw saved.error;
-
-  if (accessToken === null) {
-    const removed = await supabaseAdmin
-      .from("secrets")
-      .delete()
-      .eq("key", EXPO_ACCESS_TOKEN_SECRET);
-    if (removed.error) throw removed.error;
-  } else if (accessToken !== undefined) {
-    const kept = await supabaseAdmin
-      .from("secrets")
-      .upsert({ key: EXPO_ACCESS_TOKEN_SECRET, value: accessToken });
-    if (kept.error) throw kept.error;
+export async function saveServiceAccount(keyFile: unknown): Promise<boolean> {
+  if (keyFile === null) {
+    await keepSecret(FCM_SERVICE_ACCOUNT_SECRET, null);
+    return true;
   }
+  const account = serviceAccountSchema.safeParse(keyFile);
+  if (!account.success) return false;
+  await keepSecret(FCM_SERVICE_ACCOUNT_SECRET, account.data);
+  return true;
 }
 
-/** The way this install sends pushes, or `null` when it sends none. */
-export async function getPushAdapter(): Promise<PushAdapter | null> {
+/** Makes a new signing secret for the webhook, and returns it once. Only for an admin. */
+export async function createWebhookSecret(): Promise<string> {
+  const secret = `whsec_${randomBytes(32).toString("base64url")}`;
+  await keepSecret(PUSH_WEBHOOK_SECRET, secret);
+  return secret;
+}
+
+/** What a settings screen may know about the push secrets: whether they are there, never them. */
+export interface PushSecretsSummary {
+  expoAccessToken: boolean;
+  /** The Firebase project and account the key file is for, which are not secret. */
+  serviceAccount: { projectId: string; clientEmail: string } | null;
+  webhookSecret: boolean;
+}
+
+export async function summarisePushSecrets(): Promise<PushSecretsSummary> {
+  const [expo, account, webhook] = await Promise.all([
+    stored("secrets", EXPO_ACCESS_TOKEN_SECRET),
+    stored("secrets", FCM_SERVICE_ACCOUNT_SECRET),
+    stored("secrets", PUSH_WEBHOOK_SECRET),
+  ]);
+  const parsed = serviceAccountSchema.safeParse(account);
+  return {
+    expoAccessToken: typeof expo === "string",
+    serviceAccount: parsed.success
+      ? { projectId: parsed.data.project_id, clientEmail: parsed.data.client_email }
+      : null,
+    webhookSecret: typeof webhook === "string",
+  };
+}
+
+/** The ways this install sends pushes. A channel that is off, or not set up, is `null`. */
+export interface PushChannels {
+  expo: PushAdapter | null;
+  fcm: PushAdapter | null;
+  webhook: WebhookPush | null;
+}
+
+export async function getPushChannels(): Promise<PushChannels> {
   const settings = await getPushSettings();
-  if (settings.provider === "none") return null;
-  const token = await stored("secrets", EXPO_ACCESS_TOKEN_SECRET);
-  return createExpoPush({ accessToken: typeof token === "string" ? token : undefined });
+  const [expoToken, account, webhookSecret] = await Promise.all([
+    stored("secrets", EXPO_ACCESS_TOKEN_SECRET),
+    stored("secrets", FCM_SERVICE_ACCOUNT_SECRET),
+    stored("secrets", PUSH_WEBHOOK_SECRET),
+  ]);
+  const serviceAccount = serviceAccountSchema.safeParse(account);
+  return {
+    expo: settings.expo
+      ? createExpoPush({ accessToken: typeof expoToken === "string" ? expoToken : undefined })
+      : null,
+    fcm:
+      settings.fcm && serviceAccount.success
+        ? createFcmPush({ serviceAccount: serviceAccount.data })
+        : null,
+    webhook:
+      settings.webhook && typeof webhookSecret === "string"
+        ? createWebhookPush({ url: settings.webhook.url, secret: webhookSecret })
+        : null,
+  };
+}
+
+/**
+ * Sends a test event to a webhook address with the saved secret, for an admin checking their
+ * backend receives it. Only for an admin.
+ */
+export async function sendTestWebhook(url: string): Promise<WebhookResult> {
+  const secret = await stored("secrets", PUSH_WEBHOOK_SECRET);
+  if (typeof secret !== "string") return { ok: false, detail: "Make a signing secret first." };
+  return createWebhookPush({ url, secret }).send({
+    type: "push.test",
+    id: randomUUID(),
+    conversationId: randomUUID(),
+    contact: { id: randomUUID(), externalId: "test-user" },
+    title: "Helpwren",
+    preview: "This is a test from Settings > Mobile.",
+    unreadCount: 1,
+    sentAt: new Date().toISOString(),
+  });
 }
 
 export interface PushRun {
@@ -140,7 +226,7 @@ async function devicesOf(contact: { id: string; external_id: string | null }) {
   }
   const { data, error } = await supabaseAdmin
     .from("devices")
-    .select("id, push_token")
+    .select("id, push_token, provider")
     .or(owners.join(","));
   if (error) throw error;
   return data;
@@ -162,14 +248,43 @@ function preview(body: string | null): string {
   return text.length > PREVIEW_LENGTH ? `${text.slice(0, PREVIEW_LENGTH - 1)}…` : text;
 }
 
+/** Hands messages to one channel, and records what it said. */
+async function sendThrough(
+  adapter: PushAdapter,
+  devices: readonly { id: string; push_token: string }[],
+  message: Omit<PushMessage, "to">,
+  run: PushRun,
+): Promise<boolean> {
+  const tickets = await adapter.send(
+    devices.map((device) => ({ ...message, to: device.push_token })),
+  );
+
+  const withReceipts = tickets.flatMap((ticket, index) =>
+    ticket.ok && ticket.id !== null ? [{ id: ticket.id, device_id: devices[index]?.id ?? "" }] : [],
+  );
+  if (withReceipts.length > 0) {
+    const inserted = await supabaseAdmin.from("push_tickets").insert(withReceipts);
+    if (inserted.error) throw inserted.error;
+  }
+  const gone = tickets.flatMap((ticket, index) =>
+    !ticket.ok && ticket.reason === "gone" ? [devices[index]?.id ?? ""] : [],
+  );
+  await forgetDevices(gone);
+  run.removedDevices += gone.length;
+  return tickets.some((ticket) => ticket.ok);
+}
+
 /**
  * Sends the pushes that are due: one notification per conversation, however many replies came
- * since the last run, and none for a reply that was read in the chat meanwhile. A scheduler
- * calls this every minute through `/api/jobs/push`.
+ * since the last run, and none for a reply that was read in the chat meanwhile. Each phone gets
+ * it through its own service, Expo or Firebase, and the product's webhook, when there is one,
+ * is told once per conversation. A scheduler calls this every minute through `/api/jobs/push`.
  */
-export async function processPushQueue(adapter: PushAdapter | null = null): Promise<PushRun> {
+export async function processPushQueue(given?: Partial<PushChannels>): Promise<PushRun> {
   const run: PushRun = { sent: 0, skipped: 0, failed: 0, removedDevices: 0 };
-  const push = adapter ?? (await getPushAdapter());
+  const channels: PushChannels = given
+    ? { expo: null, fcm: null, webhook: null, ...given }
+    : await getPushChannels();
 
   const claimed = await supabaseAdmin.rpc("claim_push_queue", { batch: BATCH });
   if (claimed.error) throw claimed.error;
@@ -188,7 +303,7 @@ export async function processPushQueue(adapter: PushAdapter | null = null): Prom
     if (!retry) run[final] += ids.length;
   }
 
-  if (!push) {
+  if (!channels.expo && !channels.fcm && !channels.webhook) {
     // Push is off: what is owed is let go of, so the queue does not grow.
     await finish(
       jobs.map((job) => job.id),
@@ -197,7 +312,8 @@ export async function processPushQueue(adapter: PushAdapter | null = null): Prom
     return run;
   }
 
-  run.removedDevices += await checkReceipts(push);
+  // Only Expo has receipts to ask for.
+  if (channels.expo) run.removedDevices += await checkReceipts(channels.expo);
 
   const settings = parseSettings(
     (await supabaseAdmin.from("settings").select("key, value")).data ?? [],
@@ -224,9 +340,15 @@ export async function processPushQueue(adapter: PushAdapter | null = null): Prom
       await finish(ids, "skipped");
       continue;
     }
+    const { contact } = conversation.data;
 
-    const devices = await devicesOf(conversation.data.contact);
-    if (devices.length === 0) {
+    // A phone is reached through its own service, when that channel is on.
+    const devices = await devicesOf(contact);
+    const reachable = {
+      expo: channels.expo ? devices.filter((device) => device.provider === "expo") : [],
+      fcm: channels.fcm ? devices.filter((device) => device.provider === "fcm") : [],
+    };
+    if (reachable.expo.length === 0 && reachable.fcm.length === 0 && !channels.webhook) {
       await finish(ids, "skipped");
       continue;
     }
@@ -240,38 +362,46 @@ export async function processPushQueue(adapter: PushAdapter | null = null): Prom
       .maybeSingle();
     if (messageError) throw messageError;
 
-    const badge = await badgeFor(conversation.data.contact.id);
-    const messages: PushMessage[] = devices.map((device) => ({
-      to: device.push_token,
+    const badge = await badgeFor(contact.id);
+    const notification = {
       title: settings.brand.name,
       body: preview(message?.body ?? null),
       data: { type: "support", conversationId },
       group: conversationId,
       badge,
-    }));
+    };
 
-    let tickets;
-    try {
-      tickets = await push.send(messages);
-    } catch {
-      await finish(ids, "retry");
-      continue;
+    let delivered = false;
+    let unreachable = false;
+    for (const [adapter, phones] of [
+      [channels.expo, reachable.expo],
+      [channels.fcm, reachable.fcm],
+    ] as const) {
+      if (!adapter || phones.length === 0) continue;
+      try {
+        delivered = (await sendThrough(adapter, phones, notification, run)) || delivered;
+      } catch {
+        unreachable = true;
+      }
+    }
+    if (channels.webhook) {
+      const event: PushEvent = {
+        type: "push.reply",
+        id: randomUUID(),
+        conversationId,
+        contact: { id: contact.id, externalId: contact.external_id },
+        title: notification.title,
+        preview: notification.body,
+        unreadCount: badge,
+        sentAt: new Date().toISOString(),
+      };
+      const result = await channels.webhook.send(event);
+      if (result.ok) delivered = true;
+      else unreachable = true;
     }
 
-    const delivered = tickets.flatMap((ticket, index) =>
-      ticket.ok ? [{ id: ticket.id, device_id: devices[index]?.id ?? "" }] : [],
-    );
-    if (delivered.length > 0) {
-      const inserted = await supabaseAdmin.from("push_tickets").insert(delivered);
-      if (inserted.error) throw inserted.error;
-    }
-    const gone = tickets.flatMap((ticket, index) =>
-      !ticket.ok && ticket.reason === "gone" ? [devices[index]?.id ?? ""] : [],
-    );
-    await forgetDevices(gone);
-    run.removedDevices += gone.length;
-
-    await finish(ids, delivered.length > 0 ? "sent" : "failed");
+    // A service that could not be reached is tried again, unless another one delivered it.
+    await finish(ids, delivered ? "sent" : unreachable ? "retry" : "failed");
   }
   return run;
 }

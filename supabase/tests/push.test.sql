@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(16);
+select plan(19);
 
 -- A device the server registered for Member, and one for a product user who has not written.
 select tests.act_as_server();
@@ -34,6 +34,30 @@ select throws_ok(
   $$,
   '23505', null,
   'a push token is one device'
+);
+
+select is(
+  (select provider from public.devices where push_token = 'ExponentPushToken[member]'),
+  'expo',
+  'a device is an Expo one unless it says otherwise'
+);
+select lives_ok(
+  format(
+    $$
+      insert into public.devices (external_id, push_token, platform, app, provider)
+      values ('user-79', %L, 'android', 'business_app', 'fcm')
+    $$,
+    repeat('f', 300)
+  ),
+  'a Firebase device keeps its long registration token'
+);
+select throws_ok(
+  $$
+    insert into public.devices (external_id, push_token, platform, app, provider)
+    values ('user-80', 'some-token', 'ios', 'business_app', 'onesignal')
+  $$,
+  '23514', null,
+  'a device is for Expo or Firebase'
 );
 
 -- Nobody signed in reads or writes devices, the queue or the tickets.

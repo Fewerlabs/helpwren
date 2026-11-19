@@ -47,3 +47,8 @@ need no new code.
   Suppressing a banner while the support screen is showing that conversation is the app's own
   notification handler's job.
 - Sending has been tested against a stand-in for Expo, not real Expo or real phones.
+
+## Later changes
+
+- 2026-11-19: Firebase Cloud Messaging and a signed webhook joined Expo, each device saying which
+  service it is for. See [ADR 0019](0019-firebase-and-webhook-push.md).

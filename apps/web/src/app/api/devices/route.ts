@@ -1,4 +1,4 @@
-import { IdentityError, isExpoPushToken } from "@helpwren/adapters";
+import { IdentityError, isExpoPushToken, isFcmToken } from "@helpwren/adapters";
 import { parseSettings } from "@helpwren/core";
 import { z } from "zod";
 
@@ -7,19 +7,31 @@ import { apiError } from "@/lib/api/respond";
 import { verifyIdentity } from "@/lib/identity";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-const pushTokenSchema = z.string().refine(isExpoPushToken, "Not an Expo push token.");
+/** A push token, checked against the service it is for. */
+function validToken(provider: "expo" | "fcm", token: string): boolean {
+  return provider === "expo" ? isExpoPushToken(token) : isFcmToken(token);
+}
 
-const registerSchema = z.object({
-  /** The push service's address for this app on this phone. */
-  pushToken: pushTokenSchema,
-  platform: z.enum(["ios", "android"]),
-  /** Which of the install's sources the app is. */
-  app: z.string().trim().min(1).max(40),
-  /** The user's token for the host product. Without it, the caller's Helpwren session. */
-  token: z.string().min(1).max(8000).optional(),
-});
+const providerSchema = z.enum(["expo", "fcm"]).default("expo");
 
-const removeSchema = z.object({ pushToken: pushTokenSchema });
+const registerSchema = z
+  .object({
+    /** The push service's address for this app on this phone. */
+    pushToken: z.string().min(1).max(4096),
+    /** Which service the token is for: Expo's (the default) or Firebase's. */
+    provider: providerSchema,
+    platform: z.enum(["ios", "android"]),
+    /** Which of the install's sources the app is. */
+    app: z.string().trim().min(1).max(40),
+    /** The user's token for the host product. Without it, the caller's Helpwren session. */
+    token: z.string().min(1).max(8000).optional(),
+  })
+  .refine((input) => validToken(input.provider, input.pushToken), {
+    message: "The push token is not one for that service.",
+    path: ["pushToken"],
+  });
+
+const removeSchema = z.object({ pushToken: z.string().min(1).max(4096) });
 
 const identityCodes = {
   expired: "token_expired",
@@ -36,7 +48,7 @@ const identityCodes = {
 export async function POST(request: Request): Promise<Response> {
   const input = registerSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
-  const { pushToken, platform, app, token } = input.data;
+  const { pushToken, provider, platform, app, token } = input.data;
 
   const { data: settingRows, error: settingsError } = await supabaseAdmin
     .from("settings")
@@ -73,7 +85,10 @@ export async function POST(request: Request): Promise<Response> {
 
   const { error } = await supabaseAdmin
     .from("devices")
-    .upsert({ push_token: pushToken, platform, app, ...owner }, { onConflict: "push_token" });
+    .upsert(
+      { push_token: pushToken, provider, platform, app, ...owner },
+      { onConflict: "push_token" },
+    );
   if (error) throw error;
   return new Response(null, { status: 204 });
 }

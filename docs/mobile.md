@@ -56,7 +56,7 @@ message, opens in the system browser.
 
 ## Push notifications
 
-Turn push on in **Settings > Mobile** (Expo is the first provider). The scheduler that sends
+Turn push on in **Settings > Mobile**: Expo, Firebase Cloud Messaging, your own backend, or any of them together. The scheduler that sends
 emails must also call `POST /api/jobs/push` every minute with `CRON_SECRET`. Then, in the app:
 
 ```tsx
@@ -93,6 +93,78 @@ support screen already shows that conversation, check `supportConversationId` in
 `setNotificationHandler` (Expo SDK 58 shows foreground notifications unless told not to).
 
 Push needs a development build: Expo Go does not receive push notifications.
+
+### Firebase
+
+For native Android and iOS apps, Flutter, and React Native with `@react-native-firebase`:
+
+1. In Firebase, open Project settings, Service accounts, and choose Generate new private key.
+2. In **Settings > Mobile**, turn on Firebase Cloud Messaging and paste the whole key file. It is
+   kept with the install's secrets; only its project and account are shown again. One key file
+   covers Android and iOS.
+3. Register each phone with its registration token and `provider: "fcm"`:
+
+```tsx
+import messaging from "@react-native-firebase/messaging";
+
+await registerSupportDevice({
+  baseUrl: "https://support.example.com",
+  pushToken: await messaging().getToken(),
+  provider: "fcm",
+  platform: Platform.OS === "ios" ? "ios" : "android",
+  source: "business_app",
+  token: await auth.getAccessToken(),
+});
+
+messaging().onNotificationOpenedApp((message) => {
+  const conversationId = supportConversationId(message.data);
+  if (conversationId) navigation.navigate("Support", { conversationId });
+});
+```
+
+From another platform, post the same fields to `POST /api/devices`. Notifications for one
+conversation replace each other on both platforms, and carry the unread count as the badge.
+
+### Your own backend
+
+Turn on **Your own backend** in Settings > Mobile, enter your server's address, and make a
+signing secret (shown once). Each push is then posted to your server, once per conversation:
+
+```json
+{
+  "type": "push.reply",
+  "id": "6d1f0c2e-…",
+  "conversationId": "b3a7…",
+  "contact": { "id": "8c41…", "externalId": "user_1002" },
+  "title": "Acme",
+  "preview": "It went out this morning.",
+  "unreadCount": 2,
+  "sentAt": "2026-11-19T10:00:00.000Z"
+}
+```
+
+`contact.externalId` is your own id for the user when they are one of your logged-in users.
+Answer with any `2xx` once you have taken it; anything else, or no answer within ten seconds,
+and it is tried again on a later run. The test button sends `"type": "push.test"`. Use `id` to
+ignore a repeat.
+
+Every request carries `helpwren-signature: t=<unix seconds>,v1=<hex>`, an HMAC-SHA256 of
+`<t>.<body>` under the secret. Check it against the raw body, and refuse anything over five
+minutes old:
+
+```js
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function fromHelpwren(rawBody, header, secret) {
+  const parts = Object.fromEntries(header.split(",").map((part) => part.split("=")));
+  if (!parts.v1 || Math.abs(Date.now() / 1000 - Number(parts.t)) > 300) return false;
+  const expected = createHmac("sha256", secret).update(`${parts.t}.${rawBody}`).digest();
+  const given = Buffer.from(parts.v1, "hex");
+  return given.length === expected.length && timingSafeEqual(given, expected);
+}
+```
+
+In JavaScript, `verifyWebhook(rawBody, header, secret)` from `@helpwren/adapters` does the same.
 
 ## Other platforms
 
