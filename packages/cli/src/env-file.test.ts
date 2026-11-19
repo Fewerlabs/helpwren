@@ -39,6 +39,18 @@ describe("mergeEnv", () => {
     );
   });
 
+  it("can empty a placeholder, and then leaves the empty value alone", () => {
+    const emptied = mergeEnv(
+      "SMTP_USER=fake_mail_user\n",
+      { SMTP_USER: "" },
+      {
+        replace: ["SMTP_USER"],
+      },
+    );
+    expect(emptied.text).toBe("SMTP_USER=\n");
+    expect(mergeEnv(emptied.text, { SMTP_USER: "" }).written).toEqual([]);
+  });
+
   it("changes nothing when run again with the same values", () => {
     const once = mergeEnv(start, { EMPTY: "filled", NEW: "x" }).text;
     const twice = mergeEnv(once, { EMPTY: "filled", NEW: "x" });

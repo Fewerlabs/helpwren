@@ -69,7 +69,8 @@ export function mergeEnv(
       kept.push(key);
       return line;
     }
-    if (existing.get(key) === value) return line;
+    // An empty value and no value are the same to every reader.
+    if ((existing.get(key) ?? "") === value) return line;
     written.push(key);
     return format(key, value);
   });

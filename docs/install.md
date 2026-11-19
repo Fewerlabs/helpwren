@@ -152,10 +152,11 @@ release (`self-hosted/v0.8.4`) into `deploy/docker/supabase`.
 settings Helpwren needs on top: the sign-in code email, named volumes for the database and
 uploads, and an optional test mailbox.
 
-Supabase's stack is about a dozen containers; a server with 8 GB of memory and 2 CPUs runs it
-and Helpwren comfortably. Check Supabase's guide for its current requirements.
+Supabase's stack is about a dozen containers, about 1.5 GB of memory together with Helpwren
+once running; a server with 4 GB or more is comfortable. Check Supabase's guide for its current
+requirements.
 
-### Install (about 20 minutes, most of it pulling images)
+### Install (10 to 20 minutes, most of it pulling images)
 
 ```bash
 git clone https://github.com/Fewerlabs/helpwren.git && cd helpwren
@@ -172,7 +173,7 @@ The installer:
    it, the dashboard password and the rest), and adds Helpwren's own: `HELPWREN_APP_URL` and
    `CRON_SECRET`. Values you have already set are kept;
 4. asks whether to catch sign-in emails in a local test mailbox (Mailpit, at
-   http://localhost:8025). Say yes to try it out; for real use, set `SMTP_HOST`, `SMTP_PORT`,
+   http://localhost:8025; Auth sends to it without signing in, since it is a plain connection). Say yes to try it out; for real use, set `SMTP_HOST`, `SMTP_PORT`,
    `SMTP_USER`, `SMTP_PASS` and `SMTP_ADMIN_EMAIL` in `.env` to a real mail service;
 5. starts the database, applies the migrations through Supabase's pooler, then builds the
    Helpwren image and starts everything with `docker compose up --wait`.
@@ -295,8 +296,19 @@ run locally on separate ports in place of a Cloud project, from a clean copy of 
 
 Not measured: creating a real Cloud project (Supabase says about two minutes), a first
 `pnpm install` with an empty store (about a minute on a fast connection), Vercel's build, and a
-person reading and typing. With those, ten minutes is a fair target for the Cloud path. The
-Docker path's own steps are as fast, plus the image pulls: Supabase's images are a few GB.
+person reading and typing. With those, ten minutes is a fair target for the Cloud path.
+
+The Docker path on the same laptop, all fourteen containers healthy at the end:
+
+| Step                                                         | Time  |
+| ------------------------------------------------------------ | ----- |
+| `docker compose pull` (Supabase's images, a few GB)          | 6 min |
+| `pnpm helpwren install --mode docker`, images already pulled | 63 s  |
+| Running it again (nothing to do but rebuild the app image)   | 45 s  |
+| `pnpm helpwren upgrade` with one migration and a backup      | 48 s  |
+| The setup wizard's end-to-end test against it                | 9 s   |
+
+The whole stack used about 1.5 GB of memory once running.
 
 ## Troubleshooting
 

@@ -71,11 +71,40 @@ export function placeholderKeys(paths: Paths, envText: string): string[] {
   return [...current].filter(([key, value]) => example.get(key) === value).map(([key]) => key);
 }
 
-/** Runs `docker compose` on Helpwren's Compose file. */
-export function compose(run: Runner, paths: Paths, args: readonly string[]) {
+/** Helpwren's own services; everything else in the Compose file is Supabase's. */
+const HELPWREN_SERVICES = ["helpwren", "scheduler"];
+
+/**
+ * Supabase's services, which must all be up before the migrations run: the database alone is
+ * not enough, because Realtime and Storage create the schemas the migrations build on.
+ */
+export async function supabaseServices(run: Runner, paths: Paths): Promise<string[]> {
+  const result = await run(
+    "docker",
+    ["compose", "--file", paths.dockerCompose, "config", "--services"],
+    {
+      cwd: paths.dockerDir,
+    },
+  );
+  if (result.code !== 0) {
+    throw new Error(`The Compose file is not valid: ${result.stderr.trim()}`);
+  }
+  return result.stdout
+    .split("\n")
+    .map((name) => name.trim())
+    .filter((name) => name !== "" && !HELPWREN_SERVICES.includes(name));
+}
+
+/**
+ * Runs `docker compose` on Helpwren's Compose file. The checkout's commit goes with it, so an
+ * image built now reports it from `/api/health`; the build itself has no git history.
+ */
+export async function compose(run: Runner, paths: Paths, args: readonly string[]) {
+  const commit = await run("git", ["rev-parse", "--short", "HEAD"], { cwd: paths.root });
   return run("docker", ["compose", "--file", paths.dockerCompose, ...args], {
     cwd: paths.dockerDir,
     stdio: "inherit",
+    ...(commit.code === 0 ? { env: { HELPWREN_COMMIT: commit.stdout.trim() } } : {}),
   });
 }
 

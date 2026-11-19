@@ -31,6 +31,8 @@ services:
         NEXT_PUBLIC_APP_URL: ${HELPWREN_APP_URL}
         NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+        # Shown by /api/health. The installer passes the checkout's commit.
+        HELPWREN_COMMIT: ${HELPWREN_COMMIT:-}
     image: helpwren-web:local
     restart: unless-stopped
     depends_on:

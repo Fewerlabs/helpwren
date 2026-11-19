@@ -16,6 +16,7 @@ import {
   fetchSupabaseDocker,
   placeholderKeys,
   SUPABASE_SELF_HOSTED_REF,
+  supabaseServices,
 } from "./docker.ts";
 import { mergeEnv, parseEnv, readEnvFile, writeEnvFile, type MergeResult } from "./env-file.ts";
 import { dockerChecks, toolchainChecks, type Check } from "./prereqs.ts";
@@ -234,7 +235,18 @@ async function installDocker(ctx: Context, options: InstallOptions): Promise<str
       SITE_URL: appUrl,
       // Guests chat with anonymous sessions.
       ENABLE_ANONYMOUS_USERS: "true",
-      ...(mailbox ? { SMTP_HOST: "mail", SMTP_PORT: "1025", COMPOSE_PROFILES: "mail" } : {}),
+      // Trying it on this machine at another port: the container is published there too.
+      ...(isLocal(appUrl) && new URL(appUrl).port ? { HELPWREN_PORT: new URL(appUrl).port } : {}),
+      ...(mailbox
+        ? {
+            SMTP_HOST: "mail",
+            SMTP_PORT: "1025",
+            // No sign-in: Auth refuses to send a password over the mailbox's plain connection.
+            SMTP_USER: "",
+            SMTP_PASS: "",
+            COMPOSE_PROFILES: "mail",
+          }
+        : {}),
     },
     { overwrite: options.overwrite, replace: placeholders, header: "Helpwren" },
   );
@@ -262,13 +274,10 @@ async function installDocker(ctx: Context, options: InstallOptions): Promise<str
     return appUrl;
   }
 
-  ctx.out.step("Starting the database");
-  if (
-    (await compose(ctx.run, ctx.paths, ["up", "--detach", "--wait", "db", "supavisor"])).code !== 0
-  ) {
-    throw new InstallError(
-      "The database did not start. See `docker compose logs db` in deploy/docker.",
-    );
+  ctx.out.step("Starting Supabase");
+  const services = await supabaseServices(ctx.run, ctx.paths);
+  if ((await compose(ctx.run, ctx.paths, ["up", "--detach", "--wait", ...services])).code !== 0) {
+    throw new InstallError("Supabase did not start. See `docker compose ps` in deploy/docker.");
   }
   await applyMigrations(
     ctx,
@@ -276,7 +285,7 @@ async function installDocker(ctx: Context, options: InstallOptions): Promise<str
     await askDemoData(ctx, options),
   );
 
-  ctx.out.step("Building and starting Helpwren and Supabase");
+  ctx.out.step("Building and starting Helpwren");
   if ((await compose(ctx.run, ctx.paths, ["up", "--detach", "--build", "--wait"])).code !== 0) {
     throw new InstallError("Not everything started. See `docker compose ps` in deploy/docker.");
   }

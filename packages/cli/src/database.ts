@@ -14,6 +14,9 @@ const remote = (target: DbTarget) =>
 export const describeTarget = (target: DbTarget) =>
   target.kind === "url" ? redactUrl(target.url) : "the linked Supabase project";
 
+// What `supabase db push --output-format json` prints when it fails.
+const pushErrorSchema = z.object({ error: z.object({ message: z.string() }) });
+
 // What `supabase db push --output-format json` prints when it is done.
 const pushResultSchema = z.object({
   upToDate: z.boolean(),
@@ -60,11 +63,16 @@ export async function pushMigrations(
     ...(seed ? ["--include-seed"] : []),
   ];
   const result = await run("pnpm", args, { cwd: root });
-  if (result.code !== 0) {
-    throw new DatabaseError("The Supabase CLI could not apply the migrations.", result.stderr);
-  }
   const json = result.stdout.slice(result.stdout.indexOf("{"));
-  const parsed = pushResultSchema.safeParse(JSON.parse(json || "{}"));
+  if (result.code !== 0) {
+    // The reason is in the JSON on stdout; stderr has only the progress lines.
+    const failure = pushErrorSchema.safeParse(safeJson(json));
+    throw new DatabaseError(
+      "The Supabase CLI could not apply the migrations.",
+      failure.success ? failure.data.error.message : result.stderr,
+    );
+  }
+  const parsed = pushResultSchema.safeParse(safeJson(json));
   if (!parsed.success) {
     throw new DatabaseError(
       "The Supabase CLI answered in a way this installer does not know.",
@@ -72,6 +80,14 @@ export async function pushMigrations(
     );
   }
   return parsed.data.migrations;
+}
+
+function safeJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /** Connects this checkout to a hosted Supabase project, which asks the person to sign in. */
