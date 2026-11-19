@@ -55,7 +55,7 @@ export function RatingPrompt({ conversationId }: { conversationId: string }) {
             className={cn(
               "border-line focus-visible:outline-ring h-10 flex-1 rounded-lg text-sm font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
               score === value
-                ? "border-primary bg-primary text-primary-foreground"
+                ? "border-primary bg-primary-fill text-primary-fill-foreground"
                 : "border-input hover:bg-muted/60",
             )}
             onClick={() => {

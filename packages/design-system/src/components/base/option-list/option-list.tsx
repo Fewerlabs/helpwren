@@ -167,7 +167,9 @@ export function OptionList({
                   aria-hidden="true"
                   className={cn(
                     "border-line grid size-4 shrink-0 place-items-center rounded-sm",
-                    chosen ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                    chosen
+                      ? "border-primary bg-primary-fill text-primary-fill-foreground"
+                      : "border-input",
                   )}
                 >
                   {chosen ? <Icon name="check" weight="bold" className="size-3" /> : null}

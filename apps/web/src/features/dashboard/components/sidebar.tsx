@@ -69,7 +69,7 @@ export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
                 {count > 0 ? (
                   <span
                     aria-hidden="true"
-                    className="bg-primary text-primary-foreground ring-background text-2xs absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 font-medium ring-2"
+                    className="bg-primary-fill text-primary-fill-foreground ring-background text-2xs absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 font-medium ring-2"
                   >
                     {count > 99 ? "99+" : count}
                   </span>

@@ -240,10 +240,10 @@ describe("MessageBubble", () => {
     );
     const own = screen.getByText("Thanks");
     const theirs = screen.getByText("You are welcome");
-    expect(own).toHaveClass("bg-primary");
+    expect(own).toHaveClass("bg-primary-fill");
     expect(own).toHaveTextContent("You: Thanks");
     expect(theirs).toHaveClass("bg-muted");
-    expect(theirs).not.toHaveClass("bg-primary");
+    expect(theirs).not.toHaveClass("bg-primary-fill");
     expect(theirs).toHaveTextContent("Ada: You are welcome");
     expect(screen.getByText("10:02")).toBeInTheDocument();
   });

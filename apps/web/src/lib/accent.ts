@@ -46,6 +46,9 @@ export function accentStyle({ accent, accentTo, button }: Colours): CSSPropertie
     // Buttons and the visitor's own messages.
     "--primary": primary,
     "--primary-foreground": readableOn(primary),
+    // A brand's own button colour fills buttons in dark mode too.
+    "--primary-fill": primary,
+    "--primary-fill-foreground": readableOn(primary),
     "--ring": primary,
     ...(accent
       ? {

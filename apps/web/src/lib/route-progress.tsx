@@ -108,7 +108,7 @@ function Bar() {
       className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5"
     >
       <div
-        className="bg-primary h-full origin-left transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none"
+        className="bg-primary-fill h-full origin-left transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none"
         style={{ transform: `scaleX(${shown})`, opacity: shown === 1 ? 0 : 1 }}
       />
     </div>

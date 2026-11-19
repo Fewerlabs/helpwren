@@ -10,7 +10,7 @@ type Story = StoryObj;
 const corner = (side: "left" | "right") => (
   <span className="border-rule bg-card relative block h-11 w-16 rounded-md border">
     <span
-      className={`bg-primary absolute bottom-1 size-2.5 rounded-full ${side === "left" ? "left-1" : "right-1"}`}
+      className={`bg-primary-fill absolute bottom-1 size-2.5 rounded-full ${side === "left" ? "left-1" : "right-1"}`}
     />
   </span>
 );

@@ -46,6 +46,7 @@ export const contrastPairs: readonly ContrastPair[] = [
   ...pairs(TEXT, "Marks, errors and destructive text", ["pen"], ["background", "card"]),
   ...pairs(TEXT, "Waiting text", ["ochre"], ["background", "card"]),
   ...pairs(TEXT, "Text on a primary button", ["primary-foreground"], ["primary"]),
+  ...pairs(TEXT, "Text on a filled button", ["primary-fill-foreground"], ["primary-fill"]),
   ...pairs(TEXT, "Text on a destructive button", ["destructive-foreground"], ["destructive"]),
   ...pairs(TEXT, "Text on a secondary surface", ["secondary-foreground"], ["secondary"]),
   ...pairs(TEXT, "Text on a hovered item", ["accent-foreground"], ["accent"]),
