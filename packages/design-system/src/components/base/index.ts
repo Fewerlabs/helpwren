@@ -158,9 +158,11 @@ export {
   type DataTableKey,
   type DataTableMessages,
   type DataTableProps,
+  type DataTableReorder,
   type DataTableSort,
   type DataTableSortValue,
 } from "./table/data-table";
+export { type SortableRowsMessages } from "./table/sortable-rows";
 export {
   Table,
   TableBody,
