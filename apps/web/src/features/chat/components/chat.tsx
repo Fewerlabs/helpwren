@@ -5,7 +5,7 @@ import { cn, Skeleton } from "@helpwren/design-system";
 import { useCallback, useEffect } from "react";
 
 import { Thread } from "@/features/conversation";
-import { accentStyle, brandTone } from "@/lib/accent";
+import { accentStyle } from "@/lib/accent";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { BrandProvider, TeamAvatar } from "../brand";
@@ -196,7 +196,7 @@ function Surface({ settings: saved, source, preview = false, className }: ChatPr
     <BrandProvider brand={settings.brand}>
       {/* White, so the chat reads as its own surface on whatever site it sits in. */}
       <div
-        className={cn("bg-card flex h-dvh flex-col", brandTone(settings.brand), className)}
+        className={cn("bg-card flex h-dvh flex-col", className)}
         style={accentStyle(settings.brand)}
       >
         <Screens settings={settings} source={source} />

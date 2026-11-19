@@ -34,7 +34,7 @@ export function ConversationRow({ conversation, onOpen }: ConversationRowProps) 
       </span>
       {unread ? (
         <span className="text-xs">
-          <span aria-hidden="true" className="bg-primary block size-2 rounded-full" />
+          <span aria-hidden="true" className="bg-brand block size-2 rounded-full" />
           <span className="sr-only">{conversation.unreadForContact} unread</span>
         </span>
       ) : conversation.lastMessageAt ? (

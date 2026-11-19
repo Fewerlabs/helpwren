@@ -3,7 +3,7 @@ import { cn } from "@helpwren/design-system";
 import { type CSSProperties } from "react";
 
 import { bannerStyle, PageGrid } from "@/features/help-center";
-import { accentStyle, brandTone } from "@/lib/accent";
+import { accentStyle } from "@/lib/accent";
 
 import { Chat } from "./chat";
 
@@ -56,7 +56,6 @@ export function ChatPage({ settings, preview = false, chatClassName }: ChatPageP
       inert={preview}
       className={cn(
         "bg-card text-foreground relative isolate flex min-h-full flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-4 sm:p-8",
-        brandTone(brand),
       )}
       style={accentStyle(brand)}
     >

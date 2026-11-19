@@ -45,14 +45,9 @@ export function TabBar({ current, unread, poweredBy }: TabBarProps) {
               }}
             >
               <span className="relative">
-                {/* The open tab's icon alone wears the brand's colour; its label stays ink. */}
-                <Icon
-                  name={tab.icon}
-                  weight={active ? "duotone" : "regular"}
-                  className={cn("size-5", active && "text-brand")}
-                />
+                <Icon name={tab.icon} weight={active ? "duotone" : "regular"} className="size-5" />
                 {hasUnread ? (
-                  <span className="bg-primary ring-background absolute -top-0.5 -right-1 size-2 rounded-full ring-2" />
+                  <span className="bg-brand ring-background absolute -top-0.5 -right-1 size-2 rounded-full ring-2" />
                 ) : null}
               </span>
               {tab.label}

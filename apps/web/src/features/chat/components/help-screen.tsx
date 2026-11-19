@@ -120,6 +120,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
       <ScreenHeader title="Help" onClose={onClose} />
       <div className="px-4 pb-3">
         <SearchField
+          className="bg-muted rounded-full border-transparent"
           aria-label="Search for help"
           placeholder="Search for help"
           value={search}
@@ -179,7 +180,10 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
                 });
               }}
             >
-              <Icon name={collectionIcon(collection.icon)} className="text-brand size-5 shrink-0" />
+              <Icon
+                name={collectionIcon(collection.icon)}
+                className="text-foreground size-5 shrink-0"
+              />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{collection.name}</span>
                 <span className="text-muted-foreground block text-xs">

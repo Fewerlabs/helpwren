@@ -8,21 +8,21 @@
 
 :root {
   /* Brand palette */
-  --paper: #f5f8f6;
+  --paper: #f7f7f7;
   /* The background of the dashboard, a tinted ground for the white panels it holds. */
-  --canvas: #eff3f1;
+  --canvas: #f3f3f3;
   --card-surface: #ffffff;
-  --ink: #101a15;
-  --pencil: #5f6c65;
-  --edge: #84908a;
-  --rule: #e3ebe7;
+  --ink: #1a1a1a;
+  --pencil: #666666;
+  --edge: #8a8a8a;
+  --rule: #e8e8e8;
   --moss: #3d6b57;
   --pen: #b23520;
   --highlighter: #f5d547;
-  --highlighter-foreground: #101a15;
+  --highlighter-foreground: #1a1a1a;
   --biro: #2f5b85;
   --ochre: #7d5a12;
-  --wash: #edf2ef;
+  --wash: #f1f1f1;
 
   /* Status chips: text colour on a tint. Always shown with a dot and a word. */
   --status-open: #2f5b85;
@@ -30,11 +30,11 @@
   --status-waiting: #7d5a12;
   --status-waiting-surface: #f4ebd6;
   --status-resolved: #3d6b57;
-  --status-resolved-surface: #e3efe8;
+  --status-resolved-surface: #e6efea;
   --status-urgent: #b23520;
   --status-urgent-surface: #f7e1db;
-  --status-closed: #5f6c65;
-  --status-closed-surface: #edf2ef;
+  --status-closed: #666666;
+  --status-closed-surface: #f1f1f1;
 
   /* Semantic roles, in shadcn/ui's vocabulary */
   --background: var(--paper);
@@ -66,84 +66,34 @@
 }
 
 .dark {
-  --paper: #101513;
-  --canvas: #101513;
-  --card-surface: #171e1b;
-  --ink: #e5ece8;
-  --pencil: #9aa7a0;
-  --edge: #75827c;
-  --rule: #26302b;
+  --paper: #0c0c0d;
+  --canvas: #0c0c0d;
+  --card-surface: #161616;
+  --ink: #e5e5e5;
+  --pencil: #969696;
+  --edge: #6e6e6e;
+  --rule: #262626;
   --moss: #7fb59a;
   --pen: #f07a5a;
   --highlighter: #e8c64a;
-  --highlighter-foreground: #101513;
+  --highlighter-foreground: #0c0c0d;
   --biro: #8db3db;
   --ochre: #d9a441;
-  --wash: #1f2824;
+  --wash: #1e1e1e;
 
   --status-open: #8db3db;
   --status-open-surface: #2e3236;
   --status-waiting: #d9a441;
   --status-waiting-surface: #3a301d;
   --status-resolved: #7fb59a;
-  --status-resolved-surface: #20302a;
+  --status-resolved-surface: #1f2b25;
   --status-urgent: #f07a5a;
   --status-urgent-surface: #3e2921;
-  --status-closed: #9aa7a0;
-  --status-closed-surface: #222b27;
+  --status-closed: #969696;
+  --status-closed-surface: #202020;
 
-  --primary-foreground: var(--helpwren-accent-foreground, #101513);
-  --destructive-foreground: #101513;
+  --primary-foreground: var(--helpwren-accent-foreground, #0c0c0d);
+  --destructive-foreground: #0c0c0d;
 
   color-scheme: dark;
-}
-
-/*
- * True greys in place of Helpwren's mint, for the surfaces a visitor sees (the chat, the chat
- * page and the help center) when the install has a brand colour of its own, so the neutrals
- * never fight it. The roles are declared again here because a role is worked out where it is
- * declared, and would not follow the palette changing further down the page.
- */
-.brand-neutral {
-  --paper: #f7f7f8;
-  --canvas: #ffffff;
-  --card-surface: #ffffff;
-  --ink: #18181b;
-  --pencil: #62626a;
-  --edge: #85858d;
-  --rule: #e4e4e7;
-  --wash: #f1f1f3;
-  --highlighter-foreground: #18181b;
-  --status-closed: #62626a;
-  --status-closed-surface: #f1f1f3;
-
-  --background: var(--paper);
-  --foreground: var(--ink);
-  --card: var(--card-surface);
-  --card-foreground: var(--ink);
-  --popover: var(--card-surface);
-  --popover-foreground: var(--ink);
-  --secondary: var(--wash);
-  --secondary-foreground: var(--ink);
-  --muted: var(--wash);
-  --muted-foreground: var(--pencil);
-  --accent: var(--wash);
-  --accent-foreground: var(--ink);
-  --border: var(--edge);
-  --input: var(--edge);
-}
-
-.dark .brand-neutral,
-.dark.brand-neutral {
-  --paper: #131315;
-  --canvas: #131315;
-  --card-surface: #1c1c1f;
-  --ink: #ececef;
-  --pencil: #a1a1aa;
-  --edge: #78787f;
-  --rule: #2c2c30;
-  --wash: #232327;
-  --highlighter-foreground: #131315;
-  --status-closed: #a1a1aa;
-  --status-closed-surface: #26262a;
 }

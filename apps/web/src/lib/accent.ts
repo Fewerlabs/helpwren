@@ -34,14 +34,6 @@ export function brandFill({ accent, accentTo }: Pick<Brand, "accent" | "accentTo
 type Colours = Pick<Brand, "accent" | "accentTo" | "button">;
 
 /**
- * The class that turns Helpwren's mint neutrals into true greys, for a surface a visitor sees,
- * when the install has a brand colour of its own. Nothing when it has none.
- */
-export function brandTone({ accent }: Pick<Brand, "accent">): string | undefined {
-  return accent ? "brand-neutral" : undefined;
-}
-
-/**
  * The style that puts an install's own colours in place of Helpwren's, on an element and
  * everything inside it. Nothing when it has none, so the defaults show.
  */

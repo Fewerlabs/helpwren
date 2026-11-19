@@ -36,7 +36,7 @@ export function CollectionGrid({ collections, embed = null }: CollectionGridProp
               <Icon
                 name={iconOf(collection.icon)}
                 weight="duotone"
-                className="text-brand size-5 shrink-0"
+                className="text-foreground size-5 shrink-0"
               />
               <span className="text-pretty">{collection.name}</span>
             </span>
