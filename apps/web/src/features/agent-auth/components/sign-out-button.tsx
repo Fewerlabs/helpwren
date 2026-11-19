@@ -11,7 +11,7 @@ export function SignOutButton() {
     <form action={signOut}>
       <button
         type="submit"
-        className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-ring flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors focus-visible:outline-2"
+        className="text-destructive hover:bg-destructive/10 focus-visible:outline-ring mt-1 flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors focus-visible:outline-2"
       >
         <Icon name="sign-out" className="size-4" />
         Sign out

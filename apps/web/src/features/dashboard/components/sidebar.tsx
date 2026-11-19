@@ -9,7 +9,6 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Separator,
   Tooltip,
 } from "@helpwren/design-system";
 import Link from "next/link";
@@ -123,7 +122,6 @@ function AccountMenu({ agent, signOut }: SidebarProps) {
           <Icon name="caret-right" className="text-muted-foreground size-4 shrink-0" />
           <span className="sr-only">Your profile</span>
         </Link>
-        <Separator className="my-1.5" />
         {signOut}
       </PopoverContent>
     </Popover>
