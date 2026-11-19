@@ -33,7 +33,7 @@ describe("ActionButton", () => {
   it("keeps the label in the page, hidden visually only on a narrow screen", () => {
     renderButton({ collapseBelow: "md" });
     expect(screen.getByText("Invite")).toHaveClass("max-md:sr-only");
-    expect(screen.getByRole("button")).toHaveClass("max-md:size-10");
+    expect(screen.getByRole("button")).toHaveClass("max-md:size-9");
   });
 
   it("shows the label as a tooltip when focused", async () => {

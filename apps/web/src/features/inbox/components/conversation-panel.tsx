@@ -77,7 +77,7 @@ export function ConversationPanel({
           variant="ghost"
           size="icon-sm"
           aria-label="Back to the list"
-          className={cn("max-md:size-10", !backAlways && "md:hidden")}
+          className={cn("max-md:size-9", !backAlways && "md:hidden")}
           onClick={onBack}
         >
           <Icon name="caret-left" />
@@ -93,7 +93,7 @@ export function ConversationPanel({
         </h2>
         <StatusChip status={statuses[conversation.status].chip} size="sm" className="shrink-0" />
         <span className="flex-1" />
-        {/* On a phone these are one set of 40px icon buttons, alike in size and weight, so none
+        {/* On a phone these are one set of 36px icon buttons, alike in size and weight, so none
             reads as more pressing than the others; the words come back from md up. */}
         <div className="flex shrink-0 items-center gap-1">
           {isTicket ? null : (
@@ -102,7 +102,7 @@ export function ConversationPanel({
                 variant="ghost"
                 size="icon-sm"
                 aria-label="Convert to ticket"
-                className="max-md:size-10"
+                className="max-md:size-9"
                 onClick={() => {
                   setTicketDialogOpen(true);
                 }}
@@ -146,7 +146,7 @@ export function ConversationPanel({
               size="icon-sm"
               aria-label="Details"
               aria-pressed={detailsOpen}
-              className="max-md:size-10"
+              className="max-md:size-9"
               onClick={onToggleDetails}
             >
               <Icon
