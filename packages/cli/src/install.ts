@@ -56,14 +56,17 @@ function reportChecks(ctx: Context, checks: Check[]): void {
 }
 
 /** Says which keys were written and which kept. Never their values. */
-function reportEnv(ctx: Context, file: string, ...results: MergeResult[]): void {
-  const written = results.flatMap((result) => result.written);
-  const kept = results.flatMap((result) => result.kept);
+function reportEnv(ctx: Context, file: string, answers: MergeResult, secrets: MergeResult): void {
+  const written = [...answers.written, ...secrets.written];
   if (written.length > 0) ctx.out.ok(`Wrote ${written.join(", ")} to ${file}`);
-  if (kept.length > 0) {
-    ctx.out.info(`Kept the existing ${kept.join(", ")} (pass --overwrite to replace them).`);
+  if (answers.kept.length > 0) {
+    ctx.out.info(
+      `Kept the existing ${answers.kept.join(", ")} (pass --overwrite to replace them).`,
+    );
   }
-  if (written.length === 0 && kept.length === 0) ctx.out.ok(`${file} is up to date`);
+  // Replacing a secret would break what already uses it, so it is never done.
+  if (secrets.kept.length > 0) ctx.out.info(`Kept the existing ${secrets.kept.join(", ")}.`);
+  if (written.length === 0) ctx.out.ok(`${file} already had everything`);
 }
 
 async function applyMigrations(ctx: Context, target: DbTarget, demoData: boolean): Promise<void> {

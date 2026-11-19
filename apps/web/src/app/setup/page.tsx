@@ -12,6 +12,9 @@ import { getInstallStatus, hasTeam } from "@/lib/install-status";
 
 export const metadata: Metadata = { title: "Set up Helpwren" };
 
+// Who is on the team changes as the wizard runs, so it is never built ahead of a request.
+export const dynamic = "force-dynamic";
+
 /**
  * The local stack's test mailbox, three ports above its API by the Supabase CLI's convention,
  * when this install runs on one. A hosted project has none.
@@ -24,27 +27,30 @@ function localMailbox(): string | null {
 
 /**
  * The first-run wizard. With nobody on the team, anyone who opens it can create the first
- * admin, once. After that only that admin sees the remaining steps, until they finish or skip
- * them; then this page sends everyone to the dashboard.
+ * admin, once. After that it only offers to sign in, and only the admin sees the remaining
+ * steps, until they finish or skip them; then this page sends everyone to the dashboard.
  */
 export default async function SetupPage({
   searchParams,
 }: {
   searchParams: Promise<{ step?: string | string[] }>;
 }) {
-  const team = await hasTeam();
-  if (!team) {
+  const [team, agent, status] = await Promise.all([
+    hasTeam(),
+    getCurrentAgent(),
+    getInstallStatus(),
+  ]);
+  // A new install, or one whose first admin has not signed in yet to finish.
+  if (!team || (!status.setupCompletedAt && !agent)) {
     return (
       <Shell>
         <SetupSteps current="admin" />
         <Card className="p-6">
-          <FirstAdminStep mailboxUrl={localMailbox()} />
+          <FirstAdminStep mailboxUrl={localMailbox()} adminExists={team} />
         </Card>
       </Shell>
     );
   }
-
-  const [agent, status] = await Promise.all([getCurrentAgent(), getInstallStatus()]);
   if (status.setupCompletedAt || agent?.role !== "admin") redirect(DASHBOARD_PATH);
 
   const step = setupStepSchema.parse((await searchParams).step);
