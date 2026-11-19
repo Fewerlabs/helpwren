@@ -104,6 +104,7 @@ describe("init", () => {
         type: "hello",
         page: { url: window.location.href, title: "" },
         closable: true,
+        open: false,
         identified: false,
       },
       APP,
@@ -247,6 +248,19 @@ describe("opening and closing", () => {
     expect(parts().panel.dataset.open).toBe("true");
     widget.hide();
     expect(parts().panel.dataset.open).toBe("false");
+  });
+
+  it("tells the chat when it opens and closes, so it is live only while showing", () => {
+    widget.init();
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+
+    widget.show();
+    expect(post).toHaveBeenLastCalledWith({ channel: "helpwren", type: "panel", open: true }, APP);
+    widget.hide();
+    expect(post).toHaveBeenLastCalledWith({ channel: "helpwren", type: "panel", open: false }, APP);
   });
 
   it("closes when the chat asks to", () => {
@@ -587,7 +601,7 @@ describe("the host page's own controls", () => {
 
     widget.startConversation("I need help with order 1042");
     expect(widget.isOpen()).toBe(true);
-    expect(post).toHaveBeenLastCalledWith(
+    expect(post).toHaveBeenCalledWith(
       { channel: "helpwren", type: "start", draft: "I need help with order 1042" },
       APP,
     );

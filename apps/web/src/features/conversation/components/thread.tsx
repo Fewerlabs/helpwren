@@ -1,13 +1,27 @@
 "use client";
 
-import { type Message } from "@helpwren/core";
-import { Avatar, Button, cn, EmptyState, MessageBubble, Skeleton } from "@helpwren/design-system";
+import {
+  type Message,
+  type PlaceholderValues,
+  type TypingSender,
+  type Typist,
+} from "@helpwren/core";
+import {
+  Avatar,
+  Button,
+  cn,
+  EmptyState,
+  MessageBubble,
+  Skeleton,
+  TypingIndicator,
+} from "@helpwren/design-system";
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { formatMessageTime } from "@/lib/format-time";
 
 import { describeEvent } from "../describe-event";
 import { useEvents, useLiveThread, useMessages, useNotes } from "../hooks/use-thread";
+import { useTyping } from "../hooks/use-typing";
 import { Composer } from "./composer";
 import { MessageAttachments } from "./message-attachments";
 
@@ -37,6 +51,17 @@ export interface ThreadProps {
   nameOf?: (id: string | null) => string;
   /** Shown between the messages and the reply box, such as a request to rate the conversation. */
   beforeComposer?: ReactNode;
+  /** How the person here shows up to the other side while typing: the team gives a name. */
+  typingAs?: TypingSender | undefined;
+  /**
+   * Which of the people typing to show in the thread, and as whom. Left out, everyone typing is
+   * the other side, shown by the name and photo they sent, or `otherName`. Return `null` to
+   * leave someone out, such as a teammate, who shows in the inbox's header instead.
+   */
+  showTypist?:
+    ((typist: Typist) => { name: string; avatar?: string | undefined } | null) | undefined;
+  /** Turns on saved replies in the reply box, filled with these. Team side only. */
+  placeholders?: PlaceholderValues | undefined;
 }
 
 /**
@@ -52,8 +77,19 @@ export function Thread({
   density = "comfortable",
   nameOf,
   beforeComposer,
+  typingAs,
+  showTypist,
+  placeholders,
 }: ThreadProps) {
   const compact = density === "compact";
+  const typing = useTyping(conversationId, typingAs);
+  const typists = typing.typists.flatMap((typist) => {
+    const shown = showTypist
+      ? showTypist(typist)
+      : { name: typist.name ?? otherName, avatar: typist.avatar ?? otherAvatar };
+    return shown ? [shown] : [];
+  });
+  const [firstTypist] = typists;
   const messages = useMessages(conversationId);
   const forTeam = nameOf !== undefined;
   const notes = useNotes(conversationId, forTeam);
@@ -69,10 +105,12 @@ export function Thread({
     ...(events.data ?? []).map((event) => ({ type: "event" as const, item: event })),
   ].sort((first, second) => first.item.createdAt.localeCompare(second.item.createdAt));
   const latestId = entries.at(-1)?.item.id;
+  const someoneTyping = typists.length > 0;
   useEffect(() => {
-    // Keep the newest message in view, on opening and as each one arrives.
+    // Keep the newest message in view, on opening, as each one arrives, and when someone
+    // starts typing below it.
     end.current?.scrollIntoView({ block: "end" });
-  }, [latestId]);
+  }, [latestId, someoneTyping]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -184,6 +222,21 @@ export function Thread({
             </div>
           </>
         )}
+        <TypingIndicator
+          names={typists.map((typist) => typist.name)}
+          size={compact ? "sm" : "md"}
+          className={someoneTyping ? (compact ? "pt-2.5" : "pt-3") : undefined}
+          avatar={
+            firstTypist ? (
+              <Avatar
+                name={firstTypist.name}
+                src={firstTypist.avatar}
+                size="sm"
+                className="text-2xs size-6 shrink-0"
+              />
+            ) : null
+          }
+        />
         <div ref={end} />
       </div>
       {beforeComposer}
@@ -191,6 +244,8 @@ export function Thread({
         conversationId={conversationId}
         variant={compact ? "card" : "bar"}
         allowNotes={forTeam}
+        typing={typing}
+        placeholders={placeholders}
       />
     </div>
   );

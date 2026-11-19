@@ -56,6 +56,12 @@ interface ChatState {
   /** Whether the host page's tab is showing. The chat checks in only while it is. */
   hostVisible: boolean;
   setHostVisible: (visible: boolean) => void;
+  /**
+   * Whether the chat itself is open: false while the widget's panel is closed. The chat says
+   * whether the team is online, which holds a connection open, only while it is.
+   */
+  showing: boolean;
+  setShowing: (showing: boolean) => void;
   claimed: ClaimedIdentity | null;
   setClaimed: (claimed: ClaimedIdentity | null) => void;
   /** What the page wants the team to know about where the visitor is. */
@@ -75,6 +81,7 @@ const initial = {
   page: null,
   referrer: null,
   hostVisible: true,
+  showing: true,
   preview: false,
   pendingStart: null,
   claimed: null,
@@ -91,6 +98,9 @@ const useChatStore = create<ChatState>()((set) => ({
   },
   setHostVisible: (hostVisible) => {
     set({ hostVisible });
+  },
+  setShowing: (showing) => {
+    set({ showing });
   },
   setClaimed: (claimed) => {
     set({ claimed });
@@ -130,6 +140,8 @@ export const useReferrer = () => useChatStore((state) => state.referrer);
 export const useSetReferrer = () => useChatStore((state) => state.setReferrer);
 export const useHostVisible = () => useChatStore((state) => state.hostVisible);
 export const useSetHostVisible = () => useChatStore((state) => state.setHostVisible);
+export const useShowing = () => useChatStore((state) => state.showing);
+export const useSetShowing = () => useChatStore((state) => state.setShowing);
 
 /** For tests: puts the store back to its starting state. */
 export function resetChatStore() {

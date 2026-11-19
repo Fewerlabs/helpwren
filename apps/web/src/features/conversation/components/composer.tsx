@@ -5,14 +5,19 @@ import {
   ATTACHMENTS_MAX,
   MESSAGE_MAX_LENGTH,
   type Attachment,
+  type PlaceholderValues,
 } from "@helpwren/core";
 import { Button, cn, Icon, Kbd, Spinner, Textarea, Tooltip } from "@helpwren/design-system";
 import { useRef, useState } from "react";
 
+import { useSavedReplyPicker } from "@/features/saved-replies";
 import { formatBytes } from "@/lib/format-bytes";
 import { useHelpwren } from "@/lib/helpwren-context";
 
 import { useAddNote, useSendMessage } from "../hooks/use-thread";
+import { type TypingControls } from "../hooks/use-typing";
+
+const NO_PLACEHOLDERS: PlaceholderValues = {};
 
 const failures = {
   rate_limited: "You are writing very fast. Wait a moment and try again.",
@@ -43,12 +48,26 @@ export interface ComposerProps {
   variant?: "bar" | "card";
   /** Lets the writer switch to an internal note, which only the team sees. Team side only. */
   allowNotes?: boolean;
+  /** Tells the other side while a reply, never a note, is being written. */
+  typing?: TypingControls | undefined;
+  /**
+   * Turns on saved replies, filled with these values for the open conversation: `/` in the
+   * box and a toolbar button. Team side only, in the `card` variant.
+   */
+  placeholders?: PlaceholderValues | undefined;
 }
 
 /** The box for writing a reply. Enter sends; Shift and Enter starts a new line. */
-export function Composer({ conversationId, variant = "bar", allowNotes = false }: ComposerProps) {
+export function Composer({
+  conversationId,
+  variant = "bar",
+  allowNotes = false,
+  typing,
+  placeholders,
+}: ComposerProps) {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<Mode>("reply");
+  const box = useRef<HTMLTextAreaElement | null>(null);
   const [failure, setFailure] = useState<keyof typeof failures | null>(null);
   const send = useSendMessage(conversationId);
   const addNote = useAddNote(conversationId);
@@ -62,6 +81,21 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
   const uploading = files.some((file) => file.attachment === null);
   // A note is words only; files belong to the reply.
   const ready = note ? Boolean(body) : (Boolean(body) || files.length > 0) && !uploading;
+
+  /** Sets the text, and tells the other side whether a reply is being written. */
+  function write(next: string) {
+    setText(next);
+    if (!note && next.trim()) typing?.start();
+    else typing?.stop();
+  }
+
+  const picker = useSavedReplyPicker({
+    enabled: placeholders !== undefined && card,
+    values: placeholders ?? NO_PLACEHOLDERS,
+    field: box,
+    text,
+    onTextChange: write,
+  });
 
   /** Uploads each file as it is chosen, so sending the message itself is quick. */
   function addFiles(chosen: readonly File[]) {
@@ -103,6 +137,7 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
   function submit() {
     if (!ready || pending) return;
     setFailure(null);
+    typing?.stop();
     const failed = () => {
       setFailure("failed");
     };
@@ -197,7 +232,9 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
 
   const field = (
     <Textarea
+      ref={box}
       aria-label={note ? "Your note" : "Your message"}
+      {...picker.fieldProps}
       placeholder={
         note ? "Write a note only your team will see" : card ? "Write a reply" : "Write a message"
       }
@@ -211,9 +248,18 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
       )}
       value={text}
       onChange={(event) => {
-        setText(event.target.value);
+        write(event.target.value);
+        picker.track(event.target);
+      }}
+      onSelect={(event) => {
+        picker.track(event.currentTarget);
+      }}
+      onBlur={() => {
+        typing?.stop();
+        picker.close();
       }}
       onKeyDown={(event) => {
+        if (picker.onKeyDown(event)) return;
         if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
           event.preventDefault();
           submit();
@@ -249,7 +295,7 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
             tinted and dashed, so it is never mistaken for a reply to the customer. */}
         <div
           className={cn(
-            "flex flex-col rounded-xl border shadow-xs transition-colors",
+            "relative flex flex-col rounded-xl border shadow-xs transition-colors",
             note
               ? "border-biro bg-status-open-surface/40 border-dashed"
               : "border-rule focus-within:border-ring",
@@ -271,6 +317,8 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
                   onClick={() => {
                     setMode(option);
                     setFailure(null);
+                    // Writing a note is nothing the customer should see as typing.
+                    if (option === "note") typing?.stop();
                   }}
                 >
                   {option === "reply" ? "Reply" : "Note"}
@@ -278,11 +326,13 @@ export function Composer({ conversationId, variant = "bar", allowNotes = false }
               ))}
             </div>
           ) : null}
+          {picker.list}
           {chosenFiles}
           {field}
           <div className="flex items-center justify-between gap-2 px-2 pb-2">
             <div className="flex items-center gap-1">
               {attach}
+              {picker.button}
               <p className="text-muted-foreground text-2xs px-1 max-sm:hidden">
                 <Kbd className="h-4 px-1 text-[0.625rem]">Enter</Kbd>{" "}
                 {note ? "to add the note" : "to send"}

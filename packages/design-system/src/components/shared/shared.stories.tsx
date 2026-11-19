@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
+import { Avatar } from "../base/avatar/avatar";
 import { Button } from "../base/button/button";
 import { Icon } from "../base/icon/icon";
 import { Toaster } from "../base/toast/toast";
@@ -12,11 +13,22 @@ import { MarginNote } from "./margin-note/margin-note";
 import { MessageBubble } from "./message-bubble/message-bubble";
 import { PageHeader } from "./page-header/page-header";
 import { SearchField } from "./search-field/search-field";
+import { TypingIndicator } from "./typing-indicator/typing-indicator";
 
 const meta: Meta = { title: "Shared/Overview" };
 
 export default meta;
 type Story = StoryObj;
+
+export const TypingIndicators: Story = {
+  render: () => (
+    <div className="grid max-w-sm gap-4">
+      <TypingIndicator names={["Ada"]} avatar={<Avatar name="Ada Okafor" size="sm" />} />
+      <TypingIndicator names={["Priya Nair"]} size="sm" />
+      <TypingIndicator names={["Ada", "Sam"]} />
+    </div>
+  ),
+};
 
 export const EmptyStates: Story = {
   render: () => (

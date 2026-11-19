@@ -10,7 +10,7 @@ import {
   StatusChip,
   Tooltip,
 } from "@helpwren/design-system";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Thread } from "@/features/conversation";
 import { Panel, PanelHeader } from "@/features/dashboard";
@@ -19,6 +19,7 @@ import { contactName } from "../contact-name";
 import { useConfirmStatus } from "../hooks/use-confirm-status";
 import { useChangeConversation } from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
+import { ConversationPresence } from "./conversation-presence";
 import { TicketDialog } from "./ticket-dialog";
 
 // On the team's side, a message from any team member is "ours".
@@ -68,6 +69,26 @@ export function ConversationPanel({
           ? name
           : (team.find((member) => member.id === id)?.name ?? "A team member"),
     [contactId, name, team],
+  );
+
+  // Who is writing, for the customer's "Ada is typing…", and what saved replies are filled with.
+  const me = team.find((member) => member.id === agentId);
+  const typingAs = useMemo(() => ({ name: me?.name, avatar: me?.photo }), [me?.name, me?.photo]);
+  const { email } = conversation.contact;
+  const contactNameGiven = conversation.contact.name;
+  const ticketNumber = conversation.ticketNumber;
+  const placeholders = useMemo(
+    () => ({
+      contact: { name: contactNameGiven, email },
+      agent: { name: me?.name },
+      conversation: { number: ticketNumber },
+    }),
+    [contactNameGiven, email, me?.name, ticketNumber],
+  );
+  // Only the contact shows typing in the thread; a teammate shows in the strip under the header.
+  const showTypist = useCallback(
+    (typist: { userId: string }) => (typist.userId === contactId ? { name } : null),
+    [contactId, name],
   );
 
   return (
@@ -159,6 +180,12 @@ export function ConversationPanel({
           </Tooltip>
         </div>
       </PanelHeader>
+      <ConversationPresence
+        conversationId={conversation.id}
+        contactId={contactId}
+        agentId={agentId}
+        team={team}
+      />
       <Thread
         key={conversation.id}
         conversationId={conversation.id}
@@ -167,6 +194,9 @@ export function ConversationPanel({
         onRead={onRead}
         density="compact"
         nameOf={nameOf}
+        typingAs={typingAs}
+        showTypist={showTypist}
+        placeholders={placeholders}
       />
       <TicketDialog
         open={ticketDialogOpen}

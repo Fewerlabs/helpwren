@@ -13,6 +13,7 @@ import { MarginNote } from "./margin-note/margin-note";
 import { MessageBubble } from "./message-bubble/message-bubble";
 import { PageHeader } from "./page-header/page-header";
 import { SearchField } from "./search-field/search-field";
+import { TypingIndicator, typingLabel } from "./typing-indicator/typing-indicator";
 
 describe("EmptyState", () => {
   it("shows a heading, a description, an action and a decorative wren", () => {
@@ -207,6 +208,21 @@ describe("CodeSnippet", () => {
     await userEvent.click(screen.getByRole("button", { name: "Copy link" }));
     expect(writeText).toHaveBeenCalledWith(link);
     expect(await screen.findByRole("button", { name: "Link copied" })).toBeInTheDocument();
+  });
+});
+
+describe("TypingIndicator", () => {
+  it("says who is typing, politely, and draws nothing while nobody is", () => {
+    const { rerender } = render(<TypingIndicator names={[]} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+    rerender(<TypingIndicator names={["Ada"]} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Ada is typing…");
+  });
+
+  it("names two people, and counts more as several", () => {
+    expect(typingLabel(["Ada", "Sam"])).toBe("Ada and Sam are typing…");
+    expect(typingLabel(["Ada", "Sam", "Lee"])).toBe("Several people are typing…");
   });
 });
 

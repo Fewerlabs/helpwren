@@ -8,7 +8,14 @@ import { Notifier } from "@/features/notifications";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { getDashboardClient } from "../client";
+import { useTeamPresence } from "../hooks/use-team-presence";
 import { Sidebar } from "./sidebar";
+
+/** Shows the signed-in team member as online. Inside the provider, which it needs. */
+function TeamPresence() {
+  useTeamPresence();
+  return null;
+}
 
 export interface DashboardShellProps {
   agent: Agent;
@@ -36,6 +43,7 @@ export function DashboardShell({ agent, signOut, hiddenSections, children }: Das
           )}
         >
           <Notifier agentId={agent.id} />
+          <TeamPresence />
           <Sidebar
             agent={agent}
             signOut={signOut}

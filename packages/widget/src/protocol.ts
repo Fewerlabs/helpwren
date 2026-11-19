@@ -25,6 +25,12 @@ export type PageMessage =
       /** False when the chat is the content of the page and has nothing to close into. */
       closable?: boolean;
       /**
+       * Whether the chat is showing now. The chat joins the team's live presence only while it
+       * is, so a page view with the chat closed holds no connection open. Left out, it counts
+       * as showing.
+       */
+      open?: boolean;
+      /**
        * True when the page vouches for a logged-in user and their token is on its way. When it
        * is not, a chat still signed in as a user from an earlier visit signs out: the page is
        * the one that knows whether they are still logged in.
@@ -38,6 +44,8 @@ export type PageMessage =
   | { channel: typeof CHANNEL; type: "identify"; token?: string; details?: VisitorDetails }
   /** The visitor logged out of the page. The chat forgets who they were. */
   | { channel: typeof CHANNEL; type: "reset" }
+  /** The visitor opened or closed the chat. */
+  | { channel: typeof CHANNEL; type: "panel"; open: boolean }
   /**
    * The visitor moved to another page without loading one (a single-page app), or the tab was
    * hidden or shown. The chat checks in with the install when the page changes, and stops
