@@ -21,11 +21,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HelpPreviewPage({ params }: Props) {
   await requireAgent();
   const helpwren = await getHelpwren();
-  const [settings, collections, article, team] = await Promise.all([
+  const [settings, collections, article] = await Promise.all([
     getHelpSettings(),
     getHelpCollections(),
     helpwren.articles.get((await params).id),
-    helpwren.agents.list(),
   ]);
   if (!article) notFound();
 
@@ -45,11 +44,7 @@ export default async function HelpPreviewPage({ params }: Props) {
         collections={collections}
         current={{ collection: article.collection?.slug, article: article.slug }}
       >
-        <ArticleView
-          article={article}
-          author={team.find((member) => member.id === article.authorId)?.name}
-          preview
-        />
+        <ArticleView article={article} preview />
       </HelpShell>
     </>
   );

@@ -2,6 +2,7 @@ import { Fragment, type ComponentProps, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 
+import { CodeSnippet } from "../code-snippet/code-snippet";
 import { youtubeEmbedUrl, youtubeId } from "./video";
 
 /** A mark on a run of text, such as bold or a link. */
@@ -155,14 +156,16 @@ export function RichText({ doc, className, ...props }: RichTextProps) {
         return <li>{children(node)}</li>;
       case "blockquote":
         return <blockquote>{children(node)}</blockquote>;
-      case "codeBlock":
+      case "codeBlock": {
+        // With a copy button and its language named, as documentation shows code.
+        const language = node.attrs?.language;
         return (
-          // A long line scrolls sideways, so the block can be reached and scrolled by keyboard.
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a box that scrolls must be reachable to scroll it
-          <pre tabIndex={0}>
-            <code>{text(node)}</code>
-          </pre>
+          <CodeSnippet
+            code={text(node).replace(/\n$/, "")}
+            {...(typeof language === "string" && language ? { language } : {})}
+          />
         );
+      }
       case "horizontalRule":
         return <hr />;
       case "hardBreak":

@@ -36,6 +36,10 @@ inside its own pages as well as link to them.
   read none; the team reads totals through a view. It holds no contact's id, so nothing follows a
   guest who later signs in.
 - **Pictures** live in a public `articles` bucket that only the team writes to.
+- **The byline travels with the article.** Readers see who wrote an article, with their photo,
+  as on Featurebase and Intercom, but visitors cannot read the team. So each article keeps a
+  copy of its author's name and photo, which triggers set when the author changes and refresh
+  when that person changes their name or photo.
 
 ### The body
 
@@ -74,15 +78,21 @@ inside its own pages as well as link to them.
   open, the page in the middle, and an article's contents on the right, marking the heading
   being read. On a narrow screen the list slides in over the page from a button in the bar.
   A banner-and-cards page was built first and read as generic.
+- **Search finds articles as the reader types,** in a window over the page that ⌘K or Ctrl+K
+  opens from anywhere, with the arrow keys to move through it. Before the page's script has
+  started, and inside a host's frame, every search box is a plain form to the results page.
+- **Code blocks have a copy button and name their language**, as documentation sites do.
 - **In the chat, Help lists the collections**, each opening to its articles, with a search
   across all of them, as the established messengers do.
 - **Read as a visitor with no session, whoever is asking**, so a signed-in team member sees what
   the public sees.
-- **Drawn per request, and nothing is kept between requests.** A build has no database to
-  ask, so pages are not built ahead. Keeping answers under a tag and clearing it on save was
-  tried first; Next serves the old answer once more after a tag is cleared, so a newly
-  published article was missing on the first visit and an unpublished one still readable.
-  Three small queries a request is the price of a change showing at once.
+- **Drawn per request, and what they read is kept for a minute.** A build has no database to
+  ask, so pages are not built ahead. Asking the database on every visit would spend Supabase's
+  free 5 GB of monthly egress at about 80,000 page views, so each answer is kept for 60 seconds
+  under one tag. Saving an article, the branding or a profile clears the tag, and the change
+  shows within a request or two. Next serves the kept copy once more while it reads again, so
+  "at once" means "on the next visit but one" at worst, and a change made outside the app shows
+  within about a minute. Search is never kept.
 - **The address can be someone else's.** When the help center is served through a rewrite on
   the customer's own site, the `help_center.url` setting is the canonical address of every page.
 - **It follows the device's light or dark setting**, with a button to switch.
@@ -108,7 +118,6 @@ inside its own pages as well as link to them.
 - There is no draft of a published article: editing one and saving changes what visitors read.
 - Feedback and uploads are not rate limited. Each is narrow (one row; one image, by the team
   only), but a determined visitor could add many answers.
-- The public pages do not name an article's author, because visitors cannot read the team.
 - View counts, audiences, languages and rules that map a host page to articles are not built.
 - A new node type has to be added in three places: the editor, the renderer and the schema in
   `packages/core/src/rich-text.ts`.

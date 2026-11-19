@@ -1,58 +1,16 @@
 import { type PublicSettings } from "@helpwren/core";
-import { cn, Icon, Logo } from "@helpwren/design-system";
+import { Logo } from "@helpwren/design-system";
 import Link from "next/link";
 import { type ReactNode } from "react";
 
 import { ThemeMenu } from "@/features/theme";
-import { embedQuery, type HelpEmbed } from "@/lib/help-embed";
 
 import { HELP_PATH } from "../urls";
+import { SearchBox } from "./search-box";
 
-const DEFAULT_PLACEHOLDER = "Search for articles";
-
-export interface SearchBoxProps {
-  settings: PublicSettings;
-  /** What was searched for, kept in the box on the results page. */
-  query?: string | undefined;
-  /** `lg` is the one under the greeting; `sm` sits in the top bar. */
-  size: "sm" | "lg";
-  embed?: HelpEmbed | null | undefined;
-  className?: string;
-}
-
-/** The help center's search, as a plain form: it works before any script has loaded. */
-export function SearchBox({ settings, query, size, embed, className }: SearchBoxProps) {
-  const placeholder = settings.helpCenter.searchPlaceholder ?? DEFAULT_PLACEHOLDER;
-  const large = size === "lg";
-  return (
-    <form action={`${HELP_PATH}/search`} role="search" className={cn("relative w-full", className)}>
-      {/* Inside a frame, the results page has to be the embedded form too. */}
-      {embed
-        ? [...new URLSearchParams(embedQuery(embed))].map(([name, value]) => (
-            <input key={name} type="hidden" name={name} value={value} />
-          ))
-        : null}
-      <Icon
-        name="magnifying-glass"
-        className={cn(
-          "text-muted-foreground pointer-events-none absolute top-1/2 -translate-y-1/2",
-          large ? "left-4 size-5" : "left-3 size-4",
-        )}
-      />
-      <input
-        type="search"
-        name="q"
-        defaultValue={query}
-        aria-label={placeholder}
-        placeholder={placeholder}
-        autoComplete="off"
-        className={cn(
-          "border-rule bg-card text-foreground placeholder:text-muted-foreground focus:border-ring focus-visible:outline-ring w-full border outline-offset-2 transition-colors focus-visible:outline-2 [&::-webkit-search-cancel-button]:hidden",
-          large ? "h-12 rounded-xl pr-4 pl-12 text-base" : "h-9 rounded-lg pr-3 pl-9 text-sm",
-        )}
-      />
-    </form>
-  );
+/** The words inside an empty search box, the install's own or ours. */
+export function searchPlaceholder(settings: PublicSettings): string {
+  return settings.helpCenter.searchPlaceholder ?? "Search for articles";
 }
 
 export interface HelpHeaderProps {
@@ -106,7 +64,12 @@ export function HelpHeader({ settings, query, search = true, browse }: HelpHeade
 
         <div className="ml-auto flex items-center gap-2">
           {search ? (
-            <SearchBox settings={settings} query={query} size="sm" className="w-64 max-md:hidden" />
+            <SearchBox
+              placeholder={searchPlaceholder(settings)}
+              query={query}
+              size="sm"
+              className="w-64 max-md:hidden"
+            />
           ) : null}
           <ThemeMenu className="size-9 rounded-lg opacity-80 hover:opacity-100" />
         </div>

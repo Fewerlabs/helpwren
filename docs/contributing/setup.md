@@ -108,7 +108,8 @@ RESEND_API_KEY=re_...
 ### Sending what is due
 
 Replies a contact has not read, and changes to a ticket's status, are emailed by a job that has
-to be called every minute. Set a secret, then have any scheduler call the job with it:
+to be called every minute, and replies are pushed to phones by another (see
+[the mobile guide](../mobile.md)). Set a secret, then have any scheduler call both jobs with it:
 
 ```bash
 # apps/web/.env.local
@@ -117,6 +118,7 @@ CRON_SECRET=<output of: openssl rand -hex 32>
 
 ```bash
 curl -X POST https://support.example.com/api/jobs/email -H "Authorization: Bearer $CRON_SECRET"
+curl -X POST https://support.example.com/api/jobs/push -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 Your host's cron, a GitHub Actions schedule or an uptime pinger all work. To have the database
@@ -131,7 +133,32 @@ select cron.schedule('helpwren-email', '* * * * *', $$
     headers := '{"Authorization": "Bearer YOUR_CRON_SECRET"}'::jsonb
   );
 $$);
+select cron.schedule('helpwren-push', '* * * * *', $$
+  select net.http_post(
+    url := 'https://support.example.com/api/jobs/push',
+    headers := '{"Authorization": "Bearer YOUR_CRON_SECRET"}'::jsonb
+  );
+$$);
 ```
+
+### On Supabase's free plan
+
+Supabase pauses a free project after about a week with little activity, and the chat is down
+until someone restores it from the Supabase dashboard. Nothing is lost, but visitors cannot
+write in the meantime.
+
+The jobs above keep an install awake: every run asks the database for work, whether or not
+there is any, and a scheduler calls them every minute. Supabase does not publish exactly what
+counts as activity, so treat this as very likely rather than promised.
+
+- **With the scheduler running**, as every install that sends email or push should, you need
+  nothing more.
+- **Without one**, for example a trial install or a quiet stretch before launch, call either job
+  once a day from any scheduler (a cron job, a GitHub Actions schedule or a free service such as
+  cron-job.org). `CRON_SECRET` must be set, or the job answers "Not found" without touching the
+  database.
+- **For a business's support desk**, the Pro plan is the dependable answer: projects are never
+  paused, and it adds daily backups.
 
 ## Check your work
 
