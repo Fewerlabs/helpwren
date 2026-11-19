@@ -15,12 +15,21 @@ pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 | `packages/widget`        | The script a site loads to show the chat, published as `helpwren`          |
 | `packages/react-native`  | `SupportScreen`: the chat as a screen of a React Native app, in a web view |
 | `packages/adapters`      | Identity, push and inbound email adapters; storage to come                 |
-| `packages/cli`           | Installer and upgrader (stub)                                              |
+| `packages/cli`           | Installer and upgrader: `pnpm helpwren install` and `upgrade`              |
 | `packages/config`        | Shared TypeScript, ESLint and Prettier configuration                       |
 
 Internal packages are consumed as TypeScript source: their `exports` point at `src`, and the app
 compiles them (`transpilePackages`). There is no per-package build step until a package is
 published. See [ADR 0001](decisions/0001-tooling.md).
+
+## Installing: `packages/cli` and `deploy/`
+
+`pnpm helpwren install` writes the env file, applies the migrations with `supabase db push` and
+prints what to do next, for Supabase Cloud or for Docker. `deploy/docker` holds the Compose file
+that includes Supabase's own self-hosting stack, fetched at a pinned release, beside the app's
+image (`apps/web/Dockerfile`) and a scheduler. The first admin is made in the browser at
+`/setup`. See [Installing Helpwren](install.md) and
+[ADR 0024](decisions/0024-installer-and-setup-wizard.md).
 
 ## The database: `supabase/`
 
@@ -358,10 +367,11 @@ between screens does not refetch what was loaded a moment ago.
 | `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                                                                                    |
 | `/dashboard/visitors`               | Who is on the site now, refreshed every fifteen seconds, and one visitor's details, pages and a first message. `?visitor=` is in the address                                |
 | `/dashboard/help`                   | The Help center section: collections, a table of articles to search and filter, and `/dashboard/help/{id}`, the editor                                                      |
-| `/login`                            | Sign-in for team members                                                                                                                                                    |
+| `/login`                            | Sign-in for team members. Sends a new install with no team to `/setup`                                                                                                      |
+| `/setup`                            | The first-run wizard: the first admin, then brand, email and the widget with a live install check. Open only until the first admin finishes or skips it                     |
 | `/widget.js`                        | The widget script, built from `packages/widget`                                                                                                                             |
-| `/api/health`                       | Returns `{ "status": "ok" }`                                                                                                                                                |
-| `GET /api/widget`                   | How the widget looks on a host site: position, colour, launcher icon. Readable from any origin                                                                              |
+| `/api/health`                       | Whether the app and the database answer, the newest migration against the one this build expects, and the build's version. 503 without the database                         |
+| `GET /api/widget`                   | How the widget looks on a host site: position, colour, launcher icon. Readable from any origin. Records the site it was asked from, for the live install check              |
 | `POST /api/conversations`           | Starts a conversation with its first message                                                                                                                                |
 | `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                                                                          |
 | `POST /api/identify`                | Signs the chat in as one of the host product's users, from a token the install's identity adapter confirms                                                                  |

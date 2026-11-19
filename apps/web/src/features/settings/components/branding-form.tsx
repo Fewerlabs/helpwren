@@ -54,7 +54,7 @@ import { SettingsSection } from "./settings-frame";
 import { WidgetPreview } from "./widget-preview";
 
 /** A few colours to start from, on one row. Any other comes from the picker at the end. */
-const swatches: readonly ColorSwatch[] = [
+export const brandSwatches: readonly ColorSwatch[] = [
   { label: "Helpwren green", color: DEFAULT_ACCENT },
   { label: "Blue", color: "#1d4ed8" },
   { label: "Ink", color: "#101a15" },
@@ -244,7 +244,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       render: ({ field }) => (
         <ColorPicker
           label="Brand colour"
-          swatches={swatches}
+          swatches={brandSwatches}
           disabled={disabled}
           value={{ color: field.value, to: values.accentTo || undefined }}
           onValueChange={(next) => {

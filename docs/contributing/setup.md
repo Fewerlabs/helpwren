@@ -1,5 +1,8 @@
 # Setup
 
+This page is for working on Helpwren. To install it for real use, see
+[Installing Helpwren](../install.md).
+
 ## Requirements
 
 - **Node 26** (the current LTS). The version is pinned in `.nvmrc`; run `nvm use` or the
@@ -80,7 +83,7 @@ Then open http://127.0.0.1:4100.
 Open http://localhost:3000/dashboard and enter one of the demo emails. The six-digit code arrives in
 Mailpit, the local test mailbox, at http://127.0.0.1:54324. Keep `/embed` open in another
 window to write as a visitor and see both sides update live. Ada is an admin and can add team members under Settings, then Team. On an install with no admin
-yet, add the first one from the command line:
+yet, open http://localhost:3000/setup to create the first one, or add them from the command line:
 
 ```bash
 pnpm agent:invite you@example.com --name "Your Name" --admin

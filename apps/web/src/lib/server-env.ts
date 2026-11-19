@@ -33,6 +33,11 @@ const serverEnvSchema = z.object({
   CLIENT_IP_HEADER: z.string().min(1).default("x-forwarded-for"),
   /** Cloudflare Turnstile's secret key, for the captcha switched on in Settings → General. */
   TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+  /**
+   * Where the server reaches Supabase when that differs from the public address, such as
+   * `http://kong:8000` beside a self-hosted Supabase in Docker. Unset means the public one.
+   */
+  SUPABASE_INTERNAL_URL: z.url().optional(),
 });
 
 function parseServerEnv(source: Record<string, string | undefined>) {
@@ -55,4 +60,5 @@ export const serverEnv = parseServerEnv({
   RATE_LIMIT_STORE: set(process.env.RATE_LIMIT_STORE),
   CLIENT_IP_HEADER: set(process.env.CLIENT_IP_HEADER),
   TURNSTILE_SECRET_KEY: set(process.env.TURNSTILE_SECRET_KEY),
+  SUPABASE_INTERNAL_URL: set(process.env.SUPABASE_INTERNAL_URL),
 });

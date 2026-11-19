@@ -8,6 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 
 import { supabaseAdmin } from "./admin";
+import { supabaseServerUrl } from "./server-url";
 
 /** A session for one of the host product's users, for the chat to load with `setSession`. */
 export interface UserSession {
@@ -38,11 +39,9 @@ function addressFor(externalId: string): string {
  * called on in, and the admin client must never start acting as one user.
  */
 function exchangeClient() {
-  return createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  return createClient<Database>(supabaseServerUrl, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 async function exchange(email: string): Promise<UserSession | null> {

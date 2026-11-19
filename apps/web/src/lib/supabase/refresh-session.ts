@@ -5,6 +5,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
+import { authCookieName, supabaseServerUrl } from "./server-url";
+
 /**
  * Refreshes the session in the request's cookies if it is about to run out, and returns the
  * response that carries the new cookies. Called from the proxy, which is the one place a
@@ -14,10 +16,10 @@ export async function refreshSession(request: NextRequest): Promise<NextResponse
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseServerUrl,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
-      cookieOptions: SESSION_COOKIE_OPTIONS,
+      cookieOptions: { ...SESSION_COOKIE_OPTIONS, name: authCookieName },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(cookiesToSet, headers) {

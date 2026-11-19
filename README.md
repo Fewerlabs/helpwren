@@ -15,6 +15,24 @@ Published by [Fewer Labs](https://helpwren.fewerlabs.dev).
 - **Layered:** use the drop-in widget, restyle it, or build your own interface on the same client
   library and API.
 
+## Install it
+
+Supabase Cloud and Vercel (recommended), about ten minutes:
+
+```bash
+git clone https://github.com/Fewerlabs/helpwren.git && cd helpwren
+pnpm install
+pnpm helpwren install        # asks for your Supabase project, writes the env file, migrates
+```
+
+Then deploy `apps/web`, or use the button, and open `/setup` to create the first admin.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFewerlabs%2Fhelpwren&root-directory=apps%2Fweb&project-name=helpwren&repository-name=helpwren&env=NEXT_PUBLIC_APP_URL%2CCRON_SECRET&envDescription=Your%20install%20address%2C%20and%20a%20long%20random%20secret%20for%20the%20scheduled%20jobs%20%28openssl%20rand%20-hex%2032%29.&envLink=https%3A%2F%2Fgithub.com%2FFewerlabs%2Fhelpwren%2Fblob%2Fmain%2Fdocs%2Finstall.md%23deploy-to-vercel&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22supabase%22%2C%22productSlug%22%3A%22supabase%22%2C%22protocol%22%3A%22storage%22%7D%5D)
+
+Or everything on your own server with Docker Compose, beside Supabase's own self-hosting stack:
+`pnpm helpwren install --mode docker`. [docs/install.md](docs/install.md) covers both, step by
+step, with upgrades, rolling back and troubleshooting.
+
 ## Quick start for contributors
 
 You need Node 26 (see `.nvmrc`), pnpm 12 and Docker, for the local database.
@@ -49,8 +67,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions.
 - **The start of the client library** (`packages/core`): sign-in for team members and settings.
 - **The widget** (`packages/widget`): the script a site loads to show the chat. Try it with
   `examples/plain-html`.
-- **Documented stubs** for the other product packages: the React Native screen, the adapters and
-  the installer.
+- **The installer** (`packages/cli`): `pnpm helpwren install` and `upgrade`, for Supabase Cloud
+  or Docker, and the first-run setup wizard at `/setup`.
 
 ## Repository layout
 
@@ -63,9 +81,10 @@ packages/
   widget/              The script a site loads to show the chat, published as `helpwren`
   react-native/        React Native support screen (stub)
   adapters/            Identity, push, email and storage adapters (stub)
-  cli/                 Installer and upgrader (stub)
+  cli/                 Installer and upgrader: pnpm helpwren install, pnpm helpwren upgrade
   config/              Shared TypeScript, ESLint and Prettier configuration
 supabase/              Database migrations, access-rule tests, demo data and local configuration
+deploy/docker/         Docker Compose for a fully self-hosted install
 examples/              Small sites that use Helpwren the way an adopter would
 docs/
   brand/               Brand boards: logo, colour palette, illustrations
@@ -77,6 +96,7 @@ docs/
 
 ## Documentation
 
+- [Installing Helpwren](docs/install.md)
 - [Architecture and code conventions](docs/architecture.md)
 - [Design system](docs/design-system.md)
 - [Decision records](docs/decisions/)

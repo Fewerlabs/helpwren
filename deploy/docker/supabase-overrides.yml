@@ -1,0 +1,40 @@
+# What Helpwren changes in Supabase's official self-hosting Compose file, merged over it by the
+# `include` in docker-compose.yml. Supabase's file itself is never edited, so moving to a new
+# Supabase release is a fresh fetch.
+
+services:
+  # Team members sign in with a six-digit code, so the sign-in email shows the code. The local
+  # stack does the same from supabase/config.toml. Auth fetches templates over HTTP; the app
+  # serves this one (apps/web/Dockerfile copies it in).
+  auth:
+    environment:
+      GOTRUE_MAILER_OTP_EXP: "600"
+      GOTRUE_MAILER_OTP_LENGTH: "6"
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: Your Helpwren sign-in code
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://helpwren:3000/email-templates/sign-in-code.html
+
+  # The database and the uploaded files live in named volumes, not in folders inside ./supabase,
+  # so fetching a new Supabase release can never touch them. Back them up; see docs/install.md.
+  db:
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  storage:
+    volumes:
+      - storage-data:/var/lib/storage
+
+  # A test mailbox that catches every email, for trying Helpwren out before real email is set
+  # up. On only with COMPOSE_PROFILES=mail, which the installer sets when asked. Its inbox is at
+  # http://localhost:8025.
+  mail:
+    image: axllent/mailpit:v1.34.0
+    profiles: [mail]
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      - 8025:8025
+
+volumes:
+  db-data:
+  storage-data:

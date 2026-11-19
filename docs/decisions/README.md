@@ -28,3 +28,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0021 | [Typing indicators, presence and saved replies](0021-typing-presence-and-saved-replies.md) |
 | 0022 | [Reply by email](0022-reply-by-email.md)                                                   |
 | 0023 | [Limits on abuse](0023-abuse-limits.md)                                                    |
+| 0024 | [The installer, the upgrader and the setup wizard](0024-installer-and-setup-wizard.md)     |

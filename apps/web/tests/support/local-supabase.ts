@@ -8,13 +8,16 @@ const statusSchema = z.object({
   SECRET_KEY: z.string().min(1),
 });
 
-// Runs before each test file: points the app's environment at the local Supabase stack.
+// Runs before each test file: points the app's environment at the local Supabase stack, or at
+// another local stack named by `SUPABASE_WORKDIR`, such as a throwaway one for setup tests.
+const workdir = process.env.SUPABASE_WORKDIR;
 let output: string;
 try {
-  output = execFileSync("pnpm", ["exec", "supabase", "status", "--output", "json"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-  });
+  output = execFileSync(
+    "pnpm",
+    ["exec", "supabase", "status", "--output", "json", ...(workdir ? ["--workdir", workdir] : [])],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+  );
 } catch (cause) {
   throw new Error("Local Supabase is not running. Start it with `pnpm db:start`.", { cause });
 }
