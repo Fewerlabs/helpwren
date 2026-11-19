@@ -153,13 +153,13 @@ test("a team member changes their own name, and how they are notified", async ({
   await expect(page.getByRole("status")).toHaveText("Saved.");
   await page.reload();
   await expect(page.getByLabel("Your name")).toHaveValue("Samira Rivera");
-  // The photo is theirs from then on: in the form, and on the link to their profile.
+  // The photo is theirs from then on: in the form, and on the button to their account.
   await expect(page.getByRole("img", { name: "Current photo" })).toHaveAttribute(
     "src",
     /\/storage\/v1\/object\/public\/avatars\//,
   );
   await expect(
-    page.getByRole("link", { name: "Your profile: Samira Rivera" }).locator("img"),
+    page.getByRole("button", { name: "Your account: Samira Rivera" }).locator("img"),
   ).toHaveAttribute("src", /\/avatars\//);
 
   // Notification choices are kept as they are made, on this browser.
@@ -210,7 +210,7 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   const team = page.getByRole("list", { name: "Team members" });
   await expect(team.getByRole("listitem")).toHaveCount(2);
   // An admin has no controls for their own access.
-  await expect(page.getByRole("button", { name: /Ada Okafor/ })).toHaveCount(0);
+  await expect(team.getByRole("button", { name: /Ada Okafor/ })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add team member" }).click();
   const dialog = page.getByRole("dialog", { name: "Add a team member" });

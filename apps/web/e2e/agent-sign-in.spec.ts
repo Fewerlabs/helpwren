@@ -32,6 +32,8 @@ test("a team member signs in with an emailed code and signs out", async ({ page,
   await page.goto("/login");
   await expect(page, "someone signed in skips the sign-in page").toHaveURL(/\/dashboard\/inbox$/);
 
+  // Signing out is in the menu behind their avatar.
+  await page.getByRole("button", { name: /^Your account/ }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login$/);
 

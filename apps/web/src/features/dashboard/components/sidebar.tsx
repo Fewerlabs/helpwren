@@ -1,10 +1,20 @@
 "use client";
 
 import { type Agent } from "@helpwren/core";
-import { Avatar, cn, Icon, Logo, Tooltip } from "@helpwren/design-system";
+import {
+  Avatar,
+  cn,
+  Icon,
+  Logo,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Separator,
+  Tooltip,
+} from "@helpwren/design-system";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { ThemeMenu } from "@/features/theme";
 
@@ -13,7 +23,7 @@ import { sections } from "../sections";
 
 export interface SidebarProps {
   agent: Agent;
-  /** The sign-out control, passed in because signing out belongs to another feature. */
+  /** The sign-out row for the account menu, passed in because signing out belongs to another feature. */
   signOut: ReactNode;
 }
 
@@ -73,17 +83,49 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
           align="end"
           className="text-muted-foreground hover:bg-muted hover:text-foreground size-10 rounded-xl focus-visible:outline-offset-2"
         />
-        <Tooltip content={agent.name} side="right">
-          <Link
-            href="/dashboard/settings/profile"
-            aria-label={`Your profile: ${agent.name}`}
-            className="focus-visible:outline-ring rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            <Avatar name={agent.name} src={agent.photo} size="sm" />
-          </Link>
-        </Tooltip>
-        {signOut}
+        <AccountMenu agent={agent} signOut={signOut} />
       </div>
     </aside>
+  );
+}
+
+/**
+ * The signed-in team member's avatar, which opens who they are, a way to their profile, and
+ * signing out.
+ */
+function AccountMenu({ agent, signOut }: SidebarProps) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Your account: ${agent.name}`}
+          title={agent.name}
+          className="focus-visible:outline-ring rounded-full transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <Avatar name={agent.name} src={agent.photo} size="sm" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="right" align="end" className="w-64 p-1.5" aria-label="Your account">
+        <Link
+          href="/dashboard/settings/profile"
+          className="hover:bg-muted focus-visible:outline-ring flex items-center gap-3 rounded-lg p-2 transition-colors focus-visible:outline-2"
+          onClick={() => {
+            setOpen(false);
+          }}
+        >
+          <Avatar name={agent.name} src={agent.photo} size="sm" />
+          <span className="grid min-w-0 flex-1">
+            <span className="truncate text-sm font-medium">{agent.name}</span>
+            <span className="text-muted-foreground truncate text-xs">{agent.email}</span>
+          </span>
+          <Icon name="caret-right" className="text-muted-foreground size-4 shrink-0" />
+          <span className="sr-only">Your profile</span>
+        </Link>
+        <Separator className="my-1.5" />
+        {signOut}
+      </PopoverContent>
+    </Popover>
   );
 }
