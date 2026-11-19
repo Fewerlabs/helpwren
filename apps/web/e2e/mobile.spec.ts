@@ -101,7 +101,13 @@ test("an app signs its user in, opens the conversation a notification was about,
   });
   await expect
     .poll(async () => (await heard(page)).filter((message) => message.type === "unread").at(-1))
-    .toEqual({ channel: "helpwren", type: "unread", count: 1 });
+    .toEqual({
+      channel: "helpwren",
+      type: "unread",
+      count: 1,
+      // The newest reply, for a badge or a banner of the app's own.
+      latest: { conversationId, preview: "It went out this morning." },
+    });
 
   await tell(page, { channel: "helpwren", type: "open", conversationId: conversationId ?? "" });
   const messages = page.getByRole("log", { name: "Messages" });
