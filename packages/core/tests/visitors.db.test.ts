@@ -8,6 +8,7 @@ import { browserClient, issueLoginCode, serverClient } from "./support/local-sup
 const PRIYA = "c0000000-0000-4000-8000-000000000002";
 const browsing = `core-test-${crypto.randomUUID()}`;
 const idle = `core-test-${crypto.randomUUID()}`;
+const arriving = `core-test-${crypto.randomUUID()}`;
 const priyas = `core-test-${crypto.randomUUID()}`;
 
 async function signedInAgent() {
@@ -40,6 +41,7 @@ beforeAll(async () => {
       pending_at: minutesAgo(0),
     },
     { id: idle, page_url: "https://shop.example.com/", last_seen_at: minutesAgo(10) },
+    { id: arriving, page_url: "https://shop.example.com/", session_started_at: minutesAgo(0) },
     {
       id: priyas,
       contact_id: PRIYA,
@@ -54,14 +56,15 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await serverClient().from("visitors").delete().in("id", [browsing, idle, priyas]);
+  await serverClient().from("visitors").delete().in("id", [browsing, idle, arriving, priyas]);
 });
 
 describe("visitors", () => {
   it("lists who checked in lately, with their page, place and waiting message", async () => {
     const client = await signedInAgent();
-    const visitors = await client.visitors.list({ activeWithinSeconds: 120 });
+    const { items: visitors, total } = await client.visitors.list({ activeWithinSeconds: 120 });
     const ids = visitors.map((visitor) => visitor.id);
+    expect(total).toBe(visitors.length);
 
     expect(ids).toContain(browsing);
     expect(ids).not.toContain(idle);
@@ -72,6 +75,21 @@ describe("visitors", () => {
       recentPages: [{ title: "Pricing" }, { title: "Home" }],
       outreach: { status: "waiting", message: "Can I help?", from: "Sam Rivera" },
     });
+  });
+
+  it("pages through who is on the site, counting them all", async () => {
+    const client = await signedInAgent();
+    const all = await client.visitors.list();
+    expect(all.total).toBeGreaterThanOrEqual(2);
+
+    const first = await client.visitors.list({ page: 1, limit: 1 });
+    const second = await client.visitors.list({ page: 2, limit: 1 });
+    expect(first.total).toBe(all.total);
+    expect(first.items.map((visitor) => visitor.id)).toEqual([all.items[0]?.id]);
+    expect(second.items.map((visitor) => visitor.id)).toEqual([all.items[1]?.id]);
+
+    const past = await client.visitors.list({ page: all.total + 1, limit: 1 });
+    expect(past).toEqual({ items: [], total: all.total });
   });
 
   it("finds a contact's browser, with who they are", async () => {
@@ -87,7 +105,7 @@ describe("visitors", () => {
     const client = createHelpwrenClient({ supabase: browserClient() });
     const guest = await client.sessions.startGuest();
     try {
-      await expect(client.visitors.list()).resolves.toEqual([]);
+      await expect(client.visitors.list()).resolves.toEqual({ items: [], total: 0 });
       await expect(client.visitors.get(browsing)).resolves.toBeNull();
     } finally {
       await serverClient().auth.admin.deleteUser(guest.id);

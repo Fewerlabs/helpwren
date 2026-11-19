@@ -151,6 +151,16 @@ export type Visitor = z.infer<typeof visitorSchema>;
 export interface ListVisitorsOptions {
   /** Only browsers that checked in within this many seconds. Default 120. */
   activeWithinSeconds?: number | undefined;
+  /** The page to return, starting at 1. Default 1. */
+  page?: number | undefined;
+  /** How many a page holds. Default 200, the most the live list shows at once. */
+  limit?: number | undefined;
+}
+
+/** One page of the browsers on the site, and how many there are across every page. */
+export interface VisitorsPage {
+  items: Visitor[];
+  total: number;
 }
 
 export type CheckInResult =
@@ -166,7 +176,7 @@ const COLUMNS =
   "pending_agent:agents(name), " +
   "contact:contact_summaries(name, email, phone, conversation_count)";
 
-/** The most browsers the live list shows at once. */
+/** The most browsers one page of the live list holds. */
 const LIST_LIMIT = 200;
 
 function failed(what: string, cause: unknown): HelpwrenError {
@@ -176,16 +186,20 @@ function failed(what: string, cause: unknown): HelpwrenError {
 export function createVisitors(supabase: HelpwrenSupabaseClient, api: Api) {
   return {
     /** Who is on the site now, the newest arrivals first. For team members. */
-    async list(options: ListVisitorsOptions = {}): Promise<Visitor[]> {
+    async list(options: ListVisitorsOptions = {}): Promise<VisitorsPage> {
       const since = new Date(Date.now() - (options.activeWithinSeconds ?? 120) * 1000);
-      const { data, error } = await supabase
+      const limit = Math.min(options.limit ?? LIST_LIMIT, LIST_LIMIT);
+      const from = ((options.page ?? 1) - 1) * limit;
+      const { data, count, error } = await supabase
         .from("visitors")
-        .select(COLUMNS)
+        .select(COLUMNS, { count: "exact" })
         .gte("last_seen_at", since.toISOString())
         .order("session_started_at", { ascending: false })
-        .limit(LIST_LIMIT);
+        // Arrivals in the same moment keep one order, so none repeats across pages.
+        .order("id")
+        .range(from, from + limit - 1);
       if (error) throw failed("load the visitors", error);
-      return z.array(visitorSchema).parse(data);
+      return { items: z.array(visitorSchema).parse(data), total: count ?? data.length };
     },
 
     /** One browser, or `null` if there is none or it is not the caller's to read. */
