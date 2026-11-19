@@ -97,11 +97,13 @@ export function ArticleView({
       ) : null}
 
       <header>
-        <h1 className="text-[2rem] leading-tight font-bold tracking-tight text-balance sm:text-[2.5rem]">
+        <h1 className="text-[1.75rem] leading-tight font-bold tracking-tight text-balance sm:text-[2.5rem]">
           {article.title}
         </h1>
         {article.summary ? (
-          <p className="text-muted-foreground mt-2.5 text-lg text-pretty">{article.summary}</p>
+          <p className="text-muted-foreground mt-2.5 text-base text-pretty sm:text-lg">
+            {article.summary}
+          </p>
         ) : null}
         {/* The byline, as Featurebase and Intercom show it: who wrote it, and how fresh it is. */}
         <div className="mt-5 flex items-center gap-3 text-sm">

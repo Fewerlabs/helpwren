@@ -39,6 +39,25 @@
   font-size: 1.25em;
 }
 
+/* A phone's screen is a third as wide, so the same sizes there read as shouting. */
+@media (width < 40rem) {
+  .hw-rich-text {
+    font-size: 0.9375rem;
+  }
+
+  .hw-rich-text h2 {
+    font-size: 1.6em;
+  }
+
+  .hw-rich-text h3 {
+    font-size: 1.33em;
+  }
+
+  .hw-rich-text h4 {
+    font-size: 1.2em;
+  }
+}
+
 .hw-rich-text > :first-child {
   margin-top: 0;
 }
