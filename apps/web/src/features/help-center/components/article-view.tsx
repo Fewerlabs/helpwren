@@ -1,6 +1,8 @@
 import { richTextToPlainText, type Article, type ArticleSummary } from "@helpwren/core";
 import { cn, RichText, richTextHeadings, type RichTextHeading } from "@helpwren/design-system";
 
+import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
+
 import { formatDate, readingMinutes } from "../format";
 import { collectionPath, HELP_PATH } from "../urls";
 import { ArticleFeedback } from "./article-feedback";
@@ -33,13 +35,22 @@ export interface ArticleViewProps {
   related: readonly ArticleSummary[];
   /** Leaves out the parts that only make sense once it is published, for a preview of a draft. */
   preview?: boolean;
+  /** Set inside a host's frame: links stay in the embedded form, and hidden parts are left out. */
+  embed?: HelpEmbed | null;
 }
 
 /**
  * One article as a reader sees it: the way back up, the title, the body with a table of
  * contents beside it, then whether it helped, what to read next and how to reach a person.
  */
-export function ArticleView({ article, author, related, preview = false }: ArticleViewProps) {
+export function ArticleView({
+  article,
+  author,
+  related,
+  preview = false,
+  embed = null,
+}: ArticleViewProps) {
+  const hidden = (part: "feedback" | "chat") => embed?.hide.includes(part) ?? false;
   const headings = richTextHeadings(article.body);
   const minutes = readingMinutes(richTextToPlainText(article.body));
   // Two headings make a table of contents; one is only the article's own outline.
@@ -49,9 +60,14 @@ export function ArticleView({ article, author, related, preview = false }: Artic
     <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
       <Breadcrumbs
         crumbs={[
-          { label: "Help center", href: HELP_PATH },
+          { label: "Help center", href: withEmbed(HELP_PATH, embed) },
           ...(article.collection
-            ? [{ label: article.collection.name, href: collectionPath(article.collection.slug) }]
+            ? [
+                {
+                  label: article.collection.name,
+                  href: withEmbed(collectionPath(article.collection.slug), embed),
+                },
+              ]
             : []),
           { label: article.title },
         ]}
@@ -96,31 +112,33 @@ export function ArticleView({ article, author, related, preview = false }: Artic
 
           {preview ? null : (
             <div className="mt-12 grid gap-10">
-              <ArticleFeedback articleId={article.id} />
+              {hidden("feedback") ? null : <ArticleFeedback articleId={article.id} />}
 
               {related.length > 0 ? (
                 <section aria-labelledby="related-articles">
                   <h2 id="related-articles" className="mb-3 text-lg font-semibold">
                     Related articles
                   </h2>
-                  <ArticleList label="Related articles" articles={related} />
+                  <ArticleList label="Related articles" articles={related} embed={embed} />
                 </section>
               ) : null}
 
-              <section
-                aria-labelledby="still-need-help"
-                className="bg-muted/60 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-2xl px-6 py-6"
-              >
-                <div>
-                  <h2 id="still-need-help" className="text-lg font-semibold">
-                    Still need help?
-                  </h2>
-                  <p className="text-muted-foreground mt-1">
-                    Send us a message and a person on our team will answer.
-                  </p>
-                </div>
-                <ChatLink />
-              </section>
+              {hidden("chat") ? null : (
+                <section
+                  aria-labelledby="still-need-help"
+                  className="bg-muted/60 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-2xl px-6 py-6"
+                >
+                  <div>
+                    <h2 id="still-need-help" className="text-lg font-semibold">
+                      Still need help?
+                    </h2>
+                    <p className="text-muted-foreground mt-1">
+                      Send us a message and a person on our team will answer.
+                    </p>
+                  </div>
+                  <ChatLink newTab={embed !== null} />
+                </section>
+              )}
             </div>
           )}
         </article>

@@ -4,6 +4,7 @@ export { ArticleFeedback } from "./components/article-feedback";
 export { ArticleView, type ArticleViewProps } from "./components/article-view";
 export { Breadcrumbs, type Crumb } from "./components/breadcrumbs";
 export { ArticleList, CollectionGrid, iconOf } from "./components/collection-grid";
+export { EmbedFrame } from "./components/embed-frame";
 export { HelpChatLauncher } from "./components/help-chat";
 export { HelpFooter } from "./components/help-footer";
 export {

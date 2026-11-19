@@ -27,12 +27,15 @@ export function HelpChatLauncher() {
 /**
  * "Chat with us", at the end of an article. It opens the launcher's chat when the page has
  * one, and otherwise goes to the chat on a page of its own, which also works with no script.
+ * `newTab` opens that page in a tab of its own.
  */
-export function ChatLink() {
+export function ChatLink({ newTab = false }: { newTab?: boolean }) {
   return (
     <Button asChild>
       <a
         href="/chat"
+        // Inside a host's frame the chat would be a frame within a frame, so it gets a tab.
+        {...(newTab ? { target: "_blank", rel: "noopener" } : {})}
         onClick={(event) => {
           if (!widget) return;
           event.preventDefault();

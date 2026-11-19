@@ -15,6 +15,8 @@ import {
   JsonLd,
 } from "@/features/help-center";
 import { getHelpCollections, getHelpSettings } from "@/lib/help-center-data";
+import { withEmbed } from "@/lib/help-embed";
+import { getHelpEmbed } from "@/lib/help-embed-request";
 
 type Props = PageProps<"/help/[collection]">;
 
@@ -35,15 +37,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** One collection: what it is about, and its articles in the order the team set. */
 export default async function HelpCollectionPage({ params }: Props) {
-  const { settings, collection } = await load((await params).collection);
+  const [{ settings, collection }, embed] = await Promise.all([
+    load((await params).collection),
+    getHelpEmbed(),
+  ]);
   if (!collection) notFound();
 
   return (
     <>
-      <HelpHeader settings={settings} variant="inner" />
+      <HelpHeader settings={settings} variant="inner" embed={embed} />
       <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
         <Breadcrumbs
-          crumbs={[{ label: "Help center", href: HELP_PATH }, { label: collection.name }]}
+          crumbs={[
+            { label: "Help center", href: withEmbed(HELP_PATH, embed) },
+            { label: collection.name },
+          ]}
         />
         <header className="mt-6 mb-8 flex items-start gap-4">
           <span className="bg-primary/10 text-primary grid size-12 shrink-0 place-items-center rounded-2xl">
@@ -63,7 +71,11 @@ export default async function HelpCollectionPage({ params }: Props) {
             </p>
           </div>
         </header>
-        <ArticleList label={`Articles in ${collection.name}`} articles={collection.articles} />
+        <ArticleList
+          label={`Articles in ${collection.name}`}
+          articles={collection.articles}
+          embed={embed}
+        />
       </main>
       <JsonLd
         data={{

@@ -9,6 +9,8 @@ import {
   helpMetadata,
 } from "@/features/help-center";
 import { getHelpSettings, searchHelpArticles } from "@/lib/help-center-data";
+import { withEmbed } from "@/lib/help-embed";
+import { getHelpEmbed } from "@/lib/help-embed-request";
 
 type Props = PageProps<"/help/search">;
 
@@ -31,16 +33,22 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 /** What a search of the help center found, best match first. */
 export default async function HelpSearchPage({ searchParams }: Props) {
   const query = await readQuery(searchParams);
-  const [settings, results] = await Promise.all([
+  const [settings, results, embed] = await Promise.all([
     getHelpSettings(),
     query ? searchHelpArticles(query) : Promise.resolve([]),
+    getHelpEmbed(),
   ]);
 
   return (
     <>
-      <HelpHeader settings={settings} variant="inner" query={query} />
+      <HelpHeader settings={settings} variant="inner" query={query} embed={embed} />
       <main className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-10">
-        <Breadcrumbs crumbs={[{ label: "Help center", href: HELP_PATH }, { label: "Search" }]} />
+        <Breadcrumbs
+          crumbs={[
+            { label: "Help center", href: withEmbed(HELP_PATH, embed) },
+            { label: "Search" },
+          ]}
+        />
         <h1 className="mt-6 text-3xl font-semibold tracking-tight text-balance">
           {query ? `Results for "${query}"` : "Search the help center"}
         </h1>
@@ -56,7 +64,7 @@ export default async function HelpSearchPage({ searchParams }: Props) {
 
         <div className="mt-8">
           {results.length > 0 ? (
-            <ArticleList label="Search results" articles={results} showCollection />
+            <ArticleList label="Search results" articles={results} showCollection embed={embed} />
           ) : query ? (
             <EmptyState
               scene="no-results"

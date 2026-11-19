@@ -2,6 +2,8 @@ import { type ArticleSummary, type Collection } from "@helpwren/core";
 import { ArticleCard, Icon, type IconName, iconNames } from "@helpwren/design-system";
 import Link from "next/link";
 
+import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
+
 import { countArticles } from "../format";
 import { articlePath, collectionPath } from "../urls";
 
@@ -12,16 +14,18 @@ export function iconOf(name: string): IconName {
 
 export interface CollectionGridProps {
   collections: readonly (Collection & { articles: readonly ArticleSummary[] })[];
+  /** Set inside a host's frame, so each link stays in the embedded form. */
+  embed?: HelpEmbed | null;
 }
 
 /** The collections as cards: an icon, a name, a line about it and how many articles it holds. */
-export function CollectionGrid({ collections }: CollectionGridProps) {
+export function CollectionGrid({ collections, embed = null }: CollectionGridProps) {
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {collections.map((collection) => (
         <li key={collection.id} className="grid">
           <ArticleCard
-            href={collectionPath(collection.slug)}
+            href={withEmbed(collectionPath(collection.slug), embed)}
             icon={iconOf(collection.icon)}
             title={collection.name}
             {...(collection.description ? { summary: collection.description } : {})}
@@ -39,10 +43,17 @@ export interface ArticleListProps {
   articles: readonly ArticleSummary[];
   /** Shows which collection each article is in, for a list that mixes them. */
   showCollection?: boolean;
+  /** Set inside a host's frame, so each link stays in the embedded form. */
+  embed?: HelpEmbed | null;
 }
 
 /** Articles as rows in one outlined box, divided by hairlines. Each row is a link. */
-export function ArticleList({ label, articles, showCollection = false }: ArticleListProps) {
+export function ArticleList({
+  label,
+  articles,
+  showCollection = false,
+  embed = null,
+}: ArticleListProps) {
   return (
     <ul
       aria-label={label}
@@ -52,7 +63,7 @@ export function ArticleList({ label, articles, showCollection = false }: Article
         article.collection ? (
           <li key={article.id}>
             <Link
-              href={articlePath(article.collection.slug, article.slug)}
+              href={withEmbed(articlePath(article.collection.slug, article.slug), embed)}
               className="group hover:bg-muted/50 focus-visible:outline-ring flex items-center gap-4 px-5 py-4 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
             >
               <span className="min-w-0 flex-1">

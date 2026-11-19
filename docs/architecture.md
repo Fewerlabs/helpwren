@@ -138,6 +138,40 @@ A message can carry up to five files. The reply box uploads each one to the priv
 paths with the message; the thread asks for signed links to show them. Who may read a file
 follows who may read its conversation. See [ADR 0012](decisions/0012-attachments.md).
 
+### The knowledge base and the help center
+
+Articles are sorted into collections. `collections` and `articles` in the client library do
+everything to them, and the access rules decide who may: published articles are public, drafts
+are the team's. See [ADR 0016](decisions/0016-knowledge-base.md).
+
+| Where                               | What                                                                |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| `src/features/articles`             | The dashboard's section: the table, the dialogs and the editor page |
+| `src/features/help-center`          | The public pages' components: header, lists, the article, feedback  |
+| `src/lib/help-center-data.ts`       | What the public pages read, as a visitor, kept between requests     |
+| `src/lib/help-embed.ts`             | The options a host may pass to the embedded form, checked strictly  |
+| `src/features/chat` (`help-screen`) | The chat's Help tab and the suggestions on its home screen          |
+
+An article's body is a document tree, written with `RichTextEditor` and drawn with `RichText`,
+both in the design system. The public pages load none of the editor.
+
+The public pages are drawn for each request and never while building. What they read is kept
+under the tag in `src/lib/help-center-cache.ts`; `refreshHelpCenter` (articles) and
+`saveBranding` clear it, so a change shows at once.
+
+**Embedding.** A host shows the help center in a frame with `/help?embed=1`. `src/proxy.ts`
+checks the options, limits framing to the allowed domains and passes what it accepted to the
+pages in a header. The frame tells the page around it how tall it is with one message, so the
+host can size it:
+
+```js
+{ channel: "helpwren", type: "help-height", height: 1240 }
+```
+
+`height` is the content's height in CSS pixels. It is sent when the page loads and whenever the
+height changes. A host should check `event.origin` is the install's address before using it.
+The Installation settings page has the snippet to copy.
+
 ### The widget
 
 A site shows the chat by loading `/widget.js`, which the app builds from `packages/widget` when
@@ -247,24 +281,26 @@ between screens does not refetch what was loaded a moment ago.
 
 ### Routes
 
-| Route                               | What it is                                                                                                               |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `/design`                           | The design system running in the app, with the example feature at the bottom                                             |
-| `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded            |
-| `/chat`                             | The chat on a page of its own, with the brand around it                                                                  |
-| `/help`                             | The public help center: its branded header (articles are still to come)                                                  |
-| `/dashboard`                        | The team's screens, behind one sign-in check. Redirects to the inbox                                                     |
-| `/dashboard/inbox`                  | The inbox: views (including tickets), conversations, the open one and its details. `?view=` and `?c=` are in the address |
-| `/dashboard/settings`               | Settings: workspace pages admins change and agents read, and each person's own Profile and Notifications                 |
-| `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                                 |
-| `/dashboard/help`                   | Planned; it says what is coming                                                                                          |
-| `/login`                            | Sign-in for team members                                                                                                 |
-| `/widget.js`                        | The widget script, built from `packages/widget`                                                                          |
-| `/api/health`                       | Returns `{ "status": "ok" }`                                                                                             |
-| `GET /api/widget`                   | How the widget looks on a host site: position, colour, launcher icon. Readable from any origin                           |
-| `POST /api/conversations`           | Starts a conversation with its first message                                                                             |
-| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                       |
-| `POST /api/identify`                | Signs the chat in as one of the host product's users, from a token the install's identity adapter confirms               |
+| Route                               | What it is                                                                                                                                                                  |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/design`                           | The design system running in the app, with the example feature at the bottom                                                                                                |
+| `/embed`                            | The visitor's chat: start a conversation, see earlier ones, reply live. `?source=` names where it is embedded                                                               |
+| `/chat`                             | The chat on a page of its own, with the brand around it                                                                                                                     |
+| `/help`                             | The public help center: collections, then `/help/{collection}` and `/help/{collection}/{article}`. `/help/search?q=` searches. `?embed=1` gives the form for a host's frame |
+| `/help/preview/{id}`                | An article as it will look, for the team only                                                                                                                               |
+| `/help/sitemap.xml`, `/robots.txt`  | The help center's pages for search engines, and what they may read                                                                                                          |
+| `/dashboard`                        | The team's screens, behind one sign-in check. Redirects to the inbox                                                                                                        |
+| `/dashboard/inbox`                  | The inbox: views (including tickets), conversations, the open one and its details. `?view=` and `?c=` are in the address                                                    |
+| `/dashboard/settings`               | Settings: workspace pages admins change and agents read, and each person's own Profile and Notifications                                                                    |
+| `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                                                                                    |
+| `/dashboard/help`                   | The Help center section: collections, a table of articles to search and filter, and `/dashboard/help/{id}`, the editor                                                      |
+| `/login`                            | Sign-in for team members                                                                                                                                                    |
+| `/widget.js`                        | The widget script, built from `packages/widget`                                                                                                                             |
+| `/api/health`                       | Returns `{ "status": "ok" }`                                                                                                                                                |
+| `GET /api/widget`                   | How the widget looks on a host site: position, colour, launcher icon. Readable from any origin                                                                              |
+| `POST /api/conversations`           | Starts a conversation with its first message                                                                                                                                |
+| `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                                                                          |
+| `POST /api/identify`                | Signs the chat in as one of the host product's users, from a token the install's identity adapter confirms                                                                  |
 
 ## The design system
 

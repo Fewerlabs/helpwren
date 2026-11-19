@@ -2,6 +2,8 @@ import { type PublicSettings } from "@helpwren/core";
 import { cn, Icon, Logo } from "@helpwren/design-system";
 import Link from "next/link";
 
+import { embedQuery, type HelpEmbed } from "@/lib/help-embed";
+
 import { heroStyle } from "../hero";
 import { HELP_PATH } from "../urls";
 import { ThemeToggle } from "./theme-toggle";
@@ -16,6 +18,11 @@ export interface HelpHeaderProps {
   /** What was searched for, kept in the box on the results page. */
   query?: string;
   /**
+   * Set when the help center is inside a frame on a host's site. The host's page has its own
+   * header, so this one shrinks to the search alone, or to nothing if that is hidden too.
+   */
+  embed?: HelpEmbed | null;
+  /**
    * Draws the header without its links working, for the preview in Branding, where following
    * one would leave the form.
    */
@@ -28,15 +35,23 @@ function SearchBox({
   settings,
   query,
   large,
+  embed,
 }: {
   settings: PublicSettings;
   query?: string | undefined;
   large: boolean;
+  embed?: HelpEmbed | null | undefined;
 }) {
   const placeholder = settings.helpCenter.searchPlaceholder ?? DEFAULT_PLACEHOLDER;
   return (
     // A plain form: searching works before any script has loaded, and without one.
     <form action={`${HELP_PATH}/search`} role="search" className="relative w-full">
+      {/* Inside a frame, the results page has to be the embedded form too. */}
+      {embed
+        ? [...new URLSearchParams(embedQuery(embed))].map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))
+        : null}
       <Icon
         name="magnifying-glass"
         className={cn(
@@ -86,10 +101,26 @@ function Brand({ settings }: { settings: PublicSettings }) {
  * The top of every help center page, in the brand's colours: its mark and name, its own links,
  * and the search. On the home page it also carries the greeting.
  */
-export function HelpHeader({ settings, variant, query, inert = false }: HelpHeaderProps) {
+export function HelpHeader({
+  settings,
+  variant,
+  query,
+  embed = null,
+  inert = false,
+}: HelpHeaderProps) {
   const { helpCenter } = settings;
   const hero = heroStyle(settings);
   const home = variant === "home";
+
+  if (embed) {
+    return embed.hide.includes("search") ? null : (
+      <header className="mx-auto w-full max-w-3xl px-4 pt-4">
+        <div className="border-rule rounded-xl border">
+          <SearchBox settings={settings} query={query} large={false} embed={embed} />
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header

@@ -12,6 +12,8 @@ import {
   JsonLd,
 } from "@/features/help-center";
 import { getHelpArticle, getHelpCollections, getHelpSettings } from "@/lib/help-center-data";
+import { withEmbed } from "@/lib/help-embed";
+import { getHelpEmbed } from "@/lib/help-embed-request";
 
 type Props = PageProps<"/help/[collection]/[article]">;
 
@@ -37,16 +39,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** One article, as anyone on the web reads it. */
 export default async function HelpArticlePage({ params }: Props) {
   const { collection: collectionSlug, article: slug } = await params;
-  const [settings, article, collections] = await Promise.all([
+  const [settings, article, collections, embed] = await Promise.all([
     getHelpSettings(),
     getHelpArticle(slug),
     getHelpCollections(),
+    getHelpEmbed(),
   ]);
   if (!article?.collection) notFound();
   // An article has one address. Reached under another collection's name, say after it was
   // moved, it sends the reader and the search engine on to the right one.
   if (article.collection.slug !== collectionSlug) {
-    permanentRedirect(articlePath(article.collection.slug, article.slug));
+    permanentRedirect(withEmbed(articlePath(article.collection.slug, article.slug), embed));
   }
 
   const siblings = collections.find((item) => item.id === article.collectionId)?.articles ?? [];
@@ -60,9 +63,9 @@ export default async function HelpArticlePage({ params }: Props) {
 
   return (
     <>
-      <HelpHeader settings={settings} variant="inner" />
+      <HelpHeader settings={settings} variant="inner" embed={embed} />
       <main>
-        <ArticleView article={article} related={related} />
+        <ArticleView article={article} related={related} embed={embed} />
       </main>
       <JsonLd
         data={{
