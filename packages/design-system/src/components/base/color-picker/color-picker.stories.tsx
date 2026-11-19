@@ -10,7 +10,7 @@ type Story = StoryObj;
 const swatches = [
   { label: "Moss", color: "#3d6b57" },
   { label: "Blue", color: "#1d4ed8" },
-  { label: "Ink", color: "#26231e" },
+  { label: "Ink", color: "#101a15" },
   { label: "Lagoon", color: "#0f766e", to: "#38bdf8" },
   { label: "Dusk", color: "#4c1d95", to: "#be185d" },
   { label: "Ember", color: "#c2410c", to: "#f59e0b" },

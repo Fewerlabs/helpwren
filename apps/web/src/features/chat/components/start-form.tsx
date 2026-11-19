@@ -203,7 +203,7 @@ function QuickReplies({ replies, disabled, onPick }: QuickRepliesProps) {
             type="button"
             disabled={disabled}
             // A raised white pill, the same as the ones beside the launcher.
-            className="bg-card hover:bg-primary/10 focus-visible:outline-ring rounded-full px-3.5 py-2 text-sm font-medium shadow-[0_3px_12px_rgb(38_35_30/0.1),0_0_0_1px_rgb(38_35_30/0.06)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+            className="bg-card hover:bg-primary/10 focus-visible:outline-ring rounded-full px-3.5 py-2 text-sm font-medium shadow-[0_3px_12px_rgb(16_26_21/0.1),0_0_0_1px_rgb(16_26_21/0.06)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
             onClick={() => {
               onPick(reply);
             }}

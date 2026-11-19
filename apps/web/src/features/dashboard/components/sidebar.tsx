@@ -51,7 +51,7 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
                 <Icon
                   name={section.icon}
                   weight={active ? "duotone" : "regular"}
-                  className="size-5"
+                  className={cn("size-5", active && "text-primary")}
                 />
                 {count > 0 ? (
                   <span

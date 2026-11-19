@@ -6,8 +6,8 @@ describe("readableOn", () => {
   it("puts white text on a dark colour and dark text on a light one", () => {
     expect(readableOn("#3d6b57")).toBe("#ffffff");
     expect(readableOn("#1d4ed8")).toBe("#ffffff");
-    expect(readableOn("#facc15")).toBe("#1c1a16");
-    expect(readableOn("#ffffff")).toBe("#1c1a16");
+    expect(readableOn("#facc15")).toBe("#101a15");
+    expect(readableOn("#ffffff")).toBe("#101a15");
   });
 });
 
@@ -15,7 +15,7 @@ describe("accentStyle", () => {
   it("sets the colour and its text colour, or nothing when there is no colour", () => {
     expect(accentStyle({ accent: "#facc15" })).toMatchObject({
       "--primary": "#facc15",
-      "--primary-foreground": "#1c1a16",
+      "--primary-foreground": "#101a15",
       "--ring": "#facc15",
       "--moss": "#facc15",
       "--brand-fill": "#facc15",

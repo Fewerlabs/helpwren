@@ -51,7 +51,7 @@ import { WidgetPreview } from "./widget-preview";
 const swatches: readonly ColorSwatch[] = [
   { label: "Helpwren green", color: DEFAULT_ACCENT },
   { label: "Blue", color: "#1d4ed8" },
-  { label: "Ink", color: "#26231e" },
+  { label: "Ink", color: "#101a15" },
   { label: "Violet", color: "#6d28d9" },
   { label: "Lagoon", color: "#0f766e", to: "#38bdf8" },
   { label: "Dusk", color: "#4c1d95", to: "#be185d" },
@@ -60,7 +60,7 @@ const swatches: readonly ColorSwatch[] = [
 
 /** Plain colours for buttons, which carry text and so are never a gradient. */
 const buttonSwatches: readonly ColorSwatch[] = [
-  { label: "Ink", color: "#26231e" },
+  { label: "Ink", color: "#101a15" },
   { label: "Blue", color: "#1d4ed8" },
   { label: "Violet", color: "#6d28d9" },
   { label: "Helpwren green", color: DEFAULT_ACCENT },

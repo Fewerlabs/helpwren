@@ -12,8 +12,8 @@ export const styles = `
   --hw-h: 680px;
   --hw-z: 2147483000;
   --hw-surface: #ffffff;
-  --hw-edge: #e3ddd0;
-  --hw-ink: #26231e;
+  --hw-edge: #e4e4e7;
+  --hw-ink: #18181b;
 }
 
 * { box-sizing: border-box; }
@@ -74,7 +74,7 @@ export const styles = `
   border: 1px solid var(--hw-edge);
   border-radius: 20px;
   background: var(--hw-surface);
-  box-shadow: 0 12px 40px rgb(38 35 30 / 0.16);
+  box-shadow: 0 12px 40px rgb(24 24 27 / 0.16);
   transform-origin: bottom right;
   transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
 }
@@ -108,7 +108,7 @@ export const styles = `
   width: 100%;
   border-radius: 16px;
   background: var(--hw-surface);
-  box-shadow: 0 8px 28px rgb(38 35 30 / 0.14), 0 0 0 1px rgb(38 35 30 / 0.05);
+  box-shadow: 0 8px 28px rgb(24 24 27 / 0.14), 0 0 0 1px rgb(24 24 27 / 0.05);
 }
 .teaser-open {
   display: flex;
@@ -150,7 +150,7 @@ export const styles = `
   background: #3fb950;
 }
 .teaser-words { display: grid; min-width: 0; }
-.teaser-name { color: #6f6a5f; font-size: 12px; font-weight: 500; }
+.teaser-name { color: #5f6c65; font-size: 12px; font-weight: 500; }
 .teaser-name:empty { display: none; }
 .teaser-message { overflow-wrap: anywhere; }
 .teaser-close {
@@ -168,7 +168,7 @@ export const styles = `
   color: #8c8779;
   cursor: pointer;
 }
-.teaser-close:hover { background: rgb(38 35 30 / 0.06); color: var(--hw-ink); }
+.teaser-close:hover { background: rgb(24 24 27 / 0.06); color: var(--hw-ink); }
 .teaser-close svg { width: 12px; height: 12px; }
 .teaser-replies { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .chip {
@@ -176,7 +176,7 @@ export const styles = `
   border: 0;
   border-radius: 999px;
   background: var(--hw-surface);
-  box-shadow: 0 4px 14px rgb(38 35 30 / 0.12), 0 0 0 1px rgb(38 35 30 / 0.05);
+  box-shadow: 0 4px 14px rgb(24 24 27 / 0.12), 0 0 0 1px rgb(24 24 27 / 0.05);
   color: var(--hw-ink);
   font: 500 13px/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
   cursor: pointer;

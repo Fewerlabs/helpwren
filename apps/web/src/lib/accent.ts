@@ -1,7 +1,7 @@
 import { type Brand } from "@helpwren/core";
 import { type CSSProperties } from "react";
 
-const DARK_TEXT = "#1c1a16";
+const DARK_TEXT = "#101a15";
 const LIGHT_TEXT = "#ffffff";
 
 /** How bright a colour is to the eye, from 0 (black) to 1 (white), as WCAG defines it. */
@@ -32,6 +32,14 @@ export function brandFill({ accent, accentTo }: Pick<Brand, "accent" | "accentTo
 }
 
 type Colours = Pick<Brand, "accent" | "accentTo" | "button">;
+
+/**
+ * The class that turns Helpwren's mint neutrals into true greys, for a surface a visitor sees,
+ * when the install has a brand colour of its own. Nothing when it has none.
+ */
+export function brandTone({ accent }: Pick<Brand, "accent">): string | undefined {
+  return accent ? "brand-neutral" : undefined;
+}
 
 /**
  * The style that puts an install's own colours in place of Helpwren's, on an element and

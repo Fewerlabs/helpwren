@@ -1,7 +1,8 @@
+import { cn } from "@helpwren/design-system";
 import type { ReactNode } from "react";
 
 import { EmbedFrame, HelpChatLauncher } from "@/features/help-center";
-import { accentStyle } from "@/lib/accent";
+import { accentStyle, brandTone } from "@/lib/accent";
 import { getHelpSettings } from "@/lib/help-center-data";
 import { getHelpEmbed } from "@/lib/help-embed-request";
 
@@ -25,7 +26,7 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
     return (
       // It fills the frame it is given and is never smaller than is usable.
       <div
-        className="bg-card text-foreground flex min-h-80 min-w-72 flex-col"
+        className={cn("bg-card text-foreground flex min-h-80 min-w-72 flex-col", brandTone(brand))}
         style={accentStyle(brand)}
       >
         {children}
@@ -36,7 +37,10 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
 
   return (
     <div
-      className="bg-card text-foreground relative isolate flex min-h-dvh flex-col"
+      className={cn(
+        "bg-card text-foreground relative isolate flex min-h-dvh flex-col",
+        brandTone(settings.brand),
+      )}
       style={accentStyle(settings.brand)}
     >
       {children}

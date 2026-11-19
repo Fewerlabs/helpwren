@@ -140,7 +140,12 @@ export function ConversationPanel({
             aria-pressed={detailsOpen}
             onClick={onToggleDetails}
           >
-            <Icon name="sidebar-simple" mirrored weight={detailsOpen ? "duotone" : "regular"} />
+            <Icon
+              name="sidebar-simple"
+              mirrored
+              weight={detailsOpen ? "duotone" : "regular"}
+              className={detailsOpen ? "text-primary" : undefined}
+            />
           </Button>
         </Tooltip>
       </PanelHeader>

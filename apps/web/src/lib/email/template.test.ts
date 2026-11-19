@@ -53,6 +53,6 @@ describe("renderEmail", () => {
       content,
     );
     expect(html).toContain('<img src="https://cdn.example/logo.png" alt="Acme"');
-    expect(html).toContain("background:#facc15;color:#1c1a16");
+    expect(html).toContain("background:#facc15;color:#101a15");
   });
 });

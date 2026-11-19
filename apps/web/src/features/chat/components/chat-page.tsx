@@ -3,7 +3,7 @@ import { cn } from "@helpwren/design-system";
 import { type CSSProperties } from "react";
 
 import { bannerStyle, PageGrid } from "@/features/help-center";
-import { accentStyle } from "@/lib/accent";
+import { accentStyle, brandTone } from "@/lib/accent";
 
 import { Chat } from "./chat";
 
@@ -54,7 +54,10 @@ export function ChatPage({ settings, preview = false, chatClassName }: ChatPageP
   return (
     <main
       inert={preview}
-      className="bg-card text-foreground relative isolate flex min-h-full flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-4 sm:p-8"
+      className={cn(
+        "bg-card text-foreground relative isolate flex min-h-full flex-1 flex-col items-center justify-center gap-6 overflow-hidden p-4 sm:p-8",
+        brandTone(brand),
+      )}
       style={accentStyle(brand)}
     >
       {kind === "glow" ? (
@@ -92,7 +95,7 @@ export function ChatPage({ settings, preview = false, chatClassName }: ChatPageP
           {chatPage.intro ?? "Send us a message and we will reply here."}
         </p>
       </header>
-      <div className="border-rule w-full max-w-md overflow-hidden rounded-2xl border shadow-[0_12px_40px_rgb(38_35_30/0.12)]">
+      <div className="border-rule w-full max-w-md overflow-hidden rounded-2xl border shadow-[0_12px_40px_rgb(16_26_21/0.12)]">
         <Chat
           settings={settings}
           source="web"

@@ -200,7 +200,7 @@ function BlockList({ items, activeIndex, onChoose }: BlockListProps) {
 
 const menuSurface = "border-rule bg-popover text-popover-foreground rounded-xl border";
 /** The one shadow the editor uses: its menus float over the writing. */
-const menuShadow = "shadow-[0_8px_24px_rgb(38_35_30/0.12)]";
+const menuShadow = "shadow-[0_8px_24px_rgb(16_26_21/0.12)]";
 
 /**
  * A rich-text editor for long writing, such as a help article, that works the way Notion does:
