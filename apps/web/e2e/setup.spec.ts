@@ -1,3 +1,6 @@
+import { createServer, type Server } from "node:http";
+import { type AddressInfo } from "node:net";
+
 import { expect, test } from "@playwright/test";
 
 import { database } from "./support/database";
@@ -5,20 +8,40 @@ import { emptyMailbox, readSignInCode } from "./support/mailbox";
 
 // The wizard only opens on an install with nobody on its team, which the demo data is not.
 // Run this against a fresh database, as docs/install.md describes:
-//   E2E_PORT=3100 MAILPIT_URL=http://127.0.0.1:55424 pnpm test:e2e setup.spec.ts
+//   E2E_PORT=3170 MAILPIT_URL=http://127.0.0.1:55424 pnpm test:e2e setup.spec.ts
 const ADMIN = { name: "Rosa Diaz", email: "rosa.setup@example.com" };
-// A made-up site, answered by the test itself, that carries the widget as a customer's would.
-const SITE = "http://customer.test/";
 
-test.beforeAll(async () => {
+// A customer's site on another origin, with the HTML snippet the widget step shows pasted in.
+// A real server, because Chrome only lets a page on a local address load the widget from one.
+let site: Server | undefined;
+let siteUrl: string;
+
+test.beforeAll(async ({ baseURL }) => {
   const { count } = await database.from("agents").select("user_id", { count: "exact", head: true });
   test.skip((count ?? 0) > 0, "Needs an install with no team yet; see the note above.");
+
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    response.end(
+      [
+        "<!doctype html><title>Customer</title><body>",
+        `<script src="${baseURL ?? ""}/widget.js"></script>`,
+        '<script>Helpwren.init({ source: "web" });</script>',
+      ].join("\n"),
+    );
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  site = server;
+  siteUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/`;
+});
+
+test.afterAll(() => {
+  site?.close();
 });
 
 test("a new install is set up in the browser, from the first admin to a live widget", async ({
   page,
   context,
-  baseURL,
 }) => {
   await emptyMailbox(page.request);
 
@@ -46,17 +69,13 @@ test("a new install is set up in the browser, from the first admin to a live wid
   await expect(page).toHaveURL(/\/setup\?step=widget$/);
   await expect(page.getByText("Waiting for the widget on your site")).toBeVisible();
 
-  const site = await context.newPage();
-  await site.route(SITE, (route) =>
-    route.fulfill({
-      contentType: "text/html",
-      body: `<!doctype html><title>Customer</title><script src="${baseURL ?? ""}/widget.js"></script>`,
-    }),
-  );
-  await site.goto(SITE);
-  await expect(site.getByRole("button", { name: "Open chat" })).toBeVisible();
-  await expect(page.getByText("Seen on customer.test just now")).toBeVisible({ timeout: 15_000 });
-  await site.close();
+  const customer = await context.newPage();
+  await customer.goto(siteUrl);
+  await expect(customer.getByRole("button", { name: "Open chat" })).toBeVisible();
+  await expect(page.getByText(`Seen on ${new URL(siteUrl).host} just now`)).toBeVisible({
+    timeout: 15_000,
+  });
+  await customer.close();
 
   await page.getByRole("button", { name: "Finish" }).click();
   await expect(page.getByRole("heading", { name: "Helpwren is ready" })).toBeVisible();

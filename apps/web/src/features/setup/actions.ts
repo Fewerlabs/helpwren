@@ -1,7 +1,6 @@
 "use server";
 
 import { HelpwrenError, loginEmailSchema } from "@helpwren/core";
-import { revalidatePath } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
 import { getHelpwren } from "@/lib/helpwren";
@@ -84,11 +83,13 @@ async function isAdmin(): Promise<boolean> {
   return caller?.role === "admin";
 }
 
-/** Closes the wizard, done or skipped. Every step can still be done later in Settings. */
+/**
+ * Closes the wizard, done or skipped. Every step can still be done later in Settings. The page
+ * is not refreshed here: it would redirect away before the "Done" step is shown.
+ */
 export async function finishSetup(): Promise<{ ok: boolean }> {
   if (!(await isAdmin())) return { ok: false };
   await markSetupDone();
-  revalidatePath("/setup");
   return { ok: true };
 }
 
