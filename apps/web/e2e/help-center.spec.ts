@@ -70,13 +70,37 @@ test("a visitor says whether an article helped, once", async ({ page }) => {
     .gte("created_at", new Date(Date.now() - 60_000).toISOString());
 });
 
+test("a visitor finds an article as they type, from the search window", async ({ page }) => {
+  await page.goto(ARTICLE);
+  // The hint appears once the page's script is running, which is when ⌘K starts to work.
+  await expect(page.getByText("⌘K").first()).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+k");
+  const window = page.getByRole("dialog", { name: "Search the help center" });
+  await window.getByRole("searchbox").fill("invoice");
+  await expect(window.getByRole("link", { name: /Read your invoice/ })).toBeVisible();
+
+  // The arrow keys move from the words to the results, and Enter opens one.
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/help\/account-and-billing\/read-your-invoice$/);
+  await expect(window).toHaveCount(0);
+
+  // The byline names who wrote it, and a code block can be copied.
+  await expect(page.getByText("Written by")).toBeVisible();
+  await page.goto(ARTICLE);
+  await expect(page.getByRole("button", { name: "Copy" }).first()).toBeVisible();
+});
+
 test("a visitor searches the help center", async ({ page }) => {
   await page.goto("/help");
-  const search = page.getByRole("searchbox", { name: "Search for articles" });
-  await search.fill("tag manager");
-  await search.press("Enter");
+  // From the large box on the home page: the window opens, and Enter goes to every result.
+  await expect(page.getByText("⌘K").first()).toBeVisible();
+  await page.getByRole("searchbox", { name: "Search for articles" }).click();
+  const window = page.getByRole("dialog", { name: "Search the help center" });
+  await window.getByRole("searchbox").fill("tag manager");
+  await window.getByRole("searchbox").press("Enter");
 
-  await expect(page).toHaveURL(/\/help\/search\?q=tag\+manager$/);
+  await expect(page).toHaveURL(/\/help\/search\?q=tag(\+|%20)manager$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText('Results for "tag manager"');
   const results = page.getByRole("list", { name: "Search results" });
   await expect(results.getByRole("link")).toHaveCount(1);

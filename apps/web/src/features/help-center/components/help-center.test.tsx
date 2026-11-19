@@ -1,4 +1,5 @@
 import { parseSettings, type Article, type HelpwrenClient } from "@helpwren/core";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +13,12 @@ import { HelpShell } from "./help-shell";
 import { JsonLd } from "./json-ld";
 
 vi.mock("../client", () => ({ getReaderClient: vi.fn() }));
+// The router belongs to Next, which a unit test does not have.
+const push = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => "/help",
+}));
 // The chat link makes the widget, which needs a page of its own to live in.
 vi.mock("./help-chat", () => ({ ChatLink: () => <a href="/chat">Chat with us</a> }));
 
@@ -39,6 +46,7 @@ const article: Article = {
   status: "published",
   position: 1,
   authorId: null,
+  author: { name: "Ada Okafor", photo: null },
   publishedAt: "2026-11-01T10:00:00Z",
   updatedAt: "2026-11-18T10:00:00Z",
   tags: ["billing"],
@@ -139,6 +147,52 @@ describe("HelpShell", () => {
   });
 });
 
+describe("searching", () => {
+  it("opens the search window from the box and finds articles as the reader types", async () => {
+    const user = userEvent.setup();
+    const search = vi.fn().mockResolvedValue([article]);
+    vi.mocked(getReaderClient).mockReturnValue({
+      articles: { search },
+    } as unknown as HelpwrenClient);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <HelpShell settings={settings} collections={nav}>
+          <p>The page</p>
+        </HelpShell>
+      </QueryClientProvider>,
+    );
+
+    const [box] = screen.getAllByRole("searchbox", { name: "Search Acme help" });
+    if (!box) throw new Error("The search box was not drawn.");
+    await user.click(box);
+    const window = await screen.findByRole("dialog", { name: "Search the help center" });
+    await user.type(within(window).getByRole("searchbox"), "invoice");
+
+    expect(await within(window).findByRole("link", { name: /Read your invoice/ })).toHaveAttribute(
+      "href",
+      "/help/billing/read-your-invoice",
+    );
+    expect(search).toHaveBeenLastCalledWith("invoice", { visibility: "public", limit: 8 });
+    expect(within(window).getByRole("link", { name: /See every result/ })).toHaveAttribute(
+      "href",
+      "/help/search?q=invoice",
+    );
+  });
+
+  it("opens with ⌘K from anywhere on the page", async () => {
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <HelpShell settings={settings} collections={nav}>
+          <p>The page</p>
+        </HelpShell>
+      </QueryClientProvider>,
+    );
+    await user.keyboard("{Meta>}k{/Meta}");
+    expect(await screen.findByRole("dialog", { name: "Search the help center" })).toBeVisible();
+  });
+});
+
 describe("HelpHero", () => {
   it("greets in the brand's words, with a large search", () => {
     render(<HelpHero settings={settings} />);
@@ -157,6 +211,8 @@ describe("ArticleView", () => {
     render(<ArticleView article={article} next={other} />);
     expect(screen.getByRole("link", { name: "Billing" })).toHaveAttribute("href", "/help/billing");
     expect(screen.getByRole("heading", { level: 1, name: "Read your invoice" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "Ada Okafor" })).toBeInTheDocument();
+    expect(screen.getByText("Written by")).toBeInTheDocument();
     expect(screen.getByText("Was this helpful?")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Chat with us" })).toBeInTheDocument();
     const more = screen.getByRole("navigation", { name: "More in this collection" });

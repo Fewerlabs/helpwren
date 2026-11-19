@@ -36,6 +36,10 @@ inside its own pages as well as link to them.
   read none; the team reads totals through a view. It holds no contact's id, so nothing follows a
   guest who later signs in.
 - **Pictures** live in a public `articles` bucket that only the team writes to.
+- **The byline travels with the article.** Readers see who wrote an article, with their photo,
+  as on Featurebase and Intercom, but visitors cannot read the team. So each article keeps a
+  copy of its author's name and photo, which triggers set when the author changes and refresh
+  when that person changes their name or photo.
 
 ### The body
 
@@ -74,6 +78,10 @@ inside its own pages as well as link to them.
   open, the page in the middle, and an article's contents on the right, marking the heading
   being read. On a narrow screen the list slides in over the page from a button in the bar.
   A banner-and-cards page was built first and read as generic.
+- **Search finds articles as the reader types,** in a window over the page that ⌘K or Ctrl+K
+  opens from anywhere, with the arrow keys to move through it. Before the page's script has
+  started, and inside a host's frame, every search box is a plain form to the results page.
+- **Code blocks have a copy button and name their language**, as documentation sites do.
 - **In the chat, Help lists the collections**, each opening to its articles, with a search
   across all of them, as the established messengers do.
 - **Read as a visitor with no session, whoever is asking**, so a signed-in team member sees what
@@ -108,7 +116,6 @@ inside its own pages as well as link to them.
 - There is no draft of a published article: editing one and saving changes what visitors read.
 - Feedback and uploads are not rate limited. Each is narrow (one row; one image, by the team
   only), but a determined visitor could add many answers.
-- The public pages do not name an article's author, because visitors cannot read the team.
 - View counts, audiences, languages and rules that map a host page to articles are not built.
 - A new node type has to be added in three places: the editor, the renderer and the schema in
   `packages/core/src/rich-text.ts`.

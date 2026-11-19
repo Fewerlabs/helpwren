@@ -11,3 +11,4 @@ style and picture, header and footer links, a search hint, whether to show the c
 title and description for search engines, and a public address; `settings.uploadHeaderImage`
 stores the picture.
 `brand.poweredBy: false` hides the small "Powered by Helpwren" in the chat and the help center.
+An article carries its `author`, a name and a photo that readers with no session can see.

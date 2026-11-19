@@ -5,8 +5,10 @@ import { type HelpEmbed } from "@/lib/help-embed";
 
 import { BrowseDrawer } from "./browse-drawer";
 import { HelpFooter } from "./help-footer";
-import { HelpHeader, SearchBox } from "./help-header";
+import { HelpHeader, searchPlaceholder } from "./help-header";
 import { HelpSidebar, type HelpSidebarProps, type NavCollection } from "./help-sidebar";
+import { SearchBox } from "./search-box";
+import { SearchDialog } from "./search-dialog";
 
 export interface HelpShellProps {
   settings: PublicSettings;
@@ -51,7 +53,12 @@ export function HelpShell({
       <>
         {embed.hide.includes("search") ? null : (
           <header className="mx-auto w-full max-w-3xl px-4 pt-4">
-            <SearchBox settings={settings} query={query} size="sm" embed={embed} />
+            <SearchBox
+              placeholder={searchPlaceholder(settings)}
+              query={query}
+              size="sm"
+              embed={embed}
+            />
           </header>
         )}
         <main className="mx-auto w-full max-w-3xl px-4 py-5">{children}</main>
@@ -76,7 +83,7 @@ export function HelpShell({
       {/* On a phone the search has a row of its own under the bar. */}
       {home ? null : (
         <div className="border-rule border-b px-4 py-2.5 md:hidden">
-          <SearchBox settings={settings} query={query} size="sm" />
+          <SearchBox placeholder={searchPlaceholder(settings)} query={query} size="sm" />
         </div>
       )}
 
@@ -95,6 +102,7 @@ export function HelpShell({
           {aside}
         </aside>
       </div>
+      {inert ? null : <SearchDialog placeholder={searchPlaceholder(settings)} />}
     </div>
   );
 }

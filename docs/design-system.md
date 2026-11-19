@@ -513,7 +513,8 @@ With `icon` it stands for a whole collection of articles, with the icon in a til
 The whole card is one link. Use a plain `Link` for an article mentioned in running text.
 
 **RichText** draws a rich-text document as a page: headings, paragraphs, lists, quotes, code,
-pictures and callouts (`Note`, `Tip`, `Warning`). Give it the `doc` that `RichTextEditor`
+pictures and callouts (`Note`, `Tip`, `Warning`). Code blocks are drawn as `CodeSnippet`, with
+their language named and a button to copy them. Give it the `doc` that `RichTextEditor`
 produced. It runs on the server and loads none of the editor's code. It is safe to show
 whatever was written: it draws only the kinds of node and mark it knows, and follows only web,
 email and phone addresses and paths on the same site, so a document cannot become markup or a

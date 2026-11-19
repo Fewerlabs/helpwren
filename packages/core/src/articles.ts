@@ -28,6 +28,8 @@ const summaryRowSchema = z.object({
   status: articleStatusSchema,
   position: z.number().int(),
   author_id: z.uuid().nullable(),
+  author_name: z.string().nullable(),
+  author_photo: z.string().nullable(),
   published_at: z.string().nullable(),
   updated_at: z.string(),
   tags: z.array(z.string()),
@@ -54,6 +56,8 @@ function toSummary(row: SummaryRow) {
     /** Its place in its collection, lowest first. */
     position: row.position,
     authorId: row.author_id,
+    /** Who wrote it, as readers see it. `null` once its author has left the team. */
+    author: row.author_name ? { name: row.author_name, photo: row.author_photo } : null,
     /** When it was first published. */
     publishedAt: row.published_at,
     /** When its words last changed. */
@@ -187,7 +191,7 @@ export type UploadArticleImageResult =
   { ok: true; url: string } | { ok: false; reason: "forbidden" | "too_large" | "unsupported" };
 
 const SUMMARY_COLUMNS =
-  "id, collection_id, title, slug, summary, status, position, author_id, published_at, updated_at, tags, visibility, featured, meta_title, meta_description, collection:collections(id, name, slug)";
+  "id, collection_id, title, slug, summary, status, position, author_id, author_name, author_photo, published_at, updated_at, tags, visibility, featured, meta_title, meta_description, collection:collections(id, name, slug)";
 const COLUMNS = `${SUMMARY_COLUMNS}, body`;
 
 /** Postgres's codes for what the database refuses. `HW409` is our own, for a locked slug. */

@@ -41,9 +41,10 @@ describe("RichText", () => {
     expect(screen.getAllByRole("list")).toHaveLength(2);
     expect(screen.getAllByRole("list")[1]).toHaveAttribute("start", "3");
     expect(screen.getByText("Quoted").closest("blockquote")).not.toBeNull();
-    // Code is shown as text, never run.
-    expect(screen.getByText("<script>alert(1)</script>").tagName).toBe("CODE");
+    // Code is shown as text, never run, with a button to copy it.
+    expect(document.querySelector("pre")).toHaveTextContent("<script>alert(1)</script>");
     expect(document.querySelector("script")).toBeNull();
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
   });
 
   it("opens links to other sites in a new tab and keeps links within the site in place", () => {
