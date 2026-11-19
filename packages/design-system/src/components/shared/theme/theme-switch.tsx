@@ -1,11 +1,13 @@
 "use client";
 
-import { cn, Icon, Tooltip } from "@helpwren/design-system";
 import { useRef, type KeyboardEvent } from "react";
 
-import { setThemePreference, useThemePreference, type ThemePreference } from "@/lib/theme";
+import { cn } from "#lib/cn";
+import { setThemePreference, useThemePreference, type ThemePreference } from "#lib/theme";
 
-import { themeChoices } from "../choices";
+import { Icon } from "../../base/icon/icon";
+import { Tooltip } from "../../base/tooltip/tooltip";
+import { themeChoices } from "./choices";
 
 export interface ThemeSwitchProps {
   /** What the switch is called for assistive technology, where no words are shown beside it. */

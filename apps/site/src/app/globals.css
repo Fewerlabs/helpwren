@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@import "@helpwren/design-system/styles.css";
+
+/*
+ * The field journal's marks. Every colour is a design token, so light and dark both follow.
+ */
+
+/* Highlighter tape over the corners of something taped in. Dimmer at night. */
+.tape {
+  position: absolute;
+  z-index: 1;
+  width: 4.5rem;
+  height: 1.25rem;
+  background: color-mix(in srgb, var(--highlighter) 45%, transparent);
+  border-radius: 2px;
+}
+.dark .tape {
+  background: color-mix(in srgb, var(--highlighter) 30%, transparent);
+}
+
+/* Words on the highlighter keep their contrast in both themes. */
+.highlighted {
+  color: var(--highlighter-foreground);
+}
+
+/* The halftone of the public pages: brand dots, densest in one corner, fading on every side. */
+.halftone {
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--primary) 55%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 7px 7px;
+  mask-image:
+    radial-gradient(85% 100% at 100% 0%, #000 0%, rgb(0 0 0 / 0.5) 35%, transparent 75%),
+    linear-gradient(to right, transparent, #000 18%, #000 82%, transparent),
+    linear-gradient(to bottom, #000 55%, transparent);
+  mask-composite: intersect;
+}
+.halftone[data-corner="left"] {
+  mask-image:
+    radial-gradient(85% 100% at 0% 0%, #000 0%, rgb(0 0 0 / 0.5) 35%, transparent 75%),
+    linear-gradient(to right, transparent, #000 18%, #000 82%, transparent),
+    linear-gradient(to bottom, #000 55%, transparent);
+}
+.halftone[data-corner="center"] {
+  mask-image: radial-gradient(60% 60% at 50% 50%, #000 0%, rgb(0 0 0 / 0.4) 45%, transparent 80%);
+}
+
+/* The drawings' ink is the text colour; sketches sit in the foreground colour. */
+.sketch {
+  color: var(--foreground);
+}

@@ -13,3 +13,11 @@ export {
   type ColorToken,
   type StatusName,
 } from "./tokens/tokens";
+export {
+  setThemePreference,
+  useTheme,
+  useThemePreference,
+  type Theme,
+  type ThemePreference,
+} from "./lib/theme";
+export { THEME_STORAGE_KEY, themeScript } from "./lib/theme-script";

@@ -1,9 +1,7 @@
 import { type PublicSettings } from "@helpwren/core";
-import { Logo } from "@helpwren/design-system";
+import { Logo, ThemeMenu } from "@helpwren/design-system";
 import Link from "next/link";
 import { type ReactNode } from "react";
-
-import { ThemeMenu } from "@/features/theme";
 
 import { HELP_PATH } from "../urls";
 import { SearchBox } from "./search-box";

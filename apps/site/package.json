@@ -1,0 +1,39 @@
+{
+  "name": "@helpwren/site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Helpwren website at helpwren.fewerlabs.dev: a scroll-driven field journal.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3210",
+    "build": "next build",
+    "start": "next start --port 3210",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@helpwren/design-system": "workspace:*",
+    "next": "^16.4.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^6.3.0",
+    "eslint": "catalog:",
+    "jsdom": "^31.0.1",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

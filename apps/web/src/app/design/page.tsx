@@ -24,21 +24,21 @@ import {
   PageHeader,
   PhoneInput,
   StatusChip,
+  statusNames,
   Switch,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
   TagsInput,
+  ThemeMenu,
   Wren,
-  statusNames,
   wrenScenes,
 } from "@helpwren/design-system";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { CannedReplies } from "@/features/example";
-import { ThemeMenu } from "@/features/theme";
 
 export const metadata: Metadata = {
   title: "Design system",

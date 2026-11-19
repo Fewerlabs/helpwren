@@ -32,3 +32,6 @@ export {
   typingLabel,
   type TypingIndicatorProps,
 } from "./typing-indicator/typing-indicator";
+export { themeChoices } from "./theme/choices";
+export { ThemeMenu, type ThemeMenuProps } from "./theme/theme-menu";
+export { ThemeSwitch, type ThemeSwitchProps } from "./theme/theme-switch";
