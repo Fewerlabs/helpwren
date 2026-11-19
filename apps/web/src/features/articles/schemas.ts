@@ -11,15 +11,3 @@ export const collectionFormSchema = z.object({
   icon: z.string(),
 });
 export type CollectionFormValues = z.infer<typeof collectionFormSchema>;
-
-/** The form that starts an article. */
-export const newArticleSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(1, "Give the article a title.")
-    .max(160, "Keep the title under 160 characters."),
-  /** A collection's id, or empty for none yet. */
-  collectionId: z.string(),
-});
-export type NewArticleValues = z.infer<typeof newArticleSchema>;
