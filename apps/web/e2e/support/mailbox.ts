@@ -78,10 +78,18 @@ export async function signInToInbox(page: Page, email: string) {
     await page.goto("/login");
     await page.getByLabel("Work email").fill(email);
     await page.getByRole("button", { name: "Email me a code" }).click();
+    // Only once the page asks for the code was this request taken; a code that arrives without
+    // that was asked for by someone else.
+    const codeField = page.getByLabel("Sign-in code");
+    const asked = await codeField.waitFor({ timeout: 10_000 }).then(
+      () => true,
+      () => false,
+    );
+    if (!asked) continue;
     const code = await readSignInCode(page.request, mark).catch(() => undefined);
     if (code === undefined) continue;
     // The last digit of the code sends the form; there is no button to press.
-    await page.getByLabel("Sign-in code").fill(code);
+    await codeField.fill(code);
 
     const outcome = await Promise.race([
       page.waitForURL(/\/dashboard\/inbox$/, { timeout: 15_000 }).then(

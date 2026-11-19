@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { RUN, database, removeContactByEmail } from "./support/database";
+import { database, removeContactByEmail, removeContacts, RUN } from "./support/database";
 
 // Runs against the local Supabase stack and its demo data, which asks guests for a name and an
 // email or phone number. The team's side is played through the database until the inbox exists.
@@ -14,6 +14,9 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await removeContactByEmail(VISITOR.email);
+  // The guest who gave a phone number has no email to be found by; their name carries the mark.
+  const { data } = await database.from("contacts").select("id").eq("name", VISITOR.name);
+  await removeContacts((data ?? []).map((contact) => contact.id));
 });
 
 async function conversationOf(email: string) {
@@ -115,8 +118,4 @@ test("a visitor can give a phone number in place of an email", async ({ page }) 
     .eq("name", VISITOR.name)
     .single();
   expect(data).toMatchObject({ name: VISITOR.name, email: null });
-  if (data) {
-    await database.from("conversations").delete().eq("contact_id", data.id);
-    await database.auth.admin.deleteUser(data.id);
-  }
 });

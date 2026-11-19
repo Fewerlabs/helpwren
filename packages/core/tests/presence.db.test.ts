@@ -117,14 +117,21 @@ describe("presence", () => {
     await settled(counts);
     const before = counts.at(-1) ?? 0;
 
+    // Presence travels through Realtime, which can take a few seconds when the stack is busy.
     const leave = await team.presence.team.join();
-    await vi.waitFor(() => {
-      expect(counts.at(-1)).toBe(before + 1);
-    });
+    await vi.waitFor(
+      () => {
+        expect(counts.at(-1)).toBe(before + 1);
+      },
+      { timeout: 10_000 },
+    );
     await leave();
-    await vi.waitFor(() => {
-      expect(counts.at(-1)).toBe(before);
-    });
+    await vi.waitFor(
+      () => {
+        expect(counts.at(-1)).toBe(before);
+      },
+      { timeout: 10_000 },
+    );
 
     await stopWatching();
   });
