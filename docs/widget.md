@@ -102,10 +102,15 @@ follow them to every device, and what they wrote as a guest on this one becomes 
 </script>
 ```
 
-Your server makes the token: a JWT signed with HS256 and a signing key from your install, with
-the user's id in `sub`, an `exp` no more than a day ahead (a few minutes is plenty), and
-optionally `name`, `email`, `org: { id, name }`, `audience` and `attributes`. Never sign it in
-the browser or ship the key in an app: anyone holding the key can be any of your users.
+Choose how tokens are checked in **Settings > Identity**. There are two ways:
+
+- **Signed token.** Your server makes the token: a JWT signed with HS256 and a signing key from your install, with
+  the user's id in `sub`, an `exp` no more than a day ahead (a few minutes is plenty), and
+  optionally `name`, `email`, `org: { id, name }`, `audience` and `attributes`. Never sign it in
+  the browser or ship the key in an app: anyone holding the key can be any of your users.
+- **Profile endpoint.** Hand over the access token your own app already has. The install asks
+  your product's "who am I" address whose it is, and reads the answer through a mapping you set
+  on the Identity page. No new code on your server. A test box there checks a real token first.
 
 Call `identify` straight after `init` on every page where someone is logged in. A page that
 loads without it shows a guest's chat, even if a user was signed in there before, so someone who

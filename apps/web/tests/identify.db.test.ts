@@ -243,4 +243,25 @@ describe("POST /api/identify", () => {
       await setMode("signed_token");
     }
   });
+
+  it("says when the host product cannot be asked, rather than that the token is bad", async () => {
+    // Nothing listens on port 9 here: the product is down.
+    const { error } = await supabaseAdmin.from("settings").upsert({
+      key: IDENTITY_SETTING,
+      value: {
+        mode: "profile_endpoint",
+        endpoint: { url: "http://127.0.0.1:9/me", fields: { id: "id" } },
+      },
+    });
+    if (error) throw error;
+    try {
+      const response = await post({ token: "users-own-token" });
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toMatchObject({
+        error: { code: "identity_unavailable" },
+      });
+    } finally {
+      await setMode("signed_token");
+    }
+  });
 });

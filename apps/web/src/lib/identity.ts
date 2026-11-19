@@ -3,6 +3,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 
 import {
+  IdentityError,
   identitySettingsSchema,
   profileEndpoint,
   signedToken,
@@ -96,13 +97,34 @@ export async function removeSigningKey(id: string): Promise<void> {
   await saveSigningKeys(keys.filter((key) => key.id !== id));
 }
 
-/**
- * Confirms who a token belongs to, in the way this install is set up to. Returns `null` when
- * the install does not identify anyone, and throws an `IdentityError` when the token is not
- * accepted. The token is used for this and not kept.
- */
-export async function verifyIdentity(token: string): Promise<VerifiedIdentity | null> {
-  const settings = await getIdentitySettings();
+export type IdentityTestResult =
+  { ok: true; identity: VerifiedIdentity } | { ok: false; detail: string };
+
+/** Runs a token through the given settings, for an admin trying them out. Keeps nothing. */
+export async function testIdentityToken(
+  settings: IdentitySettings,
+  token: string,
+): Promise<IdentityTestResult> {
+  try {
+    const identity = await verifyWith(settings, token);
+    if (identity) return { ok: true, identity };
+    return {
+      ok: false,
+      detail:
+        settings.mode === "none"
+          ? "Choose a way to identify users first."
+          : "Create a signing key first.",
+    };
+  } catch (error) {
+    if (error instanceof IdentityError) return { ok: false, detail: error.message };
+    throw error;
+  }
+}
+
+async function verifyWith(
+  settings: IdentitySettings,
+  token: string,
+): Promise<VerifiedIdentity | null> {
   if (settings.mode === "none") return null;
   if (settings.mode === "profile_endpoint") return profileEndpoint.verify(token, settings.endpoint);
 
@@ -110,4 +132,13 @@ export async function verifyIdentity(token: string): Promise<VerifiedIdentity | 
   // With no key made yet, nothing could have signed a token this install accepts.
   if (keys.length === 0) return null;
   return signedToken.verify(token, { keys });
+}
+
+/**
+ * Confirms who a token belongs to, in the way this install is set up to. Returns `null` when
+ * the install does not identify anyone, and throws an `IdentityError` when the token is not
+ * accepted. The token is used for this and not kept.
+ */
+export async function verifyIdentity(token: string): Promise<VerifiedIdentity | null> {
+  return verifyWith(await getIdentitySettings(), token);
 }
