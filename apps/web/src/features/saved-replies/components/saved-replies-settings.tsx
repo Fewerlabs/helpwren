@@ -119,7 +119,7 @@ export function SavedRepliesSettings({ agent, members }: SavedRepliesSettingsPro
     {
       id: "shortcut",
       header: "Shortcut",
-      width: "8rem",
+      width: "7rem",
       cell: (reply) =>
         reply.shortcut ? (
           <span className="font-mono text-xs">/{reply.shortcut}</span>
@@ -127,12 +127,12 @@ export function SavedRepliesSettings({ agent, members }: SavedRepliesSettingsPro
           <span className="text-muted-foreground">None</span>
         ),
     },
-    { id: "visibility", header: "Visibility", width: "7rem", cell: visibility },
-    { id: "author", header: "Author", width: "9rem", cell: authorName },
+    { id: "visibility", header: "Visibility", width: "6rem", cell: visibility },
+    { id: "author", header: "Author", width: "8rem", cell: authorName },
     {
       id: "actions",
       header: <span className="sr-only">Actions</span>,
-      width: "10rem",
+      width: "9.5rem",
       cell: actions,
     },
   ];
@@ -163,7 +163,8 @@ export function SavedRepliesSettings({ agent, members }: SavedRepliesSettingsPro
         queryFn={async () => ({
           items: await getClient().savedReplies.list({ search: searchText }),
         })}
-        pagination="pages"
+        // The whole set, in one go: a team keeps tens of these, not thousands.
+        pagination="none"
       >
         {(list) => (
           <DataTable
