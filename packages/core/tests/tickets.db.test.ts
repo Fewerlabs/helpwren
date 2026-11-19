@@ -195,6 +195,55 @@ describe("filtering and searching tickets", () => {
     });
     expect(resolvedTickets).toEqual([]);
   });
+
+  it("pages through every match of a search, filtering before it pages", async () => {
+    const { client } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    // A word no other conversation has, on more tickets than the inbox's short list holds.
+    const word = `zebracrossing${Date.now()}`;
+    const start = Date.parse("2020-01-01T00:00:00Z");
+    const { error } = await serverClient()
+      .from("conversations")
+      .insert(
+        Array.from({ length: 60 }, (_, index) => ({
+          contact_id: guest.session.id,
+          type: "ticket",
+          subject: `${word} ${index}`,
+          source: "web",
+          // A third of them resolved, to check the filter narrows the count.
+          status: index % 3 === 0 ? "resolved" : "open",
+          last_message_at: new Date(start + index * 60_000).toISOString(),
+        })),
+      );
+    if (error) throw error;
+
+    const second = await client.conversations.list({
+      search: ` ${word} `,
+      type: "ticket",
+      page: 2,
+      limit: 25,
+    });
+    expect(second.total).toBe(60);
+    // Most recently active first: the second page holds numbers 34 down to 10.
+    expect(second.items.map((item) => item.subject)).toEqual(
+      Array.from({ length: 25 }, (_, index) => `${word} ${34 - index}`),
+    );
+
+    const open = await client.conversations.list({
+      search: word,
+      type: "ticket",
+      status: ["open"],
+      page: 2,
+      limit: 25,
+    });
+    expect(open.total).toBe(40);
+    expect(open.items).toHaveLength(15);
+    expect(open.items.every((item) => item.status === "open")).toBe(true);
+
+    // The inbox's short list stays short.
+    await expect(client.conversations.search(word)).resolves.toHaveLength(50);
+    await expect(client.conversations.search(word, {}, { limit: 5 })).resolves.toHaveLength(5);
+  });
 });
 
 describe("activity", () => {

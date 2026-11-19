@@ -53,12 +53,22 @@ test("a team member writes an article, publishes it and takes it down again", as
   await page.getByRole("button", { name: "New collection" }).click();
   const collectionForm = page.getByRole("dialog", { name: "New collection" });
   await collectionForm.getByLabel("Name").fill(`Shipping (${RUN})`);
-  // The radio itself is hidden under its icon, which is what a person presses.
-  await collectionForm.getByTitle("Parcel").click();
-  await expect(collectionForm.getByRole("radio", { name: "Parcel" })).toBeChecked();
+  // Any of Phosphor's icons, found by searching.
+  const icons = collectionForm.getByRole("listbox", { name: "Icon" });
+  await collectionForm.getByRole("searchbox", { name: "Search icons" }).fill("rocket");
+  await icons.getByRole("option", { name: "Rocket", exact: true }).click();
+  await expect(icons.getByRole("option", { name: "Rocket", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await collectionForm.getByRole("button", { name: "Add collection" }).click();
   await expect(page).toHaveURL(new RegExp(`collection=shipping-${RUN}`));
   await expect(page.getByText("Nothing in this collection yet")).toBeVisible();
+  const navIcon = page
+    .getByRole("navigation", { name: "Collections" })
+    .getByRole("link", { name: `Shipping (${RUN})` })
+    .locator("[data-slot=collection-icon]");
+  await expect(navIcon).toHaveAttribute("style", /\/api\/icons\/duotone\/rocket\.svg/);
 
   // A new article opens straight in an empty editor, ready for its title. Nothing exists yet.
   await page.getByRole("button", { name: "New article" }).click();
@@ -114,6 +124,18 @@ test("a team member writes an article, publishes it and takes it down again", as
       { timeout: 75_000, intervals: [500, 1_000, 2_000, 5_000] },
     )
     .toBe(true);
+
+  // The public help center wears the collection's chosen icon, drawn from the icon route.
+  const reader = await page.context().newPage();
+  await reader.goto(`/help/shipping-${RUN}`);
+  const heading = reader.getByRole("heading", { level: 1, name: `Shipping (${RUN})` });
+  await expect(heading.locator("[data-slot=collection-icon]")).toHaveAttribute(
+    "style",
+    /\/api\/icons\/duotone\/rocket\.svg/,
+  );
+  const svg = await reader.request.get("/api/icons/duotone/rocket.svg");
+  expect(svg.headers()["content-type"]).toBe("image/svg+xml");
+  await reader.close();
 
   // Unpublishing asks first.
   await page.getByRole("button", { name: "Unpublish" }).click();

@@ -2,7 +2,6 @@ import { cn } from "@helpwren/design-system";
 import Link from "next/link";
 
 import { articlePath, collectionPath } from "../urls";
-import { iconOf } from "./collection-grid";
 import { SidebarGroup } from "./sidebar-group";
 
 /** A collection as the sidebar lists it: its name and the titles under it. */
@@ -39,7 +38,7 @@ export function HelpSidebar({ collections, current }: HelpSidebarProps) {
           <SidebarGroup
             key={collection.id}
             name={collection.name}
-            icon={iconOf(collection.icon)}
+            icon={collection.icon}
             count={collection.articles.length}
             defaultOpen={here || total <= OPEN_ALL_UP_TO}
           >

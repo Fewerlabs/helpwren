@@ -3,7 +3,7 @@
 export { ArticleFeedback } from "./components/article-feedback";
 export { ArticleView, type ArticleViewProps } from "./components/article-view";
 export { Breadcrumbs, type Crumb } from "./components/breadcrumbs";
-export { ArticleList, CollectionGrid, iconOf } from "./components/collection-grid";
+export { ArticleList, CollectionGrid } from "./components/collection-grid";
 export { Contents } from "./components/contents";
 export { EmbedFrame } from "./components/embed-frame";
 export { HelpChatLauncher } from "./components/help-chat";

@@ -102,6 +102,7 @@ export {
   type ConversationWithContact,
   type ListConversationsOptions,
   type Page,
+  type SearchConversationsOptions,
   type StartConversationInput,
   type StartConversationResult,
   type UnreadSide,

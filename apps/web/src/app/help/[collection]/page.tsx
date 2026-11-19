@@ -1,4 +1,4 @@
-import { Icon } from "@helpwren/design-system";
+import { CollectionIcon } from "@helpwren/design-system";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -11,7 +11,6 @@ import {
   HELP_PATH,
   helpMetadata,
   HelpShell,
-  iconOf,
   JsonLd,
 } from "@/features/help-center";
 import { getHelpCollections, getHelpSettings } from "@/lib/help-center-data";
@@ -58,11 +57,7 @@ export default async function HelpCollectionPage({ params }: Props) {
       </Link>
       <header className="mb-8">
         <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-balance">
-          <Icon
-            name={iconOf(collection.icon)}
-            weight="duotone"
-            className="text-primary size-7 shrink-0"
-          />
+          <CollectionIcon name={collection.icon} weight="duotone" className="text-primary size-7" />
           {collection.name}
         </h1>
         {collection.description ? (
