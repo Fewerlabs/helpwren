@@ -151,6 +151,23 @@ const ticketsSchema = z.object({
   fromChat: z.boolean().default(true),
 });
 
+/** Where answers to the install's emails come in, and how. */
+export const inboundProviderSchema = z.enum(["resend", "postmark", "generic"]);
+export type InboundProvider = z.infer<typeof inboundProviderSchema>;
+
+const inboundSchema = z.object({
+  /** Contacts may answer an email from their mail app, into the same conversation. */
+  enabled: z.boolean().default(false),
+  /**
+   * The address replies go to, such as `reply@support.example.com`. Each email adds a signed
+   * part after a plus: `reply+<token>@support.example.com`.
+   */
+  address: z.email().optional(),
+  provider: inboundProviderSchema.default("resend"),
+});
+
+export type InboundEmailSettings = z.infer<typeof inboundSchema>;
+
 /** Who emails come from. The name falls back to the brand's. */
 const emailSchema = z.object({
   fromName: z.string().min(1).optional(),
@@ -159,6 +176,7 @@ const emailSchema = z.object({
   replies: z.boolean().default(true),
   /** Email a contact when the team changes their ticket's status. */
   status: z.boolean().default(true),
+  inbound: inboundSchema.default(() => inboundSchema.parse({})),
 });
 
 export type EmailSettings = z.infer<typeof emailSchema>;
@@ -294,6 +312,18 @@ export const settingsPatchSchema = z
       fromAddress: z.string().trim().toLowerCase().pipe(z.email()).optional(),
       replies: z.boolean(),
       status: z.boolean(),
+      inbound: z.object({
+        enabled: z.boolean(),
+        // A plus of its own would be taken for the start of the signed part.
+        address: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .pipe(z.email())
+          .refine((address) => !address.split("@")[0]?.includes("+"))
+          .optional(),
+        provider: inboundProviderSchema,
+      }),
     }),
     helpCenter: pageTextPatchSchema.extend({
       headerStyle: helpHeaderStyleSchema,

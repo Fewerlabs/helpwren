@@ -375,6 +375,7 @@ export type Database = {
           unread_for_agents: number;
           unread_for_contact: number;
           updated_at: string;
+          via_email: boolean;
         };
         ComputedFields: never;
         Insert: {
@@ -397,6 +398,7 @@ export type Database = {
           unread_for_agents?: number;
           unread_for_contact?: number;
           updated_at?: string;
+          via_email?: boolean;
         };
         Update: {
           assignee_id?: string | null;
@@ -418,6 +420,7 @@ export type Database = {
           unread_for_agents?: number;
           unread_for_contact?: number;
           updated_at?: string;
+          via_email?: boolean;
         };
         Relationships: [
           {
@@ -560,6 +563,52 @@ export type Database = {
           },
           {
             foreignKeyName: "email_queue_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inbound_emails: {
+        Row: {
+          conversation_id: string;
+          email_id: string;
+          id: string;
+          message_id: string | null;
+          outcome: string;
+          received_at: string;
+          sender: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          conversation_id: string;
+          email_id: string;
+          id?: string;
+          message_id?: string | null;
+          outcome: string;
+          received_at?: string;
+          sender: string;
+        };
+        Update: {
+          conversation_id?: string;
+          email_id?: string;
+          id?: string;
+          message_id?: string | null;
+          outcome?: string;
+          received_at?: string;
+          sender?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inbound_emails_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inbound_emails_message_id_fkey";
             columns: ["message_id"];
             isOneToOne: false;
             referencedRelation: "messages";
@@ -1121,6 +1170,16 @@ export type Database = {
       };
       link_visitor: { Args: { contact_id: string; visitor_id: string }; Returns: undefined };
       merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
+      receive_email_reply: {
+        Args: {
+          attachments?: Json;
+          body: string;
+          conversation_id: string;
+          email_id: string;
+          sender: string;
+        };
+        Returns: string;
+      };
       record_visit: {
         Args: {
           browser?: string;
@@ -1194,6 +1253,7 @@ export type Database = {
           unread_for_agents: number;
           unread_for_contact: number;
           updated_at: string;
+          via_email: boolean;
         }[];
         SetofOptions: {
           from: "*";

@@ -1,13 +1,20 @@
 "use client";
 
-import { type Settings } from "@helpwren/core";
-import { Badge, Button, FieldList, toast, type FieldItem } from "@helpwren/design-system";
+import { type InboundProvider, type Settings } from "@helpwren/core";
+import {
+  Badge,
+  Button,
+  CodeSnippet,
+  FieldList,
+  toast,
+  type FieldItem,
+} from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
-import { saveEmail, sendTestEmail } from "../actions";
+import { makeInboundSecret, saveEmail, sendTestEmail } from "../actions";
 import { emailSchema, type EmailValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
@@ -18,14 +25,90 @@ export interface EmailFormProps {
   provider: string | null;
   /** Where a test email goes: the signed-in admin's own address. */
   testAddress: string;
+  /** Which secrets for replies by email are saved. Their values never reach the browser. */
+  inbound: {
+    secret: boolean;
+    resendSigningSecret: boolean;
+    resendApiKey: boolean;
+    serverResendKey: boolean;
+    lastReceivedAt: string | null;
+  };
+  /** This install's address, for the webhook. */
+  origin: string;
   canEdit: boolean;
 }
 
-/** Who the install's emails are from, how they are sent, and a way to try it. */
-export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFormProps) {
+const providerOptions = [
+  { value: "resend", label: "Resend" },
+  { value: "postmark", label: "Postmark" },
+  { value: "generic", label: "Another provider (signed JSON)" },
+];
+
+const receivedFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
+
+/** The steps to have a provider pass replies on, in the order they are done. */
+function checklist(provider: InboundProvider, domain: string): string[] {
+  switch (provider) {
+    case "resend":
+      return [
+        `In Resend, add ${domain} under Domains and turn on receiving. Add the MX record Resend shows to your DNS. Use a subdomain, such as support.example.com, so mail to your main domain is not affected.`,
+        "In Resend, add a webhook for the email.received event, with the address below.",
+        "Paste the webhook's signing secret here. Replies are read through Resend's API, so this install also needs an API key: the server's RESEND_API_KEY, or one pasted here.",
+        "Save, then reply to one of your own test emails.",
+      ];
+    case "postmark":
+      return [
+        "In Postmark, open your server's inbound stream.",
+        `To use your own domain, add an MX record for ${domain} pointing at inbound.postmarkapp.com (priority 10), and set ${domain} as the inbound domain.`,
+        "Make a secret below, and paste the webhook address, with the secret in it, as the inbound webhook URL.",
+        "Save, then reply to one of your own test emails.",
+      ];
+    case "generic":
+      return [
+        `Point ${domain}'s mail at your provider or bridge, as it explains.`,
+        "Make a secret below, and have the bridge post each email to the address below as JSON, signed with it.",
+        "Save, then reply to one of your own test emails.",
+      ];
+  }
+}
+
+const genericSample = (url: string) =>
+  [
+    'import { createHmac } from "node:crypto";',
+    "",
+    "const body = JSON.stringify({",
+    '  from: "Priya Shah <priya@example.org>",',
+    '  to: ["reply+<token>@support.example.com"],',
+    "  // cc, deliveredTo: more addresses it was for",
+    '  subject: "Re: New reply",',
+    '  text: "Thanks, that worked.",',
+    "  // html, messageId, inReplyTo, references",
+    "  attachments: [], // { name, type, content: base64, inline }",
+    "});",
+    "const t = Math.floor(Date.now() / 1000);",
+    'const v1 = createHmac("sha256", SECRET).update(`${t}.${body}`).digest("hex");',
+    "",
+    `await fetch("${url}", {`,
+    '  method: "POST",',
+    '  headers: { "content-type": "application/json", "helpwren-signature": `t=${t},v1=${v1}` },',
+    "  body,",
+    "});",
+  ].join("\n");
+
+/** Who the install's emails are from, how they are sent, how replies come back, and a test. */
+export function EmailForm({
+  settings,
+  provider,
+  testAddress,
+  inbound,
+  origin,
+  canEdit,
+}: EmailFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [making, setMaking] = useState(false);
+  const [newSecret, setNewSecret] = useState<string | null>(null);
   const form = useForm<EmailValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
@@ -33,9 +116,19 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
       fromAddress: settings.email.fromAddress ?? "",
       replies: settings.email.replies,
       status: settings.email.status,
+      inboundEnabled: settings.email.inbound.enabled,
+      replyAddress: settings.email.inbound.address ?? "",
+      inboundProvider: settings.email.inbound.provider,
+      resendSigningSecret: "",
+      resendApiKey: "",
     },
   });
+  const [inboundEnabled, inboundProvider, replyAddress] = useWatch({
+    control: form.control,
+    name: ["inboundEnabled", "inboundProvider", "replyAddress"],
+  });
   const disabled = !canEdit || form.formState.isSubmitting;
+  const hasSecret = inbound.secret || newSecret !== null;
 
   const fields: FieldItem<EmailValues>[] = [
     {
@@ -69,15 +162,69 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
     },
   ];
 
+  const inboundSwitch: FieldItem<EmailValues>[] = [
+    {
+      name: "inboundEnabled",
+      label: "Let contacts reply by email",
+      type: "switch",
+      hint: "Their answer lands in the same conversation, as if they had written in the chat.",
+    },
+  ];
+
+  const inboundFields: FieldItem<EmailValues>[] = [
+    {
+      name: "replyAddress",
+      label: "Reply address",
+      type: "input",
+      hint: "Each email adds a signed part after a plus, such as reply+k7f…@support.example.com, so a reply finds its conversation and nobody can write into someone else's.",
+      props: { type: "email", autoCapitalize: "none", placeholder: "reply@support.example.com" },
+    },
+    {
+      name: "inboundProvider",
+      label: "Received by",
+      type: "select",
+      props: { options: providerOptions },
+    },
+  ];
+
+  const resendFields: FieldItem<EmailValues>[] = [
+    {
+      name: "resendSigningSecret",
+      label: inbound.resendSigningSecret ? "Replace the signing secret" : "Webhook signing secret",
+      type: "input",
+      hint: "On the webhook's page in Resend. It starts with whsec_.",
+      props: {
+        type: "password",
+        autoComplete: "off",
+        placeholder: inbound.resendSigningSecret ? "Leave empty to keep the saved secret" : "",
+      },
+    },
+    {
+      name: "resendApiKey",
+      label: inbound.resendApiKey ? "Replace the API key" : "API key",
+      type: "input",
+      hint: inbound.serverResendKey
+        ? "Leave empty to use the server's RESEND_API_KEY. A key that may send cannot always read; use a full-access key if replies do not arrive."
+        : "Resend's webhook says only that an email arrived; its words and files are read with this key.",
+      props: {
+        type: "password",
+        autoComplete: "off",
+        placeholder: inbound.resendApiKey ? "Leave empty to keep the saved key" : "re_…",
+      },
+    },
+  ];
+
   async function save(values: EmailValues) {
     setSaved(false);
     try {
       const result = await saveEmail(values);
       if (result.ok) {
-        form.reset(values);
+        form.reset({ ...values, resendSigningSecret: "", resendApiKey: "" });
         setSaved(true);
         toast.success("Changes saved");
         router.refresh();
+      } else if (result.reason === "invalid" && values.inboundEnabled && !values.replyAddress) {
+        form.setError("replyAddress", { message: "Enter the address replies should go to." });
       } else {
         form.setError("root", { message: saveErrors[result.reason] });
       }
@@ -100,7 +247,31 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
     }
   }
 
+  async function makeSecret() {
+    setMaking(true);
+    try {
+      const result = await makeInboundSecret();
+      if (result.ok) {
+        setNewSecret(result.secret);
+        router.refresh();
+      } else {
+        toast.error(saveErrors.forbidden);
+      }
+    } catch {
+      toast.error("The secret could not be made. Try again.");
+    } finally {
+      setMaking(false);
+    }
+  }
+
   const ready = provider !== null && Boolean(settings.email.fromAddress);
+  const webhook = new URL(`/api/email/inbound/${inboundProvider}`, origin);
+  // Postmark has no signatures; the secret travels as the password in the address.
+  const webhookUrl =
+    inboundProvider === "postmark"
+      ? `${webhook.protocol}//postmark:${newSecret ?? "<secret>"}@${webhook.host}${webhook.pathname}`
+      : webhook.href;
+  const domain = /@(.+)$/.exec(replyAddress)?.[1] ?? "your reply domain";
 
   return (
     <form
@@ -137,6 +308,106 @@ export function EmailForm({ settings, provider, testAddress, canEdit }: EmailFor
         description="When a contact who gave an email address hears from you by email as well as in the chat."
       >
         <FieldList control={form.control} fields={contactFields} disabled={disabled} />
+      </SettingsSection>
+      <SettingsSection
+        title="Replies by email"
+        description="Contacts answer the emails above from their mail app. Your mail provider receives the reply and passes it to this install."
+      >
+        <FieldList control={form.control} fields={inboundSwitch} disabled={disabled} />
+        {inboundEnabled ? (
+          <>
+            <FieldList control={form.control} fields={inboundFields} disabled={disabled} />
+            <div className="grid gap-2">
+              <p className="font-medium">Setting it up</p>
+              <ol className="text-muted-foreground grid list-decimal gap-1 pl-5 text-xs">
+                {checklist(inboundProvider, domain).map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </div>
+            <div className="grid gap-2">
+              <p className="font-medium">Webhook address</p>
+              <CodeSnippet
+                variant="inline"
+                aria-label="Webhook address"
+                code={webhookUrl}
+                copyLabel="Copy address"
+                copiedLabel="Address copied"
+                copiedMessage="Address copied"
+              />
+            </div>
+            {inboundProvider === "resend" ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  {inbound.resendSigningSecret ? (
+                    <Badge variant="accent">Signing secret saved</Badge>
+                  ) : (
+                    <Badge variant="outline">No signing secret</Badge>
+                  )}
+                  {inbound.resendApiKey ? (
+                    <Badge variant="accent">API key saved</Badge>
+                  ) : inbound.serverResendKey ? (
+                    <Badge variant="outline">Using the server&apos;s API key</Badge>
+                  ) : (
+                    <Badge variant="outline">No API key</Badge>
+                  )}
+                </div>
+                <FieldList control={form.control} fields={resendFields} disabled={disabled} />
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  {hasSecret ? (
+                    <Badge variant="accent">Secret saved</Badge>
+                  ) : (
+                    <Badge variant="outline">No secret</Badge>
+                  )}
+                </div>
+                {newSecret ? (
+                  <div role="status" className="grid gap-2">
+                    <p className="font-medium">Copy the secret now. It will not be shown again.</p>
+                    <CodeSnippet
+                      variant="inline"
+                      aria-label="Inbound secret"
+                      code={newSecret}
+                      copyLabel="Copy secret"
+                      copiedLabel="Secret copied"
+                      copiedMessage="Secret copied"
+                    />
+                  </div>
+                ) : null}
+                {canEdit ? (
+                  <div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      loading={making}
+                      onClick={() => {
+                        void makeSecret();
+                      }}
+                    >
+                      {hasSecret ? "Make a new secret" : "Make a secret"}
+                    </Button>
+                  </div>
+                ) : null}
+                {inboundProvider === "generic" ? (
+                  <CodeSnippet
+                    wrap
+                    tabs={[{ label: "Node.js", language: "js", code: genericSample(webhook.href) }]}
+                    tabsLabel="Posting an email"
+                    copiedMessage="Code copied"
+                  />
+                ) : null}
+              </>
+            )}
+            <p role="note" className="text-muted-foreground text-xs">
+              {inbound.lastReceivedAt
+                ? `Last reply received ${receivedFormat.format(new Date(inbound.lastReceivedAt))}.`
+                : "No replies have arrived yet."}
+            </p>
+          </>
+        ) : null}
       </SettingsSection>
       {canEdit ? (
         <SettingsSection
