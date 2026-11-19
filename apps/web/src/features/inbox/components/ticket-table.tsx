@@ -16,6 +16,7 @@ import {
   FilterBar,
   Icon,
   InlineSelect,
+  Pagination,
   QueryList,
   SearchField,
   StatusChip,
@@ -45,6 +46,8 @@ import {
   unassigned,
 } from "../options";
 import { PriorityLabel } from "./priority-label";
+
+const PAGE_SIZE = 25;
 
 /** Turns what the filter bar holds into what the database is asked for. No values means any. */
 function toFilter(value: FilterValue): ConversationFilter {
@@ -198,28 +201,32 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
   );
 
   return (
-    <QueryList<ConversationWithContact, string>
-      // Under the inbox's key, so a change anywhere in the inbox refreshes the table too.
+    <QueryList<ConversationWithContact>
+      // Under the inbox's key, so a change anywhere in the inbox refreshes the table too. A new
+      // filter or search changes the key, which starts the table on page 1.
       queryKey={[...INBOX_QUERY_KEY, "tickets", filter, searching ? searchText : ""]}
-      queryFn={async ({ cursor, pageSize }) => {
+      queryFn={async ({ page, pageSize = PAGE_SIZE }) => {
         const client = getClient();
-        // Filtering, searching and paging are all the database's work.
-        return searching
-          ? { items: await client.conversations.search(searchText, filter) }
-          : client.conversations.list({ ...filter, cursor, limit: pageSize });
+        if (!searching) {
+          // Filtering and paging are the database's work.
+          return client.conversations.list({ ...filter, page, limit: pageSize });
+        }
+        // A search returns its best few dozen matches at once, so they are paged here.
+        const found = await client.conversations.search(searchText, filter);
+        const start = (page - 1) * pageSize;
+        return { items: found.slice(start, start + pageSize), total: found.length };
       }}
-      pageSize={50}
-      loadMoreOn="button"
+      pagination="pages"
+      pageSize={PAGE_SIZE}
     >
       {(list) => (
         <Panel aria-label="Tickets" className="h-full">
           <PanelHeader>
             <h2 className="flex items-baseline gap-1.5 font-semibold">
               Tickets
-              {list.status === "loading" ? null : (
+              {list.total === undefined ? null : (
                 <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                  {list.items.length}
-                  {list.hasMore ? "+" : ""}
+                  {list.total}
                 </span>
               )}
             </h2>
@@ -261,77 +268,70 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
                 }
               />
             ) : (
-              <>
-                <DataTable
-                  caption="Tickets"
-                  density="compact"
-                  columns={columns}
-                  rows={list.items}
-                  getRowKey={(ticket) => ticket.id}
-                  // A phone has room for the subject and a line under it, so the row is read,
-                  // then opened to change it.
-                  renderMobileRow={(ticket) => {
-                    const assignee = team.find((member) => member.id === ticket.assigneeId);
-                    const group = teams.find((item) => item.id === ticket.teamId);
-                    return (
-                      <button
-                        type="button"
-                        className="hover:bg-muted/50 focus-visible:outline-ring grid w-full gap-1.5 px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
-                        onClick={() => {
-                          onOpen(ticket.id);
-                        }}
-                      >
-                        <span className="flex items-baseline gap-2">
-                          <span className="text-muted-foreground shrink-0 font-mono text-xs">
-                            {ticketLabel(ticket)}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate font-medium">
-                            {ticket.subject ?? ticket.lastMessagePreview}
-                          </span>
-                          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                            {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
-                          </span>
-                        </span>
-                        <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
-                          <StatusChip status={statuses[ticket.status].chip} size="sm" />
-                          <PriorityLabel priority={ticket.priority} />
-                          <span className="min-w-0 truncate">
-                            {assignee?.name ?? group?.name ?? "Unassigned"}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  }}
-                  loading={list.isFetching}
-                  empty={
-                    <EmptyState
-                      scene={narrowed ? false : "all-caught-up"}
-                      size="sm"
-                      className="py-10"
-                      title={narrowed ? "No tickets match" : "No tickets yet"}
-                      description={
-                        narrowed
-                          ? "Try a different search, or remove a filter."
-                          : "Convert a conversation to a ticket when it needs tracking beyond the chat."
-                      }
-                    />
-                  }
-                />
-                {list.hasMore ? (
-                  <div className="flex justify-center py-3">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      loading={list.isFetchingMore}
-                      onClick={list.loadMore}
+              <DataTable
+                caption="Tickets"
+                density="compact"
+                columns={columns}
+                rows={list.items}
+                getRowKey={(ticket) => ticket.id}
+                // A phone has room for the subject and a line under it, so the row is read,
+                // then opened to change it.
+                renderMobileRow={(ticket) => {
+                  const assignee = team.find((member) => member.id === ticket.assigneeId);
+                  const group = teams.find((item) => item.id === ticket.teamId);
+                  return (
+                    <button
+                      type="button"
+                      className="hover:bg-muted/50 focus-visible:outline-ring grid w-full gap-1.5 px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+                      onClick={() => {
+                        onOpen(ticket.id);
+                      }}
                     >
-                      Load more
-                    </Button>
-                  </div>
-                ) : null}
-              </>
+                      <span className="flex items-baseline gap-2">
+                        <span className="text-muted-foreground shrink-0 font-mono text-xs">
+                          {ticketLabel(ticket)}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-medium">
+                          {ticket.subject ?? ticket.lastMessagePreview}
+                        </span>
+                        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                          {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
+                        <StatusChip status={statuses[ticket.status].chip} size="sm" />
+                        <PriorityLabel priority={ticket.priority} />
+                        <span className="min-w-0 truncate">
+                          {assignee?.name ?? group?.name ?? "Unassigned"}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                }}
+                loading={list.isFetching}
+                empty={
+                  <EmptyState
+                    scene={narrowed ? false : "all-caught-up"}
+                    size="sm"
+                    className="py-10"
+                    title={narrowed ? "No tickets match" : "No tickets yet"}
+                    description={
+                      narrowed
+                        ? "Try a different search, or remove a filter."
+                        : "Convert a conversation to a ticket when it needs tracking beyond the chat."
+                    }
+                  />
+                }
+              />
             )}
           </div>
+          {list.pagination ? (
+            <Pagination
+              pagination={list.pagination}
+              noun={{ one: "ticket", other: "tickets" }}
+              messages={{ label: "Tickets pages" }}
+            />
+          ) : null}
         </Panel>
       )}
     </QueryList>
