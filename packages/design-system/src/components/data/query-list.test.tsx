@@ -1,7 +1,9 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TooltipProvider } from "../base/tooltip/tooltip";
 import { QueryList, type QueryListPage, type QueryListRequest } from "./query-list";
 import { QueryProvider } from "./test-utils";
 
@@ -251,10 +253,10 @@ describe("QueryList", () => {
       </QueryProvider>,
     );
     await screen.findByText("Ticket 1");
-    expect(screen.getByText("Page 1 of 3")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    expect(screen.getByText("1–10 of 25")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
 
-    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
 
     expect(onPageChange).toHaveBeenCalledWith(2);
     // Page 1 stays visible, with the progress bar, until page 2 arrives.
@@ -267,7 +269,7 @@ describe("QueryList", () => {
     expect(await screen.findByText("Ticket 11")).toBeInTheDocument();
     expect(screen.queryByText("Ticket 1")).not.toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
-    expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+    expect(screen.getByText("11–20 of 25")).toBeInTheDocument();
   });
 
   it("serves a page it has already loaded from the cache", async () => {
@@ -285,12 +287,100 @@ describe("QueryList", () => {
       </QueryProvider>,
     );
     await screen.findByText("Ticket 1");
-    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
     await screen.findByText("Ticket 11");
-    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    await userEvent.click(screen.getByRole("button", { name: "Previous page" }));
 
     expect(await screen.findByText("Ticket 1")).toBeInTheDocument();
     expect(queryFn).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the footer with the count even when everything fits on one page", async () => {
+    render(
+      <QueryProvider>
+        <QueryList
+          queryKey={["tickets", "one-page"]}
+          queryFn={() => Promise.resolve({ items: tickets.slice(0, 4), total: 4 })}
+          pagination="pages"
+          pageSize={10}
+          noun={{ one: "ticket", other: "tickets" }}
+          {...item}
+        />
+      </QueryProvider>,
+    );
+    await screen.findByText("Ticket 1");
+    const footer = screen.getByRole("navigation", { name: "Pagination" });
+    expect(footer).toHaveTextContent("4 tickets");
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
+  });
+
+  it("goes back to the first page when the query key changes", async () => {
+    const queryFn = pagedBy(10);
+    const { rerender } = render(
+      <QueryProvider>
+        <QueryList
+          queryKey={["tickets", "a"]}
+          queryFn={queryFn}
+          pagination="pages"
+          pageSize={10}
+          {...item}
+        />
+      </QueryProvider>,
+    );
+    await screen.findByText("Ticket 1");
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
+    await screen.findByText("Ticket 11");
+
+    rerender(
+      <QueryProvider>
+        <QueryList
+          queryKey={["tickets", "b"]}
+          queryFn={queryFn}
+          pagination="pages"
+          pageSize={10}
+          {...item}
+        />
+      </QueryProvider>,
+    );
+
+    expect(await screen.findByText("1–10 of 25")).toBeInTheDocument();
+    expect(queryFn).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1 }));
+  });
+
+  it("falls back to the last page when the list shrinks under the one on screen", async () => {
+    let count = 25;
+    const queryFn = vi.fn(({ page }: QueryListRequest<number>) => {
+      const start = (page - 1) * 10;
+      return Promise.resolve({
+        items: tickets.slice(0, count).slice(start, start + 10),
+        total: count,
+      });
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <TooltipProvider>
+          <QueryList
+            queryKey={["tickets", "shrink"]}
+            queryFn={queryFn}
+            pagination="pages"
+            pageSize={10}
+            {...item}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Ticket 1");
+    await userEvent.click(screen.getByRole("button", { name: "Next page" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Next page" }));
+    expect(await screen.findByText("21–25 of 25")).toBeInTheDocument();
+
+    count = 12;
+    await act(() => client.invalidateQueries());
+
+    expect(await screen.findByText("11–12 of 12")).toBeInTheDocument();
+    expect(screen.getByText("Ticket 12")).toBeInTheDocument();
   });
 
   it("shows no paging in none mode", async () => {

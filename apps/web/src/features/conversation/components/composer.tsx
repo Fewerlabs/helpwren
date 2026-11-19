@@ -202,7 +202,10 @@ export function Composer({
 
   const chosenFiles =
     note || files.length === 0 ? null : (
-      <ul aria-label="Files to send" className={cn("flex flex-wrap gap-1.5", card && "px-3 pt-2")}>
+      <ul
+        aria-label="Files to send"
+        className={cn("flex flex-wrap gap-1.5", card && "px-3 pt-2 max-md:px-2.5")}
+      >
         {files.map((file) => (
           <li
             key={file.id}
@@ -243,7 +246,7 @@ export function Composer({
       className={cn(
         "max-h-40 flex-1 resize-none",
         card
-          ? "min-h-14 rounded-none border-0 bg-transparent px-3 pt-2.5 pb-1 text-[0.8125rem] shadow-none focus:border-0 data-keyboard-focus:outline-0 md:text-[0.8125rem] dark:bg-transparent"
+          ? "min-h-14 rounded-none border-0 bg-transparent px-3 pt-2.5 pb-1 text-[0.8125rem] shadow-none focus:border-0 data-keyboard-focus:outline-0 max-md:min-h-12 max-md:px-2.5 max-md:pt-2 md:text-[0.8125rem] dark:bg-transparent"
           : "min-h-10",
       )}
       value={text}
@@ -283,8 +286,10 @@ export function Composer({
 
   if (card) {
     return (
+      // On a phone the card sits closer to the edges and holds its parts closer together, so the
+      // thread above keeps as much of the small screen as it can.
       <form
-        className="grid gap-2 p-3 pt-0"
+        className="grid gap-2 p-3 pt-0 max-md:px-2 max-md:pb-2"
         onSubmit={(event) => {
           event.preventDefault();
           submit();
@@ -302,7 +307,11 @@ export function Composer({
           )}
         >
           {allowNotes ? (
-            <div role="group" aria-label="Write a" className="flex gap-1 px-2 pt-2">
+            <div
+              role="group"
+              aria-label="Write a"
+              className="flex gap-1 px-2 pt-2 max-md:px-1.5 max-md:pt-1.5"
+            >
               {(["reply", "note"] as const).map((option) => (
                 <button
                   key={option}
@@ -329,7 +338,7 @@ export function Composer({
           {picker.list}
           {chosenFiles}
           {field}
-          <div className="flex items-center justify-between gap-2 px-2 pb-2">
+          <div className="flex items-center justify-between gap-2 px-2 pb-2 max-md:px-1.5 max-md:pb-1.5">
             <div className="flex items-center gap-1">
               {attach}
               {picker.button}

@@ -237,4 +237,5 @@ export {
   type Visitor,
   type VisitorCheckInInput,
   type VisitorDevice,
+  type VisitorsPage,
 } from "./visitors";

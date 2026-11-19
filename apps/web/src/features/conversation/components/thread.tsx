@@ -25,6 +25,10 @@ import { useTyping } from "../hooks/use-typing";
 import { Composer } from "./composer";
 import { MessageAttachments } from "./message-attachments";
 
+// In the inbox a bubble stays short of the full width, so the two sides read apart. A phone has
+// little width to give away, so there it may run wider.
+const COMPACT_WIDTH = "max-w-[72%] max-md:max-w-[85%]";
+
 export interface ThreadProps {
   conversationId: string;
   /** Whether a message came from the person looking at the screen, or their side. */
@@ -114,7 +118,10 @@ export function Thread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      {/* In the inbox on a phone the thread keeps a narrow margin, so the messages get the width. */}
+      <div
+        className={cn("min-h-0 flex-1 overflow-y-auto p-4", compact && "max-md:px-3 max-md:py-3")}
+      >
         {messages.isPending ? (
           <div className="grid gap-3" aria-busy="true" aria-label="Loading messages">
             <Skeleton className="h-10 w-2/3 rounded-2xl" />
@@ -176,7 +183,7 @@ export function Thread({
                     size={compact ? "sm" : "md"}
                     time={formatMessageTime(entry.item.createdAt)}
                     footer={nameOf?.(entry.item.authorId)}
-                    {...(compact ? { className: "max-w-[72%]" } : {})}
+                    {...(compact ? { className: COMPACT_WIDTH } : {})}
                   >
                     {entry.item.body}
                   </MessageBubble>
@@ -187,7 +194,7 @@ export function Thread({
                     size={compact ? "sm" : "md"}
                     {...(compact
                       ? {
-                          className: "max-w-[72%]",
+                          className: COMPACT_WIDTH,
                           avatar: (
                             <Avatar
                               name={otherName}

@@ -148,8 +148,10 @@ const WITH_CONTACT = `${CONVERSATION_COLUMNS}, contact:contacts!inner(id, kind, 
 
 export interface Page<Item> {
   items: Item[];
-  /** Pass to the next call to continue. `undefined` on the last page. */
+  /** Pass to the next call to continue. `undefined` on the last page, and when paging by number. */
   nextCursor: string | undefined;
+  /** How many match across every page. Counted only when a page number was asked for. */
+  total?: number | undefined;
 }
 
 /** Which conversations to list or count. Everything given must match. */
@@ -171,9 +173,14 @@ export interface ConversationFilter {
 }
 
 export interface ListConversationsOptions extends ConversationFilter {
-  /** `nextCursor` from the previous page. */
+  /** `nextCursor` from the previous page, for a list that grows as it scrolls. */
   cursor?: string | undefined;
-  /** How many to return. Default 25. */
+  /**
+   * A page number, starting at 1, for a list paged by number. The answer then has `total` and
+   * no `nextCursor`, and `cursor` is ignored.
+   */
+  page?: number | undefined;
+  /** How many to return, or how many a page holds. Default 25. */
   limit?: number | undefined;
 }
 
@@ -285,6 +292,26 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
      */
     async list(options: ListConversationsOptions = {}): Promise<Page<ConversationWithContact>> {
       const limit = options.limit ?? 25;
+      if (options.page !== undefined) {
+        const from = (options.page - 1) * limit;
+        const { data, count, error } = await applyFilter(
+          supabase
+            .from("conversations")
+            .select(WITH_CONTACT, { count: "exact" })
+            .order("last_message_at", { ascending: false })
+            // Rows active at the same moment keep one order, so none repeats across pages.
+            .order("id")
+            .range(from, from + limit - 1),
+          options,
+        );
+        if (error) throw unexpected("load the conversations", error);
+        return {
+          items: z.array(conversationWithContactSchema).parse(data),
+          nextCursor: undefined,
+          total: count ?? data.length,
+        };
+      }
+
       let query = supabase
         .from("conversations")
         .select(WITH_CONTACT)

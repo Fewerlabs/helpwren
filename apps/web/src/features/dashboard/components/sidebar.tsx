@@ -13,9 +13,9 @@ import {
 } from "@helpwren/design-system";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
-import { ThemeMenu } from "@/features/theme";
+import { ThemeMenu, ThemeSwitch } from "@/features/theme";
 
 import { useTeamUnread } from "../hooks/use-unread";
 import { sections } from "../sections";
@@ -80,10 +80,12 @@ export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
         })}
       </nav>
       <div className="flex shrink-0 items-center gap-2 max-md:gap-0.5 md:flex-col">
+        {/* The bar along a phone's bottom has no room for a button used this rarely; there the
+            theme is chosen in the account menu instead. */}
         <ThemeMenu
           side="right"
           align="end"
-          className="text-muted-foreground hover:bg-muted hover:text-foreground size-10 rounded-xl focus-visible:outline-offset-2"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground size-10 rounded-xl focus-visible:outline-offset-2 max-md:hidden"
         />
         <AccountMenu agent={agent} signOut={signOut} />
       </div>
@@ -97,6 +99,7 @@ export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
  */
 function AccountMenu({ agent, signOut }: SidebarProps) {
   const [open, setOpen] = useState(false);
+  const themeLabel = useId();
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -130,6 +133,13 @@ function AccountMenu({ agent, signOut }: SidebarProps) {
           <Icon name="caret-right" className="text-muted-foreground size-4 shrink-0" />
           <span className="sr-only">Your profile</span>
         </Link>
+        {/* On a phone the theme button leaves the bar, so the choice is made here. */}
+        <div className="flex items-center justify-between gap-3 py-1 pr-1 pl-2.5 md:hidden">
+          <span id={themeLabel} className="text-sm">
+            Theme
+          </span>
+          <ThemeSwitch aria-labelledby={themeLabel} />
+        </div>
         {signOut}
       </PopoverContent>
     </Popover>

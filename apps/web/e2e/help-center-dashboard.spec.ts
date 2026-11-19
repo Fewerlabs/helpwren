@@ -59,18 +59,26 @@ test("a team member writes an article, publishes it and takes it down again", as
   await expect(page).toHaveURL(/collection=shipping-e2e/);
   await expect(page.getByText("Nothing in this collection yet")).toBeVisible();
 
-  // The article starts as a draft, in the collection that was open.
+  // A new article opens straight in an empty editor, ready for its title. Nothing exists yet.
   await page.getByRole("button", { name: "New article" }).click();
-  const articleForm = page.getByRole("dialog", { name: "New article" });
-  await articleForm.getByLabel("Title").fill("Track a parcel (e2e)");
-  await articleForm.getByRole("button", { name: "Start writing" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/help\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole("textbox", { name: "Slug" })).toHaveValue("track-a-parcel-e2e");
+  await expect(page).toHaveURL(/\/dashboard\/help\/new\?collection=shipping-e2e$/);
+  await expect(page.getByRole("textbox", { name: "Title", exact: true })).toBeFocused();
+  await expect(page.getByRole("status")).toHaveText("Not saved yet");
+  await page.keyboard.type("Track a parcel (e2e)");
 
-  // Written the Notion way: a slash for a block, Markdown as typed.
+  // Once it has a title and some words, the draft is made, in the collection that was open,
+  // and takes its own address. The editor stays as it was: the caret is still in the body.
   const body = page.getByRole("textbox", { name: "Article body" });
   await body.click();
   await page.keyboard.type("Every order has a tracking link.");
+  await expect(page).toHaveURL(/\/dashboard\/help\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("status")).toHaveText(/^Saved/);
+  await expect(page.getByRole("textbox", { name: "Slug" })).toHaveValue("track-a-parcel-e2e");
+  await expect(page.getByRole("combobox", { name: "Collection" })).toContainText("Shipping (e2e)");
+  await page.keyboard.type(" It comes by email.");
+  await expect(body).toContainText("Every order has a tracking link. It comes by email.");
+
+  // Written the Notion way: a slash for a block, Markdown as typed.
   await page.keyboard.press("Enter");
   await page.keyboard.type("/head");
   await page.keyboard.press("Enter");
@@ -152,4 +160,76 @@ test("a team member moves a block by its grip, and turns it into another kind", 
   await expect(
     body.getByRole("heading", { level: 3, name: "Greeting and quick replies" }),
   ).toBeVisible();
+});
+
+test("a new article left without a word in it is never made", async ({ page }) => {
+  await signInToInbox(page, "sam@example.com");
+  const count = async () =>
+    (await database.from("articles").select("id", { count: "exact", head: true })).count;
+  const before = await count();
+
+  await page.goto("/dashboard/help/new");
+  await expect(page.getByRole("textbox", { name: "Title", exact: true })).toBeFocused();
+  // A title alone is not enough to make it.
+  await page.keyboard.type("Only a title (e2e)");
+  await page.waitForTimeout(1_500);
+  await expect(page).toHaveURL(/\/dashboard\/help\/new$/);
+  expect(await count()).toBe(before);
+});
+
+test("a team member puts a collection's articles in order with the keyboard", async ({ page }) => {
+  const { data: collection } = await database
+    .from("collections")
+    .insert({ name: "Order (e2e)", slug: "order-e2e", icon: "book-open" })
+    .select("id")
+    .single();
+  if (!collection) throw new Error("The collection was not made.");
+  // One at a time, so each goes to the end of the collection after the one before.
+  for (const [title, slug] of [
+    ["First (e2e)", "first-e2e"],
+    ["Second (e2e)", "second-e2e"],
+    ["Third (e2e)", "third-e2e"],
+  ] as const) {
+    await database
+      .from("articles")
+      .insert({ collection_id: collection.id, title, slug, body: { type: "doc", content: [] } });
+  }
+
+  await signInToInbox(page, "sam@example.com");
+  await page.goto("/dashboard/help?collection=order-e2e");
+  const table = page.getByRole("table", { name: "Order (e2e)" });
+  const titles = table.getByRole("rowheader");
+  await expect(titles).toHaveText(["First (e2e)", "Second (e2e)", "Third (e2e)"]);
+
+  // Space picks the row up, the arrows move it, and Space drops it. Each step is read out, and
+  // the next key waits for it, as a person listening would.
+  await table.getByRole("button", { name: "Reorder First (e2e)" }).focus();
+  await page.keyboard.press("Space");
+  const announcement = page.locator('[id^="DndLiveRegion"]').first();
+  await expect(announcement).toHaveText("Picked up First (e2e), at position 1 of 3.");
+  // The arrow keys are listened for a moment after the pick-up is announced; no person is
+  // quicker than that, but a test is.
+  await page.waitForTimeout(100);
+  await page.keyboard.press("ArrowDown");
+  await expect(announcement).toHaveText("First (e2e) moved to position 2 of 3.");
+  await page.keyboard.press("ArrowDown");
+  await expect(announcement).toHaveText("First (e2e) moved to position 3 of 3.");
+  await page.keyboard.press("Space");
+  await expect(announcement).toHaveText("First (e2e) dropped at position 3 of 3.");
+  await expect(titles).toHaveText(["Second (e2e)", "Third (e2e)", "First (e2e)"]);
+
+  // Escape puts a row back where it was.
+  await table.getByRole("button", { name: "Reorder Second (e2e)" }).focus();
+  await page.keyboard.press("Space");
+  await expect(announcement).toHaveText(/^Picked up Second/);
+  await page.waitForTimeout(100);
+  await page.keyboard.press("ArrowDown");
+  await expect(announcement).toHaveText(/^Second \(e2e\) moved to position 2/);
+  await page.keyboard.press("Escape");
+  await expect(announcement).toHaveText(/^Moving cancelled/);
+  await expect(titles).toHaveText(["Second (e2e)", "Third (e2e)", "First (e2e)"]);
+
+  // The new order was saved.
+  await page.reload();
+  await expect(titles).toHaveText(["Second (e2e)", "Third (e2e)", "First (e2e)"]);
 });

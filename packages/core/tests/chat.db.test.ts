@@ -129,6 +129,28 @@ describe("conversations", () => {
     expect(second.items.every((item) => !firstIds.includes(item.id))).toBe(true);
   });
 
+  it("pages by number, counting every match, alongside the cursor", async () => {
+    const { client } = await signedInAgent();
+    const { session } = await newGuest();
+    await startConversation(session.id);
+    await startConversation(session.id);
+    await startConversation(session.id);
+
+    const four = await client.conversations.list({ page: 1, limit: 4 });
+    const first = await client.conversations.list({ page: 1, limit: 2 });
+    const second = await client.conversations.list({ page: 2, limit: 2 });
+    const ids = (page: { items: { id: string }[] }) => page.items.map((item) => item.id);
+
+    await expect(client.conversations.count()).resolves.toBe(first.total);
+    expect(second.total).toBe(first.total);
+    expect([...ids(first), ...ids(second)]).toEqual(ids(four));
+    expect(first.nextCursor).toBeUndefined();
+
+    const theirs = await client.conversations.list({ contactId: session.id, page: 2, limit: 2 });
+    expect(theirs.total).toBe(3);
+    expect(theirs.items).toHaveLength(1);
+  });
+
   it("filters by status", async () => {
     const { client } = await signedInAgent();
 

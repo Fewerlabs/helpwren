@@ -16,6 +16,7 @@ import {
   FilterBar,
   type FilterDefinition,
   type FilterValue,
+  Pagination,
   QueryList,
   SearchField,
 } from "@helpwren/design-system";
@@ -88,7 +89,6 @@ export function Contacts() {
   const [selectedId, select] = useSelectedContact();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FilterValue>({});
-  const [page, setPage] = useState(1);
   const searchText = useDebounced(search).trim();
   const filterOptions = useMemo(() => toOptions(filters), [filters]);
   const narrowed = searchText !== "" || Object.values(filters).some((values) => values.length > 0);
@@ -132,15 +132,6 @@ export function Contacts() {
     ],
     [countries],
   );
-
-  // A new search, filter or segment starts from its first page. Resetting while rendering, when
-  // the inputs change, avoids showing page 3 of results that only have one page.
-  const listKey = `${segment.id}:${searchText}:${JSON.stringify(filterOptions)}`;
-  const [lastListKey, setLastListKey] = useState(listKey);
-  if (lastListKey !== listKey) {
-    setLastListKey(listKey);
-    setPage(1);
-  }
 
   const columns = useMemo<DataTableColumn<ContactSummary>[]>(
     () => [
@@ -234,6 +225,7 @@ export function Contacts() {
       )}
     >
       <QueryList
+        // A new search, filter or segment changes the key, which starts the list on page 1.
         queryKey={[...CONTACTS_QUERY_KEY, "list", segment.id, searchText, filterOptions]}
         queryFn={({ page: number, pageSize }) =>
           getClient().contacts.list({
@@ -246,8 +238,6 @@ export function Contacts() {
         }
         pagination="pages"
         pageSize={PAGE_SIZE}
-        page={page}
-        onPageChange={setPage}
       >
         {(list) => (
           <Panel aria-label={segment.label} className={cn(selectedId && "max-lg:hidden")}>
@@ -315,35 +305,12 @@ export function Contacts() {
               )}
             </div>
 
-            {list.pagination && (list.pagination.hasPrevious || list.pagination.hasNext) ? (
-              <footer className="border-rule flex h-11 shrink-0 items-center justify-between border-t px-3">
-                <p className="text-muted-foreground text-xs tabular-nums" aria-live="polite">
-                  Page {list.pagination.page}
-                  {list.pagination.pageCount ? ` of ${list.pagination.pageCount}` : ""}
-                </p>
-                <div className="flex gap-1.5">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={!list.pagination.hasPrevious}
-                    onClick={() => {
-                      setPage(page - 1);
-                    }}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={!list.pagination.hasNext}
-                    onClick={() => {
-                      setPage(page + 1);
-                    }}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </footer>
+            {list.pagination ? (
+              <Pagination
+                pagination={list.pagination}
+                noun={{ one: "contact", other: "contacts" }}
+                messages={{ label: "Contacts pages" }}
+              />
             ) : null}
           </Panel>
         )}

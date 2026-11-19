@@ -162,6 +162,56 @@ describe("DataTable", () => {
     expect(row).toHaveClass("cursor-pointer");
   });
 
+  describe("with reordering", () => {
+    const unsorted = columns.map((column) => ({ ...column, sortable: false }));
+
+    it("gives every row a named drag handle, in the table and the list", () => {
+      render(
+        <DataTable
+          {...base}
+          columns={unsorted}
+          reorder={{ label: (ticket) => ticket.subject, onReorder: vi.fn() }}
+          renderMobileRow={(ticket) => ticket.subject}
+        />,
+      );
+      const table = screen.getByRole("table");
+      expect(within(table).getAllByRole("button", { name: /^Reorder / })).toHaveLength(4);
+      const list = screen.getByRole("list");
+      expect(within(list).getByRole("button", { name: "Reorder Refund" })).toHaveAttribute(
+        "aria-roledescription",
+        "sortable",
+      );
+    });
+
+    it("moves a row with the keyboard and reports the new order", async () => {
+      // jsdom lays nothing out, so each row is given a place 40px below the one before it.
+      const rect = vi
+        .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+        .mockImplementation(function (this: HTMLElement) {
+          const row = this.closest("tr");
+          const top = row ? [...(row.parentElement?.children ?? [])].indexOf(row) * 40 : 0;
+          return DOMRect.fromRect({ x: 0, y: top, width: 400, height: 40 });
+        });
+      const onReorder = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <DataTable
+          {...base}
+          columns={unsorted}
+          reorder={{ label: (ticket) => ticket.subject, onReorder }}
+        />,
+      );
+
+      screen.getByRole("button", { name: "Reorder Refund" }).focus();
+      await user.keyboard(" ");
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard(" ");
+
+      expect(onReorder).toHaveBeenCalledWith([2, 1, 3, 4]);
+      rect.mockRestore();
+    });
+  });
+
   describe("with a mobile renderer", () => {
     // jsdom applies no CSS, so both the table and the list are in the page; the classes decide
     // which one a screen shows.

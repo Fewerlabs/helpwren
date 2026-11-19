@@ -25,6 +25,10 @@ test("a team member browses, filters and searches contacts, and opens one", asyn
   await page.getByRole("searchbox", { name: "Search contacts" }).fill("northwind");
   await expect(table.getByText("Jonas Berg")).toBeVisible();
   await expect(table.getByText("Priya Nair")).toHaveCount(0);
+  // The footer shows how many there are, even when they fit on one page.
+  const footer = page.getByRole("navigation", { name: "Contacts pages" });
+  await expect(footer).toContainText(/^\d+ contacts?$/);
+  await expect(footer.getByRole("button", { name: "Next page" })).toBeDisabled();
 
   // Opening someone shows how to reach them and their conversations.
   await table.getByRole("button", { name: "Jonas Berg" }).click();

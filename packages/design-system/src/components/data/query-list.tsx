@@ -1,6 +1,12 @@
 "use client";
 
-import { keepPreviousData, useInfiniteQuery, useQuery, type QueryKey } from "@tanstack/react-query";
+import {
+  hashKey,
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+  type QueryKey,
+} from "@tanstack/react-query";
 import { useEffect, useRef, useState, type Key, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
@@ -8,6 +14,11 @@ import { useScrollableFocus } from "#lib/scrollable-focus";
 
 import { Wren } from "../../illustrations/wren";
 import { Button } from "../base/button/button";
+import {
+  Pagination,
+  type PaginationNoun,
+  type PaginationState,
+} from "../base/pagination/pagination";
 import { Spinner } from "../base/spinner/spinner";
 import { focusRing } from "../base/styles";
 import {
@@ -48,9 +59,9 @@ export interface QueryListMessages {
   loadingMore: string;
   /** Shown under the last item once every page has been loaded. */
   end: ReactNode;
+  /** The previous and next page buttons' names and tooltips. */
   previous: string;
   next: string;
-  page: (page: number, pageCount: number | undefined) => string;
 }
 
 const defaultMessages: QueryListMessages = {
@@ -61,19 +72,14 @@ const defaultMessages: QueryListMessages = {
   loadMore: "Load more",
   loadingMore: "Loading more",
   end: "You've reached the end.",
-  previous: "Previous",
-  next: "Next",
-  page: (page, pageCount) =>
-    pageCount === undefined ? `Page ${page}` : `Page ${page} of ${pageCount}`,
+  previous: "Previous page",
+  next: "Next page",
 };
 
-export interface QueryListPagination {
-  page: number;
+/** Pass it to `Pagination` to draw the footer when you render the list yourself. */
+export interface QueryListPagination extends PaginationState {
   /** Known only when the server returns `total` and you pass `pageSize`. */
   pageCount: number | undefined;
-  hasPrevious: boolean;
-  hasNext: boolean;
-  setPage: (page: number) => void;
   isFetching: boolean;
 }
 
@@ -111,6 +117,7 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   pageSize?: number;
   /** Pages mode, controlled. */
   page?: number;
+  /** Pages mode, uncontrolled: where it starts, and where it goes back to when `queryKey` changes. */
   defaultPage?: number;
   onPageChange?: (page: number) => void;
 
@@ -123,7 +130,10 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   renderLoading?: () => ReactNode;
   renderEmpty?: () => ReactNode;
   renderError?: (context: QueryErrorContext) => ReactNode;
+  /** Replaces the page footer, which shows in pages mode whenever there are items. */
   renderPagination?: (pagination: QueryListPagination) => ReactNode;
+  /** What the items are, for the page footer's count: "4 contacts". */
+  noun?: PaginationNoun;
   /** Replaces the end-of-list marker shown in infinite mode. Return `null` for none. */
   renderEnd?: () => ReactNode;
   /** Content above and below the items, shown once there are items. */
@@ -185,6 +195,7 @@ function ListView<Item, Cursor>({
   renderError,
   renderPagination,
   renderEnd,
+  noun,
   header,
   footer,
   messages: overrides,
@@ -314,7 +325,11 @@ function ListView<Item, Cursor>({
         ) : null}
         {state.pagination
           ? (renderPagination?.(state.pagination) ?? (
-              <DefaultPagination pagination={state.pagination} messages={messages} />
+              <Pagination
+                pagination={state.pagination}
+                {...(noun === undefined ? {} : { noun })}
+                messages={{ previous: messages.previous, next: messages.next }}
+              />
             ))
           : null}
         {footer}
@@ -340,46 +355,6 @@ function ListView<Item, Cursor>({
         {body()}
       </div>
     </div>
-  );
-}
-
-function DefaultPagination({
-  pagination,
-  messages,
-}: {
-  pagination: QueryListPagination;
-  messages: QueryListMessages;
-}) {
-  const { page, pageCount, hasPrevious, hasNext, setPage } = pagination;
-  if (!hasPrevious && !hasNext) {
-    return null;
-  }
-  return (
-    <nav aria-label="Pagination" className="flex items-center justify-between gap-3 pt-3">
-      <Button
-        variant="secondary"
-        size="sm"
-        disabled={!hasPrevious}
-        onClick={() => {
-          setPage(page - 1);
-        }}
-      >
-        {messages.previous}
-      </Button>
-      <p className="text-muted-foreground text-sm" aria-live="polite">
-        {messages.page(page, pageCount)}
-      </p>
-      <Button
-        variant="secondary"
-        size="sm"
-        disabled={!hasNext}
-        onClick={() => {
-          setPage(page + 1);
-        }}
-      >
-        {messages.next}
-      </Button>
-    </nav>
   );
 }
 
@@ -430,7 +405,18 @@ function InfiniteQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
 
 function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
   const { queryKey, queryFn, pageSize, pagination = "pages", onPageChange } = props;
-  const [internalPage, setInternalPage] = useState(props.defaultPage ?? 1);
+  const controlled = props.page !== undefined;
+  const firstPage = props.defaultPage ?? 1;
+  const [internalPage, setInternalPage] = useState(firstPage);
+  // A new search or filter is a new list, so it starts again from its first page rather than
+  // asking for page 3 of results that may have only one. Reset while rendering, so the old
+  // page number is never fetched under the new key.
+  const keyHash = hashKey(queryKey);
+  const [pageKeyHash, setPageKeyHash] = useState(keyHash);
+  if (pageKeyHash !== keyHash) {
+    setPageKeyHash(keyHash);
+    setInternalPage(firstPage);
+  }
   const page = pagination === "none" ? 1 : (props.page ?? internalPage);
 
   const query = useQuery({
@@ -452,6 +438,22 @@ function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
       ? query.data?.nextCursor !== undefined && query.data.nextCursor !== null
       : page < pageCount;
   const { refetch } = query;
+
+  // The list can shrink under the page on screen, as people leave a live list or rows are
+  // removed. Then the last page that still exists is shown instead of an empty one. A
+  // placeholder is the previous query's answer, so it says nothing about this page.
+  const lastPage =
+    pagination !== "none" && !query.isPlaceholderData && pageCount !== undefined && page > pageCount
+      ? pageCount
+      : undefined;
+  if (lastPage !== undefined && !controlled) {
+    setInternalPage(lastPage);
+  }
+  useEffect(() => {
+    if (lastPage !== undefined && controlled) {
+      onPageChange?.(lastPage);
+    }
+  }, [lastPage, controlled, onPageChange]);
 
   const state: QueryListState<Item> = {
     items,
@@ -475,11 +477,14 @@ function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
         : {
             page,
             pageCount,
+            pageSize,
+            total,
+            itemCount: items.length,
             hasPrevious: page > 1,
             hasNext,
             isFetching: query.isFetching,
             setPage: (next) => {
-              if (props.page === undefined) {
+              if (!controlled) {
                 setInternalPage(next);
               }
               onPageChange?.(next);

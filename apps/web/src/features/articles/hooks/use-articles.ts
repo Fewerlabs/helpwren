@@ -44,12 +44,22 @@ export function collectionHref(slug?: string): string {
   return slug ? `${HELP_PATH}?${COLLECTION}=${slug}` : HELP_PATH;
 }
 
+/** The empty editor for a new article, which starts in the collection given, if any. */
+export function newArticleHref(slug?: string): string {
+  return slug ? `${HELP_PATH}/new?${COLLECTION}=${slug}` : `${HELP_PATH}/new`;
+}
+
+/** The slug of the collection in the address, if there is one. */
+export function useCollectionSlug(): string | null {
+  return useSearchParams().get(COLLECTION);
+}
+
 /**
  * The collection in the address (`/dashboard/help?collection=billing`), so a reload and a
  * shared link land in the same place. An unknown slug shows everything.
  */
 export function useShown(collections: readonly Collection[] | undefined): Shown {
-  const slug = useSearchParams().get(COLLECTION);
+  const slug = useCollectionSlug();
   if (slug === NO_COLLECTION) return { kind: "none" };
   const collection = collections?.find((item) => item.slug === slug);
   return collection ? { kind: "collection", collection } : { kind: "all" };
