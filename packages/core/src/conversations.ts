@@ -94,6 +94,8 @@ const conversationRowSchema = z.object({
   last_message_at: z.string().nullable(),
   unread_for_contact: z.number().int(),
   unread_for_agents: z.number().int(),
+  // Missing from rows in a client's cache from before email replies.
+  via_email: z.boolean().default(false),
   created_at: z.string(),
 });
 
@@ -116,6 +118,8 @@ export const conversationSchema = conversationRowSchema.transform((row) => ({
   lastMessageAt: row.last_message_at,
   unreadForContact: row.unread_for_contact,
   unreadForAgents: row.unread_for_agents,
+  /** Whether the contact has answered by email as well as in the chat. */
+  viaEmail: row.via_email,
   createdAt: row.created_at,
 }));
 
@@ -143,7 +147,7 @@ const CONVERSATION_COLUMNS =
   "id, contact_id, status, type, ticket_number, subject, priority, source, context, assignee_id, " +
   "team_id, " +
   "last_message_preview, last_message_at, " +
-  "unread_for_contact, unread_for_agents, created_at";
+  "unread_for_contact, unread_for_agents, via_email, created_at";
 const WITH_CONTACT = `${CONVERSATION_COLUMNS}, contact:contacts!inner(id, kind, verified, name, email, phone)`;
 
 export interface Page<Item> {

@@ -11,6 +11,7 @@ import {
   HELP_FOOTER_LINKS_MAX,
   HELP_HEADER_LINKS_MAX,
   helpHeaderStyleSchema,
+  inboundProviderSchema,
   QUICK_REPLIES_MAX,
   QUICK_REPLY_MAX_LENGTH,
   settingsPatchSchema,
@@ -212,6 +213,25 @@ export const emailSchema = z.object({
     z.literal(""),
     z.string().trim().toLowerCase().pipe(z.email("Enter an email address.")),
   ]),
+  /** Contacts may answer an email from their mail app. */
+  inboundEnabled: z.boolean(),
+  /** Empty while replies by email have no address; each email adds a signed part after a plus. */
+  replyAddress: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.email("Enter an email address."))
+      .refine((address) => !address.split("@")[0]?.includes("+"), {
+        message: "Use an address without a plus. The plus part is added to each email.",
+      }),
+  ]),
+  inboundProvider: inboundProviderSchema,
+  /** Empty to keep the saved one. */
+  resendSigningSecret: z.string().trim(),
+  /** Empty to keep the saved one, or to use the server's own key. */
+  resendApiKey: z.string().trim(),
 });
 export type EmailValues = z.infer<typeof emailSchema>;
 
