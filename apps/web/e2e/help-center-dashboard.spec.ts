@@ -110,3 +110,38 @@ test("a team member writes an article, publishes it and takes it down again", as
   await expect(page).toHaveURL(/collection=shipping-e2e/);
   await expect(page.getByText("Nothing in this collection yet")).toBeVisible();
 });
+
+test("a team member moves a block by its grip, and turns it into another kind", async ({
+  page,
+}) => {
+  await signInToInbox(page, "sam@example.com");
+  // A published article; nothing here is saved, so it is left as it was.
+  await page.goto("/dashboard/help/f1000000-0000-4000-8000-000000000003");
+  const body = page.getByRole("textbox", { name: "Article body" });
+  const blocks = body.locator(":scope > *");
+  await expect(blocks.first()).toContainText("Visitors should feel");
+
+  // The grip appears beside the block under the pointer, and drags it.
+  await blocks.first().hover();
+  const grip = page.getByRole("button", { name: "Block options" });
+  const from = await grip.boundingBox();
+  const to = await blocks.nth(2).boundingBox();
+  if (!from || !to) throw new Error("The grip or the block to drop on was not drawn.");
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + 40, to.y + 4, { steps: 15 });
+  await page.mouse.move(to.x + 41, to.y + to.height - 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(blocks.first()).toHaveText("Logo and colours");
+  await expect(page.getByRole("status")).toHaveText("Unsaved changes");
+
+  // Pressed, the grip opens what can be done to the block.
+  const heading = await blocks.nth(3).boundingBox();
+  if (!heading) throw new Error("The heading was not drawn.");
+  await page.mouse.move(heading.x + 30, heading.y + 5, { steps: 5 });
+  await grip.click();
+  await page.getByRole("button", { name: "Subheading" }).last().click();
+  await expect(
+    body.getByRole("heading", { level: 3, name: "Greeting and quick replies" }),
+  ).toBeVisible();
+});
