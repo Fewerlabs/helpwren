@@ -26,3 +26,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0019 | [Firebase and webhook push](0019-firebase-and-webhook-push.md)                             |
 | 0020 | [Live visitors](0020-live-visitors.md)                                                     |
 | 0021 | [Typing indicators, presence and saved replies](0021-typing-presence-and-saved-replies.md) |
+| 0024 | [The installer, the upgrader and the setup wizard](0024-installer-and-setup-wizard.md)     |
