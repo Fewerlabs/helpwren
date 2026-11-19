@@ -1,6 +1,11 @@
 "use client";
 
-import { type ContactSummary } from "@helpwren/core";
+import {
+  type ContactDevice,
+  type ContactSeen,
+  type ContactSummary,
+  type ListContactsOptions,
+} from "@helpwren/core";
 import {
   Avatar,
   Button,
@@ -8,9 +13,13 @@ import {
   DataTable,
   type DataTableColumn,
   EmptyState,
+  FilterBar,
+  type FilterDefinition,
+  type FilterValue,
   QueryList,
   SearchField,
 } from "@helpwren/design-system";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { DashboardPage, Panel, PanelHeader } from "@/features/dashboard";
@@ -33,6 +42,41 @@ import { KindBadge } from "./kind-badge";
 
 const PAGE_SIZE = 25;
 
+const deviceOptions = [
+  { value: "desktop", label: "Desktop" },
+  { value: "mobile", label: "Phone" },
+  { value: "tablet", label: "Tablet" },
+];
+
+const seenOptions = [
+  { value: "day", label: "Today" },
+  { value: "week", label: "Last 7 days" },
+  { value: "month", label: "Last 30 days" },
+  { value: "never", label: "Never" },
+];
+
+/** Turns what the filter bar holds into what the database is asked for. No values means any. */
+function toOptions(value: FilterValue): Partial<ListContactsOptions> {
+  const chosen = (id: string) => {
+    const values = value[id];
+    return values && values.length > 0 ? values : undefined;
+  };
+  // A two-way choice with both sides chosen is the same as no choice.
+  const one = (id: string): string | undefined => {
+    const values = chosen(id);
+    return values?.length === 1 ? values[0] : undefined;
+  };
+  const verified = one("verified");
+  const conversations = one("conversations");
+  return {
+    countries: chosen("country"),
+    devices: chosen("device") as ContactDevice[] | undefined,
+    seen: chosen("seen") as ContactSeen[] | undefined,
+    verified: verified === undefined ? undefined : verified === "yes",
+    conversations: conversations === "some" || conversations === "none" ? conversations : undefined,
+  };
+}
+
 /**
  * Everyone who has written to the team: guests and the host product's users. A table to search
  * and page through, and one person's details and conversations beside it.
@@ -43,12 +87,55 @@ export function Contacts() {
   const counts = useSegmentCounts();
   const [selectedId, select] = useSelectedContact();
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<FilterValue>({});
   const [page, setPage] = useState(1);
   const searchText = useDebounced(search).trim();
+  const filterOptions = useMemo(() => toOptions(filters), [filters]);
+  const narrowed = searchText !== "" || Object.values(filters).some((values) => values.length > 0);
 
-  // A new search or segment starts from its first page. Resetting while rendering, when the
-  // inputs change, avoids showing page 3 of results that only have one page.
-  const listKey = `${segment.id}:${searchText}`;
+  // The countries people have been seen in, so the filter offers only ones that match someone.
+  const countries = useQuery({
+    queryKey: [...CONTACTS_QUERY_KEY, "countries"],
+    queryFn: () => getClient().contacts.countries(),
+  }).data;
+  const definitions = useMemo<FilterDefinition[]>(
+    () => [
+      {
+        id: "country",
+        label: "Country",
+        icon: "globe",
+        options: (countries ?? []).map((code) => ({
+          value: code,
+          label: `${countryFlag(code)} ${countryName(code)}`,
+        })),
+      },
+      { id: "device", label: "Device", icon: "device-mobile", options: deviceOptions },
+      { id: "seen", label: "Last seen", icon: "clock", options: seenOptions },
+      {
+        id: "conversations",
+        label: "Conversations",
+        icon: "chat-circle",
+        options: [
+          { value: "some", label: "Has written" },
+          { value: "none", label: "Has not written" },
+        ],
+      },
+      {
+        id: "verified",
+        label: "Verified",
+        icon: "shield-check",
+        options: [
+          { value: "yes", label: "Verified" },
+          { value: "no", label: "Not verified" },
+        ],
+      },
+    ],
+    [countries],
+  );
+
+  // A new search, filter or segment starts from its first page. Resetting while rendering, when
+  // the inputs change, avoids showing page 3 of results that only have one page.
+  const listKey = `${segment.id}:${searchText}:${JSON.stringify(filterOptions)}`;
   const [lastListKey, setLastListKey] = useState(listKey);
   if (lastListKey !== listKey) {
     setLastListKey(listKey);
@@ -147,9 +234,10 @@ export function Contacts() {
       )}
     >
       <QueryList
-        queryKey={[...CONTACTS_QUERY_KEY, "list", segment.id, searchText]}
+        queryKey={[...CONTACTS_QUERY_KEY, "list", segment.id, searchText, filterOptions]}
         queryFn={({ page: number, pageSize }) =>
           getClient().contacts.list({
+            ...filterOptions,
             kind: segment.kind,
             search: searchText,
             page: number,
@@ -182,6 +270,9 @@ export function Contacts() {
                 loading={list.isFetching && searchText !== ""}
               />
             </PanelHeader>
+            <div className="border-rule border-b px-3 py-2">
+              <FilterBar filters={definitions} value={filters} onValueChange={setFilters} />
+            </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               {list.status === "error" ? (
@@ -209,13 +300,13 @@ export function Contacts() {
                   loading={list.isFetching}
                   empty={
                     <EmptyState
-                      scene={searchText ? "no-results" : "visitors"}
+                      scene={narrowed ? "no-results" : "visitors"}
                       size="sm"
                       className="py-10"
-                      title={searchText ? "No contacts found" : "No contacts yet"}
+                      title={narrowed ? "No contacts found" : "No contacts yet"}
                       description={
-                        searchText
-                          ? "Try a different name, email address or phone number."
+                        narrowed
+                          ? "Try a different search, or fewer filters."
                           : "People appear here once they have written to you."
                       }
                     />

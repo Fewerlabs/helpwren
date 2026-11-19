@@ -79,11 +79,31 @@ export interface ListContactsOptions {
   search?: string | undefined;
   /** Only guests, or only users. Default: both. */
   kind?: ContactKind | undefined;
+  /** Only contacts in these countries, as ISO codes such as `NG`. */
+  countries?: readonly string[] | undefined;
+  /** Only contacts last seen on these kinds of device. */
+  devices?: readonly ContactDevice[] | undefined;
+  /** Only verified contacts, or only unverified ones. */
+  verified?: boolean | undefined;
+  /** Only contacts last seen within any of these spans, or never seen browsing. */
+  seen?: readonly ContactSeen[] | undefined;
+  /** Only contacts who have written, or only those who have not. */
+  conversations?: "some" | "none" | undefined;
   /** Which page, starting at 1. */
   page?: number | undefined;
   /** How many to a page. Default 25. */
   pageSize?: number | undefined;
 }
+
+/** The kinds of device a contact can be seen on. */
+export const CONTACT_DEVICES = ["desktop", "mobile", "tablet"] as const;
+export type ContactDevice = (typeof CONTACT_DEVICES)[number];
+
+/** How recently a contact was seen browsing, for filtering: within a span, or never. */
+export const CONTACT_SEEN = ["day", "week", "month", "never"] as const;
+export type ContactSeen = (typeof CONTACT_SEEN)[number];
+
+const SEEN_DAYS: Record<Exclude<ContactSeen, "never">, number> = { day: 1, week: 7, month: 30 };
 
 export interface ContactsPage {
   items: ContactSummary[];
@@ -116,6 +136,20 @@ export function createContacts(supabase: HelpwrenSupabaseClient) {
         .order("created_at", { ascending: false })
         .range(from, from + pageSize - 1);
       if (options.kind) query = query.eq("kind", options.kind);
+      if (options.countries?.length) query = query.in("country", [...options.countries]);
+      if (options.devices?.length) query = query.in("device", [...options.devices]);
+      if (options.verified !== undefined) query = query.eq("verified", options.verified);
+      if (options.conversations === "some") query = query.gt("conversation_count", 0);
+      if (options.conversations === "none") query = query.eq("conversation_count", 0);
+      if (options.seen?.length) {
+        // Any of the chosen spans will do, so they are joined as alternatives.
+        const spans = options.seen.map((span) =>
+          span === "never"
+            ? "last_seen_at.is.null"
+            : `last_seen_at.gte.${new Date(Date.now() - SEEN_DAYS[span] * 86_400_000).toISOString()}`,
+        );
+        query = query.or(spans.join(","));
+      }
 
       const term = options.search?.replace(FILTER_SYNTAX, " ").trim();
       if (term) {
@@ -125,6 +159,18 @@ export function createContacts(supabase: HelpwrenSupabaseClient) {
       const { data, count, error } = await query;
       if (error) throw new HelpwrenError("Could not load the contacts.", { cause: error });
       return { items: z.array(contactSummarySchema).parse(data), total: count ?? data.length };
+    },
+
+    /** The countries contacts have been seen in, as ISO codes, for a filter's choices. */
+    async countries(): Promise<string[]> {
+      const { data, error } = await supabase
+        .from("contact_summaries")
+        .select("country")
+        .not("country", "is", null)
+        .limit(5000);
+      if (error) throw new HelpwrenError("Could not load the countries.", { cause: error });
+      const codes = z.array(z.object({ country: z.string() })).parse(data);
+      return [...new Set(codes.map((row) => row.country))].sort();
     },
 
     /** One contact, or `null` if there is none or it is not the caller's to read. */

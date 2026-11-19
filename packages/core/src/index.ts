@@ -124,9 +124,13 @@ export {
 export { type Unsubscribe } from "./realtime";
 export { type Session } from "./sessions";
 export {
+  CONTACT_DEVICES,
+  CONTACT_SEEN,
   contactKindSchema,
   contactSummarySchema,
+  type ContactDevice,
   type ContactKind,
+  type ContactSeen,
   type ContactsPage,
   type ContactSummary,
   type ListContactsOptions,

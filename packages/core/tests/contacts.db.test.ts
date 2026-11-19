@@ -40,6 +40,27 @@ describe("contacts.list", () => {
     expect(users.items.map((item) => item.name).sort()).toEqual(["Jonas Berg", "Mei Tanaka"]);
   });
 
+  it("filters by whether they are verified and have written", async () => {
+    const client = await signedInAgent();
+    const verified = await client.contacts.list({ verified: true });
+    expect(verified.items.map((item) => item.name).sort()).toEqual(["Jonas Berg", "Mei Tanaka"]);
+    await expect(client.contacts.list({ verified: false })).resolves.toMatchObject({ total: 2 });
+    await expect(client.contacts.list({ conversations: "none" })).resolves.toMatchObject({
+      total: 0,
+    });
+  });
+
+  it("filters by when they were last seen, alongside a search", async () => {
+    const client = await signedInAgent();
+    // The demo contacts have never been seen browsing, and both filters must hold at once.
+    const never = await client.contacts.list({ seen: ["never"], search: "jonas" });
+    expect(never.items.map((item) => item.name)).toEqual(["Jonas Berg"]);
+    await expect(
+      client.contacts.list({ seen: ["day"], devices: ["tablet"] }),
+    ).resolves.toMatchObject({ total: 0 });
+    await expect(client.contacts.countries()).resolves.toBeInstanceOf(Array);
+  });
+
   it.each([
     ["a name", "jonas", ["Jonas Berg"]],
     ["part of an email address", "example.org", ["Priya Nair"]],
