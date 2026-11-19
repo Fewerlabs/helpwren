@@ -21,6 +21,8 @@ const NO_PLACEHOLDERS: PlaceholderValues = {};
 
 const failures = {
   rate_limited: "You are writing very fast. Wait a moment and try again.",
+  refused: "That message was not sent. Add a few words of your own, or say something new.",
+  blocked: "You can no longer send messages here.",
   failed: "That could not be sent. Try again.",
   too_large: "That file is over 10 MB. Choose a smaller one.",
   unsupported: "That kind of file cannot be sent. Try an image, a PDF or a document.",

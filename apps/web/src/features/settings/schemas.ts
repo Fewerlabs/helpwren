@@ -19,15 +19,24 @@ import { z } from "zod";
 
 const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
-export const generalSchema = z.object({
-  guestDetails: guestDetailsSchema,
-  /** Whether a visitor can open a ticket themselves from the chat. */
-  ticketsFromChat: z.boolean(),
-  /** Whether the chat checks in, so the team sees who is on the site and where. */
-  trackVisitors: z.boolean(),
-  /** Whether the Visitors section lists them live and lets the team write first. */
-  liveVisitors: z.boolean(),
-});
+export const generalSchema = z
+  .object({
+    guestDetails: guestDetailsSchema,
+    /** Whether a visitor can open a ticket themselves from the chat. */
+    ticketsFromChat: z.boolean(),
+    /** Whether the chat checks in, so the team sees who is on the site and where. */
+    trackVisitors: z.boolean(),
+    /** Whether the Visitors section lists them live and lets the team write first. */
+    liveVisitors: z.boolean(),
+    /** Whether a guest answers Cloudflare Turnstile before their first message. */
+    captcha: z.boolean(),
+    /** Turnstile's site key. Empty while the captcha is off. */
+    captchaSiteKey: z.string().trim().max(100, "That is longer than a site key."),
+  })
+  .refine((values) => !values.captcha || values.captchaSiteKey !== "", {
+    message: "Paste the site key from Cloudflare.",
+    path: ["captchaSiteKey"],
+  });
 export type GeneralValues = z.infer<typeof generalSchema>;
 
 export const installationSchema = z.object({

@@ -39,7 +39,11 @@ export const startConversationInputSchema = z.object({
   ticket: z.object({ subject: ticketSubjectSchema }).optional(),
   /** The page the chat was opened from, shown to agents as context. */
   page: z
-    .object({ url: z.url().max(2000), title: z.string().trim().max(300).optional() })
+    // Shown to agents as a link, so only a web address: never `javascript:` or `data:`.
+    .object({
+      url: z.url({ protocol: /^https?$/ }).max(2000),
+      title: z.string().trim().max(300).optional(),
+    })
     .optional(),
   /**
    * What the page said about where the visitor is, with `setContext`, and who an unverified
@@ -48,6 +52,15 @@ export const startConversationInputSchema = z.object({
   context: pageContextSchema.optional(),
   /** The browser the chat runs in, as it checks in, so the team sees it beside the contact. */
   visitorId: visitorIdSchema.optional(),
+  /**
+   * A field people never see, and so never fill in. A bot filling in every field it finds
+   * fills this one too, and its message is refused.
+   */
+  honeypot: z.string().max(500).optional(),
+  /** How long the form was open before it was sent. A person takes longer than a script. */
+  elapsedMs: z.number().int().nonnegative().optional(),
+  /** The captcha's answer, when the install asks for one. */
+  captchaToken: z.string().min(1).max(4096).optional(),
 });
 
 export type StartConversationInput = z.input<typeof startConversationInputSchema>;
@@ -204,7 +217,7 @@ export type ChangeConversationResult =
 
 export type StartConversationResult =
   | { ok: true; conversation: ConversationWithContact }
-  | { ok: false; reason: "details_required" | "rate_limited" };
+  | { ok: false; reason: "details_required" | "rate_limited" | "refused" };
 
 /** Whose unread messages to count: the signed-in contact's, or the team's. */
 export type UnreadSide = "contact" | "agents";
@@ -341,7 +354,11 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
       );
 
       if (!result.ok) {
-        if (result.code === "details_required" || result.code === "rate_limited") {
+        if (
+          result.code === "details_required" ||
+          result.code === "rate_limited" ||
+          result.code === "refused"
+        ) {
           return { ok: false, reason: result.code };
         }
         throw unexpected("start the conversation", result);

@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { env } from "@/lib/env";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
 /**
  * Refreshes the session in the request's cookies if it is about to run out, and returns the
@@ -16,6 +17,7 @@ export async function refreshSession(request: NextRequest): Promise<NextResponse
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(cookiesToSet, headers) {

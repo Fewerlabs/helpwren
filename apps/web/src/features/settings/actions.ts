@@ -67,6 +67,10 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
     guestDetails: parsed.data.guestDetails,
     tickets: { fromChat: parsed.data.ticketsFromChat },
     visitors: { tracking: parsed.data.trackVisitors, liveList: parsed.data.liveVisitors },
+    spam: {
+      captcha: parsed.data.captcha ? "turnstile" : "off",
+      ...(parsed.data.captchaSiteKey ? { siteKey: parsed.data.captchaSiteKey } : {}),
+    },
   });
   if (result.ok) {
     revalidatePath(SETTINGS_PATH, "layout");

@@ -3,6 +3,8 @@ import { identifyInputSchema, type IdentifyResponse } from "@helpwren/core";
 import { z } from "zod";
 
 import { getCaller } from "@/lib/api/caller";
+import { LIMITS } from "@/lib/api/limits";
+import { checkLimits, requestNetwork } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/respond";
 import { verifyIdentity } from "@/lib/identity";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -43,6 +45,9 @@ async function mergeGuest(guestId: string, userId: string): Promise<number> {
  * becomes the user's. The session is the proof that those conversations are theirs to bring.
  */
 export async function POST(request: Request): Promise<Response> {
+  const limited = await checkLimits([[LIMITS.identifyPerNetwork, requestNetwork(request).key]]);
+  if (limited) return limited;
+
   const caller = await getCaller(request);
   // A session that was sent but could not be verified is said so, not passed over: the chat
   // can renew it and ask again, where carrying on would leave the guest's conversations behind.

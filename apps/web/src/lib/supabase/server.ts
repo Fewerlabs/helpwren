@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { env } from "@/lib/env";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
 /**
  * A Supabase client for Server Components, Server Actions and Route Handlers. It acts as the
@@ -18,6 +19,7 @@ export async function createSupabaseServerClient() {
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: SESSION_COOKIE_OPTIONS,
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll(cookiesToSet) {

@@ -21,6 +21,7 @@ describe("settings.getPublic", () => {
       tickets: { fromChat: true },
       guestDetails: "email_or_phone",
       visitors: { tracking: true, liveList: true },
+      spam: { captcha: "off" },
     });
   });
 });

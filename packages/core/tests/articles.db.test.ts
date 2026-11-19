@@ -85,13 +85,38 @@ describe("the help center, for a visitor", () => {
     expect(listed.total).toBeGreaterThan(2);
   });
 
-  it("records whether an article helped, for published articles only", async () => {
-    await expect(visitor().articles.sendFeedback(PUBLISHED, true)).resolves.toEqual({ ok: true });
-    await expect(visitor().articles.sendFeedback(DRAFT, true)).resolves.toEqual({
+  it("sends whether an article helped through the API, which keeps the count", async () => {
+    const calls: string[] = [];
+    const reader = createHelpwrenClient({
+      supabase: browserClient(),
+      apiUrl: "https://help.example.com",
+      fetch: (input) => {
+        const url = input instanceof Request ? input.url : input.toString();
+        calls.push(url);
+        return Promise.resolve(
+          url.includes(DRAFT)
+            ? Response.json(
+                { error: { code: "not_found", message: "No such article." } },
+                { status: 404 },
+              )
+            : new Response(null, { status: 204 }),
+        );
+      },
+    });
+    await expect(reader.articles.sendFeedback(PUBLISHED, true)).resolves.toEqual({ ok: true });
+    await expect(reader.articles.sendFeedback(DRAFT, true)).resolves.toEqual({
       ok: false,
       reason: "not_found",
     });
+    expect(calls[0]).toBe(`https://help.example.com/api/articles/${PUBLISHED}/feedback`);
     await expect(visitor().articles.feedbackTotals()).rejects.toThrow();
+  });
+
+  it("lets no reader answer straight into the database, where nothing could limit it", async () => {
+    const { error } = await browserClient()
+      .from("article_feedback")
+      .insert({ article_id: PUBLISHED, helpful: true });
+    expect(error).not.toBeNull();
   });
 
   it("is refused anything that writes", async () => {

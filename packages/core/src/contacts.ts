@@ -119,6 +119,21 @@ const COLUMNS =
 /** Characters that have a meaning in a filter and so cannot be searched for as themselves. */
 const FILTER_SYNTAX = /[,()%*\\"]/g;
 
+/** Whether a contact may still write, as the team sees it on their page. */
+export interface BlockStatus {
+  /** When the contact was blocked, or `null` if they are not. */
+  blockedAt: string | null;
+  /** Whether the network they last started a conversation from is blocked too. */
+  networkBlocked: boolean;
+  /** Whether that network is known, and so could be blocked. */
+  networkKnown: boolean;
+}
+
+export type BlockResult = { ok: true } | { ok: false; reason: "forbidden" };
+
+/** Postgres's error code for an action the access rules do not allow. */
+const NOT_ALLOWED = "42501";
+
 export function createContacts(supabase: HelpwrenSupabaseClient) {
   return {
     /**
@@ -182,6 +197,87 @@ export function createContacts(supabase: HelpwrenSupabaseClient) {
         .maybeSingle();
       if (error) throw new HelpwrenError("Could not load the contact.", { cause: error });
       return data ? contactSummarySchema.parse(data) : null;
+    },
+
+    /** Whether a contact is blocked. For the team. */
+    async blockStatus(id: string): Promise<BlockStatus> {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("blocked_at, network_key")
+        .eq("id", z.uuid().parse(id))
+        .maybeSingle();
+      if (error) throw new HelpwrenError("Could not load the contact.", { cause: error });
+      if (!data?.network_key) {
+        return { blockedAt: data?.blocked_at ?? null, networkBlocked: false, networkKnown: false };
+      }
+      const network = await supabase
+        .from("blocked_networks")
+        .select("key", { count: "exact", head: true })
+        .eq("key", data.network_key);
+      if (network.error) {
+        throw new HelpwrenError("Could not load the contact.", { cause: network.error });
+      }
+      return {
+        blockedAt: data.blocked_at,
+        networkBlocked: (network.count ?? 0) > 0,
+        networkKnown: true,
+      };
+    },
+
+    /**
+     * Blocks a contact: they can no longer write, start a conversation or send a file. With
+     * `network`, the network they last started a conversation from is blocked too, which stops
+     * them starting again as a new guest, and also anyone else who shares it. For the team.
+     * Each block is recorded in the audit log.
+     */
+    async block(id: string, options: { network?: boolean } = {}): Promise<BlockResult> {
+      const contactId = z.uuid().parse(id);
+      const { data, error } = await supabase
+        .from("contacts")
+        // The database sets the time and who did it; this only has to say "now".
+        .update({ blocked_at: new Date().toISOString() })
+        .eq("id", contactId)
+        .select("network_key");
+      if (error) {
+        if (error.code === NOT_ALLOWED) return { ok: false, reason: "forbidden" };
+        throw new HelpwrenError("Could not block the contact.", { cause: error });
+      }
+      if (data.length === 0) return { ok: false, reason: "forbidden" };
+
+      const key = data[0]?.network_key;
+      if (options.network && key) {
+        const network = await supabase
+          .from("blocked_networks")
+          .upsert({ key, contact_id: contactId }, { onConflict: "key", ignoreDuplicates: true });
+        if (network.error) {
+          throw new HelpwrenError("Could not block the network.", { cause: network.error });
+        }
+      }
+      return { ok: true };
+    },
+
+    /** Lets a blocked contact write again, and lifts the block on their network. For the team. */
+    async unblock(id: string): Promise<BlockResult> {
+      const contactId = z.uuid().parse(id);
+      const { data, error } = await supabase
+        .from("contacts")
+        .update({ blocked_at: null })
+        .eq("id", contactId)
+        .select("network_key");
+      if (error) {
+        if (error.code === NOT_ALLOWED) return { ok: false, reason: "forbidden" };
+        throw new HelpwrenError("Could not unblock the contact.", { cause: error });
+      }
+      if (data.length === 0) return { ok: false, reason: "forbidden" };
+
+      const key = data[0]?.network_key;
+      if (key) {
+        const network = await supabase.from("blocked_networks").delete().eq("key", key);
+        if (network.error) {
+          throw new HelpwrenError("Could not unblock the network.", { cause: network.error });
+        }
+      }
+      return { ok: true };
     },
 
     /** How many guests and how many users there are. */

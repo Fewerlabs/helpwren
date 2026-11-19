@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { getCaller } from "@/lib/api/caller";
 import { installSettings } from "@/lib/api/install-settings";
+import { LIMITS } from "@/lib/api/limits";
+import { checkLimits, requestNetwork } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/respond";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -18,6 +20,12 @@ export async function POST(request: Request): Promise<Response> {
   const caller = await getCaller(request);
   if (!caller) return apiError("unauthorized", "Start a session before taking up a message.");
   if (caller.isAgent) return apiError("forbidden", "Team members cannot take up a message.");
+
+  const limited = await checkLimits([
+    [LIMITS.outreachPerNetwork, requestNetwork(request).key],
+    [LIMITS.outreachPerSession, caller.id],
+  ]);
+  if (limited) return limited;
 
   const input = claimOutreachInputSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));

@@ -178,6 +178,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
     guestDetails: settings.guestDetails,
     tickets: settings.tickets,
     visitors: settings.visitors,
+    spam: settings.spam,
   }));
   const draft = useMemo(() => {
     const parsed = brandingSchema.safeParse(values);
@@ -187,9 +188,10 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           guestDetails: settings.guestDetails,
           tickets: settings.tickets,
           visitors: settings.visitors,
+          spam: settings.spam,
         }
       : null;
-  }, [settings.guestDetails, settings.tickets, settings.visitors, values]);
+  }, [settings.guestDetails, settings.tickets, settings.visitors, settings.spam, values]);
   if (draft && JSON.stringify(draft) !== JSON.stringify(shown)) setShown(draft);
 
   // Below lg there is no room beside the form, so the preview opens over it from a button.

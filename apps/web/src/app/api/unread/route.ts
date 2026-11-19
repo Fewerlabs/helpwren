@@ -2,6 +2,8 @@ import { IdentityError } from "@helpwren/adapters";
 import { z } from "zod";
 
 import { getCaller } from "@/lib/api/caller";
+import { LIMITS } from "@/lib/api/limits";
+import { checkLimits, requestNetwork } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/respond";
 import { verifyIdentity } from "@/lib/identity";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -41,6 +43,9 @@ async function contactFor(externalId: string): Promise<string | null> {
  * profile endpoint, each call asks the host product who the token belongs to.
  */
 export async function POST(request: Request): Promise<Response> {
+  const limited = await checkLimits([[LIMITS.unreadPerNetwork, requestNetwork(request).key]]);
+  if (limited) return limited;
+
   const input = inputSchema.safeParse(await request.json().catch(() => ({})));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
   const respond = (count: number) =>

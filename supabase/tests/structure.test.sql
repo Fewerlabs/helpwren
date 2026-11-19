@@ -31,13 +31,10 @@ select is_empty(
         -- The deliberate exceptions, each still narrowed by its policies. The help center is
         -- public: anyone may read a published article and the collection it is in.
         ('collections', 'SELECT'),
-        ('articles', 'SELECT'),
-        -- "Was this helpful?" is answered by readers with no session. They may add an
-        -- answer to a published article and can read none.
-        ('article_feedback', 'INSERT')
+        ('articles', 'SELECT')
       )
   $$,
-  'visitors with no session may only read settings and the help center, and rate an article'
+  'visitors with no session may only read settings and the help center'
 );
 
 select is_empty(

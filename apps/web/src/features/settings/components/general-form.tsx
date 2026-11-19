@@ -22,10 +22,12 @@ const guestDetailOptions = [
 export interface GeneralFormProps {
   settings: Settings;
   canEdit: boolean;
+  /** Whether the server has Turnstile's secret key, without which the captcha stays off. */
+  captchaSecretConfigured: boolean;
 }
 
 /** What guests are asked for, whether they can open tickets, and seeing who is on the site. */
-export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
+export function GeneralForm({ settings, canEdit, captchaSecretConfigured }: GeneralFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const form = useForm<GeneralValues>({
@@ -35,9 +37,12 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
       ticketsFromChat: settings.tickets.fromChat,
       trackVisitors: settings.visitors.tracking,
       liveVisitors: settings.visitors.liveList,
+      captcha: settings.spam.captcha === "turnstile",
+      captchaSiteKey: settings.spam.siteKey ?? "",
     },
   });
   const tracking = useWatch({ control: form.control, name: "trackVisitors" });
+  const captcha = useWatch({ control: form.control, name: "captcha" });
 
   const guestFields: FieldItem<GeneralValues>[] = [
     {
@@ -70,6 +75,27 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
         ? "Shows who is on your site right now in Visitors, and lets your team start a conversation with them."
         : "Needs Track visitors: without it there is nobody to list.",
     },
+  ];
+  const spamFields: FieldItem<GeneralValues>[] = [
+    {
+      name: "captcha",
+      label: "Ask guests to show they are people",
+      type: "switch",
+      hint: captchaSecretConfigured
+        ? "Guests answer Cloudflare Turnstile before their first message. Most are asked nothing and see a box tick itself. Signed-in users of your product are never asked."
+        : "Needs TURNSTILE_SECRET_KEY in the server's environment. Until it is set, the captcha stays off whatever this says.",
+    },
+    ...(captcha
+      ? [
+          {
+            name: "captchaSiteKey",
+            label: "Turnstile site key",
+            type: "input",
+            hint: "From your Cloudflare dashboard, under Turnstile. The secret key that comes with it goes in the server's environment, not here.",
+            props: { autoCapitalize: "none", spellCheck: false },
+          } as const,
+        ]
+      : []),
   ];
   const disabled = !canEdit || form.formState.isSubmitting;
 
@@ -113,6 +139,12 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
         description="See who is on your site, where they are and what they are reading, and write to them first."
       >
         <FieldList control={form.control} fields={visitorFields} disabled={disabled} />
+      </SettingsSection>
+      <SettingsSection
+        title="Spam"
+        description="Messages that are only links, the same words again and again, and forms filled in by bots are turned away on their own. You can block a contact from their page."
+      >
+        <FieldList control={form.control} fields={spamFields} disabled={disabled} />
       </SettingsSection>
       {canEdit ? (
         <SaveBar
