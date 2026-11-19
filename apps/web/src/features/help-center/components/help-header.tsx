@@ -86,7 +86,7 @@ export function HelpHeader({ settings, query, search = true, browse }: HelpHeade
               className="h-7 w-auto max-w-28 rounded-md object-contain"
             />
           ) : (
-            <Logo variant="mark" size={24} label="" className="text-primary" />
+            <Logo variant="mark" size={24} label="" className="text-brand" />
           )}
           <span className="truncate">{brand.name}</span>
           <span className="text-muted-foreground font-normal max-sm:hidden">Help center</span>

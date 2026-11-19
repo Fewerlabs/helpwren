@@ -36,6 +36,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  /* The install's own brand colour where one is set (accentStyle), else Helpwren's green. */
+  --color-brand: var(--brand, var(--moss));
 
   /* Brand colours */
   --color-paper: var(--paper);
