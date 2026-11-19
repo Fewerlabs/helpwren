@@ -2,19 +2,25 @@
   "name": "@helpwren/cli",
   "version": "0.0.0",
   "private": true,
-  "description": "The one-command Helpwren installer and upgrader.",
+  "description": "The Helpwren installer and upgrader: pnpm helpwren install, pnpm helpwren upgrade.",
   "license": "MIT",
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
+  "bin": {
+    "helpwren": "./src/main.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@helpwren/config": "workspace:*",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
