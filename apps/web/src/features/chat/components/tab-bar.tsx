@@ -14,10 +14,12 @@ export interface TabBarProps {
   current: (typeof tabs)[number]["name"];
   /** How many of the visitor's messages are unread. Shows a dot on Messages. */
   unread: number;
+  /** Shows the line saying what the chat runs on. The install can turn it off. */
+  poweredBy: boolean;
 }
 
 /** The tabs along the bottom of the chat, and the line that says what it runs on. */
-export function TabBar({ current, unread }: TabBarProps) {
+export function TabBar({ current, unread, poweredBy }: TabBarProps) {
   const show = useShowScreen();
 
   return (
@@ -52,9 +54,13 @@ export function TabBar({ current, unread }: TabBarProps) {
           );
         })}
       </nav>
-      <p className="text-muted-foreground text-2xs flex items-center justify-center gap-1.5 pt-1 pb-2">
-        Powered by <Logo variant="mark" size={12} label="" /> Helpwren
-      </p>
+      {poweredBy ? (
+        <p className="text-muted-foreground text-2xs flex items-center justify-center gap-1.5 pt-1 pb-2">
+          Powered by <Logo variant="mark" size={12} label="" /> Helpwren
+        </p>
+      ) : (
+        <div className="pb-2" />
+      )}
     </footer>
   );
 }

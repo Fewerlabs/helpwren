@@ -131,6 +131,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       accent: brand.accent ?? DEFAULT_ACCENT,
       accentTo: brand.accentTo ?? "",
       button: brand.button ?? brand.accent ?? DEFAULT_ACCENT,
+      poweredBy: brand.poweredBy !== false,
       position: widget.position,
       offsetX: widget.offsetX,
       offsetY: widget.offsetY,
@@ -198,6 +199,14 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           disabled={disabled}
         />
       ),
+    },
+  ];
+  const credit: Fields = [
+    {
+      name: "poweredBy",
+      label: "Show “Powered by Helpwren”",
+      type: "switch",
+      hint: "A small line at the foot of the chat and the help center.",
     },
   ];
   const colour: Fields = [
@@ -590,6 +599,12 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
               description="A colour or gradient of your own in place of Helpwren's green, and a colour for buttons if they should differ. Text on a colour turns dark or light to stay readable."
             >
               {list(colour)}
+            </SettingsSection>
+            <SettingsSection
+              title="Credit"
+              description="Helpwren is free and open source. The credit helps others find it, and you can turn it off."
+            >
+              {list(credit)}
             </SettingsSection>
           </TabsContent>
 

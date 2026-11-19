@@ -22,13 +22,15 @@ export function HelpFooter({ settings }: { settings: PublicSettings }) {
           </a>
         ))}
       </nav>
-      <a
-        href="https://helpwren.fewerlabs.dev"
-        rel="noopener"
-        className="hover:text-foreground focus-visible:outline-ring rounded-sm text-xs focus-visible:outline-2"
-      >
-        Powered by Helpwren
-      </a>
+      {brand.poweredBy === false ? null : (
+        <a
+          href="https://helpwren.fewerlabs.dev"
+          rel="noopener"
+          className="hover:text-foreground focus-visible:outline-ring rounded-sm text-xs focus-visible:outline-2"
+        >
+          Powered by Helpwren
+        </a>
+      )}
     </footer>
   );
 }

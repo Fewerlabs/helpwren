@@ -10,3 +10,4 @@ for search engines, and an author that can be changed. The `help_center` setting
 style and picture, header and footer links, a search hint, whether to show the chat, a home page
 title and description for search engines, and a public address; `settings.uploadHeaderImage`
 stores the picture.
+`brand.poweredBy: false` hides the small "Powered by Helpwren" in the chat and the help center.

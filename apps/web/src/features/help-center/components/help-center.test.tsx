@@ -107,6 +107,16 @@ describe("HelpShell", () => {
     expect(screen.getByText(/© \d{4} Acme/)).toBeInTheDocument();
   });
 
+  it("leaves the credit out when the install turned it off", () => {
+    const quiet = parseSettings([{ key: "brand", value: { name: "Acme", poweredBy: false } }]);
+    render(
+      <HelpShell settings={quiet} collections={nav}>
+        <p>The page</p>
+      </HelpShell>,
+    );
+    expect(screen.queryByRole("link", { name: "Powered by Helpwren" })).toBeNull();
+  });
+
   it("draws only the search and the page inside a host's frame", () => {
     const { rerender } = render(
       <HelpShell settings={settings} collections={nav} embed={{ hide: [] }}>

@@ -67,6 +67,7 @@ export const brandingSchema = z.object({
   accentTo: z.union([z.literal(""), z.string().regex(hex)]),
   /** The colour of buttons. The same as `accent` when they follow the brand. */
   button: z.string().regex(hex),
+  poweredBy: z.boolean(),
   position: widgetPatchSchema.shape.position,
   offsetX: widgetPatchSchema.shape.offsetX,
   offsetY: widgetPatchSchema.shape.offsetY,
@@ -122,6 +123,8 @@ export function brandingToSettings(values: BrandingValues) {
       accent: own ? values.accent : undefined,
       accentTo: own ? text(values.accentTo) : undefined,
       button: values.button === values.accent ? undefined : values.button,
+      // Saved only when turned off, so the stored brand stays as short as it was.
+      poweredBy: values.poweredBy ? undefined : false,
     },
     widget: {
       position: values.position,

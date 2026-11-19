@@ -328,7 +328,7 @@ saved later.
 **Badge** is a small label for a tag, a category or a count. Variants: `neutral`, `outline` and
 `accent`. It carries no status meaning.
 
-**Avatar** shows a person or organisation as their picture, or their initials while it loads or if
+**Avatar** sits on a card's surface with a hairline edge, like the cards around it. It shows a person or organisation as their picture, or their initials while it loads or if
 there is none. `name` is required and is its accessible name. Sizes: `sm`, `md`, `lg`.
 
 **Kbd** shows a keyboard key or shortcut in the monospace font.

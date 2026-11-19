@@ -178,6 +178,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
       <TabBar
         current={screen.name === "messages" || screen.name === "help" ? screen.name : "home"}
         unread={unread}
+        poweredBy={settings.brand.poweredBy !== false}
       />
     </>
   );

@@ -39,6 +39,11 @@ const brandSchema = z.object({
   button: accentColorSchema.optional(),
   /** A second colour. With it, large surfaces such as the launcher fade from `accent` to this. */
   accentTo: accentColorSchema.optional(),
+  /**
+   * `false` hides the small "Powered by Helpwren" in the chat and the help center. Left out,
+   * it shows, so settings saved before this existed keep their credit.
+   */
+  poweredBy: z.boolean().optional(),
 });
 
 export type Brand = z.infer<typeof brandSchema>;
@@ -239,6 +244,7 @@ export const settingsPatchSchema = z
       accent: accentColorSchema.optional(),
       accentTo: accentColorSchema.optional(),
       button: accentColorSchema.optional(),
+      poweredBy: z.boolean().optional(),
     }),
     widget: z.object({
       position: widgetPositionSchema,
