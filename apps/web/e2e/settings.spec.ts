@@ -221,20 +221,20 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   const row = team.getByRole("listitem").filter({ hasText: NEW_MEMBER.name });
   await expect(row).toContainText("Agent");
 
-  await page.getByRole("button", { name: `Make ${NEW_MEMBER.name} an admin` }).click();
+  await page.getByRole("button", { name: `Make admin, ${NEW_MEMBER.name}` }).click();
   await page
     .getByRole("alertdialog", { name: `Make ${NEW_MEMBER.name} an admin?` })
     .getByRole("button", { name: "Make admin" })
     .click();
   await expect(row).toContainText("Admin");
 
-  await page.getByRole("button", { name: `Deactivate ${NEW_MEMBER.name}` }).click();
+  await page.getByRole("button", { name: `Deactivate, ${NEW_MEMBER.name}` }).click();
   await page
     .getByRole("alertdialog", { name: `Deactivate ${NEW_MEMBER.name}?` })
     .getByRole("button", { name: "Deactivate" })
     .click();
   await expect(row).toContainText("Deactivated");
-  await expect(page.getByRole("button", { name: `Reactivate ${NEW_MEMBER.name}` })).toBeVisible();
+  await expect(page.getByRole("button", { name: `Reactivate, ${NEW_MEMBER.name}` })).toBeVisible();
 });
 
 test("an admin sets who emails are from, and is told when no provider is set up", async ({

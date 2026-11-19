@@ -25,8 +25,8 @@ export interface ActionButtonProps extends Omit<
   label: string;
   /**
    * What the button acts on, such as "Sam Rivera" for a Deactivate button in a list of people.
-   * It is read after the label but never shown, so the name a screen reader says ("Deactivate,
-   * Sam Rivera") still starts with the words on screen, which is what voice control listens for.
+   * It is added to the name after the label but never shown, so the name ("Deactivate, Sam
+   * Rivera") still starts with the words on screen, which is what voice control listens for.
    */
   target?: string;
   /** The width below which only the icon shows. */
@@ -54,10 +54,14 @@ export function ActionButton({
   return (
     // The tooltip repeats the visible label on a wide screen, so it shows only when collapsed.
     <Tooltip content={label} className={styles.tooltip}>
-      <Button size={size} className={cn(styles.button, className)} {...props}>
+      <Button
+        size={size}
+        {...(target ? { "aria-label": `${label}, ${target}` } : {})}
+        className={cn(styles.button, className)}
+        {...props}
+      >
         <Icon name={icon} weight={iconWeight} className={iconClassName} />
         <span className={styles.label}>{label}</span>
-        {target ? <span className="sr-only">, {target}</span> : null}
       </Button>
     </Tooltip>
   );

@@ -60,7 +60,7 @@ test("an admin makes a team, gives it a conversation, and finds it under that te
 
   // Removing the team asks first, and leaves the conversation where it was.
   await page.goto("/dashboard/settings/team");
-  await page.getByRole("button", { name: `Remove ${TEAM}` }).click();
+  await page.getByRole("button", { name: `Remove, ${TEAM}` }).click();
   await page
     .getByRole("alertdialog", { name: `Remove ${TEAM}?` })
     .getByRole("button", { name: "Remove team" })
