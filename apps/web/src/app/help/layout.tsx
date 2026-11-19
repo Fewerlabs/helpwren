@@ -25,7 +25,7 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
     return (
       // It fills the frame it is given and is never smaller than is usable.
       <div
-        className="bg-background text-foreground flex min-h-80 min-w-72 flex-col"
+        className="bg-card text-foreground flex min-h-80 min-w-72 flex-col"
         style={accentStyle(brand)}
       >
         {children}
@@ -36,7 +36,7 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
 
   return (
     <div
-      className="bg-background text-foreground relative isolate flex min-h-dvh flex-col"
+      className="bg-card text-foreground relative isolate flex min-h-dvh flex-col"
       style={accentStyle(settings.brand)}
     >
       {children}

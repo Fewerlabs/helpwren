@@ -5,6 +5,7 @@ import {
   HELP_HEADER_LINKS_MAX,
   LOGO_MAX_BYTES,
   LOGO_TYPES,
+  type HelpHeaderStyle,
   type Settings,
 } from "@helpwren/core";
 import {
@@ -14,7 +15,6 @@ import {
   ColorPicker,
   FieldList,
   Icon,
-  Link,
   Logo,
   Slider,
   Tabs,
@@ -37,9 +37,11 @@ import {
   brandingToSettings,
   DEFAULT_ACCENT,
   type BrandingValues,
+  type LinkRow,
 } from "../schemas";
+import { ChatPagePreview } from "./chat-page-preview";
 import { HelpCenterPreview } from "./help-center-preview";
-import { ImageField } from "./image-field";
+import { ImageField, type ImageFieldProps } from "./image-field";
 import { LinksField } from "./links-field";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
@@ -142,6 +144,8 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       quickReplies: widget.quickReplies,
       chatTitle: chatPage.title ?? "",
       chatIntro: chatPage.intro ?? "",
+      chatHeaderStyle: chatPage.headerStyle,
+      chatHeaderImage: chatPage.headerImage ?? "",
       helpTitle: helpCenter.title ?? "",
       helpIntro: helpCenter.intro ?? "",
       helpHeaderStyle: helpCenter.headerStyle,
@@ -254,6 +258,11 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
     },
   ];
   const fill = colorBackground({ color: values.accent, to: values.accentTo || undefined });
+  // The soft wash of the brand's colours that the chat page and the help center draw at the top.
+  const glow = [
+    `radial-gradient(90% 110% at 0% 0%, color-mix(in srgb, ${values.accent} 55%, transparent), transparent 70%)`,
+    `radial-gradient(80% 100% at 100% 0%, color-mix(in srgb, ${values.accentTo || values.accent} 40%, transparent), transparent 70%)`,
+  ].join(", ");
   const launcher: Fields = [
     {
       name: "position",
@@ -383,6 +392,81 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       props: { placeholder: "Track my order" },
     },
   ];
+  /** What a field's own render is handed, narrowed to what these shared fields use. */
+  interface Bound<Value> {
+    field: { value: Value; onChange: (value: Value) => void };
+    fieldState: { error?: unknown };
+  }
+  /** What is behind the top of a page, the same choice for the chat page and the help center. */
+  const background = ({ field }: Bound<HelpHeaderStyle>, image: string) => (
+    <ChoiceCards
+      label="Background"
+      value={field.value}
+      onValueChange={field.onChange}
+      disabled={disabled}
+      options={[
+        {
+          value: "brand",
+          label: "Brand colour",
+          visual: <HeaderSwatch className="bg-background" style={{ background: glow }} />,
+        },
+        {
+          value: "plain",
+          label: "Plain",
+          visual: <HeaderSwatch className="bg-background" />,
+        },
+        {
+          value: "image",
+          label: "Picture",
+          visual: (
+            <HeaderSwatch
+              className="bg-muted"
+              {...(image
+                ? {
+                    style: {
+                      backgroundImage: `url(${JSON.stringify(image)})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    },
+                  }
+                : {})}
+            >
+              {image ? null : <Icon name="image" className="size-4" />}
+            </HeaderSwatch>
+          ),
+        },
+      ]}
+    />
+  );
+  const PICTURE_HINT =
+    "PNG, JPG or WebP, up to 1 MB. Wide works best. It is darkened so the words on it stay readable.";
+  /** The picture behind the top of a page, shown once Picture is chosen. */
+  const picture = ({ field }: Bound<string>, upload: ImageFieldProps["upload"]) => (
+    <ImageField
+      noun="picture"
+      value={field.value}
+      onChange={field.onChange}
+      upload={upload}
+      placeholder={<Icon name="image" className="text-muted-foreground size-5" />}
+      maxBytes={LOGO_MAX_BYTES}
+      accept={Object.keys(LOGO_TYPES)}
+      disabled={disabled}
+    />
+  );
+  const HEADER_LINKS_HINT = `Beside your name at the top, such as a way back to your site. Up to ${HELP_HEADER_LINKS_MAX}.`;
+  const FOOTER_LINKS_HINT = `At the foot of the page, such as your terms and privacy policy. Up to ${HELP_FOOTER_LINKS_MAX}.`;
+  /** A list of header or footer links, the same for the chat page and the help center. */
+  const links = ({ field, fieldState }: Bound<LinkRow[]>, noun: string, max: number) => (
+    <LinksField
+      noun={noun}
+      value={field.value}
+      onChange={field.onChange}
+      max={max}
+      errors={fieldState.error}
+      disabled={disabled}
+    />
+  );
+
   const chatPageFields: Fields = [
     {
       name: "chatTitle",
@@ -395,6 +479,20 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       label: "Line under it",
       type: "textarea",
       props: { rows: 2, placeholder: "Send us a message and we will reply here." },
+    },
+    {
+      name: "chatHeaderStyle",
+      label: "Background",
+      type: "custom",
+      render: (bound) => background(bound, values.chatHeaderImage),
+    },
+    {
+      name: "chatHeaderImage",
+      label: "Header picture",
+      type: "custom",
+      hidden: values.chatHeaderStyle !== "image",
+      hint: PICTURE_HINT,
+      render: (bound) => picture(bound, (file) => getClient().settings.uploadChatHeaderImage(file)),
     },
   ];
   const helpFields: Fields = [
@@ -421,65 +519,15 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       name: "helpHeaderStyle",
       label: "Background",
       type: "custom",
-      render: ({ field }) => (
-        <ChoiceCards
-          label="Background"
-          value={field.value}
-          onValueChange={field.onChange}
-          disabled={disabled}
-          options={[
-            {
-              value: "brand",
-              label: "Brand colour",
-              visual: <HeaderSwatch style={{ background: fill }} />,
-            },
-            {
-              value: "plain",
-              label: "Plain",
-              visual: <HeaderSwatch className="bg-background" />,
-            },
-            {
-              value: "image",
-              label: "Picture",
-              visual: (
-                <HeaderSwatch
-                  className="bg-muted"
-                  {...(values.helpHeaderImage
-                    ? {
-                        style: {
-                          backgroundImage: `url(${JSON.stringify(values.helpHeaderImage)})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        },
-                      }
-                    : {})}
-                >
-                  {values.helpHeaderImage ? null : <Icon name="image" className="size-4" />}
-                </HeaderSwatch>
-              ),
-            },
-          ]}
-        />
-      ),
+      render: (bound) => background(bound, values.helpHeaderImage),
     },
     {
       name: "helpHeaderImage",
       label: "Header picture",
       type: "custom",
       hidden: values.helpHeaderStyle !== "image",
-      hint: "PNG, JPG or WebP, up to 1 MB. Wide works best. It is darkened so the words on it stay readable.",
-      render: ({ field }) => (
-        <ImageField
-          noun="picture"
-          value={field.value}
-          onChange={field.onChange}
-          upload={(file) => getClient().settings.uploadHeaderImage(file)}
-          placeholder={<Icon name="image" className="text-muted-foreground size-5" />}
-          maxBytes={LOGO_MAX_BYTES}
-          accept={Object.keys(LOGO_TYPES)}
-          disabled={disabled}
-        />
-      ),
+      hint: PICTURE_HINT,
+      render: (bound) => picture(bound, (file) => getClient().settings.uploadHeaderImage(file)),
     },
   ];
   const helpLinkFields: Fields = [
@@ -487,33 +535,15 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       name: "helpHeaderLinks",
       label: "Header links",
       type: "custom",
-      hint: `Beside your name at the top, such as a way back to your site. Up to ${HELP_HEADER_LINKS_MAX}.`,
-      render: ({ field, fieldState }) => (
-        <LinksField
-          noun="Header link"
-          value={field.value}
-          onChange={field.onChange}
-          max={HELP_HEADER_LINKS_MAX}
-          errors={fieldState.error}
-          disabled={disabled}
-        />
-      ),
+      hint: HEADER_LINKS_HINT,
+      render: (bound) => links(bound, "Header link", HELP_HEADER_LINKS_MAX),
     },
     {
       name: "helpFooterLinks",
       label: "Footer links",
       type: "custom",
-      hint: `At the foot of every page, such as your terms and privacy policy. Up to ${HELP_FOOTER_LINKS_MAX}.`,
-      render: ({ field, fieldState }) => (
-        <LinksField
-          noun="Footer link"
-          value={field.value}
-          onChange={field.onChange}
-          max={HELP_FOOTER_LINKS_MAX}
-          errors={fieldState.error}
-          disabled={disabled}
-        />
-      ),
+      hint: FOOTER_LINKS_HINT,
+      render: (bound) => links(bound, "Footer link", HELP_FOOTER_LINKS_MAX),
     },
   ];
   const helpChatFields: Fields = [
@@ -632,14 +662,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           <TabsContent value="chat-page" className="pt-1">
             <SettingsSection
               title="Chat page"
-              description={
-                <>
-                  The chat on a page of its own, for a link in an email, a profile or a QR code.{" "}
-                  <Link href="/chat" target="_blank">
-                    Open the chat page
-                  </Link>
-                </>
-              }
+              description="The chat on a page of its own, for a link in an email, a profile or a QR code: what it says over the chat, and what is behind it."
             >
               {list(chatPageFields)}
             </SettingsSection>
@@ -684,6 +707,8 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       <aside className="lg:sticky lg:top-3">
         {tab === "help-center" ? (
           <HelpCenterPreview settings={shown} />
+        ) : tab === "chat-page" ? (
+          <ChatPagePreview settings={shown} />
         ) : (
           <WidgetPreview settings={shown} />
         )}

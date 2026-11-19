@@ -71,7 +71,7 @@ export interface HelpHeaderProps {
 export function HelpHeader({ settings, query, search = true, browse }: HelpHeaderProps) {
   const { brand, helpCenter } = settings;
   return (
-    <header className="border-rule bg-background/85 sticky top-0 z-30 border-b backdrop-blur-md">
+    <header className="border-rule bg-card/85 sticky top-0 z-30 border-b backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-[90rem] items-center gap-3 px-4 sm:px-6 lg:gap-5">
         {browse}
         <Link

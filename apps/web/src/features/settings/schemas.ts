@@ -86,6 +86,9 @@ export const brandingSchema = z.object({
     .max(QUICK_REPLIES_MAX, `Offer ${QUICK_REPLIES_MAX} replies at most.`),
   chatTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
   chatIntro: z.string().trim().max(200, "Keep this under 200 characters."),
+  chatHeaderStyle: helpHeaderStyleSchema,
+  /** The address of the uploaded picture behind the top of the chat page. Empty for none. */
+  chatHeaderImage: z.string(),
   helpTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
   helpIntro: z.string().trim().max(200, "Keep this under 200 characters."),
   helpHeaderStyle: helpHeaderStyleSchema,
@@ -142,7 +145,15 @@ export function brandingToSettings(values: BrandingValues) {
       welcome: text(values.welcome),
       quickReplies: values.quickReplies,
     },
-    chatPage: { title: text(values.chatTitle), intro: text(values.chatIntro) },
+    chatPage: {
+      title: text(values.chatTitle),
+      intro: text(values.chatIntro),
+      headerStyle:
+        values.chatHeaderStyle === "image" && !values.chatHeaderImage
+          ? "brand"
+          : values.chatHeaderStyle,
+      headerImage: text(values.chatHeaderImage),
+    },
     helpCenter: {
       title: text(values.helpTitle),
       intro: text(values.helpIntro),

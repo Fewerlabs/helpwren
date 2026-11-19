@@ -202,7 +202,11 @@ describe("branding", () => {
         welcome: "  Hello!  ",
         quickReplies: ["Pricing", "Track my order"],
       },
-      chatPage: { title: "Talk to Acme" },
+      chatPage: {
+        title: "Talk to Acme",
+        headerStyle: "image",
+        headerImage: "https://cdn.example/chat.jpg",
+      },
       helpCenter: {
         headerStyle: "plain",
         headerLinks: [{ label: " Back to Acme ", url: "https://acme.example" }],
@@ -223,7 +227,11 @@ describe("branding", () => {
         welcome: "Hello!",
         quickReplies: ["Pricing", "Track my order"],
       },
-      chatPage: { title: "Talk to Acme" },
+      chatPage: {
+        title: "Talk to Acme",
+        headerStyle: "image",
+        headerImage: "https://cdn.example/chat.jpg",
+      },
       helpCenter: {
         headerStyle: "plain",
         headerLinks: [{ label: "Back to Acme", url: "https://acme.example" }],

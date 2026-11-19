@@ -27,7 +27,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
 
   return (
     // A wash of the brand's colour glows from the top corner and fades out with no edge.
-    <div className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(130%_22rem_at_0%_0%,color-mix(in_srgb,var(--brand,var(--primary))_20%,transparent),transparent_72%)] bg-no-repeat">
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(130%_19rem_at_0%_-5rem,color-mix(in_srgb,var(--brand,var(--primary))_20%,transparent),transparent_72%)] bg-no-repeat">
       <div className="relative px-5 pt-5 pb-2">
         <BrandMark />
         {/* The speech bubbles alone: the wren is our mark, and this screen wears theirs. */}

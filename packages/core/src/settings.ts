@@ -76,14 +76,6 @@ const widgetSchema = z.object({
 
 export type WidgetSettings = z.infer<typeof widgetSchema>;
 
-/** What the chat page says at the top, in place of the usual wording. */
-const pageTextSchema = z.object({
-  title: z.string().min(1).optional(),
-  intro: z.string().min(1).optional(),
-});
-
-export type PageText = z.infer<typeof pageTextSchema>;
-
 /** The most links the help center's header and footer hold. */
 export const HELP_HEADER_LINKS_MAX = 4;
 export const HELP_FOOTER_LINKS_MAX = 6;
@@ -139,6 +131,20 @@ const helpCenterSchema = z.object({
 
 export type HelpCenterSettings = z.infer<typeof helpCenterSchema>;
 
+/** The chat on a page of its own, at `/chat`. Everything has a default. */
+const chatPageSchema = z.object({
+  /** The heading over the chat, in place of "Chat with {brand}". */
+  title: z.string().min(1).optional(),
+  /** The line under it. */
+  intro: z.string().min(1).optional(),
+  /** What fills the band behind the top of the page, as for the help center's header. */
+  headerStyle: helpHeaderStyleSchema.default("brand"),
+  /** The address of the picture behind it, for the `image` style. */
+  headerImage: z.url().optional(),
+});
+
+export type ChatPageSettings = z.infer<typeof chatPageSchema>;
+
 /** How tickets come in. */
 const ticketsSchema = z.object({
   /** Whether a visitor can open a ticket themselves from the chat. */
@@ -161,7 +167,7 @@ const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
   widget: widgetSchema.default(() => widgetSchema.parse({})),
   /** The chat on a page of its own, at `/chat`, for a link in an email or a profile. */
-  chat_page: pageTextSchema.default({}),
+  chat_page: chatPageSchema.default(() => chatPageSchema.parse({})),
   tickets: ticketsSchema.default({ fromChat: true }),
   /** Who the install's emails are from. Without an address it sends none. */
   email: emailSchema.default(() => emailSchema.parse({})),
@@ -200,7 +206,7 @@ export type PublicSettings = Pick<
 export const publicSettingsSchema = z.object({
   brand: brandSchema,
   widget: widgetSchema,
-  chatPage: pageTextSchema,
+  chatPage: chatPageSchema,
   helpCenter: helpCenterSchema,
   tickets: ticketsSchema,
   guestDetails: guestDetailsSchema,
@@ -258,7 +264,10 @@ export const settingsPatchSchema = z
         .array(z.string().trim().min(1).max(QUICK_REPLY_MAX_LENGTH))
         .max(QUICK_REPLIES_MAX),
     }),
-    chatPage: pageTextPatchSchema,
+    chatPage: pageTextPatchSchema.extend({
+      headerStyle: helpHeaderStyleSchema,
+      headerImage: z.url().max(2000).optional(),
+    }),
     tickets: z.object({ fromChat: z.boolean() }),
     email: z.object({
       fromName: z.string().trim().min(1).max(60).optional(),
@@ -380,6 +389,10 @@ export function createSettings(supabase: HelpwrenSupabaseClient) {
     /** Stores the picture for the help center's header, to save as `helpCenter.headerImage`. */
     uploadHeaderImage: (file: Blob): Promise<UploadLogoResult> =>
       uploadBrandImage(file, "help-header"),
+
+    /** Stores the picture behind the top of the chat page, to save as `chatPage.headerImage`. */
+    uploadChatHeaderImage: (file: Blob): Promise<UploadLogoResult> =>
+      uploadBrandImage(file, "chat-header"),
 
     async getPublic(): Promise<PublicSettings> {
       const { data, error } = await supabase

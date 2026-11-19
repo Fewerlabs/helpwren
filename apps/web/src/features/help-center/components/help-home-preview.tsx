@@ -42,7 +42,7 @@ export function HelpHomePreview({ settings, collections }: HelpHomePreviewProps)
 
   return (
     <div
-      className="bg-background text-foreground relative isolate flex min-h-full flex-col overflow-hidden"
+      className="bg-card text-foreground relative isolate flex min-h-full flex-col overflow-hidden"
       style={accentStyle(settings.brand)}
     >
       <HelpShell settings={settings} collections={shown} home inert>
