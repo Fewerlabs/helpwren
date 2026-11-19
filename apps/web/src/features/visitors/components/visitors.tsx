@@ -10,6 +10,7 @@ import {
   EmptyState,
   Icon,
   Link,
+  Pagination,
   QueryList,
 } from "@helpwren/design-system";
 import NextLink from "next/link";
@@ -35,6 +36,7 @@ import {
 import { VisitorDetails } from "./visitor-details";
 
 const SETTINGS_HREF = "/dashboard/settings/general";
+const PAGE_SIZE = 25;
 
 export interface VisitorsProps {
   settings: VisitorSettings;
@@ -63,7 +65,8 @@ function SwitchedOff({ tracking }: { tracking: boolean }) {
 
 /**
  * Who is on the site right now: everyone whose chat checked in within the last two minutes,
- * asked for again every fifteen seconds while the page is open. Opening one shows where they
+ * 25 to a page, asked for again every fifteen seconds while the page is open. A refresh keeps
+ * the page on screen, or moves back to the last one if people left and it no longer exists. Opening one shows where they
  * are and what they have looked at, and lets the team write to them first.
  */
 export function Visitors({ settings }: VisitorsProps) {
@@ -171,10 +174,15 @@ export function Visitors({ settings }: VisitorsProps) {
       {on ? (
         <QueryList
           queryKey={[...VISITORS_QUERY_KEY, "live"]}
-          queryFn={async () => ({
-            items: await getClient().visitors.list({ activeWithinSeconds: ACTIVE_WITHIN_SECONDS }),
-          })}
-          pagination="none"
+          queryFn={({ page, pageSize }) =>
+            getClient().visitors.list({
+              activeWithinSeconds: ACTIVE_WITHIN_SECONDS,
+              page,
+              limit: pageSize,
+            })
+          }
+          pagination="pages"
+          pageSize={PAGE_SIZE}
           refetchInterval={REFRESH_EVERY_MS}
         >
           {(list) => (
@@ -182,9 +190,11 @@ export function Visitors({ settings }: VisitorsProps) {
               <PanelHeader>
                 <h2 className="flex items-baseline gap-1.5 font-semibold">
                   On your site now
-                  <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                    {list.items.length}
-                  </span>
+                  {list.total === undefined ? null : (
+                    <span className="text-muted-foreground text-xs font-normal tabular-nums">
+                      {list.total}
+                    </span>
+                  )}
                 </h2>
               </PanelHeader>
               <div className="min-h-0 flex-1 overflow-y-auto">
@@ -223,6 +233,13 @@ export function Visitors({ settings }: VisitorsProps) {
                   />
                 )}
               </div>
+              {list.pagination ? (
+                <Pagination
+                  pagination={list.pagination}
+                  noun={{ one: "visitor", other: "visitors" }}
+                  messages={{ label: "Visitors pages" }}
+                />
+              ) : null}
             </Panel>
           )}
         </QueryList>

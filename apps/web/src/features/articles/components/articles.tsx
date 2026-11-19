@@ -9,6 +9,7 @@ import {
   EmptyState,
   FilterBar,
   Icon,
+  Pagination,
   QueryList,
   SearchField,
   toast,
@@ -463,37 +464,13 @@ export function Articles() {
                 )}
               </div>
 
-              {!collection &&
-              list.pagination &&
-              (list.pagination.hasPrevious || list.pagination.hasNext) ? (
-                <footer className="border-rule flex h-11 shrink-0 items-center justify-between border-t px-3">
-                  <p className="text-muted-foreground text-xs tabular-nums" aria-live="polite">
-                    Page {list.pagination.page}
-                    {list.pagination.pageCount ? ` of ${list.pagination.pageCount}` : ""}
-                  </p>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={!list.pagination.hasPrevious}
-                      onClick={() => {
-                        setPage(page - 1);
-                      }}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={!list.pagination.hasNext}
-                      onClick={() => {
-                        setPage(page + 1);
-                      }}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </footer>
+              {/* A collection shows all its articles at once, to drag into order. */}
+              {!collection && list.pagination ? (
+                <Pagination
+                  pagination={list.pagination}
+                  noun={{ one: "article", other: "articles" }}
+                  messages={{ label: "Articles pages" }}
+                />
               ) : null}
             </Panel>
           );

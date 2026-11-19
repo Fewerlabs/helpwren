@@ -76,6 +76,9 @@ test("a visitor shows in Visitors with their page, until the setting hides the l
   await expect(row).toBeVisible();
   // The page they are on, as a link to it.
   await expect(row.getByRole("link")).toHaveAttribute("href", /\/chat$/);
+  await expect(agent.getByRole("navigation", { name: "Visitors pages" })).toContainText(
+    /visitors?|of \d+/,
+  );
 
   await row.getByRole("button", { name: visitorName(id) }).click();
   const details = agent.getByRole("region", { name: "Visitor" });

@@ -150,6 +150,7 @@ export const Pages: Story = {
       queryFn={fetchConversations}
       pagination="pages"
       pageSize={5}
+      noun={{ one: "conversation", other: "conversations" }}
       staleTime={60_000}
       {...list}
     />
