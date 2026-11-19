@@ -9,10 +9,15 @@ import {
   type Settings,
 } from "@helpwren/core";
 import {
+  Button,
   ChoiceCards,
   cn,
   colorBackground,
   ColorPicker,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   FieldList,
   Icon,
   Logo,
@@ -30,6 +35,7 @@ import { useMemo, useState, type ComponentProps } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
 import { useHelpwren } from "@/lib/helpwren-context";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 import { saveBranding } from "../actions";
 import {
@@ -183,6 +189,18 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       : null;
   }, [settings.guestDetails, settings.tickets, values]);
   if (draft && JSON.stringify(draft) !== JSON.stringify(shown)) setShown(draft);
+
+  // Below lg there is no room beside the form, so the preview opens over it from a button.
+  const wide = useMediaQuery("(min-width: 64rem)");
+  const [previewing, setPreviewing] = useState(false);
+  const preview =
+    tab === "help-center" ? (
+      <HelpCenterPreview settings={shown} />
+    ) : tab === "chat-page" ? (
+      <ChatPagePreview settings={shown} />
+    ) : (
+      <WidgetPreview settings={shown} />
+    );
 
   const identity: Fields = [
     { name: "brandName", label: "Brand name", type: "input", required: true },
@@ -602,6 +620,8 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
     <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
       <form
         noValidate
+        // Room under the Save button, so it scrolls up clear of the floating Preview button.
+        className="max-lg:pb-16"
         onSubmit={(event) => {
           void form.handleSubmit(save)(event);
         }}
@@ -704,15 +724,29 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           />
         ) : null}
       </form>
-      <aside className="lg:sticky lg:top-3">
-        {tab === "help-center" ? (
-          <HelpCenterPreview settings={shown} />
-        ) : tab === "chat-page" ? (
-          <ChatPagePreview settings={shown} />
-        ) : (
-          <WidgetPreview settings={shown} />
-        )}
-      </aside>
+      {/* Mounted only where it is seen, so the widget runs once: beside the form on a wide
+          screen, and in the dialog below on a narrower one. */}
+      {wide ? <aside className="sticky top-3">{preview}</aside> : null}
+      <Button
+        variant="secondary"
+        // Above the phone's tab bar, and clear of the Save button, which the form's padding
+        // lets scroll up past it.
+        className="fixed right-4 bottom-18 z-20 rounded-full shadow-lg md:bottom-6 lg:hidden"
+        onClick={() => {
+          setPreviewing(true);
+        }}
+      >
+        <Icon name="eye" />
+        Preview
+      </Button>
+      <Dialog open={previewing && !wide} onOpenChange={setPreviewing}>
+        <DialogContent fullScreen aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Preview</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto">{preview}</div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
