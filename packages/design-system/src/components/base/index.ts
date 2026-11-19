@@ -84,6 +84,13 @@ export { Link, type LinkProps } from "./link/link";
 export { OtpInput, type OtpInputProps } from "./otp-input/otp-input";
 export { OptionList, type OptionListOption, type OptionListProps } from "./option-list/option-list";
 export {
+  Pagination,
+  type PaginationMessages,
+  type PaginationNoun,
+  type PaginationProps,
+  type PaginationState,
+} from "./pagination/pagination";
+export {
   Popover,
   PopoverAnchor,
   PopoverContent,
