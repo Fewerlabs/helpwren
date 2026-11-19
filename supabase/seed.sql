@@ -346,3 +346,6 @@ values
     ]},
     {"type":"callout","attrs":{"tone":"tip"},"content":[{"type":"paragraph","content":[{"type":"text","text":"Add a note instead of a reply to talk to your team about a conversation. The visitor never sees notes."}]}]}
   ]}$json$);
+
+-- The demo install comes with a team, so it has been set up: the wizard at /setup is closed.
+update public.install_status set setup_completed_at = now() where setup_completed_at is null;

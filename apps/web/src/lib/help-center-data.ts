@@ -14,6 +14,7 @@ import { cache } from "react";
 
 import { env } from "@/lib/env";
 import { HELP_CENTER_KEEP_FOR, HELP_CENTER_TAG } from "@/lib/help-center-cache";
+import { supabaseServerUrl } from "@/lib/supabase/server-url";
 
 /**
  * The Helpwren client the public help center reads through: a visitor with no session, whoever
@@ -22,11 +23,9 @@ import { HELP_CENTER_KEEP_FOR, HELP_CENTER_TAG } from "@/lib/help-center-cache";
  */
 function visitor() {
   return createHelpwrenClient({
-    supabase: createClient<Database>(
-      env.NEXT_PUBLIC_SUPABASE_URL,
-      env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    ),
+    supabase: createClient<Database>(supabaseServerUrl, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }),
   });
 }
 

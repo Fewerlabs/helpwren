@@ -45,8 +45,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // The dashboard, the sign-in page and a team member's preview of a draft have sessions to
+  // The dashboard, the sign-in page, the setup wizard and a team member's preview of a draft have sessions to
   // refresh; the chat has a framing rule to set, and so has the help center when a host embeds
   // it. Other routes skip the proxy entirely.
-  matcher: ["/dashboard/:path*", "/login", "/embed", "/help", "/help/:path*"],
+  matcher: ["/dashboard/:path*", "/login", "/setup", "/embed", "/help", "/help/:path*"],
 };

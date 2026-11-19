@@ -3,11 +3,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getCurrentAgent, DASHBOARD_PATH, LoginForm } from "@/features/agent-auth";
+import { hasTeam } from "@/lib/install-status";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 export default async function LoginPage() {
   if (await getCurrentAgent()) redirect(DASHBOARD_PATH);
+  // A new install has nobody to sign in yet: the first admin is made in the setup wizard.
+  if (!(await hasTeam())) redirect("/setup");
 
   return (
     <main className="grid min-h-dvh place-items-center p-6">

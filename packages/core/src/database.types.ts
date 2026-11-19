@@ -567,6 +567,34 @@ export type Database = {
           },
         ];
       };
+      install_status: {
+        Row: {
+          id: boolean;
+          setup_completed_at: string | null;
+          widget_first_seen_at: string | null;
+          widget_first_seen_origin: string | null;
+          widget_last_seen_at: string | null;
+          widget_last_seen_origin: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          id?: boolean;
+          setup_completed_at?: string | null;
+          widget_first_seen_at?: string | null;
+          widget_first_seen_origin?: string | null;
+          widget_last_seen_at?: string | null;
+          widget_last_seen_origin?: string | null;
+        };
+        Update: {
+          id?: boolean;
+          setup_completed_at?: string | null;
+          widget_first_seen_at?: string | null;
+          widget_first_seen_origin?: string | null;
+          widget_last_seen_at?: string | null;
+          widget_last_seen_origin?: string | null;
+        };
+        Relationships: [];
+      };
       messages: {
         Row: {
           attachments: NonNullable<Json>;
@@ -1073,6 +1101,10 @@ export type Database = {
         Args: { contact_id: string; context?: Json; source: string; visitor_id: string };
         Returns: string;
       };
+      create_first_admin: {
+        Args: { email: string; name: string; user_id: string };
+        Returns: boolean;
+      };
       identify_contact: {
         Args: {
           attributes?: Json;
@@ -1139,8 +1171,10 @@ export type Database = {
         };
         Returns: boolean;
       };
+      record_widget_seen: { Args: { origin: string }; Returns: undefined };
       reorder_articles: { Args: { ids: string[] }; Returns: undefined };
       reorder_collections: { Args: { ids: string[] }; Returns: undefined };
+      schema_version: { Args: Record<PropertyKey, never>; Returns: string };
       search_articles: {
         Args: { query: string };
         Returns: {

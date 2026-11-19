@@ -20,6 +20,11 @@ const serverEnvSchema = z.object({
    * that are due. Long and random. Unset means there is no scheduled work.
    */
   CRON_SECRET: z.string().min(16).optional(),
+  /**
+   * Where the server reaches Supabase when that differs from the public address, such as
+   * `http://kong:8000` beside a self-hosted Supabase in Docker. Unset means the public one.
+   */
+  SUPABASE_INTERNAL_URL: z.url().optional(),
 });
 
 function parseServerEnv(source: Record<string, string | undefined>) {
@@ -39,4 +44,5 @@ export const serverEnv = parseServerEnv({
   SMTP_URL: set(process.env.SMTP_URL),
   RESEND_API_KEY: set(process.env.RESEND_API_KEY),
   CRON_SECRET: set(process.env.CRON_SECRET),
+  SUPABASE_INTERNAL_URL: set(process.env.SUPABASE_INTERNAL_URL),
 });
