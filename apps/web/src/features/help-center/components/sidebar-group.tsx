@@ -1,11 +1,12 @@
 "use client";
 
-import { Expandable, Icon, type IconName } from "@helpwren/design-system";
+import { CollectionIcon, Expandable, Icon } from "@helpwren/design-system";
 import { useId, useState, type ReactNode } from "react";
 
 export interface SidebarGroupProps {
   name: string;
-  icon: IconName;
+  /** The Phosphor name of the collection's icon. */
+  icon: string;
   /** How many articles it holds, shown beside its name. */
   count: number;
   /** Whether it starts open. The reader can open and close it from then on. */
@@ -30,7 +31,7 @@ export function SidebarGroup({ name, icon, count, defaultOpen, children }: Sideb
           setOpen(!open);
         }}
       >
-        <Icon name={icon} weight="duotone" className="text-foreground size-4 shrink-0" />
+        <CollectionIcon name={icon} weight="duotone" className="text-foreground size-4" />
         <span className="min-w-0 flex-1 text-pretty">{name}</span>
         <span className="text-muted-foreground text-xs font-normal tabular-nums">{count}</span>
         <Icon

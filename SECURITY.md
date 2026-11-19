@@ -23,6 +23,11 @@ Please include:
 - We will keep you informed while we investigate and agree a disclosure date with you.
 - We will credit you in the advisory unless you prefer otherwise.
 
+## Reviews
+
+What has been checked for abuse and misuse, what was fixed and what is left:
+[docs/security/abuse-review.md](docs/security/abuse-review.md).
+
 ## Supported versions
 
 Helpwren is pre-alpha. Only the latest commit on `main` receives security fixes. This section

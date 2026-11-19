@@ -238,7 +238,7 @@ export function useAttachmentUrls(attachments: readonly Attachment[]) {
   const paths = attachments.map((attachment) => attachment.path);
   return useQuery({
     queryKey: ["conversation", "attachment-urls", ...paths],
-    queryFn: () => getClient().attachments.urls(paths),
+    queryFn: () => getClient().attachments.urls(attachments),
     enabled: paths.length > 0,
     staleTime: 45 * 60_000,
     refetchInterval: 45 * 60_000,

@@ -5,6 +5,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
 import { sendEmail } from "@/lib/email";
+import { createInboundSecret, saveResendInbound } from "@/lib/email/inbound";
 import { HELP_CENTER_TAG } from "@/lib/help-center-cache";
 import { getHelpwren } from "@/lib/helpwren";
 import {
@@ -70,6 +71,10 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
     guestDetails: parsed.data.guestDetails,
     tickets: { fromChat: parsed.data.ticketsFromChat },
     visitors: { tracking: parsed.data.trackVisitors, liveList: parsed.data.liveVisitors },
+    spam: {
+      captcha: parsed.data.captcha ? "turnstile" : "off",
+      ...(parsed.data.captchaSiteKey ? { siteKey: parsed.data.captchaSiteKey } : {}),
+    },
   });
   if (result.ok) {
     revalidatePath(SETTINGS_PATH, "layout");
@@ -159,11 +164,19 @@ export async function changeMember(id: string, change: MemberChange): Promise<Ch
   return result;
 }
 
-/** Saves who the install's emails are from. The database refuses anyone who is not an admin. */
+/**
+ * Saves who the install's emails are from and how replies come back. The database refuses
+ * anyone who is not an admin; the Resend secrets, written with the secret key, are checked here.
+ */
 export async function saveEmail(values: EmailValues): Promise<SaveResult> {
   const parsed = emailSchema.safeParse(values);
   if (!parsed.success) return { ok: false, reason: "invalid" };
-  const { fromName, fromAddress, replies, status } = parsed.data;
+  const { fromName, fromAddress, replies, status, inboundEnabled, replyAddress } = parsed.data;
+  const { inboundProvider, resendSigningSecret, resendApiKey } = parsed.data;
+  // Replies cannot come back without an address to come back to.
+  if (inboundEnabled && !replyAddress) return { ok: false, reason: "invalid" };
+  const secretsGiven = resendSigningSecret !== "" || resendApiKey !== "";
+  if (secretsGiven && !(await isAdmin())) return { ok: false, reason: "forbidden" };
 
   const helpwren = await getHelpwren();
   const result = await helpwren.settings.update({
@@ -172,10 +185,27 @@ export async function saveEmail(values: EmailValues): Promise<SaveResult> {
       status,
       ...(fromName ? { fromName } : {}),
       ...(fromAddress ? { fromAddress } : {}),
+      inbound: {
+        enabled: inboundEnabled,
+        provider: inboundProvider,
+        ...(replyAddress ? { address: replyAddress } : {}),
+      },
     },
   });
+  if (result.ok && secretsGiven) await saveResendInbound(resendSigningSecret, resendApiKey);
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
+}
+
+/**
+ * Makes the secret Postmark's webhook address or the generic adapter's signature uses,
+ * replacing the old one. Shown this once.
+ */
+export async function makeInboundSecret(): Promise<WebhookSecretResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  const secret = await createInboundSecret();
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true, secret };
 }
 
 export type TestEmailResult = { ok: true } | { ok: false; detail: string };

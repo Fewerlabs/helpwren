@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createHelpwrenClient, type Note } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { browserClient, serverClient } from "./support/local-supabase";
+import { runMarker, signIn } from "./support/test-data";
 
 // These run against the local database and its demo data (supabase/seed.sql).
 const guestIds: string[] = [];
@@ -10,12 +11,7 @@ function newClient() {
   return createHelpwrenClient({ supabase: browserClient() });
 }
 
-async function signedInAgent(email = "sam@example.com") {
-  const client = newClient();
-  const result = await client.auth.verifyLoginCode(email, await issueLoginCode(email));
-  if (!result.ok) throw new Error(`Could not sign in as ${email}.`);
-  return { client, agent: result.agent };
-}
+const signedInAgent = (email = "sam@example.com") => signIn(email);
 
 async function newGuestWithConversation() {
   const client = newClient();
@@ -92,8 +88,10 @@ describe("tickets", () => {
     const number = ticket.conversation.ticketNumber ?? 0;
     expect(number).toBeGreaterThanOrEqual(1000);
 
+    // Numbers only go up. Another run may take the very next one, so this is later, not +1.
     const next = await client.conversations.convertToTicket(second.conversationId, "Another");
-    expect(next).toMatchObject({ ok: true, conversation: { ticketNumber: number + 1 } });
+    if (!next.ok) throw new Error("The conversation did not become a ticket.");
+    expect(next.conversation.ticketNumber).toBeGreaterThan(number);
 
     // Converting again keeps the number it already has.
     await expect(
@@ -106,17 +104,18 @@ describe("tickets", () => {
 
   it("lists and counts by type and by assignee", async () => {
     const { client, agent } = await signedInAgent();
-    const { conversationId } = await newGuestWithConversation();
-    const before = await client.conversations.count({ type: "ticket" });
-    const mineBefore = await client.conversations.count({ assigneeId: agent.id });
+    const { session, conversationId } = await newGuestWithConversation();
+    // Counted within this guest's conversations, which nothing else touches.
+    const contactId = session.id;
+    await expect(client.conversations.count({ contactId, type: "ticket" })).resolves.toBe(0);
+    await expect(client.conversations.count({ contactId, assigneeId: agent.id })).resolves.toBe(0);
 
     await client.conversations.convertToTicket(conversationId, "Refund");
     await client.conversations.update(conversationId, { assigneeId: agent.id });
 
-    await expect(client.conversations.count({ type: "ticket" })).resolves.toBe(before + 1);
-    await expect(client.conversations.count({ assigneeId: agent.id })).resolves.toBe(
-      mineBefore + 1,
-    );
+    await expect(client.conversations.count({ contactId, type: "ticket" })).resolves.toBe(1);
+    await expect(client.conversations.count({ contactId, type: "chat" })).resolves.toBe(0);
+    await expect(client.conversations.count({ contactId, assigneeId: agent.id })).resolves.toBe(1);
     const mine = await client.conversations.list({ assigneeId: agent.id, type: "ticket" });
     expect(mine.items.map((item) => item.id)).toContain(conversationId);
     const unassigned = await client.conversations.list({ assigneeId: null, limit: 100 });
@@ -177,23 +176,73 @@ describe("filtering and searching tickets", () => {
   it("searches within a filter, and finds a ticket by its number", async () => {
     const { client } = await signedInAgent();
     const guest = await newGuestWithConversation();
-    const ticket = await client.conversations.convertToTicket(guest.conversationId, "Lost parcel");
+    const subject = `Lost parcel ${runMarker()}`;
+    const ticket = await client.conversations.convertToTicket(guest.conversationId, subject);
     if (!ticket.ok) throw new Error("The conversation did not become a ticket.");
     const number = String(ticket.conversation.ticketNumber);
 
     const byNumber = await client.conversations.search(`#${number}`);
     expect(byNumber.map((item) => item.id)).toEqual([guest.conversationId]);
 
-    const openTickets = await client.conversations.search("lost parcel", {
+    const openTickets = await client.conversations.search(subject, {
       type: "ticket",
       status: ["open"],
     });
     expect(openTickets.map((item) => item.id)).toContain(guest.conversationId);
-    const resolvedTickets = await client.conversations.search("lost parcel", {
+    const resolvedTickets = await client.conversations.search(subject, {
       type: "ticket",
       status: ["resolved"],
     });
     expect(resolvedTickets).toEqual([]);
+  });
+
+  it("pages through every match of a search, filtering before it pages", async () => {
+    const { client } = await signedInAgent();
+    const guest = await newGuestWithConversation();
+    // A word no other conversation has, on more tickets than the inbox's short list holds.
+    const word = `zebracrossing${Date.now()}`;
+    const start = Date.parse("2020-01-01T00:00:00Z");
+    const { error } = await serverClient()
+      .from("conversations")
+      .insert(
+        Array.from({ length: 60 }, (_, index) => ({
+          contact_id: guest.session.id,
+          type: "ticket",
+          subject: `${word} ${index}`,
+          source: "web",
+          // A third of them resolved, to check the filter narrows the count.
+          status: index % 3 === 0 ? "resolved" : "open",
+          last_message_at: new Date(start + index * 60_000).toISOString(),
+        })),
+      );
+    if (error) throw error;
+
+    const second = await client.conversations.list({
+      search: ` ${word} `,
+      type: "ticket",
+      page: 2,
+      limit: 25,
+    });
+    expect(second.total).toBe(60);
+    // Most recently active first: the second page holds numbers 34 down to 10.
+    expect(second.items.map((item) => item.subject)).toEqual(
+      Array.from({ length: 25 }, (_, index) => `${word} ${34 - index}`),
+    );
+
+    const open = await client.conversations.list({
+      search: word,
+      type: "ticket",
+      status: ["open"],
+      page: 2,
+      limit: 25,
+    });
+    expect(open.total).toBe(40);
+    expect(open.items).toHaveLength(15);
+    expect(open.items.every((item) => item.status === "open")).toBe(true);
+
+    // The inbox's short list stays short.
+    await expect(client.conversations.search(word)).resolves.toHaveLength(50);
+    await expect(client.conversations.search(word, {}, { limit: 5 })).resolves.toHaveLength(5);
   });
 });
 

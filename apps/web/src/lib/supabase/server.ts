@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { env } from "@/lib/env";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
 import { authCookieName, supabaseServerUrl } from "./server-url";
 
@@ -17,7 +18,7 @@ export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseServerUrl, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
-    cookieOptions: { name: authCookieName },
+    cookieOptions: { ...SESSION_COOKIE_OPTIONS, name: authCookieName },
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll(cookiesToSet) {

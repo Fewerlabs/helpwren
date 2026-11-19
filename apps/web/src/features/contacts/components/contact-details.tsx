@@ -20,6 +20,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { contactLabel } from "../contact-label";
 import { CONTACTS_QUERY_KEY } from "../hooks/use-contacts";
+import { BlockSection } from "./block-section";
 import { KindBadge } from "./kind-badge";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
@@ -70,9 +71,15 @@ export function ContactDetails({ contactId, onClose, className }: ContactDetails
         queryFn={() => getClient().contacts.get(contactId)}
         messages={{
           loading: "Loading contact",
-          empty: "This contact could not be found.",
+          notFound: "This contact could not be found.",
+          notFoundDescription: "They may have been merged into another contact or deleted.",
           error: "This contact could not be loaded.",
         }}
+        notFoundAction={
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        }
         className="min-h-0 flex-1 overflow-y-auto"
       >
         {(contact) => {
@@ -121,6 +128,11 @@ export function ContactDetails({ contactId, onClose, className }: ContactDetails
                   </section>
                 )}
               />
+
+              <section className="border-rule border-b pb-3">
+                <h3 className={eyebrow}>Spam and abuse</h3>
+                <BlockSection contactId={contact.id} label={label} className="px-3" />
+              </section>
 
               <section>
                 <h3 className={eyebrow}>Conversations</h3>

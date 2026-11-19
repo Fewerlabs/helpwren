@@ -13,7 +13,6 @@ import { ArticleScreen, CollectionScreen, HelpScreen, SuggestedArticles } from "
 // Feedback has a client of its own, which a unit test has no database for.
 vi.mock("@/features/help-center", () => ({
   ArticleFeedback: () => <p>Was this helpful?</p>,
-  iconOf: () => "book-open",
 }));
 
 const summary = (overrides: Partial<ArticleSummary>): ArticleSummary => ({

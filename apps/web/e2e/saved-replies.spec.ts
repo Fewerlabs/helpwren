@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-import { database, removeContactByEmail } from "./support/database";
+import { RUN, database, removeContactByEmail } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // Runs against the local Supabase stack and its demo data, which has a "Greeting" reply (/hi)
 // and where Ada is an admin.
 const TITLE = "Delivery days E2E";
-const SHORTCUT = "delivery-e2e";
-const VISITOR = { name: "Lena Novak", email: "lena.e2e@example.org" };
+const SHORTCUT = `delivery-${RUN}`;
+const VISITOR = { name: `Lena Novak ${RUN}`, email: `lena.${RUN}@example.org` };
 
 async function cleanUp() {
   await database.from("saved_replies").delete().like("title", "Delivery days E2E%");

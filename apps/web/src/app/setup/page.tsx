@@ -6,6 +6,7 @@ import { type ReactNode } from "react";
 import { DASHBOARD_PATH, getCurrentAgent } from "@/features/agent-auth";
 import { FirstAdminStep, SetupSteps, SetupWizard, setupStepSchema } from "@/features/setup";
 import { getEmailAdapter } from "@/lib/email";
+import { summariseInbound } from "@/lib/email/inbound";
 import { env } from "@/lib/env";
 import { getHelpwren } from "@/lib/helpwren";
 import { getInstallStatus, hasTeam } from "@/lib/install-status";
@@ -54,7 +55,10 @@ export default async function SetupPage({
   if (status.setupCompletedAt || agent?.role !== "admin") redirect(DASHBOARD_PATH);
 
   const step = setupStepSchema.parse((await searchParams).step);
-  const settings = await (await getHelpwren()).settings.getAll();
+  const [settings, inbound] = await Promise.all([
+    getHelpwren().then((helpwren) => helpwren.settings.getAll()),
+    summariseInbound(),
+  ]);
   return (
     <Shell wide>
       <Card className="p-6">
@@ -63,6 +67,7 @@ export default async function SetupPage({
           settings={settings}
           emailProvider={getEmailAdapter()?.name ?? null}
           adminEmail={agent.email}
+          inbound={inbound}
           appUrl={env.NEXT_PUBLIC_APP_URL}
         />
       </Card>

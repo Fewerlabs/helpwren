@@ -21,6 +21,19 @@ const serverEnvSchema = z.object({
    */
   CRON_SECRET: z.string().min(16).optional(),
   /**
+   * Where request counts are kept: `database` (the default) shares one count between every
+   * copy of the app; `memory` keeps one per process, which suits a single server.
+   */
+  RATE_LIMIT_STORE: z.enum(["database", "memory"]).default("database"),
+  /**
+   * The header that holds the visitor's network address, as the proxy in front of the app sets
+   * it. The last address in it is used: the one the nearest proxy saw. Behind Cloudflare, use
+   * `cf-connecting-ip`.
+   */
+  CLIENT_IP_HEADER: z.string().min(1).default("x-forwarded-for"),
+  /** Cloudflare Turnstile's secret key, for the captcha switched on in Settings → General. */
+  TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+  /**
    * Where the server reaches Supabase when that differs from the public address, such as
    * `http://kong:8000` beside a self-hosted Supabase in Docker. Unset means the public one.
    */
@@ -44,5 +57,8 @@ export const serverEnv = parseServerEnv({
   SMTP_URL: set(process.env.SMTP_URL),
   RESEND_API_KEY: set(process.env.RESEND_API_KEY),
   CRON_SECRET: set(process.env.CRON_SECRET),
+  RATE_LIMIT_STORE: set(process.env.RATE_LIMIT_STORE),
+  CLIENT_IP_HEADER: set(process.env.CLIENT_IP_HEADER),
+  TURNSTILE_SECRET_KEY: set(process.env.TURNSTILE_SECRET_KEY),
   SUPABASE_INTERNAL_URL: set(process.env.SUPABASE_INTERNAL_URL),
 });

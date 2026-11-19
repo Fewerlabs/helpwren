@@ -30,6 +30,12 @@ export type { ComboboxResolver } from "./combobox/use-resolved-options";
 export { Checkbox, type CheckboxProps } from "./checkbox/checkbox";
 export { ChoiceCards, type ChoiceCard, type ChoiceCardsProps } from "./choice-cards/choice-cards";
 export {
+  CollectionIcon,
+  ICON_ROUTE,
+  iconUrl,
+  type CollectionIconProps,
+} from "./collection-icon/collection-icon";
+export {
   ColorPicker,
   colorBackground,
   type ColorPickerProps,
@@ -83,7 +89,9 @@ export { LinearProgress, type LinearProgressProps } from "./linear-progress/line
 export { Link, type LinkProps } from "./link/link";
 export { OtpInput, type OtpInputProps } from "./otp-input/otp-input";
 export { OptionList, type OptionListOption, type OptionListProps } from "./option-list/option-list";
+export { readPageSize, rememberPageSize } from "./pagination/page-size-memory";
 export {
+  defaultPageSizeOptions,
   Pagination,
   type PaginationMessages,
   type PaginationNoun,
@@ -169,6 +177,7 @@ export {
   type DataTableSort,
   type DataTableSortValue,
 } from "./table/data-table";
+export { RowLink, type RowLinkProps } from "./table/row-link";
 export { type SortableRowsMessages } from "./table/sortable-rows";
 export {
   Table,

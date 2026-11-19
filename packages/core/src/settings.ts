@@ -151,6 +151,23 @@ const ticketsSchema = z.object({
   fromChat: z.boolean().default(true),
 });
 
+/** Where answers to the install's emails come in, and how. */
+export const inboundProviderSchema = z.enum(["resend", "postmark", "generic"]);
+export type InboundProvider = z.infer<typeof inboundProviderSchema>;
+
+const inboundSchema = z.object({
+  /** Contacts may answer an email from their mail app, into the same conversation. */
+  enabled: z.boolean().default(false),
+  /**
+   * The address replies go to, such as `reply@support.example.com`. Each email adds a signed
+   * part after a plus: `reply+<token>@support.example.com`.
+   */
+  address: z.email().optional(),
+  provider: inboundProviderSchema.default("resend"),
+});
+
+export type InboundEmailSettings = z.infer<typeof inboundSchema>;
+
 /** Who emails come from. The name falls back to the brand's. */
 const emailSchema = z.object({
   fromName: z.string().min(1).optional(),
@@ -159,6 +176,7 @@ const emailSchema = z.object({
   replies: z.boolean().default(true),
   /** Email a contact when the team changes their ticket's status. */
   status: z.boolean().default(true),
+  inbound: inboundSchema.default(() => inboundSchema.parse({})),
 });
 
 export type EmailSettings = z.infer<typeof emailSchema>;
@@ -178,6 +196,21 @@ export type VisitorSettings = z.infer<typeof visitorsSchema>;
 
 const visitorsDefault = { tracking: true, liveList: true };
 
+/**
+ * Keeping spam out of the chat. The basic checks are always on; a captcha before a visitor's
+ * first message is off until an admin switches it on.
+ */
+const spamSchema = z.object({
+  /** Which captcha a visitor answers before their first message, if any. */
+  captcha: z.enum(["off", "turnstile"]).default("off"),
+  /** Cloudflare Turnstile's site key. Public by design: the chat shows the widget with it. */
+  siteKey: z.string().min(1).max(100).optional(),
+});
+
+export type SpamSettings = z.infer<typeof spamSchema>;
+
+const spamDefault = { captcha: "off" } as const;
+
 const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
   widget: widgetSchema.default(() => widgetSchema.parse({})),
@@ -196,6 +229,7 @@ const storedSettingsSchema = z.object({
   /** Where a conversation may come from, such as the website or a mobile app. */
   sources: z.array(z.string().min(1)).min(1).default(["web"]),
   visitors: visitorsSchema.default(visitorsDefault),
+  spam: spamSchema.default(spamDefault),
 });
 
 export const settingsSchema = storedSettingsSchema.transform((stored) => ({
@@ -209,6 +243,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   allowedDomains: stored.allowed_domains,
   sources: stored.sources,
   visitors: stored.visitors,
+  spam: stored.spam,
 }));
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -216,7 +251,7 @@ export type Settings = z.infer<typeof settingsSchema>;
 /** The settings anyone may read, including a visitor with no session. */
 export type PublicSettings = Pick<
   Settings,
-  "brand" | "widget" | "chatPage" | "helpCenter" | "tickets" | "guestDetails" | "visitors"
+  "brand" | "widget" | "chatPage" | "helpCenter" | "tickets" | "guestDetails" | "visitors" | "spam"
 >;
 
 /** For checking settings that arrive from somewhere other than the database, such as a preview. */
@@ -229,6 +264,7 @@ export const publicSettingsSchema = z.object({
   guestDetails: guestDetailsSchema,
   // Left out by a preview sent before this existed, which then shows the chat as it is.
   visitors: visitorsSchema.default(visitorsDefault),
+  spam: spamSchema.default(spamDefault),
 });
 
 interface SettingRow {
@@ -250,9 +286,9 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, widget, chatPage, helpCenter, tickets, guestDetails, visitors } =
+  const { brand, widget, chatPage, helpCenter, tickets, guestDetails, visitors, spam } =
     parseSettings(rows);
-  return { brand, widget, chatPage, helpCenter, tickets, guestDetails, visitors };
+  return { brand, widget, chatPage, helpCenter, tickets, guestDetails, visitors, spam };
 }
 
 const pageTextPatchSchema = z.object({
@@ -294,6 +330,18 @@ export const settingsPatchSchema = z
       fromAddress: z.string().trim().toLowerCase().pipe(z.email()).optional(),
       replies: z.boolean(),
       status: z.boolean(),
+      inbound: z.object({
+        enabled: z.boolean(),
+        // A plus of its own would be taken for the start of the signed part.
+        address: z
+          .string()
+          .trim()
+          .toLowerCase()
+          .pipe(z.email())
+          .refine((address) => !address.split("@")[0]?.includes("+"))
+          .optional(),
+        provider: inboundProviderSchema,
+      }),
     }),
     helpCenter: pageTextPatchSchema.extend({
       headerStyle: helpHeaderStyleSchema,
@@ -315,6 +363,15 @@ export const settingsPatchSchema = z
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
     visitors: z.object({ tracking: z.boolean(), liveList: z.boolean() }),
+    spam: z
+      .object({
+        captcha: z.enum(["off", "turnstile"]),
+        siteKey: z.string().trim().min(1).max(100).optional(),
+      })
+      .refine((spam) => spam.captcha === "off" || spam.siteKey, {
+        message: "Turnstile needs its site key.",
+        path: ["siteKey"],
+      }),
   })
   .partial();
 
@@ -348,6 +405,8 @@ const storage = {
   allowedDomains: { key: "allowed_domains", isPublic: false },
   // Public, because the chat decides from it whether to check in.
   visitors: { key: "visitors", isPublic: true },
+  // Public, because the chat shows the captcha with the site key. The secret key is never here.
+  spam: { key: "spam", isPublic: true },
 } as const satisfies Record<keyof SettingsPatch, { key: string; isPublic: boolean }>;
 
 /** Postgres's error code for an action the access rules do not allow. */

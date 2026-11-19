@@ -18,7 +18,15 @@ import {
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useEffectEvent, useMemo, useState, type ComponentProps } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type RefObject,
+} from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
@@ -37,6 +45,7 @@ import {
   useSetPendingStart,
   useShowScreen,
 } from "../store/chat-store";
+import { Captcha } from "./captcha";
 
 interface StartValues {
   name: string;
@@ -185,6 +194,23 @@ export interface StartFormProps {
   returning: boolean;
   /** Opens a ticket in place of a chat: a subject is asked for, and it is tracked by number. */
   ticket?: boolean;
+  /** Turnstile's site key, when the install asks visitors to show they are people. */
+  captchaSiteKey?: string | undefined;
+}
+
+/**
+ * A field nobody sees, for bots that fill in every field they find. Moved off screen rather than
+ * hidden: a bot skips a hidden field. Screen readers and the keyboard skip it too.
+ */
+function Honeypot({ inputRef }: { inputRef: RefObject<HTMLInputElement | null> }) {
+  return (
+    <div aria-hidden="true" className="absolute -left-[10000px] size-px overflow-hidden">
+      <label>
+        Leave this empty
+        <input ref={inputRef} type="text" name="website" tabIndex={-1} autoComplete="off" />
+      </label>
+    </div>
+  );
 }
 
 interface QuickRepliesProps {
@@ -225,6 +251,7 @@ export function StartForm({
   quickReplies,
   returning,
   ticket = false,
+  captchaSiteKey,
 }: StartFormProps) {
   const getClient = useHelpwren();
   const preview = usePreview();
@@ -245,6 +272,17 @@ export function StartForm({
   });
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
 
+  // What tells a person from a script: the field only a bot fills in, how long the form was
+  // open, and the captcha when the install asks for one.
+  const honeypot = useRef<HTMLInputElement>(null);
+  const openedAt = useRef<number | null>(null);
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Each answer is good for one send, so every attempt shows a fresh captcha.
+  const [captchaRound, setCaptchaRound] = useState(0);
+
   async function start(values: StartValues) {
     if (preview) {
       form.setError("root", { message: "This is a preview, so nothing was sent." });
@@ -256,6 +294,12 @@ export function StartForm({
     // What the page said about the visitor, for the team to see beside the conversation.
     const context = { ...pageContext, ...(claimed?.id ? { claimedUserId: claimed.id } : {}) };
     const visitorId = existingVisitorId();
+    if (captchaSiteKey && !captchaToken) {
+      form.setError("root", { message: "Wait a moment while we check you are a person." });
+      return;
+    }
+    // Timed only where there is a form to fill in: a quick reply is meant to be quick.
+    const timed = !((ask === "nothing" || ask === "none") && !ticket) && openedAt.current !== null;
 
     try {
       // The session is created here, with the first message, not when the chat is opened.
@@ -279,7 +323,14 @@ export function StartForm({
         ...(Object.keys(context).length > 0 ? { context } : {}),
         // The browser that has been checking in, so the team sees its details on the contact.
         ...(visitorId ? { visitorId } : {}),
+        ...(honeypot.current?.value ? { honeypot: honeypot.current.value } : {}),
+        ...(timed ? { elapsedMs: Date.now() - (openedAt.current ?? 0) } : {}),
+        ...(captchaToken ? { captchaToken } : {}),
       });
+      if (captchaSiteKey && !result.ok) {
+        setCaptchaToken(null);
+        setCaptchaRound((round) => round + 1);
+      }
 
       if (result.ok) {
         await queryClient.invalidateQueries({ queryKey: chatKeys.session });
@@ -288,6 +339,12 @@ export function StartForm({
       } else if (result.reason === "details_required") {
         setAskAnyway(true);
         form.setError("root", { message: "Tell us who you are, so we can reply." });
+      } else if (result.reason === "refused") {
+        form.setError("root", {
+          message: captchaSiteKey
+            ? "Your message was not sent. Answer the check again, and add a few words of your own."
+            : "Your message was not sent. Add a few words of your own, or try again in a while.",
+        });
       } else {
         form.setError("root", {
           message: "You have started several conversations. Try again in a while.",
@@ -322,12 +379,17 @@ export function StartForm({
 
   const known = ask === "nothing" || ask === "none";
 
+  const captcha = captchaSiteKey ? (
+    <Captcha key={captchaRound} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
+  ) : null;
+
   // With nothing to ask, the screen is a conversation waiting for its first message. A ticket
   // always has its subject to ask for, so it is always the form below.
   if (known && !ticket) {
     const message = form.register("message");
     return (
-      <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
+      <form noValidate className="relative flex min-h-0 flex-1 flex-col" onSubmit={submit}>
+        <Honeypot inputRef={honeypot} />
         {welcome || quickReplies.length > 0 ? (
           // A conversation the team has already opened: their welcome, and replies to tap.
           <div className="flex min-h-0 flex-1 flex-col justify-end gap-3 overflow-y-auto p-4">
@@ -355,6 +417,7 @@ export function StartForm({
           </div>
         )}
         <div className="border-rule grid gap-2 border-t p-3">
+          {captcha}
           {(failure ?? errors.message?.message) ? (
             <p role="alert" className="text-destructive text-xs">
               {failure ?? errors.message?.message}
@@ -386,7 +449,8 @@ export function StartForm({
   }
 
   return (
-    <form noValidate className="flex min-h-0 flex-1 flex-col" onSubmit={submit}>
+    <form noValidate className="relative flex min-h-0 flex-1 flex-col" onSubmit={submit}>
+      <Honeypot inputRef={honeypot} />
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         <div className="flex items-center gap-3 py-4">
           <TeamAvatar />
@@ -423,6 +487,7 @@ export function StartForm({
         ) : null}
       </div>
       <div className="border-rule grid gap-2 border-t p-3">
+        {captcha}
         {failure ? (
           <p role="alert" className="text-destructive text-sm">
             {failure}

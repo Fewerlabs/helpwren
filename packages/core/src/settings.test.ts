@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { HelpwrenError } from "./errors";
-import { parsePublicSettings, parseSettings } from "./settings";
+import { parsePublicSettings, parseSettings, settingsPatchSchema } from "./settings";
 
 const widget = { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] };
 
@@ -13,13 +13,14 @@ const defaults = {
   brand: { name: "Helpwren" },
   widget,
   chatPage,
-  email: { replies: true, status: true },
+  email: { replies: true, status: true, inbound: { enabled: false, provider: "resend" } },
   helpCenter,
   tickets: { fromChat: true },
   guestDetails: "email",
   allowedDomains: [],
   sources: ["web"],
   visitors: { tracking: true, liveList: true },
+  spam: { captcha: "off" },
 };
 
 describe("parseSettings", () => {
@@ -35,13 +36,14 @@ describe("parseSettings", () => {
       brand: { name: "Acme" },
       widget,
       chatPage,
-      email: { replies: true, status: true },
+      email: { replies: true, status: true, inbound: { enabled: false, provider: "resend" } },
       helpCenter,
       tickets: { fromChat: true },
       guestDetails: "phone",
       allowedDomains: [],
       sources: ["web", "ios"],
       visitors: { tracking: true, liveList: false },
+      spam: { captcha: "off" },
     });
   });
 
@@ -102,7 +104,19 @@ describe("parsePublicSettings", () => {
       guestDetails: "email",
       // The chat reads it to decide whether to check in.
       visitors: { tracking: true, liveList: true },
+      // The chat shows the captcha with the site key, when there is one.
+      spam: { captcha: "off" },
     });
+  });
+});
+
+describe("the spam settings", () => {
+  it("needs Turnstile's site key to switch the captcha on", () => {
+    expect(settingsPatchSchema.safeParse({ spam: { captcha: "turnstile" } }).success).toBe(false);
+    expect(
+      settingsPatchSchema.safeParse({ spam: { captcha: "turnstile", siteKey: "0x4AAAA" } }).success,
+    ).toBe(true);
+    expect(settingsPatchSchema.safeParse({ spam: { captcha: "off" } }).success).toBe(true);
   });
 });
 

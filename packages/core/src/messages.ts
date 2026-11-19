@@ -14,6 +14,8 @@ const messageRowSchema = z.object({
   sender_role: z.enum(["guest", "user", "agent", "system"]),
   body: z.string().nullable(),
   attachments: z.array(attachmentSchema).default([]),
+  // Missing from messages in a client's cache from before email replies.
+  channel: z.enum(["chat", "email"]).default("chat"),
   created_at: z.string(),
 });
 
@@ -24,13 +26,15 @@ export const messageSchema = messageRowSchema.transform((row) => ({
   senderRole: row.sender_role,
   body: row.body ?? "",
   attachments: row.attachments,
+  /** `email` for a reply the contact sent from their mail app. */
+  channel: row.channel,
   createdAt: row.created_at,
 }));
 
 export type Message = z.infer<typeof messageSchema>;
 
 const MESSAGE_COLUMNS =
-  "id, conversation_id, sender_id, sender_role, body, attachments, created_at";
+  "id, conversation_id, sender_id, sender_role, body, attachments, channel, created_at";
 
 export interface ListMessagesOptions {
   /** `nextCursor` from the previous page, to load older messages. */
@@ -40,7 +44,13 @@ export interface ListMessagesOptions {
 }
 
 export type SendMessageResult =
-  { ok: true; message: Message } | { ok: false; reason: "rate_limited" };
+  | { ok: true; message: Message }
+  // Too fast; refused as spam or as the same words again; or the sender has been blocked.
+  | { ok: false; reason: "rate_limited" | "refused" | "blocked" };
+
+/** The database's codes for a message it refuses as spam, and for a blocked sender. */
+const REFUSED_SQLSTATE = "HW422";
+const BLOCKED_SQLSTATE = "HW403";
 
 export function createMessages(supabase: HelpwrenSupabaseClient) {
   return {
@@ -98,6 +108,8 @@ export function createMessages(supabase: HelpwrenSupabaseClient) {
 
       if (error) {
         if (error.code === RATE_LIMITED_SQLSTATE) return { ok: false, reason: "rate_limited" };
+        if (error.code === REFUSED_SQLSTATE) return { ok: false, reason: "refused" };
+        if (error.code === BLOCKED_SQLSTATE) return { ok: false, reason: "blocked" };
         throw new HelpwrenError("Could not send the message.", { cause: error });
       }
       return { ok: true, message: messageSchema.parse(data) };

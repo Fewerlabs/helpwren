@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 
 import { getDashboardClient } from "@/features/dashboard";
-import { BrandBasicsForm, EmailForm, InstallationForm } from "@/features/settings";
+import {
+  BrandBasicsForm,
+  EmailForm,
+  InstallationForm,
+  type EmailFormProps,
+} from "@/features/settings";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { finishSetup } from "../actions";
@@ -57,6 +62,8 @@ export interface SetupWizardProps {
   emailProvider: string | null;
   /** The signed-in admin's address, where a test email goes. */
   adminEmail: string;
+  /** Which secrets for replies by email are saved, for the Email step. */
+  inbound: EmailFormProps["inbound"];
   appUrl: string;
 }
 
@@ -69,6 +76,7 @@ export function SetupWizard({
   settings,
   emailProvider,
   adminEmail,
+  inbound,
   appUrl,
 }: SetupWizardProps) {
   const router = useRouter();
@@ -200,6 +208,8 @@ export function SetupWizard({
               settings={settings}
               provider={emailProvider}
               testAddress={adminEmail}
+              inbound={inbound}
+              origin={new URL(appUrl).origin}
               canEdit
             />
           </Step>

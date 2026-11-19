@@ -149,6 +149,93 @@ export type Database = {
           },
         ];
       };
+      audit_events: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          contact_id: string | null;
+          created_at: string;
+          data: NonNullable<Json>;
+          id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          data?: NonNullable<Json>;
+          id?: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          data?: NonNullable<Json>;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_events_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contact_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "audit_events_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      blocked_networks: {
+        Row: {
+          blocked_by: string | null;
+          contact_id: string | null;
+          created_at: string;
+          key: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          blocked_by?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          key: string;
+        };
+        Update: {
+          blocked_by?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          key?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "blocked_networks_blocked_by_fkey";
+            columns: ["blocked_by"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "blocked_networks_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contact_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "blocked_networks_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       collections: {
         Row: {
           created_at: string;
@@ -187,6 +274,8 @@ export type Database = {
         Row: {
           attributes: NonNullable<Json>;
           audience: string | null;
+          blocked_at: string | null;
+          blocked_by: string | null;
           browser: string | null;
           city: string | null;
           country: string | null;
@@ -202,6 +291,7 @@ export type Database = {
           last_page_url: string | null;
           last_seen_at: string | null;
           name: string | null;
+          network_key: string | null;
           org_id: string | null;
           org_name: string | null;
           os: string | null;
@@ -216,6 +306,8 @@ export type Database = {
         Insert: {
           attributes?: NonNullable<Json>;
           audience?: string | null;
+          blocked_at?: string | null;
+          blocked_by?: string | null;
           browser?: string | null;
           city?: string | null;
           country?: string | null;
@@ -231,6 +323,7 @@ export type Database = {
           last_page_url?: string | null;
           last_seen_at?: string | null;
           name?: string | null;
+          network_key?: string | null;
           org_id?: string | null;
           org_name?: string | null;
           os?: string | null;
@@ -244,6 +337,8 @@ export type Database = {
         Update: {
           attributes?: NonNullable<Json>;
           audience?: string | null;
+          blocked_at?: string | null;
+          blocked_by?: string | null;
           browser?: string | null;
           city?: string | null;
           country?: string | null;
@@ -259,6 +354,7 @@ export type Database = {
           last_page_url?: string | null;
           last_seen_at?: string | null;
           name?: string | null;
+          network_key?: string | null;
           org_id?: string | null;
           org_name?: string | null;
           os?: string | null;
@@ -269,7 +365,15 @@ export type Database = {
           timezone?: string | null;
           verified?: boolean;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "contacts_blocked_by_fkey";
+            columns: ["blocked_by"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+        ];
       };
       conversation_events: {
         Row: {
@@ -375,6 +479,7 @@ export type Database = {
           unread_for_agents: number;
           unread_for_contact: number;
           updated_at: string;
+          via_email: boolean;
         };
         ComputedFields: never;
         Insert: {
@@ -397,6 +502,7 @@ export type Database = {
           unread_for_agents?: number;
           unread_for_contact?: number;
           updated_at?: string;
+          via_email?: boolean;
         };
         Update: {
           assignee_id?: string | null;
@@ -418,6 +524,7 @@ export type Database = {
           unread_for_agents?: number;
           unread_for_contact?: number;
           updated_at?: string;
+          via_email?: boolean;
         };
         Relationships: [
           {
@@ -560,6 +667,52 @@ export type Database = {
           },
           {
             foreignKeyName: "email_queue_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      inbound_emails: {
+        Row: {
+          conversation_id: string;
+          email_id: string;
+          id: string;
+          message_id: string | null;
+          outcome: string;
+          received_at: string;
+          sender: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          conversation_id: string;
+          email_id: string;
+          id?: string;
+          message_id?: string | null;
+          outcome: string;
+          received_at?: string;
+          sender: string;
+        };
+        Update: {
+          conversation_id?: string;
+          email_id?: string;
+          id?: string;
+          message_id?: string | null;
+          outcome?: string;
+          received_at?: string;
+          sender?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "inbound_emails_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inbound_emails_message_id_fkey";
             columns: ["message_id"];
             isOneToOne: false;
             referencedRelation: "messages";
@@ -755,6 +908,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      rate_limits: {
+        Row: {
+          hits: number;
+          key: string;
+          window_start: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          hits: number;
+          key: string;
+          window_start: string;
+        };
+        Update: {
+          hits?: number;
+          key?: string;
+          window_start?: string;
+        };
+        Relationships: [];
       };
       saved_replies: {
         Row: {
@@ -1105,6 +1277,10 @@ export type Database = {
         Args: { email: string; name: string; user_id: string };
         Returns: boolean;
       };
+      hit_rate_limit: {
+        Args: { key: string; max_hits: number; window_seconds: number };
+        Returns: boolean;
+      };
       identify_contact: {
         Args: {
           attributes?: Json;
@@ -1119,6 +1295,8 @@ export type Database = {
         Returns: {
           attributes: NonNullable<Json>;
           audience: string | null;
+          blocked_at: string | null;
+          blocked_by: string | null;
           browser: string | null;
           city: string | null;
           country: string | null;
@@ -1134,6 +1312,7 @@ export type Database = {
           last_page_url: string | null;
           last_seen_at: string | null;
           name: string | null;
+          network_key: string | null;
           org_id: string | null;
           org_name: string | null;
           os: string | null;
@@ -1153,6 +1332,16 @@ export type Database = {
       };
       link_visitor: { Args: { contact_id: string; visitor_id: string }; Returns: undefined };
       merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
+      receive_email_reply: {
+        Args: {
+          attachments?: Json;
+          body: string;
+          conversation_id: string;
+          email_id: string;
+          sender: string;
+        };
+        Returns: string;
+      };
       record_visit: {
         Args: {
           browser?: string;
@@ -1228,6 +1417,7 @@ export type Database = {
           unread_for_agents: number;
           unread_for_contact: number;
           updated_at: string;
+          via_email: boolean;
         }[];
         SetofOptions: {
           from: "*";
@@ -1244,6 +1434,7 @@ export type Database = {
           contact_name?: string;
           contact_phone?: string;
           context?: Json;
+          network_key?: string;
           source: string;
           ticket_subject?: string;
         };

@@ -12,6 +12,7 @@ import {
   HELP_FOOTER_LINKS_MAX,
   HELP_HEADER_LINKS_MAX,
   helpHeaderStyleSchema,
+  inboundProviderSchema,
   QUICK_REPLIES_MAX,
   QUICK_REPLY_MAX_LENGTH,
   settingsPatchSchema,
@@ -20,15 +21,24 @@ import { z } from "zod";
 
 const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
-export const generalSchema = z.object({
-  guestDetails: guestDetailsSchema,
-  /** Whether a visitor can open a ticket themselves from the chat. */
-  ticketsFromChat: z.boolean(),
-  /** Whether the chat checks in, so the team sees who is on the site and where. */
-  trackVisitors: z.boolean(),
-  /** Whether the Visitors section lists them live and lets the team write first. */
-  liveVisitors: z.boolean(),
-});
+export const generalSchema = z
+  .object({
+    guestDetails: guestDetailsSchema,
+    /** Whether a visitor can open a ticket themselves from the chat. */
+    ticketsFromChat: z.boolean(),
+    /** Whether the chat checks in, so the team sees who is on the site and where. */
+    trackVisitors: z.boolean(),
+    /** Whether the Visitors section lists them live and lets the team write first. */
+    liveVisitors: z.boolean(),
+    /** Whether a guest answers Cloudflare Turnstile before their first message. */
+    captcha: z.boolean(),
+    /** Turnstile's site key. Empty while the captcha is off. */
+    captchaSiteKey: z.string().trim().max(100, "That is longer than a site key."),
+  })
+  .refine((values) => !values.captcha || values.captchaSiteKey !== "", {
+    message: "Paste the site key from Cloudflare.",
+    path: ["captchaSiteKey"],
+  });
 export type GeneralValues = z.infer<typeof generalSchema>;
 
 export const installationSchema = z.object({
@@ -235,6 +245,25 @@ export const emailSchema = z.object({
     z.literal(""),
     z.string().trim().toLowerCase().pipe(z.email("Enter an email address.")),
   ]),
+  /** Contacts may answer an email from their mail app. */
+  inboundEnabled: z.boolean(),
+  /** Empty while replies by email have no address; each email adds a signed part after a plus. */
+  replyAddress: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.email("Enter an email address."))
+      .refine((address) => !address.split("@")[0]?.includes("+"), {
+        message: "Use an address without a plus. The plus part is added to each email.",
+      }),
+  ]),
+  inboundProvider: inboundProviderSchema,
+  /** Empty to keep the saved one. */
+  resendSigningSecret: z.string().trim(),
+  /** Empty to keep the saved one, or to use the server's own key. */
+  resendApiKey: z.string().trim(),
 });
 export type EmailValues = z.infer<typeof emailSchema>;
 

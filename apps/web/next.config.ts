@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import type { NextConfig } from "next";
 
+import { BASE_HEADERS } from "./src/lib/security-headers";
+
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
 /** The commit being built: from the host when it says (Vercel does), else from git. */
@@ -58,6 +60,13 @@ const nextConfig: NextConfig = {
     { source: "/inbox", destination: "/dashboard/inbox", permanent: true },
     { source: "/inbox/login", destination: "/login", permanent: true },
   ],
+  // The same on every response. The Content-Security-Policy, which depends on the install's
+  // settings, is set per page by the proxy (src/proxy.ts).
+  headers: () => Promise.resolve([{ source: "/:path*", headers: [...BASE_HEADERS] }]),
+  // The icon route reads Phosphor's SVG files from disk, so a deployment has to carry them.
+  outputFileTracingIncludes: {
+    "/api/icons/**": ["./node_modules/@phosphor-icons/core/assets/**/*.svg"],
+  },
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
   },

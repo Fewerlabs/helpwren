@@ -5,6 +5,7 @@ import { cn } from "#lib/cn";
 import { Button } from "../base/button/button";
 import { Icon } from "../base/icon/icon";
 import { LinearProgress } from "../base/linear-progress/linear-progress";
+import { Skeleton } from "../base/skeleton/skeleton";
 import { AppLoader } from "../shared/app-loader/app-loader";
 import { EmptyState } from "../shared/empty-state/empty-state";
 
@@ -140,4 +141,34 @@ export function StickyProgress({ active, label }: { active: boolean; label: stri
  */
 export function DefaultLoading({ label }: { label: string }) {
   return <AppLoader label={label} size="sm" />;
+}
+
+/**
+ * The first load of a record's panel, in the shape most of them take: a name beside an avatar,
+ * then sections of labelled facts. The panel keeps its place instead of jumping from a spinner
+ * to content.
+ */
+export function DetailSkeleton({ label }: { label: string }) {
+  return (
+    <div role="status" aria-label={label} data-slot="detail-skeleton">
+      <div className="border-rule flex items-center gap-3 border-b px-3 py-3.5">
+        <Skeleton className="size-10 shrink-0 rounded-full" />
+        <div className="grid flex-1 gap-2">
+          <Skeleton className="h-4 w-2/5" />
+          <Skeleton className="h-3 w-1/4" />
+        </div>
+      </div>
+      {[4, 3].map((rows, section) => (
+        <div key={section} className="border-rule grid gap-3 border-b px-3 py-3">
+          <Skeleton className="h-2.5 w-16" />
+          {Array.from({ length: rows }, (_, row) => (
+            <div key={row} className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3">
+              <Skeleton className="h-3 w-12" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
 }

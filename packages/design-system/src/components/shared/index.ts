@@ -12,6 +12,7 @@ export {
 } from "./conversation-list-item/conversation-list-item";
 export { EmptyState, type EmptyStateProps } from "./empty-state/empty-state";
 export { Highlight, type HighlightProps } from "./highlight/highlight";
+export { IconPicker, type IconPickerProps } from "./icon-picker/icon-picker";
 export { MarginNote, type MarginNoteProps } from "./margin-note/margin-note";
 export { MessageBubble, type MessageBubbleProps } from "./message-bubble/message-bubble";
 export { PageHeader, type PageHeaderProps } from "./page-header/page-header";

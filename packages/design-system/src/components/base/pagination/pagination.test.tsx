@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { TooltipProvider } from "../tooltip/tooltip";
-import { Pagination, paginationSummary, type PaginationState } from "./pagination";
+import { loadMoreSummary, Pagination, paginationSummary, type PaginationState } from "./pagination";
 
 const contacts = { one: "contact", other: "contacts" };
 
@@ -93,5 +93,82 @@ describe("Pagination", () => {
       </TooltipProvider>,
     );
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("offers a rows-per-page picker when it can change the size", async () => {
+    const onPageSizeChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TooltipProvider>
+        <Pagination pagination={state({})} onPageSizeChange={onPageSizeChange} />
+      </TooltipProvider>,
+    );
+    const picker = screen.getByRole("combobox", { name: "Rows per page" });
+    expect(picker).toHaveTextContent("25");
+    await user.click(picker);
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "10",
+      "25",
+      "50",
+      "100",
+    ]);
+    await user.click(screen.getByRole("option", { name: "100" }));
+    expect(onPageSizeChange).toHaveBeenCalledWith(100);
+  });
+
+  it("leaves out the picker, the summary or the controls when asked", () => {
+    render(
+      <TooltipProvider>
+        <Pagination
+          pagination={state({})}
+          onPageSizeChange={vi.fn()}
+          pageSizeOptions={false}
+          showSummary={false}
+        />
+      </TooltipProvider>,
+    );
+    const footer = screen.getByRole("navigation");
+    expect(within(footer).queryByRole("combobox")).not.toBeInTheDocument();
+    expect(footer).not.toHaveTextContent("1–25 of 132");
+    expect(within(footer).getByRole("button", { name: "Next page" })).toBeInTheDocument();
+  });
+
+  it("draws nothing when every part is turned off", () => {
+    render(
+      <TooltipProvider>
+        <Pagination pagination={state({})} showSummary={false} showControls={false} />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("loads more instead of paging, saying how many are shown", async () => {
+    const onLoadMore = vi.fn();
+    render(
+      <TooltipProvider>
+        <Pagination
+          pagination={state({ itemCount: 50 })}
+          mode="load-more"
+          onLoadMore={onLoadMore}
+        />
+      </TooltipProvider>,
+    );
+    expect(screen.getByRole("navigation")).toHaveTextContent("Showing 50 of 132");
+    expect(screen.queryByRole("button", { name: "Next page" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Load more" }));
+    expect(onLoadMore).toHaveBeenCalled();
+  });
+});
+
+describe("loadMoreSummary", () => {
+  it("counts what is shown, then everything once all of it is", () => {
+    expect(loadMoreSummary(state({ itemCount: 50 }))).toBe("Showing 50 of 132");
+    expect(loadMoreSummary(state({ itemCount: 50, total: undefined }))).toBe("Showing 50");
+    expect(
+      loadMoreSummary(state({ itemCount: 132, hasNext: false }), {
+        one: "contact",
+        other: "contacts",
+      }),
+    ).toBe("132 contacts");
   });
 });

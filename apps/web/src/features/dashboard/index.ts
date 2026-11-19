@@ -6,5 +6,6 @@ export { Panel, PanelHeader } from "./components/panel";
 export {
   DashboardPage,
   type DashboardPageProps,
+  type PageNavIconProps,
   type PageNavItem,
 } from "./components/dashboard-page";

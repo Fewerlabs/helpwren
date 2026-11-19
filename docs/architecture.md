@@ -14,7 +14,7 @@ pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 | `packages/core`          | Headless client library                                                    |
 | `packages/widget`        | The script a site loads to show the chat, published as `helpwren`          |
 | `packages/react-native`  | `SupportScreen`: the chat as a screen of a React Native app, in a web view |
-| `packages/adapters`      | Identity adapters, so far; push, email and storage to come                 |
+| `packages/adapters`      | Identity, push and inbound email adapters; storage to come                 |
 | `packages/cli`           | Installer and upgrader: `pnpm helpwren install` and `upgrade`              |
 | `packages/config`        | Shared TypeScript, ESLint and Prettier configuration                       |
 
@@ -278,6 +278,22 @@ The widget's `identify`, `reset` and `setContext` reach the chat as messages
 through `sessions.identify` and `sessions.reset` in the client library. Admins choose the adapter and make signing keys on Settings > Identity. Signing keys and other credentials live in the `secrets` table, which only the
 server can read. See [ADR 0013](decisions/0013-sessions-for-identified-users.md) and
 [ADR 0014](decisions/0014-identity-adapters.md).
+
+### Email
+
+`src/lib/email` sends and receives mail. Sending goes through an `EmailAdapter` (SMTP or Resend,
+chosen by `EMAIL_PROVIDER`) and `sendEmail`; the database queues what is owed and
+`processEmailQueue` (`queue.ts`), called by `/api/jobs/email`, sends it, with a Message-ID chain
+per conversation so mail apps thread it. See [ADR 0015](decisions/0015-email.md).
+
+Replies come back when Settings > Email turns them on. Each email's `Reply-To` is the reply
+address with a signed token after a plus (`reply-address.ts`, keys in `secrets`). The provider
+posts the reply to `/api/email/inbound/[provider]`, where an inbound adapter from
+`@helpwren/adapters` (Resend, Postmark or the generic signed JSON) checks the request and parses
+it. `inbound.ts` finds and checks the token, strips the quoted earlier messages
+(`strip-reply.ts`), stores the files through the attachments flow, and calls
+`receive_email_reply`, which adds the message as the contact with `channel = 'email'`. See
+[ADR 0022](decisions/0022-reply-by-email.md).
 
 ### Features
 

@@ -32,7 +32,7 @@ describe("QueryDetail", () => {
         <QueryDetail<Contact>
           queryKey={["contact", 404]}
           queryFn={() => Promise.resolve(null)}
-          messages={{ empty: "This contact no longer exists." }}
+          messages={{ notFound: "This contact no longer exists." }}
         >
           {(contact) => <h2>{contact.name}</h2>}
         </QueryDetail>
@@ -139,5 +139,61 @@ describe("QueryDetail", () => {
       </QueryProvider>,
     );
     expect(queryFn).not.toHaveBeenCalled();
+  });
+
+  it("opens with the app's loader, or a skeleton in a record panel's shape when asked", () => {
+    const pending = () => new Promise<Contact>(() => undefined);
+    const { container, unmount } = render(
+      <QueryProvider>
+        <QueryDetail<Contact> queryKey={["contact", "slow"]} queryFn={pending}>
+          {(contact) => <h2>{contact.name}</h2>}
+        </QueryDetail>
+      </QueryProvider>,
+    );
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(container.querySelector("[data-slot=app-loader]")).toBeInTheDocument();
+    expect(container.querySelector("[data-slot=detail-skeleton]")).not.toBeInTheDocument();
+    unmount();
+
+    const skeleton = render(
+      <QueryProvider>
+        <QueryDetail<Contact>
+          queryKey={["contact", "slow"]}
+          queryFn={pending}
+          placeholder="skeleton"
+        >
+          {(contact) => <h2>{contact.name}</h2>}
+        </QueryDetail>
+      </QueryProvider>,
+    );
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(skeleton.container.querySelector("[data-slot=detail-skeleton]")).toBeInTheDocument();
+  });
+
+  it("says what was not found, with the way out it is given", async () => {
+    const onClose = vi.fn();
+    render(
+      <QueryProvider>
+        <QueryDetail<Contact>
+          queryKey={["contact", "gone"]}
+          queryFn={() => Promise.resolve(null)}
+          messages={{
+            notFound: "This contact could not be found.",
+            notFoundDescription: "They may have been merged.",
+          }}
+          notFoundAction={
+            <button type="button" onClick={onClose}>
+              Close
+            </button>
+          }
+        >
+          {(contact) => <h2>{contact.name}</h2>}
+        </QueryDetail>
+      </QueryProvider>,
+    );
+    expect(await screen.findByText("This contact could not be found.")).toBeInTheDocument();
+    expect(screen.getByText("They may have been merged.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalled();
   });
 });

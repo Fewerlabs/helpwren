@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { database, removeContactByEmail } from "./support/database";
+import { RUN, database, removeContactByEmail } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // A team member works a conversation from start to finish: takes it, makes it a ticket, leaves
 // a note for the team, and resolves it. Runs against the local Supabase stack and its demo data.
-const CONTACT = { name: "Ines Duarte", email: "ines.e2e@example.org" };
+const CONTACT = { name: `Ines Duarte ${RUN}`, email: `ines.${RUN}@example.org` };
 
 async function startConversation() {
   const created = await database.auth.admin.createUser({
@@ -171,7 +171,7 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   await ticketSearch.fill(number);
   await expect(table.getByRole("row")).toHaveCount(2);
   await ticketSearch.fill("nothing like this");
-  await expect(tickets.getByText("No tickets match")).toBeVisible();
+  await expect(tickets.getByText("No results")).toBeVisible();
   await ticketSearch.fill("");
   await views.getByRole("link", { name: /My inbox/ }).click();
 

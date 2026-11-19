@@ -18,6 +18,11 @@ export const apiErrorSchema = z.object({
       "identity_unavailable",
       // A feature the install has switched off.
       "disabled",
+      // Refused as spam, failed the captcha, or sent by someone the team has blocked.
+      "refused",
+      // A file that is too big, or not what it says it is.
+      "too_large",
+      "unsupported",
     ]),
     message: z.string(),
   }),
@@ -52,6 +57,8 @@ export function createApi(supabase: HelpwrenSupabaseClient, options: ApiOptions)
     body: unknown,
     schema: Schema,
   ): Promise<ApiResult<z.infer<Schema>>> {
+    // A form carries files, and sets its own content type with the boundary between parts.
+    const form = body instanceof FormData;
     // Read from this device's own session, to send it along as proof of who is asking.
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
@@ -61,10 +68,10 @@ export function createApi(supabase: HelpwrenSupabaseClient, options: ApiOptions)
       response = await send(`${baseUrl}${path}`, {
         method,
         headers: {
-          "content-type": "application/json",
+          ...(form ? {} : { "content-type": "application/json" }),
           ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(body ?? {}),
+        body: form ? body : JSON.stringify(body ?? {}),
       });
     } catch (cause) {
       throw new HelpwrenError("Could not reach the Helpwren server.", { cause });
@@ -87,6 +94,7 @@ export function createApi(supabase: HelpwrenSupabaseClient, options: ApiOptions)
   }
 
   return {
+    /** Sends JSON, or a `FormData` as it is, for files. */
     post: <Schema extends z.ZodType>(path: string, body: unknown, schema: Schema) =>
       request("POST", path, body, schema),
 

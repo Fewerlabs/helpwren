@@ -25,7 +25,10 @@ export const typingEventSchema = z.object({
   typing: z.boolean(),
   /** The writer's name and photo, sent by the team so the visitor can see who is replying. */
   name: z.string().max(120).optional(),
-  avatar: z.url().max(2000).optional(),
+  avatar: z
+    .url({ protocol: /^https?$/ })
+    .max(2000)
+    .optional(),
 });
 
 export type TypingEvent = z.infer<typeof typingEventSchema>;

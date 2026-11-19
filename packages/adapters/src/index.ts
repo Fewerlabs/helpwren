@@ -24,6 +24,26 @@ export {
   type IdentityFailure,
   type VerifiedIdentity,
 } from "./identity/types";
+export {
+  createGenericInbound,
+  genericInboundSchema,
+  type GenericInboundEmail,
+  type GenericInboundOptions,
+} from "./inbound-email/generic";
+export {
+  POSTMARK_USER,
+  createPostmarkInbound,
+  type PostmarkInboundOptions,
+} from "./inbound-email/postmark";
+export { createResendInbound, type ResendInboundOptions } from "./inbound-email/resend";
+export {
+  InboundEmailError,
+  type InboundAttachment,
+  type InboundEmail,
+  type InboundEmailAdapter,
+  type InboundProvider,
+  type InboundRequest,
+} from "./inbound-email/types";
 export { createExpoPush, isExpoPushToken, type ExpoPushOptions } from "./push/expo";
 export {
   createFcmPush,
@@ -50,3 +70,7 @@ export {
   type PushReceipt,
   type PushTicket,
 } from "./push/types";
+export { createTurnstile, type CaptchaAdapter, type TurnstileOptions } from "./captcha/turnstile";
+export { createDatabaseRateLimit, type HitRateLimit } from "./rate-limit/database";
+export { createMemoryRateLimit, type MemoryRateLimitOptions } from "./rate-limit/memory";
+export { type RateLimitRule, type RateLimitStore } from "./rate-limit/types";

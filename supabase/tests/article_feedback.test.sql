@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(10);
+select plan(9);
 
 insert into public.collections (id, name, slug) values
   ('f0000000-0000-4000-8000-000000000001', 'Getting started', 'getting-started');
@@ -11,16 +11,16 @@ insert into public.articles (id, collection_id, title, slug, status) values
   ('f1000000-0000-4000-8000-000000000002', 'f0000000-0000-4000-8000-000000000001',
    'Invite your team', 'invite-your-team', 'draft');
 
+-- Answers arrive through the app's server, which limits how often one network may answer.
+select tests.act_as_server();
+insert into public.article_feedback (article_id, helpful)
+values ('f1000000-0000-4000-8000-000000000001', true);
+
 select tests.act_as_visitor();
-select lives_ok(
-  $$ insert into public.article_feedback (article_id, helpful)
-     values ('f1000000-0000-4000-8000-000000000001', true) $$,
-  'a visitor says a published article helped'
-);
 select throws_ok(
   $$ insert into public.article_feedback (article_id, helpful)
-     values ('f1000000-0000-4000-8000-000000000002', true) $$,
-  '42501', null, 'a visitor cannot rate a draft'
+     values ('f1000000-0000-4000-8000-000000000001', true) $$,
+  '42501', null, 'a visitor cannot answer straight into the database, where nothing limits it'
 );
 select throws_ok(
   $$ select * from public.article_feedback $$, '42501', null,
@@ -32,11 +32,15 @@ select throws_ok(
 );
 
 select tests.act_as('guest_a');
-select lives_ok(
+select throws_ok(
   $$ insert into public.article_feedback (article_id, helpful)
      values ('f1000000-0000-4000-8000-000000000001', false) $$,
-  'a guest says a published article did not help'
+  '42501', null, 'nor can a guest'
 );
+select tests.act_as_server();
+insert into public.article_feedback (article_id, helpful)
+values ('f1000000-0000-4000-8000-000000000001', false);
+select tests.act_as('guest_a');
 select is(
   (select count(*) from public.article_feedback), 0::bigint,
   'a guest cannot read what others answered'

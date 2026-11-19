@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { type Api } from "./api";
 import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
 import { EMPTY_RICH_TEXT, richTextSchema } from "./rich-text";
@@ -169,7 +170,8 @@ export type ChangeArticleResult =
     };
 
 export type RemoveArticleResult = { ok: true } | { ok: false; reason: "not_found" };
-export type ArticleFeedbackResult = { ok: true } | { ok: false; reason: "not_found" };
+export type ArticleFeedbackResult =
+  { ok: true } | { ok: false; reason: "not_found" | "rate_limited" };
 
 /** How many readers said an article helped, and how many said it did not. */
 export interface FeedbackTotals {
@@ -198,7 +200,6 @@ const COLUMNS = `${SUMMARY_COLUMNS}, body`;
 const NOT_ALLOWED = "42501";
 const TAKEN = "23505";
 const CHECK_FAILED = "23514";
-const NO_SUCH_ROW = "23503";
 const LOCKED = "HW409";
 
 function refusal(code: string | undefined) {
@@ -226,7 +227,7 @@ function metadata(input: Metadata) {
   return values;
 }
 
-export function createArticles(supabase: HelpwrenSupabaseClient) {
+export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
   async function change(
     id: string,
     values: Database["public"]["Tables"]["articles"]["Update"],
@@ -414,17 +415,17 @@ export function createArticles(supabase: HelpwrenSupabaseClient) {
 
     /** Records a reader's answer to "Was this helpful?" on a published article. */
     async sendFeedback(articleId: string, helpful: boolean): Promise<ArticleFeedbackResult> {
-      const { error } = await supabase
-        .from("article_feedback")
-        .insert({ article_id: z.uuid().parse(articleId), helpful });
-      if (error) {
-        // Not published, or not there at all: either way there is nothing to rate.
-        if (error.code === NOT_ALLOWED || error.code === NO_SUCH_ROW) {
-          return { ok: false, reason: "not_found" };
-        }
-        throw new HelpwrenError("Could not record the answer.", { cause: error });
+      // Through the app's server, which limits how often one network may answer.
+      const result = await api.post(
+        `/api/articles/${z.uuid().parse(articleId)}/feedback`,
+        { helpful },
+        z.unknown(),
+      );
+      if (result.ok) return { ok: true };
+      if (result.code === "not_found" || result.code === "rate_limited") {
+        return { ok: false, reason: result.code };
       }
-      return { ok: true };
+      throw new HelpwrenError(`Could not record the answer: ${result.message}`);
     },
 
     /** What readers answered, by article id. Articles nobody has rated are left out. For the team. */

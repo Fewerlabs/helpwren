@@ -4,7 +4,7 @@ import { type AddressInfo } from "node:net";
 import { expect, test } from "@playwright/test";
 
 import { database } from "./support/database";
-import { emptyMailbox, readSignInCode } from "./support/mailbox";
+import { markMailbox, readSignInCode } from "./support/mailbox";
 
 // The wizard only opens on an install with nobody on its team, which the demo data is not.
 // Run this against a fresh database, as docs/install.md describes:
@@ -43,7 +43,7 @@ test("a new install is set up in the browser, from the first admin to a live wid
   page,
   context,
 }) => {
-  await emptyMailbox(page.request);
+  const mailbox = await markMailbox(page.request, ADMIN.email);
 
   // With nobody on the team, sign-in sends people to set up.
   await page.goto("/login");
@@ -53,7 +53,7 @@ test("a new install is set up in the browser, from the first admin to a live wid
   await page.getByLabel("Work email").fill(ADMIN.email);
   await page.getByRole("button", { name: "Create admin and email me a code" }).click();
   await expect(page.getByRole("heading", { name: `Sign in, ${ADMIN.name}` })).toBeVisible();
-  await page.getByLabel("Sign-in code").fill(await readSignInCode(page.request, ADMIN.email));
+  await page.getByLabel("Sign-in code").fill(await readSignInCode(page.request, mailbox));
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
   // Brand.

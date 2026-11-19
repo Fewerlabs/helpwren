@@ -134,7 +134,10 @@ export function DetailsPanel({
 }: DetailsPanelProps) {
   const { contact, context } = conversation;
   const name = contactName(contact);
-  const page = typeof context.url === "string" ? context.url : undefined;
+  // The page the visitor wrote from is their browser's word, so it is a link only when it is a
+  // web address: older conversations were stored before the server checked.
+  const page =
+    typeof context.url === "string" && /^https?:\/\//i.test(context.url) ? context.url : undefined;
   const pageTitle = typeof context.title === "string" ? context.title : undefined;
   const fromPage = Object.entries(pageContextSchema.safeParse(context.custom).data ?? {});
   const isTicket = conversation.type === "ticket";
@@ -242,6 +245,9 @@ export function DetailsPanel({
           <Row label="Started">{startedFormat.format(new Date(conversation.createdAt))}</Row>
           <Row label="Source">
             <span className="font-mono">{conversation.source}</span>
+            {conversation.viaEmail ? (
+              <span className="text-muted-foreground block pt-0.5">Also replied by email</span>
+            ) : null}
           </Row>
           <Row label="Page">
             {page ? (

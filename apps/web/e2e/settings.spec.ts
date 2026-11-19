@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { database } from "./support/database";
+import { database, newTeamMember, RUN, uniqueEmail } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // Runs against the local Supabase stack and its demo data, where Ada is an admin and Sam is
 // an agent, and guests are asked for a name and an email or phone number.
-const NEW_MEMBER = { name: "Kofi Mensah", email: "kofi.e2e@example.com" };
+const NEW_MEMBER = { name: `Kofi Mensah ${RUN}`, email: uniqueEmail("kofi") };
 
 async function restore() {
   await database
@@ -17,16 +17,17 @@ async function restore() {
     .update({ value: { name: "Helpwren Demo" } })
     .eq("key", "brand");
   await database.from("settings").update({ value: "email_or_phone" }).eq("key", "guest_details");
-  await database
-    .from("agents")
-    .update({ name: "Sam Rivera", photo: null })
-    .eq("email", "sam@example.com");
   const { data } = await database.from("agents").select("user_id").eq("email", NEW_MEMBER.email);
   for (const { user_id } of data ?? []) await database.auth.admin.deleteUser(user_id);
 }
 
+const madeMembers: { remove: () => Promise<unknown> }[] = [];
+
 test.beforeEach(restore);
-test.afterEach(restore);
+test.afterEach(async () => {
+  await restore();
+  await Promise.all(madeMembers.splice(0).map((member) => member.remove()));
+});
 
 test("an admin changes what the chat asks guests", async ({ page, browser }) => {
   await signInToInbox(page, "ada@example.com");
@@ -134,11 +135,14 @@ test("a team member changes their own name, and how they are notified", async ({
   page,
   context,
 }) => {
+  // Someone of the test's own, so the demo's Sam keeps his name for anyone else using him.
+  const member = await newTeamMember(`Sam ${RUN}`);
+  madeMembers.push(member);
   await context.grantPermissions(["notifications"]);
-  await signInToInbox(page, "sam@example.com");
+  await signInToInbox(page, member.email);
   await page.goto("/dashboard/settings/profile");
 
-  await expect(page.getByText("sam@example.com")).toBeVisible();
+  await expect(page.getByText(member.email)).toBeVisible();
   await page.getByLabel("Your name").fill("Samira Rivera");
   await page.getByLabel("Photo file").setInputFiles({
     name: "me.png",
@@ -208,7 +212,9 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   await signInToInbox(page, "ada@example.com");
   await page.goto("/dashboard/settings/team");
   const team = page.getByRole("list", { name: "Team members" });
-  await expect(team.getByRole("listitem")).toHaveCount(2);
+  // Everyone on the team is listed, the demo's two and anyone added while trying the app.
+  const { count } = await database.from("agents").select("user_id", { count: "exact", head: true });
+  await expect(team.getByRole("listitem")).toHaveCount(count ?? 0);
   // An admin has no controls for their own access.
   await expect(team.getByRole("button", { name: /Ada Okafor/ })).toHaveCount(0);
 
