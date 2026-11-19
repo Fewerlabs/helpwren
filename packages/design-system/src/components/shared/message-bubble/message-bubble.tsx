@@ -71,7 +71,8 @@ export function MessageBubble({
           {note ? <span className="text-biro font-medium"> Internal note</span> : null}
         </p>
       ) : null}
-      <div className="flex max-w-full items-end gap-2">
+      {/* On a phone a dense thread has little width to spare, so the avatar sits closer. */}
+      <div className={cn("flex max-w-full items-end gap-2", size === "sm" && "max-md:gap-1.5")}>
         {self ? null : avatar}
         <div className={cn("flex min-w-0 flex-col gap-1.5", self ? "items-end" : "items-start")}>
           {hasWords ? (
@@ -110,7 +111,7 @@ export function MessageBubble({
             "text-muted-foreground flex items-center gap-2 px-1",
             size === "sm" ? "text-2xs" : "text-xs",
             // Line the time up under the bubble, past the avatar.
-            !self && avatar !== undefined && (size === "sm" ? "pl-8" : "pl-10"),
+            !self && avatar !== undefined && (size === "sm" ? "pl-8 max-md:pl-7.5" : "pl-10"),
           )}
         >
           {time === undefined ? null : <span>{time}</span>}
