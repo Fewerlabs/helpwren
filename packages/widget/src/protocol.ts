@@ -2,6 +2,10 @@
  * The messages the widget script and the chat frame send each other with `postMessage`. The
  * chat's side of this lives in the app (`apps/web/src/features/chat`); keep the two in step.
  *
+ * In a mobile app the chat is the whole page of a web view, and the same messages travel as JSON
+ * strings: to the app through `window.ReactNativeWebView.postMessage`, and from it as message
+ * events the app dispatches in the page (`@helpwren/react-native` does both).
+ *
  * The frame announces that it is ready, saying nothing else, and the page answers with `hello`.
  * The frame learns the page's origin from that answer and sends everything after it to that
  * origin only, so nothing about the visitor reaches a page that did not embed the chat.
@@ -14,7 +18,8 @@ export type PageMessage =
   | {
       channel: typeof CHANNEL;
       type: "hello";
-      page: { url: string; title: string };
+      /** The page the chat is on. An app, which has none, leaves it out. */
+      page?: { url: string; title: string };
       /** False when the chat is the content of the page and has nothing to close into. */
       closable?: boolean;
       /**
@@ -33,6 +38,8 @@ export type PageMessage =
   | { channel: typeof CHANNEL; type: "reset" }
   /** What the page wants the team to know about where the visitor is. Replaces what was sent. */
   | { channel: typeof CHANNEL; type: "context"; context: PageContext }
+  /** Shows one of the visitor's conversations, as when they tap a notification about it. */
+  | { channel: typeof CHANNEL; type: "open"; conversationId: string }
   /**
    * Start a new conversation. `reply` is a quick reply the visitor tapped beside the launcher,
    * which the chat sends for them if it is one of the install's own. `draft` is text from the

@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@helpwren/config": "workspace:*",
+    "@helpwren/react-native": "workspace:*",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/dom": "^10.4.1",

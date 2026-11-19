@@ -2,19 +2,34 @@
   "name": "@helpwren/react-native",
   "version": "0.0.0",
   "private": true,
-  "description": "Support screen for React Native and Expo apps.",
+  "description": "A support screen for React Native and Expo apps: Helpwren's chat in a web view.",
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./bridge": "./src/bridge.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@helpwren/config": "workspace:*",
+    "@types/react": "catalog:",
     "eslint": "catalog:",
-    "typescript": "catalog:"
+    "react": "catalog:",
+    "react-native": "0.86.3",
+    "react-native-webview": "14.0.1",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "helpwren": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-native": ">=0.79",
+    "react-native-webview": ">=13.12"
   }
 }
