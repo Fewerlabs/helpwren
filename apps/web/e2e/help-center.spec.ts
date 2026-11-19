@@ -18,17 +18,17 @@ test("a visitor browses from the home page to an article", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "How can we help?" })).toBeVisible();
 
   // Collections are cards with how many articles each holds; the draft is not counted.
-  await expect(page.getByRole("link", { name: /Getting started.*3 articles/s })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Getting started.*4 articles/s })).toBeVisible();
   await expect(page.getByRole("link", { name: /Troubleshooting.*1 article/s })).toBeVisible();
   await expect(page.getByRole("list", { name: "Popular articles" })).toContainText(
     "The chat does not appear",
   );
 
-  await page.getByRole("link", { name: /Getting started.*3 articles/s }).click();
+  await page.getByRole("link", { name: /Getting started.*4 articles/s }).click();
   await expect(page).toHaveURL(/\/help\/getting-started$/);
   await expect(page.getByRole("heading", { level: 1, name: "Getting started" })).toBeVisible();
   const articles = page.getByRole("list", { name: "Articles in Getting started" });
-  await expect(articles.getByRole("link")).toHaveCount(3);
+  await expect(articles.getByRole("link")).toHaveCount(4);
 
   await articles.getByRole("link", { name: /Add the chat to your website/ }).click();
   await expect(page).toHaveURL(new RegExp(`${ARTICLE}$`));
@@ -238,7 +238,7 @@ test("a host embeds the help center without its chrome, and is told its height",
   const frame = page.frameLocator("#help");
 
   // The content alone: no brand header, no footer, no credit, no launcher.
-  await expect(frame.getByRole("link", { name: /Getting started.*3 articles/s })).toBeVisible();
+  await expect(frame.getByRole("link", { name: /Getting started.*4 articles/s })).toBeVisible();
   // Whatever the branding test before this one called it, the search is there.
   await expect(frame.getByRole("searchbox")).toBeVisible();
   await expect(frame.getByRole("link", { name: "Powered by Helpwren" })).toHaveCount(0);
@@ -250,7 +250,7 @@ test("a host embeds the help center without its chrome, and is told its height",
     .toBeGreaterThan(300);
 
   // Links stay in the frame and in the embedded form, with the host's options.
-  await frame.getByRole("link", { name: /Getting started.*3 articles/s }).click();
+  await frame.getByRole("link", { name: /Getting started.*4 articles/s }).click();
   await frame.getByRole("link", { name: /Add the chat to your website/ }).click();
   await expect(
     frame.getByRole("heading", { level: 1, name: "Add the chat to your website" }),

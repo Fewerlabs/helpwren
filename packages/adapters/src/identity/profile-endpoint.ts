@@ -14,7 +14,7 @@ const TIMEOUT_MS = 5000;
 const ANSWER_MAX_BYTES = 100_000;
 
 /** Where a value sits in the answer, as names joined by dots: `data.user.id`. */
-const pathSchema = z
+export const fieldPathSchema = z
   .string()
   .trim()
   .regex(/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/);
@@ -25,23 +25,23 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
  * The address must be HTTPS, because the user's own token is sent to it. Plain HTTP is allowed
  * only to this machine, for development.
  */
-const endpointSchema = z.url().refine((value) => {
+export const endpointUrlSchema = z.url().refine((value) => {
   const url = new URL(value);
   return url.protocol === "https:" || (url.protocol === "http:" && LOCAL_HOSTS.has(url.hostname));
 });
 
 export const profileEndpointConfigSchema = z.object({
   /** The host product's "who am I" address, which answers with JSON for a valid token. */
-  url: endpointSchema,
+  url: endpointUrlSchema,
   fields: z.object({
     /** The user's id. The only field every install must map. */
-    id: pathSchema,
+    id: fieldPathSchema,
     /** One or more fields that make up the name, joined with spaces: first and last name. */
-    name: z.array(pathSchema).max(4).default([]),
-    email: pathSchema.optional(),
-    orgId: pathSchema.optional(),
-    orgName: pathSchema.optional(),
-    audience: pathSchema.optional(),
+    name: z.array(fieldPathSchema).max(4).default([]),
+    email: fieldPathSchema.optional(),
+    orgId: fieldPathSchema.optional(),
+    orgName: fieldPathSchema.optional(),
+    audience: fieldPathSchema.optional(),
   }),
   /**
    * What the product's values for the audience field mean here, such as `Business` meaning
@@ -50,7 +50,7 @@ export const profileEndpointConfigSchema = z.object({
   audiences: z.record(z.string(), z.string().min(1)).default({}),
   /** Other fields to show the team: the name to show each under, and where it is. */
   attributes: z
-    .record(z.string().min(1).max(100), pathSchema)
+    .record(z.string().min(1).max(100), fieldPathSchema)
     .refine((attributes) => Object.keys(attributes).length <= ATTRIBUTES_MAX)
     .default({}),
 });

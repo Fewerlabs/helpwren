@@ -21,3 +21,5 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0014 | [Identity adapters and the signed token](0014-identity-adapters.md)            |
 | 0015 | [Sending email](0015-email.md)                                                 |
 | 0016 | [The knowledge base and the public help center](0016-knowledge-base.md)        |
+| 0017 | [The support screen in mobile apps](0017-mobile-support-screen.md)             |
+| 0018 | [Push notifications to mobile apps](0018-push-notifications.md)                |

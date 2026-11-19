@@ -443,6 +443,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
 
       const frame = document.createElement("iframe");
       frame.title = "Chat";
+      // So a video in a help article can go full screen or float, as it can on a page.
+      frame.allow = "fullscreen; picture-in-picture; encrypted-media";
       const url = new URL("/embed", appOrigin);
       url.searchParams.set("source", options.source ?? "web");
       if (options.preview) url.searchParams.set("preview", "1");

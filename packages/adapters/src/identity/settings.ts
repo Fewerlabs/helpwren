@@ -2,6 +2,14 @@ import { z } from "zod";
 
 import { profileEndpointConfigSchema } from "./profile-endpoint";
 
+export {
+  endpointUrlSchema,
+  fieldPathSchema,
+  profileEndpointConfigSchema,
+  type ProfileEndpointConfig,
+} from "./profile-endpoint";
+export { type VerifiedIdentity } from "./types";
+
 /**
  * How this install learns who a visitor is, as stored in its `identity` setting. `none` means
  * everyone chats as a guest. Secrets are not part of it: they are kept where only the server
@@ -15,3 +23,4 @@ export const identitySettingsSchema = z.discriminatedUnion("mode", [
 
 export type IdentitySettings = z.infer<typeof identitySettingsSchema>;
 export type IdentityMode = IdentitySettings["mode"];
+export { pushSettingsSchema, type PushSettings } from "../push/settings";

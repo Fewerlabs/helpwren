@@ -1,14 +1,27 @@
 # @helpwren/react-native
 
-> **Status: stub.** Nothing is implemented yet. This package exists so the workspace layout,
-> naming and tooling are settled before product work starts.
+> **Status: early.** The support screen and push helpers work; not yet tried on real devices.
 
-Support screen for React Native and Expo apps.
+Helpwren's chat as a screen of a React Native or Expo app. It shows the install's own chat page
+in a web view, tells it who the user is and what they are looking at, and passes back the
+unread count. See [docs/mobile.md](../../docs/mobile.md) for setup.
 
-## What it will contain
+```tsx
+import { SupportScreen, getUnreadCount } from "@helpwren/react-native";
 
-- A `SupportScreen` component that opens `/embed` in a WebView and passes the user's token,
-  `source` and context by message, never in the URL.
-- Push token registration and removal helpers.
-- Deep-link handling for opening a conversation or an article.
-- Native components as an alternative to the WebView come later.
+<SupportScreen
+  baseUrl="https://support.example.com"
+  source="customer_app"
+  token={() => auth.getAccessToken()}
+  context={{ appVersion: "3.2.0", screen: "Booking" }}
+  onUnread={setBadge}
+  onClose={() => navigation.goBack()}
+/>;
+```
+
+- `react`, `react-native` and `react-native-webview` are peer dependencies: your app owns their
+  versions. Install the web view with `npx expo install react-native-webview`.
+- No Supabase or other Helpwren packages go into the app.
+- `registerSupportDevice`, `unregisterSupportDevice` and `supportConversationId` connect
+  push notifications; see the guide.
+- `@helpwren/react-native/bridge` has the message helpers on their own, for a custom screen.

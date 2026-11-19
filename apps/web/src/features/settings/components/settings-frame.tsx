@@ -19,6 +19,8 @@ const pages = [
     group: WORKSPACE,
   },
   { href: "/dashboard/settings/email", label: "Email", icon: "envelope", group: WORKSPACE },
+  { href: "/dashboard/settings/identity", label: "Identity", icon: "lock", group: WORKSPACE },
+  { href: "/dashboard/settings/mobile", label: "Mobile", icon: "device-mobile", group: WORKSPACE },
   { href: "/dashboard/settings/team", label: "Team", icon: "users", group: WORKSPACE },
   { href: "/dashboard/settings/profile", label: "Profile", icon: "user", group: PERSONAL },
   {

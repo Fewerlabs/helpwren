@@ -1,7 +1,7 @@
 import { type Brand } from "@helpwren/core";
 import { type CSSProperties } from "react";
 
-const DARK_TEXT = "#1c1a16";
+const DARK_TEXT = "#101a15";
 const LIGHT_TEXT = "#ffffff";
 
 /** How bright a colour is to the eye, from 0 (black) to 1 (white), as WCAG defines it. */

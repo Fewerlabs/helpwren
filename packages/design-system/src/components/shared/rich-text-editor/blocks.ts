@@ -97,6 +97,14 @@ export const blockChoices: readonly BlockChoice[] = [
     run: (editor) => editor.chain().focus().setCallout("warning").run(),
   },
   {
+    id: "video",
+    label: "Video",
+    hint: "A YouTube video",
+    icon: "youtube-logo",
+    keywords: "youtube embed film clip",
+    run: (editor) => editor.chain().focus().insertVideoField().run(),
+  },
+  {
     id: "divider",
     label: "Divider",
     hint: "A line between two parts",

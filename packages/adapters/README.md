@@ -6,8 +6,10 @@ Identity, push, email and storage adapters that connect Helpwren to a host produ
 
 ## What it contains
 
-- **Identity, so far:** the `IdentityAdapter` interface and the signed token adapter (a
-  short-lived HS256 token from the product's backend). See
+- **Identity, so far:** the `IdentityAdapter` interface, the signed token adapter (a
+  short-lived HS256 token from the product's backend) and the profile endpoint adapter (the
+  product's own "who am I" address, read through a mapping). The settings schemas are also on
+  `@helpwren/adapters/settings`, which the browser can load. See
   [ADR 0014](../../docs/decisions/0014-identity-adapters.md).
 
 ## What it will contain

@@ -38,7 +38,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { CannedReplies } from "@/features/example";
-import { ThemeToggle } from "@/features/theme";
+import { ThemeMenu } from "@/features/theme";
 
 export const metadata: Metadata = {
   title: "Design system",
@@ -77,7 +77,7 @@ export default function DesignPage() {
         eyebrow="Helpwren"
         title="Design system"
         description="Calm interface, hand-drawn character. Every piece on this page comes from @helpwren/design-system, running in the real app."
-        actions={<ThemeToggle />}
+        actions={<ThemeMenu className="border-rule hover:bg-muted size-9 rounded-lg border" />}
       />
 
       <Section id="brand" title="Brand">

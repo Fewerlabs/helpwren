@@ -5,6 +5,7 @@ import { type HelpEmbed } from "@/lib/help-embed";
 
 import { bannerStyle, heroKind } from "../hero";
 import { SearchBox } from "./help-header";
+import { PageHalftone } from "./page-halftone";
 
 /**
  * The top of the home page: the greeting and a large search. Behind it, a soft wash of the
@@ -27,6 +28,7 @@ export function HelpHero({ settings }: { settings: PublicSettings; embed?: HelpE
           className="pointer-events-none absolute -top-24 -right-10 -z-10 h-72 w-[34rem] max-w-full bg-[radial-gradient(closest-side,color-mix(in_srgb,var(--brand,var(--primary))_26%,transparent),transparent)] blur-2xl"
         />
       ) : null}
+      {banner ? null : <PageHalftone className="-inset-x-10 -top-14 h-96" />}
       <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
         {helpCenter.title ?? "How can we help?"}
       </h1>

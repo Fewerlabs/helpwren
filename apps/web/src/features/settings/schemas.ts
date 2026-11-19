@@ -1,4 +1,10 @@
 import {
+  endpointUrlSchema,
+  fieldPathSchema,
+  identitySettingsSchema,
+  type IdentitySettings,
+} from "@helpwren/adapters/settings";
+import {
   agentRoleSchema,
   guestDetailsSchema,
   HELP_FOOTER_LINKS_MAX,
@@ -80,6 +86,9 @@ export const brandingSchema = z.object({
     .max(QUICK_REPLIES_MAX, `Offer ${QUICK_REPLIES_MAX} replies at most.`),
   chatTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
   chatIntro: z.string().trim().max(200, "Keep this under 200 characters."),
+  chatHeaderStyle: helpHeaderStyleSchema,
+  /** The address of the uploaded picture behind the top of the chat page. Empty for none. */
+  chatHeaderImage: z.string(),
   helpTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
   helpIntro: z.string().trim().max(200, "Keep this under 200 characters."),
   helpHeaderStyle: helpHeaderStyleSchema,
@@ -136,7 +145,15 @@ export function brandingToSettings(values: BrandingValues) {
       welcome: text(values.welcome),
       quickReplies: values.quickReplies,
     },
-    chatPage: { title: text(values.chatTitle), intro: text(values.chatIntro) },
+    chatPage: {
+      title: text(values.chatTitle),
+      intro: text(values.chatIntro),
+      headerStyle:
+        values.chatHeaderStyle === "image" && !values.chatHeaderImage
+          ? "brand"
+          : values.chatHeaderStyle,
+      headerImage: text(values.chatHeaderImage),
+    },
     helpCenter: {
       title: text(values.helpTitle),
       intro: text(values.helpIntro),
@@ -192,3 +209,133 @@ export const emailSchema = z.object({
   ]),
 });
 export type EmailValues = z.infer<typeof emailSchema>;
+
+/**
+ * The Identity page. The profile endpoint's mapping is typed as text, the way an admin reads it
+ * off the product's answer: paths joined by dots, a name made of several fields separated by
+ * commas, and one `left = right` pair per line for audiences and attributes.
+ */
+export const identitySchema = z
+  .object({
+    mode: z.enum(["none", "signed_token", "profile_endpoint"]),
+    url: z.string().trim(),
+    idField: z.string().trim(),
+    nameFields: z.string().trim(),
+    emailField: z.string().trim(),
+    orgIdField: z.string().trim(),
+    orgNameField: z.string().trim(),
+    audienceField: z.string().trim(),
+    audiences: z.string(),
+    attributes: z.string(),
+  })
+  .superRefine((values, context) => {
+    if (values.mode !== "profile_endpoint") return;
+    const problem = (path: keyof typeof values, message: string) => {
+      context.addIssue({ code: "custom", path: [path], message });
+    };
+
+    if (!endpointUrlSchema.safeParse(values.url).success) {
+      problem("url", "Enter an https:// address. Plain http:// works only for localhost.");
+    }
+    if (!fieldPathSchema.safeParse(values.idField).success) {
+      problem("idField", "Enter where the user's id is, such as data.id.");
+    }
+    for (const [path, value] of [
+      ["emailField", values.emailField],
+      ["orgIdField", values.orgIdField],
+      ["orgNameField", values.orgNameField],
+      ["audienceField", values.audienceField],
+    ] as const) {
+      if (value !== "" && !fieldPathSchema.safeParse(value).success) {
+        problem(path, "Use names joined by dots, such as data.email.");
+      }
+    }
+    if (splitList(values.nameFields).some((part) => !fieldPathSchema.safeParse(part).success)) {
+      problem(
+        "nameFields",
+        "Use paths separated by commas, such as data.firstName, data.lastName.",
+      );
+    }
+    if (pairs(values.audiences) === null) {
+      problem("audiences", "Write one pair a line, such as Business = business.");
+    }
+    const attributes = pairs(values.attributes);
+    if (
+      attributes === null ||
+      Object.values(attributes).some((path) => !fieldPathSchema.safeParse(path).success)
+    ) {
+      problem("attributes", "Write one pair a line, such as Plan = data.plan.");
+    }
+  });
+export type IdentityValues = z.infer<typeof identitySchema>;
+
+function splitList(text: string): string[] {
+  return text
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+}
+
+/** `left = right` lines as a record, or `null` if a line is not one. Blank lines are skipped. */
+function pairs(text: string): Record<string, string> | null {
+  const result: Record<string, string> = {};
+  for (const line of text.split("\n").map((each) => each.trim())) {
+    if (line === "") continue;
+    const [left, right, ...rest] = line.split("=").map((part) => part.trim());
+    if (!left || !right || rest.length > 0) return null;
+    result[left] = right;
+  }
+  return result;
+}
+
+const lines = (record: Record<string, string>) =>
+  Object.entries(record)
+    .map(([left, right]) => `${left} = ${right}`)
+    .join("\n");
+
+/** What the page shows for what is saved. */
+export function identityToValues(settings: IdentitySettings): IdentityValues {
+  const endpoint = settings.mode === "profile_endpoint" ? settings.endpoint : undefined;
+  return {
+    mode: settings.mode,
+    url: endpoint?.url ?? "",
+    idField: endpoint?.fields.id ?? "",
+    nameFields: endpoint?.fields.name.join(", ") ?? "",
+    emailField: endpoint?.fields.email ?? "",
+    orgIdField: endpoint?.fields.orgId ?? "",
+    orgNameField: endpoint?.fields.orgName ?? "",
+    audienceField: endpoint?.fields.audience ?? "",
+    audiences: lines(endpoint?.audiences ?? {}),
+    attributes: lines(endpoint?.attributes ?? {}),
+  };
+}
+
+/** What is saved for what the page holds. `null` if it does not make a valid setting. */
+export function identityFromValues(values: IdentityValues): IdentitySettings | null {
+  if (values.mode !== "profile_endpoint") return { mode: values.mode };
+  const optional = (path: string) => (path === "" ? undefined : path);
+  const parsed = identitySettingsSchema.safeParse({
+    mode: "profile_endpoint",
+    endpoint: {
+      url: values.url,
+      fields: {
+        id: values.idField,
+        name: splitList(values.nameFields),
+        email: optional(values.emailField),
+        orgId: optional(values.orgIdField),
+        orgName: optional(values.orgNameField),
+        audience: optional(values.audienceField),
+      },
+      audiences: pairs(values.audiences) ?? {},
+      attributes: pairs(values.attributes) ?? {},
+    },
+  });
+  return parsed.success ? parsed.data : null;
+}
+
+/** The Mobile page. An access token left empty keeps the one already saved. */
+export const mobileSchema = z.object({
+  provider: z.enum(["none", "expo"]),
+  accessToken: z.string().trim().max(200, "That is longer than an Expo access token."),
+});
+export type MobileValues = z.infer<typeof mobileSchema>;

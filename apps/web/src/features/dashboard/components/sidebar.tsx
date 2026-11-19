@@ -6,9 +6,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 
+import { ThemeMenu } from "@/features/theme";
+
 import { useTeamUnread } from "../hooks/use-unread";
 import { sections } from "../sections";
-import { ThemeToggle } from "./theme-toggle";
 
 export interface SidebarProps {
   agent: Agent;
@@ -51,7 +52,7 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
                 <Icon
                   name={section.icon}
                   weight={active ? "duotone" : "regular"}
-                  className="size-5"
+                  className={cn("size-5", active && "text-primary")}
                 />
                 {count > 0 ? (
                   <span
@@ -67,7 +68,11 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
         })}
       </nav>
       <div className="flex shrink-0 items-center gap-2 max-md:gap-0.5 md:flex-col">
-        <ThemeToggle />
+        <ThemeMenu
+          side="right"
+          align="end"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground size-10 rounded-xl focus-visible:outline-offset-2"
+        />
         <Tooltip content={agent.name} side="right">
           <Link
             href="/dashboard/settings/profile"

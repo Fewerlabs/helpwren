@@ -63,9 +63,12 @@
 }
 
 .hw-rich-text a {
-  color: var(--biro);
+  color: inherit;
+  font-weight: 500;
   text-decoration: underline;
-  text-underline-offset: 0.18em;
+  text-decoration-color: var(--brand, var(--primary));
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
 }
 
 .hw-rich-text a:hover {
@@ -136,8 +139,9 @@
 
 /* A callout: a tinted box with a word saying what it is, so it never relies on colour alone. */
 .hw-rich-text .hw-callout {
-  --hw-callout-ink: var(--status-open);
-  --hw-callout-surface: var(--status-open-surface);
+  /* A note wears the brand's colour; a tip and a warning keep the colours of what they mean. */
+  --hw-callout-ink: var(--brand, var(--primary));
+  --hw-callout-surface: color-mix(in srgb, var(--brand, var(--primary)) 8%, var(--card));
   border-radius: 0.75rem;
   background: var(--hw-callout-surface);
   padding: 0.85em 1.1em;
@@ -192,4 +196,19 @@
 .hw-rich-text.ProseMirror .ProseMirror-selectednode {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* A YouTube video, as wide as the text and in its own shape, with soft corners like a picture. */
+.hw-rich-text .hw-video {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #000;
+}
+
+.hw-rich-text .hw-video iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }

@@ -6,7 +6,8 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./settings": "./src/identity/settings.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings=0",

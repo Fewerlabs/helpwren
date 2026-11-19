@@ -7,10 +7,12 @@ const widget = { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", 
 
 const helpCenter = { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true };
 
+const chatPage = { headerStyle: "brand" };
+
 const defaults = {
   brand: { name: "Helpwren" },
   widget,
-  chatPage: {},
+  chatPage,
   email: { replies: true, status: true },
   helpCenter,
   tickets: { fromChat: true },
@@ -30,7 +32,7 @@ describe("parseSettings", () => {
     ).toEqual({
       brand: { name: "Acme" },
       widget,
-      chatPage: {},
+      chatPage,
       email: { replies: true, status: true },
       helpCenter,
       tickets: { fromChat: true },
@@ -91,7 +93,7 @@ describe("parsePublicSettings", () => {
     expect(parsePublicSettings([{ key: "sources", value: ["web", "ios"] }])).toEqual({
       brand: { name: "Helpwren" },
       widget,
-      chatPage: {},
+      chatPage,
       helpCenter,
       tickets: { fromChat: true },
       guestDetails: "email",

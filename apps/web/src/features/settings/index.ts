@@ -2,6 +2,9 @@
 export { BrandingForm } from "./components/branding-form";
 export { EmailForm } from "./components/email-form";
 export { GeneralForm } from "./components/general-form";
+export { IdentityForm } from "./components/identity-form";
+export { MobileForm } from "./components/mobile-form";
+export { identityToValues } from "./schemas";
 export { InstallationForm } from "./components/installation-form";
 export { InviteDialog } from "./components/invite-dialog";
 export { NotificationForm } from "./components/notification-form";

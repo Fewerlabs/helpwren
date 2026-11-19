@@ -34,7 +34,7 @@ function ArticleRow({ article, from }: { article: ArticleSummary; from?: OpenCol
   return (
     <button
       type="button"
-      className="hover:bg-primary/10 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
+      className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
       onClick={() => {
         show({ name: "article", slug: article.slug, ...(from ? { from } : {}) });
       }}
@@ -120,6 +120,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
       <ScreenHeader title="Help" onClose={onClose} />
       <div className="px-4 pb-3">
         <SearchField
+          className="bg-muted rounded-full border-transparent"
           aria-label="Search for help"
           placeholder="Search for help"
           value={search}
@@ -171,7 +172,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
           renderItem={(collection) => (
             <button
               type="button"
-              className="hover:bg-primary/10 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
+              className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
               onClick={() => {
                 show({
                   name: "collection",
@@ -179,13 +180,10 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
                 });
               }}
             >
-              <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-lg">
-                <Icon
-                  name={collectionIcon(collection.icon)}
-                  weight="duotone"
-                  className="size-4.5"
-                />
-              </span>
+              <Icon
+                name={collectionIcon(collection.icon)}
+                className="text-foreground size-5 shrink-0"
+              />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{collection.name}</span>
                 <span className="text-muted-foreground block text-xs">

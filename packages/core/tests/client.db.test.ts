@@ -16,7 +16,7 @@ describe("settings.getPublic", () => {
     await expect(newClient().settings.getPublic()).resolves.toEqual({
       brand: { name: "Helpwren Demo" },
       widget: { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] },
-      chatPage: {},
+      chatPage: { headerStyle: "brand" },
       helpCenter: { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true },
       tickets: { fromChat: true },
       guestDetails: "email_or_phone",

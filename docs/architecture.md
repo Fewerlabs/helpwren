@@ -7,16 +7,16 @@ This page describes how the code is organised. For what Helpwren is, see the
 
 pnpm workspaces with Turborepo. Apps are in `apps/`, libraries in `packages/`.
 
-| Workspace                | Role                                                              |
-| ------------------------ | ----------------------------------------------------------------- |
-| `apps/web`               | The one Next.js app: `/embed`, `/help`, `/dashboard`, `/api`      |
-| `packages/design-system` | Tokens, components and illustrations                              |
-| `packages/core`          | Headless client library                                           |
-| `packages/widget`        | The script a site loads to show the chat, published as `helpwren` |
-| `packages/react-native`  | React Native support screen (stub)                                |
-| `packages/adapters`      | Identity adapters, so far; push, email and storage to come        |
-| `packages/cli`           | Installer and upgrader (stub)                                     |
-| `packages/config`        | Shared TypeScript, ESLint and Prettier configuration              |
+| Workspace                | Role                                                                       |
+| ------------------------ | -------------------------------------------------------------------------- |
+| `apps/web`               | The one Next.js app: `/embed`, `/help`, `/dashboard`, `/api`               |
+| `packages/design-system` | Tokens, components and illustrations                                       |
+| `packages/core`          | Headless client library                                                    |
+| `packages/widget`        | The script a site loads to show the chat, published as `helpwren`          |
+| `packages/react-native`  | `SupportScreen`: the chat as a screen of a React Native app, in a web view |
+| `packages/adapters`      | Identity adapters, so far; push, email and storage to come                 |
+| `packages/cli`           | Installer and upgrader (stub)                                              |
+| `packages/config`        | Shared TypeScript, ESLint and Prettier configuration                       |
 
 Internal packages are consumed as TypeScript source: their `exports` point at `src`, and the app
 compiles them (`transpilePackages`). There is no per-package build step until a package is
@@ -219,7 +219,7 @@ Supabase Auth user on every device. `identify_contact` in the database records t
 verified contact, and `merge_guest_into_user` gives them what they did as a guest on that device.
 The widget's `identify`, `reset` and `setContext` reach the chat as messages
 (`src/features/chat/hooks/use-embed-bridge.ts`), and `use-identity.ts` signs the chat in or out
-through `sessions.identify` and `sessions.reset` in the client library. Signing keys and other credentials live in the `secrets` table, which only the
+through `sessions.identify` and `sessions.reset` in the client library. Admins choose the adapter and make signing keys on Settings > Identity. Signing keys and other credentials live in the `secrets` table, which only the
 server can read. See [ADR 0013](decisions/0013-sessions-for-identified-users.md) and
 [ADR 0014](decisions/0014-identity-adapters.md).
 
@@ -301,6 +301,10 @@ between screens does not refetch what was loaded a moment ago.
 | `POST /api/conversations`           | Starts a conversation with its first message                                                                                                                                |
 | `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                                                                          |
 | `POST /api/identify`                | Signs the chat in as one of the host product's users, from a token the install's identity adapter confirms                                                                  |
+| `POST /api/unread`                  | How many replies a person has not read, from an app's own token or a Helpwren session, for a badge                                                                          |
+| `POST /api/devices`                 | Registers a phone for pushes, from an app's own token or a Helpwren session                                                                                                 |
+| `DELETE /api/devices`               | Stops pushes to a phone                                                                                                                                                     |
+| `POST /api/jobs/push`               | Sends the pushes that are due. Called every minute by the scheduler, with `CRON_SECRET`                                                                                     |
 
 ## The design system
 

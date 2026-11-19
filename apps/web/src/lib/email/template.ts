@@ -41,12 +41,12 @@ export function renderEmail(brand: Brand, content: EmailContent): { html: string
   const accent = brand.button ?? brand.accent ?? DEFAULT_ACCENT;
   const mark = brand.logo
     ? `<img src="${escapeHtml(brand.logo)}" alt="${escapeHtml(brand.name)}" height="32" style="display:block;height:32px;width:auto;border:0">`
-    : `<span style="font-size:16px;font-weight:600;color:#26231e">${escapeHtml(brand.name)}</span>`;
+    : `<span style="font-size:16px;font-weight:600;color:#101a15">${escapeHtml(brand.name)}</span>`;
 
   const quotes = (content.quotes ?? [])
     .map(
       (quote) =>
-        `<tr><td style="padding:0 0 12px"><div style="border-left:3px solid ${accent};padding:2px 0 2px 14px"><div style="font-size:12px;color:#6f6a5f;padding-bottom:4px">${escapeHtml(quote.from)}</div><div style="font-size:15px;line-height:1.55;color:#26231e">${lines(quote.text)}</div></div></td></tr>`,
+        `<tr><td style="padding:0 0 12px"><div style="border-left:3px solid ${accent};padding:2px 0 2px 14px"><div style="font-size:12px;color:#5f6c65;padding-bottom:4px">${escapeHtml(quote.from)}</div><div style="font-size:15px;line-height:1.55;color:#101a15">${lines(quote.text)}</div></div></td></tr>`,
     )
     .join("");
   const action = content.action
@@ -61,9 +61,9 @@ export function renderEmail(brand: Brand, content: EmailContent): { html: string
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f3ec"><tr><td align="center" style="padding:32px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
 <tr><td style="padding:0 4px 16px">${mark}</td></tr>
-<tr><td style="background:#ffffff;border:1px solid #e3ddd0;border-radius:14px;padding:28px">
+<tr><td style="background:#ffffff;border:1px solid #e3ebe7;border-radius:14px;padding:28px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-<tr><td style="font-size:19px;font-weight:600;line-height:1.3;color:#26231e;padding:0 0 12px">${escapeHtml(content.heading)}</td></tr>
+<tr><td style="font-size:19px;font-weight:600;line-height:1.3;color:#101a15;padding:0 0 12px">${escapeHtml(content.heading)}</td></tr>
 ${content.body.map((paragraph) => `<tr><td style="font-size:15px;line-height:1.55;color:#4a463e;padding:0 0 14px">${lines(paragraph)}</td></tr>`).join("")}
 ${quotes}${action}
 </table>

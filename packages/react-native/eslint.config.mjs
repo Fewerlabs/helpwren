@@ -1,3 +1,3 @@
-import base from "@helpwren/config/eslint/base";
+import react from "@helpwren/config/eslint/react";
 
-export default base;
+export default react;

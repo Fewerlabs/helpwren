@@ -110,7 +110,7 @@ export function DashboardPage({
                       <Icon
                         name={item.icon}
                         weight={item.active ? "duotone" : "regular"}
-                        className="size-4"
+                        className={cn("size-4", item.active && "text-primary")}
                       />
                     ) : null}
                     <span className="flex-1 truncate">{item.label}</span>

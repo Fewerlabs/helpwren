@@ -76,3 +76,22 @@ deprecated its older static hash because it never expires. None of them accept a
     `setContext` is stored under `context.custom`, apart from what the server itself knows.
     A long-lived tab that is never reloaded keeps its session until it is. Opening a conversation
     from the page (for a push notification) comes with the mobile screen.
+- 2026-11-19: a second adapter, the **profile endpoint**, and the Settings > Identity page.
+  - The page hands over the token the user already has for the product, and this install calls
+    the product's own "who am I" address with it as a bearer token, reading the answer through a
+    mapping an admin types in (paths such as `data.id`, a name made of several fields, audience
+    values, attributes to show). The product stays the only judge of who is logged in and needs
+    no new code. It suits a product whose tokens are signed with a secret it cannot share.
+  - The address must be HTTPS, except to this machine; redirects are refused, because following
+    one would hand the user's token to wherever it pointed; the product has five seconds. A 401
+    is reported to the page as expired, so it fetches a fresh token; a 403 as rejected; anything
+    else as `identity_unavailable` (503), and then the chat keeps whoever is signed in, because
+    being unable to ask is not the same as being told no.
+  - Signing keys are made on the Identity page and kept in `secrets`. A key's secret is shown
+    once, when it is made, and never again; two can be in use so one can be replaced. Removing a
+    key turns its tokens away at once. With the signed token chosen and no key yet, the install
+    identifies nobody.
+  - An admin can test a token against the settings on the page, saved or not. It runs the same
+    check the chat does, signs no one in and keeps nothing.
+  - The settings schemas are on `@helpwren/adapters/settings`, an entry point the browser can
+    load without the adapters' server code.

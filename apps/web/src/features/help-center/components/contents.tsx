@@ -41,7 +41,7 @@ export function Contents({ headings }: { headings: readonly RichTextHeading[] })
               "focus-visible:outline-ring -ml-px block border-l py-1.5 text-pretty transition-colors focus-visible:outline-2",
               heading.level > 2 ? "pl-7" : "pl-4",
               heading.id === active
-                ? "border-primary text-primary font-medium"
+                ? "border-foreground text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground border-transparent",
             )}
           >

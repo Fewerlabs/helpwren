@@ -2,18 +2,53 @@ import { useSyncExternalStore } from "react";
 
 import { THEME_STORAGE_KEY } from "./theme-script";
 
+/** The theme on screen. */
 export type Theme = "light" | "dark";
 
+/** What the person chose: a theme of their own, or whatever their device prefers. */
+export type ThemePreference = Theme | "system";
+
+const DARK_QUERY = "(prefers-color-scheme: dark)";
 const listeners = new Set<() => void>();
 
 function current(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
+function stored(): ThemePreference {
+  try {
+    const value = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return value === "light" || value === "dark" ? value : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function deviceTheme(): Theme {
+  return window.matchMedia(DARK_QUERY).matches ? "dark" : "light";
+}
+
+function notify() {
+  for (const listener of listeners) listener();
+}
+
+// While the choice is the device's, a change on the device shows at once.
+function onDeviceChange() {
+  if (stored() === "system") {
+    document.documentElement.classList.toggle("dark", deviceTheme() === "dark");
+    notify();
+  }
+}
+
 function subscribe(listener: () => void) {
+  if (listeners.size === 0)
+    window.matchMedia(DARK_QUERY).addEventListener("change", onDeviceChange);
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
+    if (listeners.size === 0) {
+      window.matchMedia(DARK_QUERY).removeEventListener("change", onDeviceChange);
+    }
   };
 }
 
@@ -22,26 +57,37 @@ export function useTheme(): Theme {
   return useSyncExternalStore(subscribe, current, () => "light");
 }
 
-function apply(theme: Theme) {
-  document.documentElement.classList.toggle("dark", theme === "dark");
+/** What the person chose. The device's on the server, where their choice is not known. */
+export function useThemePreference(): ThemePreference {
+  return useSyncExternalStore(subscribe, stored, () => "system");
+}
+
+function save(preference: ThemePreference) {
   try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    if (preference === "system") window.localStorage.removeItem(THEME_STORAGE_KEY);
+    else window.localStorage.setItem(THEME_STORAGE_KEY, preference);
   } catch {
     // Storage is blocked: the choice lasts until the page is left.
   }
-  for (const listener of listeners) listener();
 }
 
 /**
- * Switches between light and dark. Where the browser can, the new theme spreads across the
- * page as a circle growing from `origin`, the point that was pressed. People who prefer
- * reduced motion, and browsers without view transitions, get a plain switch.
+ * Sets the theme: light, dark, or whatever the device prefers. When that changes what is on
+ * screen, and the browser can, the new theme spreads across the page as a circle growing from
+ * `origin`, the point that was pressed. People who prefer reduced motion, and browsers without
+ * view transitions, get a plain switch.
  */
-export function toggleTheme(origin: { x: number; y: number }) {
-  const next: Theme = current() === "dark" ? "light" : "dark";
+export function setThemePreference(preference: ThemePreference, origin: { x: number; y: number }) {
+  save(preference);
+  const next = preference === "system" ? deviceTheme() : preference;
+  const apply = () => {
+    document.documentElement.classList.toggle("dark", next === "dark");
+    notify();
+  };
+
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (still || typeof document.startViewTransition !== "function") {
-    apply(next);
+  if (next === current() || still || typeof document.startViewTransition !== "function") {
+    apply();
     return;
   }
 
@@ -50,9 +96,7 @@ export function toggleTheme(origin: { x: number; y: number }) {
     Math.max(origin.x, window.innerWidth - origin.x),
     Math.max(origin.y, window.innerHeight - origin.y),
   );
-  const transition = document.startViewTransition(() => {
-    apply(next);
-  });
+  const transition = document.startViewTransition(apply);
   void transition.ready.then(() => {
     document.documentElement.animate(
       {

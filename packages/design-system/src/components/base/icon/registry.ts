@@ -32,6 +32,7 @@ import {
   CodeBlockIcon,
   CopyIcon,
   CreditCardIcon,
+  DesktopIcon,
   DeviceMobileIcon,
   DotsSixVerticalIcon,
   DotsThreeIcon,
@@ -97,6 +98,7 @@ import {
   WrenchIcon,
   XIcon,
   XCircleIcon,
+  YoutubeLogoIcon,
 } from "@phosphor-icons/react/ssr";
 import { createElement, forwardRef, type ComponentProps, type ReactElement } from "react";
 
@@ -165,6 +167,7 @@ export const registry = {
   "code-block": CodeBlockIcon,
   copy: CopyIcon,
   "credit-card": CreditCardIcon,
+  desktop: DesktopIcon,
   "device-mobile": DeviceMobileIcon,
   "dots-six-vertical": DotsSixVerticalIcon,
   "dots-three": DotsThreeIcon,
@@ -230,6 +233,7 @@ export const registry = {
   wrench: WrenchIcon,
   x: XIcon,
   "x-circle": XCircleIcon,
+  "youtube-logo": YoutubeLogoIcon,
 } as const;
 
 export type IconName = keyof typeof registry;

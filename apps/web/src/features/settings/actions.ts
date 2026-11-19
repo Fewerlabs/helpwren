@@ -5,6 +5,14 @@ import { revalidatePath } from "next/cache";
 import { getCurrentAgent } from "@/features/agent-auth";
 import { sendEmail } from "@/lib/email";
 import { getHelpwren } from "@/lib/helpwren";
+import {
+  createSigningKey,
+  removeSigningKey,
+  saveIdentitySettings,
+  testIdentityToken,
+  type IdentityTestResult,
+} from "@/lib/identity";
+import { getPushSettings, savePushSettings } from "@/lib/push";
 
 import {
   brandingSchema,
@@ -12,12 +20,17 @@ import {
   type EmailValues,
   brandingToSettings,
   generalSchema,
+  identityFromValues,
+  identitySchema,
+  mobileSchema,
   installationSchema,
   inviteSchema,
   memberChangeSchema,
   profileSchema,
   type BrandingValues,
   type GeneralValues,
+  type IdentityValues,
+  type MobileValues,
   type InstallationValues,
   type InviteValues,
   type MemberChange,
@@ -143,4 +156,79 @@ export async function sendTestEmail(): Promise<TestEmailResult> {
     text: "If you are reading this, your Helpwren install can send email.",
   });
   return result.ok ? { ok: true } : { ok: false, detail: result.detail };
+}
+
+/** Only admins: these are written with the secret key, so the database cannot check them. */
+async function isAdmin(): Promise<boolean> {
+  const caller = await getCurrentAgent();
+  return caller?.role === "admin";
+}
+
+/** Saves how the install identifies its users. */
+export async function saveIdentity(values: IdentityValues): Promise<SaveResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  const parsed = identitySchema.safeParse(values);
+  const settings = parsed.success ? identityFromValues(parsed.data) : null;
+  if (!settings) return { ok: false, reason: "invalid" };
+
+  await saveIdentitySettings(settings);
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true };
+}
+
+/**
+ * Checks a token the way the chat would, with what is on the page now, saved or not. It signs
+ * nobody in and stores nothing: it says who the token is for, or why it was not accepted.
+ */
+export async function tryIdentityToken(
+  values: IdentityValues,
+  token: string,
+): Promise<IdentityTestResult> {
+  if (!(await isAdmin())) return { ok: false, detail: "Only admins can test a token." };
+  const parsed = identitySchema.safeParse(values);
+  const settings = parsed.success ? identityFromValues(parsed.data) : null;
+  if (!settings) return { ok: false, detail: "Fix the settings above first." };
+  const trimmed = token.trim();
+  if (trimmed === "") return { ok: false, detail: "Paste a token to test." };
+  return testIdentityToken(settings, trimmed);
+}
+
+export type CreateKeyResult =
+  { ok: true; key: { id: string; secret: string } } | { ok: false; reason: "forbidden" | "full" };
+
+/** Makes a signing key. Its secret is in the answer, and never shown again after that. */
+export async function createIdentityKey(): Promise<CreateKeyResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  const key = await createSigningKey();
+  if (!key) return { ok: false, reason: "full" };
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true, key };
+}
+
+/** Tokens signed with the key stop working at once. */
+export async function removeIdentityKey(id: string): Promise<SaveResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  await removeSigningKey(id);
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true };
+}
+
+/** Saves how the install reaches phones. A new access token replaces the saved one. */
+export async function saveMobile(values: MobileValues): Promise<SaveResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  const parsed = mobileSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+
+  const { provider, accessToken } = parsed.data;
+  await savePushSettings({ provider }, accessToken === "" ? undefined : accessToken);
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true };
+}
+
+/** Forgets the saved Expo access token. */
+export async function removeExpoAccessToken(): Promise<SaveResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  await savePushSettings(await getPushSettings(), null);
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true };
 }

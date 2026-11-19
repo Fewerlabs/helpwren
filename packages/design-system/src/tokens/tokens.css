@@ -8,21 +8,21 @@
 
 :root {
   /* Brand palette */
-  --paper: #f7f4ed;
-  /* A lighter paper, for the background of a dense screen that holds white surfaces. */
-  --canvas: #fdfbf7;
+  --paper: #f7f7f7;
+  /* The background of the dashboard, a tinted ground for the white panels it holds. */
+  --canvas: #f3f3f3;
   --card-surface: #ffffff;
-  --ink: #26231e;
-  --pencil: #6e675b;
-  --edge: #8f8778;
-  --rule: #e3ddd0;
+  --ink: #1a1a1a;
+  --pencil: #666666;
+  --edge: #8a8a8a;
+  --rule: #e8e8e8;
   --moss: #3d6b57;
   --pen: #b23520;
   --highlighter: #f5d547;
-  --highlighter-foreground: #26231e;
+  --highlighter-foreground: #1a1a1a;
   --biro: #2f5b85;
   --ochre: #7d5a12;
-  --wash: #ede9e0;
+  --wash: #f1f1f1;
 
   /* Status chips: text colour on a tint. Always shown with a dot and a word. */
   --status-open: #2f5b85;
@@ -30,11 +30,11 @@
   --status-waiting: #7d5a12;
   --status-waiting-surface: #f4ebd6;
   --status-resolved: #3d6b57;
-  --status-resolved-surface: #e4ede7;
+  --status-resolved-surface: #e6efea;
   --status-urgent: #b23520;
   --status-urgent-surface: #f7e1db;
-  --status-closed: #6e675b;
-  --status-closed-surface: #ede9e0;
+  --status-closed: #666666;
+  --status-closed-surface: #f1f1f1;
 
   /* Semantic roles, in shadcn/ui's vocabulary */
   --background: var(--paper);
@@ -66,34 +66,34 @@
 }
 
 .dark {
-  --paper: #1c1a16;
-  --canvas: #1c1a16;
-  --card-surface: #24211c;
-  --ink: #ede8dc;
-  --pencil: #a39b8b;
-  --edge: #827b6e;
-  --rule: #3a362f;
+  --paper: #0c0c0d;
+  --canvas: #0c0c0d;
+  --card-surface: #161616;
+  --ink: #e5e5e5;
+  --pencil: #969696;
+  --edge: #6e6e6e;
+  --rule: #262626;
   --moss: #7fb59a;
   --pen: #f07a5a;
   --highlighter: #e8c64a;
-  --highlighter-foreground: #1c1a16;
+  --highlighter-foreground: #0c0c0d;
   --biro: #8db3db;
   --ochre: #d9a441;
-  --wash: #2e2a24;
+  --wash: #1e1e1e;
 
   --status-open: #8db3db;
   --status-open-surface: #2e3236;
   --status-waiting: #d9a441;
   --status-waiting-surface: #3a301d;
   --status-resolved: #7fb59a;
-  --status-resolved-surface: #2c332b;
+  --status-resolved-surface: #1f2b25;
   --status-urgent: #f07a5a;
   --status-urgent-surface: #3e2921;
-  --status-closed: #a39b8b;
-  --status-closed-surface: #322f29;
+  --status-closed: #969696;
+  --status-closed-surface: #202020;
 
-  --primary-foreground: var(--helpwren-accent-foreground, #1c1a16);
-  --destructive-foreground: #1c1a16;
+  --primary-foreground: var(--helpwren-accent-foreground, #0c0c0d);
+  --destructive-foreground: #0c0c0d;
 
   color-scheme: dark;
 }

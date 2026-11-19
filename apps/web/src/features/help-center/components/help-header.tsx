@@ -3,10 +3,10 @@ import { cn, Icon, Logo } from "@helpwren/design-system";
 import Link from "next/link";
 import { type ReactNode } from "react";
 
+import { ThemeMenu } from "@/features/theme";
 import { embedQuery, type HelpEmbed } from "@/lib/help-embed";
 
 import { HELP_PATH } from "../urls";
-import { ThemeToggle } from "./theme-toggle";
 
 const DEFAULT_PLACEHOLDER = "Search for articles";
 
@@ -71,7 +71,7 @@ export interface HelpHeaderProps {
 export function HelpHeader({ settings, query, search = true, browse }: HelpHeaderProps) {
   const { brand, helpCenter } = settings;
   return (
-    <header className="border-rule bg-background/85 sticky top-0 z-30 border-b backdrop-blur-md">
+    <header className="border-rule bg-card/85 sticky top-0 z-30 border-b backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-[90rem] items-center gap-3 px-4 sm:px-6 lg:gap-5">
         {browse}
         <Link
@@ -86,7 +86,7 @@ export function HelpHeader({ settings, query, search = true, browse }: HelpHeade
               className="h-7 w-auto max-w-28 rounded-md object-contain"
             />
           ) : (
-            <Logo variant="mark" size={24} label="" className="text-primary" />
+            <Logo variant="mark" size={24} label="" className="text-brand" />
           )}
           <span className="truncate">{brand.name}</span>
           <span className="text-muted-foreground font-normal max-sm:hidden">Help center</span>
@@ -108,7 +108,7 @@ export function HelpHeader({ settings, query, search = true, browse }: HelpHeade
           {search ? (
             <SearchBox settings={settings} query={query} size="sm" className="w-64 max-md:hidden" />
           ) : null}
-          <ThemeToggle />
+          <ThemeMenu className="size-9 rounded-lg opacity-80 hover:opacity-100" />
         </div>
       </div>
     </header>

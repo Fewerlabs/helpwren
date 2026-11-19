@@ -20,7 +20,9 @@ export function useIdentity() {
     async function forget() {
       await getClient().sessions.reset();
       show({ name: "home" });
-      await queryClient.resetQueries();
+      // Not waited for: a refetch that fails now there is no session is retried for seconds,
+      // and the page should hear that the visitor is a guest at once.
+      void queryClient.resetQueries();
     }
 
     /**

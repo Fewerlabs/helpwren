@@ -27,7 +27,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
 
   return (
     // A wash of the brand's colour glows from the top corner and fades out with no edge.
-    <div className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(130%_22rem_at_0%_0%,color-mix(in_srgb,var(--brand,var(--primary))_20%,transparent),transparent_72%)] bg-no-repeat">
+    <div className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(130%_19rem_at_0%_-5rem,color-mix(in_srgb,var(--brand,var(--primary))_20%,transparent),transparent_72%)] bg-no-repeat">
       <div className="relative px-5 pt-5 pb-2">
         <BrandMark />
         {/* The speech bubbles alone: the wren is our mark, and this screen wears theirs. */}
@@ -50,7 +50,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
       <div className="grid gap-2 px-4 pt-3">
         <button
           type="button"
-          className="border-line border-input bg-card hover:border-primary hover:bg-primary/10 focus-visible:outline-ring flex h-12 w-full items-center justify-between rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="bg-muted hover:bg-rule focus-visible:outline-ring flex h-12 w-full items-center justify-between rounded-full px-5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           onClick={() => {
             show({ name: "start" });
           }}
@@ -61,7 +61,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
         {tickets ? (
           <button
             type="button"
-            className="border-line border-input bg-card hover:border-primary hover:bg-primary/10 focus-visible:outline-ring flex h-12 w-full items-center gap-2.5 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-muted hover:bg-rule focus-visible:outline-ring flex h-12 w-full items-center gap-2.5 rounded-full px-5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             onClick={() => {
               show({ name: "ticket" });
             }}
