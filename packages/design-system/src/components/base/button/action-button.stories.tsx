@@ -21,17 +21,12 @@ export const Default: Story = {};
 export const InARow: Story = {
   render: () => (
     <div className="flex items-center gap-1">
-      <ActionButton
-        variant="ghost"
-        icon="shield-check"
-        label="Make admin"
-        aria-label="Make Sam Rivera an admin"
-      />
+      <ActionButton variant="ghost" icon="shield-check" label="Make admin" target="Sam Rivera" />
       <ActionButton
         variant="ghost"
         icon="user-minus"
         label="Deactivate"
-        aria-label="Deactivate Sam Rivera"
+        target="Sam Rivera"
         className="text-destructive hover:text-destructive"
       />
     </div>

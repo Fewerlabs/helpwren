@@ -50,7 +50,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Deactivate Sam Rivera" }));
+    await user.click(screen.getByRole("button", { name: "Deactivate, Sam Rivera" }));
     const dialog = screen.getByRole("alertdialog", { name: "Deactivate Sam Rivera?" });
     // The safe answer has the focus, so Enter cannot lock someone out by accident.
     expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
@@ -63,7 +63,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Deactivate Sam Rivera" }));
+    await user.click(screen.getByRole("button", { name: "Deactivate, Sam Rivera" }));
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Deactivate" }),
     );
@@ -79,7 +79,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Deactivate Sam Rivera" }));
+    await user.click(screen.getByRole("button", { name: "Deactivate, Sam Rivera" }));
     const dialog = screen.getByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
@@ -93,7 +93,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Make Sam Rivera an admin" }));
+    await user.click(screen.getByRole("button", { name: "Make admin, Sam Rivera" }));
     expect(changeMember).not.toHaveBeenCalled();
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Make admin" }),
@@ -106,7 +106,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Make Sam Rivera an admin" }));
+    await user.click(screen.getByRole("button", { name: "Make admin, Sam Rivera" }));
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }),
     );

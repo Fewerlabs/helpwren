@@ -261,7 +261,7 @@ export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
                       variant="ghost"
                       icon="pencil-simple"
                       label="Edit"
-                      aria-label={`Edit ${team.name}`}
+                      target={team.name}
                       onClick={() => {
                         setEditing(team);
                       }}
@@ -270,7 +270,7 @@ export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
                       variant="ghost"
                       icon="trash"
                       label="Remove"
-                      aria-label={`Remove ${team.name}`}
+                      target={team.name}
                       onClick={() => {
                         remove(team);
                       }}

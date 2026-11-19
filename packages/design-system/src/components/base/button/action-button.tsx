@@ -16,7 +16,7 @@ const collapse = {
 
 export interface ActionButtonProps extends Omit<
   ComponentProps<typeof Button>,
-  "children" | "size" | "aria-label"
+  "children" | "size" | "aria-label" | "aria-labelledby"
 > {
   icon: IconName;
   iconWeight?: IconWeight;
@@ -24,10 +24,11 @@ export interface ActionButtonProps extends Omit<
   /** The words beside the icon. On a narrow screen they become the tooltip. */
   label: string;
   /**
-   * A fuller name for assistive technology, such as "Deactivate Sam Rivera" when the label is
-   * only "Deactivate". Without it, the label names the button.
+   * What the button acts on, such as "Sam Rivera" for a Deactivate button in a list of people.
+   * It is read after the label but never shown, so the name a screen reader says ("Deactivate,
+   * Sam Rivera") still starts with the words on screen, which is what voice control listens for.
    */
-  "aria-label"?: string;
+  target?: string;
   /** The width below which only the icon shows. */
   collapseBelow?: keyof typeof collapse;
   size?: "md" | "sm";
@@ -35,8 +36,8 @@ export interface ActionButtonProps extends Omit<
 
 /**
  * A button with an icon and a label that drops to the icon alone on a narrow screen, where a
- * row of worded buttons would squeeze out what they act on. The label stays the button's name
- * and becomes its tooltip, so nothing is lost.
+ * row of worded buttons would squeeze out what they act on. The label stays the start of the
+ * button's name and becomes its tooltip, so nothing is lost.
  */
 export function ActionButton({
   icon,
@@ -46,21 +47,17 @@ export function ActionButton({
   collapseBelow = "sm",
   size = "sm",
   className,
-  "aria-label": ariaLabel,
+  target,
   ...props
 }: ActionButtonProps) {
   const styles = collapse[collapseBelow];
   return (
     // The tooltip repeats the visible label on a wide screen, so it shows only when collapsed.
     <Tooltip content={label} className={styles.tooltip}>
-      <Button
-        size={size}
-        aria-label={ariaLabel ?? label}
-        className={cn(styles.button, className)}
-        {...props}
-      >
+      <Button size={size} className={cn(styles.button, className)} {...props}>
         <Icon name={icon} weight={iconWeight} className={iconClassName} />
         <span className={styles.label}>{label}</span>
+        {target ? <span className="sr-only">, {target}</span> : null}
       </Button>
     </Tooltip>
   );

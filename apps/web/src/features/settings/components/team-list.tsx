@@ -125,7 +125,7 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
                     icon={member.role === "admin" ? "shield-slash" : "shield-check"}
                     label={member.role === "admin" ? "Make agent" : "Make admin"}
                     disabled={busy}
-                    aria-label={`Make ${member.name} ${member.role === "admin" ? "an agent" : "an admin"}`}
+                    target={member.name}
                     onClick={() => {
                       changeRole(member);
                     }}
@@ -136,7 +136,7 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
                   icon={member.active ? "user-minus" : "user-check"}
                   label={member.active ? "Deactivate" : "Reactivate"}
                   disabled={busy}
-                  aria-label={`${member.active ? "Deactivate" : "Reactivate"} ${member.name}`}
+                  target={member.name}
                   // Taking away someone's access is the one action here that hurts if misclicked.
                   className={member.active ? "text-destructive hover:text-destructive" : undefined}
                   onClick={() => {

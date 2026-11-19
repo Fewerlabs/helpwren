@@ -26,8 +26,8 @@ describe("ActionButton", () => {
   });
 
   it("takes a fuller name when the label alone would be ambiguous", () => {
-    renderButton({ label: "Deactivate", "aria-label": "Deactivate Sam Rivera" });
-    expect(screen.getByRole("button", { name: "Deactivate Sam Rivera" })).toBeInTheDocument();
+    renderButton({ label: "Deactivate", target: "Sam Rivera" });
+    expect(screen.getByRole("button", { name: "Deactivate, Sam Rivera" })).toBeInTheDocument();
   });
 
   it("keeps the label in the page, hidden visually only on a narrow screen", () => {
