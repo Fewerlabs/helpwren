@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { RichText, richTextHeadings, safeHref, type RichTextNode } from "./rich-text";
+import { youtubeId } from "./video";
 
 const words = (value: string, marks?: RichTextNode["marks"]): RichTextNode => ({
   type: "text",
@@ -105,6 +106,48 @@ describe("RichText", () => {
     );
     expect(screen.getByRole("note", { name: "Warning" })).toHaveTextContent("Keep two admins.");
     expect(screen.getByRole("note", { name: "Note" })).toHaveAttribute("data-tone", "info");
+  });
+});
+
+describe("video", () => {
+  it("plays a YouTube video in the privacy-enhanced player", () => {
+    render(<RichText doc={doc({ type: "video", attrs: { id: "dQw4w9WgXcQ" } })} />);
+    expect(screen.getByTitle("YouTube video")).toHaveAttribute(
+      "src",
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0",
+    );
+  });
+
+  it("frames nothing for an id that is not a YouTube video's", () => {
+    render(<RichText doc={doc({ type: "video", attrs: { id: "javascript:alert(1)" } })} />);
+    expect(screen.queryByTitle("YouTube video")).toBeNull();
+  });
+});
+
+describe("youtubeId", () => {
+  it("reads the id from each kind of YouTube address", () => {
+    for (const address of [
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42",
+      "https://youtu.be/dQw4w9WgXcQ",
+      "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "https://youtube.com/shorts/dQw4w9WgXcQ",
+      "dQw4w9WgXcQ",
+    ]) {
+      expect(youtubeId(address)).toBe("dQw4w9WgXcQ");
+    }
+  });
+
+  it("refuses addresses that are not YouTube videos", () => {
+    for (const address of [
+      "https://vimeo.com/123456",
+      "https://evil.example/watch?v=dQw4w9WgXcQ",
+      "https://www.youtube.com/watch?v=short",
+      "not a link",
+      42,
+    ]) {
+      expect(youtubeId(address)).toBeUndefined();
+    }
   });
 });
 

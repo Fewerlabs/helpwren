@@ -304,3 +304,30 @@ update public.articles set tags = '{team,admins}'
 where slug in ('invite-your-team', 'change-who-can-sign-in');
 update public.articles set tags = '{branding}' where slug = 'make-the-chat-match-your-brand';
 update public.articles set tags = '{billing,invoices}' where slug = 'read-your-invoice';
+
+-- An article that opens with a video, played in YouTube's privacy-enhanced player. The film is
+-- Blender's open Big Buck Bunny, standing in for a real product tour.
+insert into public.articles (id, collection_id, title, slug, summary, status, author_id, tags, position, body)
+values
+  ('f1000000-0000-4000-8000-000000000010', 'f0000000-0000-4000-8000-000000000001',
+   'Take a tour of the inbox', 'take-a-tour-of-the-inbox',
+   'A two-minute video of where conversations land, and how your team answers them.', 'published',
+   'a0000000-0000-4000-8000-000000000001', '{video}', 4,
+   $json${"type":"doc","content":[
+    {"type":"video","attrs":{"id":"aqz-KE-bpKQ"}},
+    {"type":"paragraph","content":[{"type":"text","text":"Watch the video for the whole tour, or read on for the same steps in words. Every conversation from the chat, the chat page and your help center lands in one inbox."}]},
+    {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"What you will see"}]},
+    {"type":"bulletList","content":[
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","marks":[{"type":"bold"}],"text":"My inbox"},{"type":"text","text":" holds the conversations assigned to you."}]}]},
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","marks":[{"type":"bold"}],"text":"Unassigned"},{"type":"text","text":" holds new conversations nobody has taken yet."}]}]},
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","marks":[{"type":"bold"}],"text":"Tickets"},{"type":"text","text":" holds requests that need more than one reply, each with a status."}]}]}
+    ]},
+    {"type":"heading","attrs":{"level":2},"content":[{"type":"text","text":"Answer your first conversation"}]},
+    {"type":"orderedList","attrs":{"start":1},"content":[
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","text":"Open "},{"type":"text","marks":[{"type":"bold"}],"text":"Unassigned"},{"type":"text","text":" and pick a conversation."}]}]},
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","text":"Choose "},{"type":"text","marks":[{"type":"bold"}],"text":"Assign to me"},{"type":"text","text":" so the rest of the team knows it is yours."}]}]},
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","text":"Write your reply and press Enter. The visitor sees it at once."}]}]},
+      {"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","text":"When the question is answered, choose "},{"type":"text","marks":[{"type":"bold"}],"text":"Resolve"},{"type":"text","text":"."}]}]}
+    ]},
+    {"type":"callout","attrs":{"tone":"tip"},"content":[{"type":"paragraph","content":[{"type":"text","text":"Add a note instead of a reply to talk to your team about a conversation. The visitor never sees notes."}]}]}
+  ]}$json$);

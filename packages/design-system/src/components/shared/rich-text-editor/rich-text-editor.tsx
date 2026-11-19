@@ -21,6 +21,7 @@ import { BlockHandle } from "./block-handle";
 import { blockChoices, type BlockChoice } from "./blocks";
 import { Callout } from "./callout";
 import { Slash, type SlashMenuState } from "./slash";
+import { Video } from "./video";
 
 export interface RichTextEditorProps {
   /** Names the writing area for assistive technology, such as "Article body". */
@@ -273,6 +274,7 @@ export function RichTextEditor({
       }),
       Image,
       Callout,
+      Video,
       Placeholder.configure({ placeholder }),
       // eslint-disable-next-line react-hooks/refs -- these functions run later, on a key press, never while drawing
       Slash.configure({

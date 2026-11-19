@@ -2,6 +2,8 @@ import { Fragment, type ComponentProps, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 
+import { youtubeEmbedUrl, youtubeId } from "./video";
+
 /** A mark on a run of text, such as bold or a link. */
 export interface RichTextMark {
   type: string;
@@ -175,6 +177,22 @@ export function RichText({ doc, className, ...props }: RichTextProps) {
             <img src={src} alt={alt} loading="lazy" decoding="async" />
             {caption ? <figcaption>{caption}</figcaption> : null}
           </figure>
+        );
+      }
+      case "video": {
+        const id = youtubeId(node.attrs?.id);
+        if (!id) return null;
+        return (
+          <div className="hw-video">
+            <iframe
+              src={youtubeEmbedUrl(id)}
+              title="YouTube video"
+              allow="encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
         );
       }
       case "callout": {

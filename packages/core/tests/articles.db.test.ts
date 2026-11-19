@@ -33,7 +33,7 @@ describe("the help center, for a visitor", () => {
   it("lists the collections in order, counting published articles only", async () => {
     const collections = await visitor().collections.list();
     expect(collections.map((collection) => [collection.slug, collection.articleCount])).toEqual([
-      ["getting-started", 3],
+      ["getting-started", 4],
       ["account-and-billing", 2],
       ["troubleshooting", 1],
     ]);
@@ -46,16 +46,17 @@ describe("the help center, for a visitor", () => {
 
   it("lists a collection's articles in their order, without drafts", async () => {
     const page = await visitor().articles.list({ collectionId: GETTING_STARTED });
-    expect(page.total).toBe(3);
+    expect(page.total).toBe(4);
     expect(page.items.map((article) => article.slug)).toEqual([
       "add-the-chat-to-your-website",
       "invite-your-team",
       "make-the-chat-match-your-brand",
+      "take-a-tour-of-the-inbox",
     ]);
     expect(page.items[0]?.collection).toMatchObject({ slug: "getting-started" });
 
     const everything = await visitor().articles.list();
-    expect(everything.total).toBe(6);
+    expect(everything.total).toBe(7);
   });
 
   it("reads a published article by its slug, and no draft", async () => {
@@ -170,7 +171,7 @@ describe("the help center, for the team", () => {
     });
     await agent.articles.update(id, { collectionId: GETTING_STARTED });
     const published = await agent.articles.publish(id);
-    expect(published).toMatchObject({ ok: true, article: { status: "published", position: 4 } });
+    expect(published).toMatchObject({ ok: true, article: { status: "published", position: 5 } });
     await expect(visitor().articles.getBySlug("export-your-data-test")).resolves.toMatchObject({
       id,
     });
@@ -202,7 +203,7 @@ describe("the help center, for the team", () => {
     expect(drafts.items.map((article) => article.id)).toEqual([id]);
     const counts = await agent.articles.counts();
     expect(counts.uncategorised).toBe(1);
-    expect(counts.total).toBe(9);
+    expect(counts.total).toBe(10);
 
     await expect(agent.articles.remove(id)).resolves.toEqual({ ok: true });
     await expect(agent.articles.remove(id)).resolves.toEqual({ ok: false, reason: "not_found" });

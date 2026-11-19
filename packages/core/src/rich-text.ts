@@ -17,6 +17,8 @@ export const RICH_TEXT_NODES = [
   "horizontalRule",
   "image",
   "callout",
+  // A YouTube video, kept as its id alone; the screen frames it in YouTube's own player.
+  "video",
   "hardBreak",
   "text",
 ] as const;
