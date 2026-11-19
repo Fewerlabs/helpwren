@@ -14,7 +14,7 @@ export default async function TeamSettingsPage() {
 
   return (
     <SettingsPage
-      title="Team"
+      title="Members"
       description="The people who answer conversations, and who can manage this install."
       readOnly={!canEdit}
       action={canEdit ? <InviteDialog /> : undefined}
