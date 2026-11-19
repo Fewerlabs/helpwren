@@ -1,7 +1,7 @@
 "use client";
 
 import { type TeamMember } from "@helpwren/core";
-import { Avatar, Badge, Button, toast, useConfirm } from "@helpwren/design-system";
+import { ActionButton, Avatar, Badge, toast, useConfirm } from "@helpwren/design-system";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -92,37 +92,49 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
         const isSelf = member.id === currentId;
         const busy = pending === member.id;
         return (
-          <li key={member.id} className="flex flex-wrap items-center gap-3 py-2.5">
-            <Avatar name={member.name} src={member.photo} size="sm" className="text-2xs size-7" />
+          <li key={member.id} className="flex items-center gap-3 py-2.5">
+            <Avatar
+              name={member.name}
+              src={member.photo}
+              size="sm"
+              className="text-2xs size-7 shrink-0"
+            />
+            {/* Takes the room the badges and actions leave, and cuts long names short. */}
             <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-2 truncate font-medium">
-                {member.name}
-                {isSelf ? <span className="text-muted-foreground font-normal">(you)</span> : null}
+              <p className="flex min-w-0 items-center gap-2 font-medium">
+                <span className="truncate">{member.name}</span>
+                {isSelf ? (
+                  <span className="text-muted-foreground shrink-0 font-normal">(you)</span>
+                ) : null}
               </p>
               <p className="text-muted-foreground truncate text-xs">{member.email}</p>
             </div>
-            <Badge variant={member.role === "admin" ? "accent" : "neutral"}>
+            <Badge variant={member.role === "admin" ? "accent" : "neutral"} className="shrink-0">
               {member.role === "admin" ? "Admin" : "Agent"}
             </Badge>
-            {member.active ? null : <Badge variant="outline">Deactivated</Badge>}
+            {member.active ? null : (
+              <Badge variant="outline" className="shrink-0">
+                Deactivated
+              </Badge>
+            )}
             {canEdit && !isSelf ? (
-              <div className="flex gap-1">
+              <div className="flex shrink-0 gap-1">
                 {member.active ? (
-                  <Button
+                  <ActionButton
                     variant="ghost"
-                    size="sm"
+                    icon={member.role === "admin" ? "shield-slash" : "shield-check"}
+                    label={member.role === "admin" ? "Make agent" : "Make admin"}
                     disabled={busy}
                     aria-label={`Make ${member.name} ${member.role === "admin" ? "an agent" : "an admin"}`}
                     onClick={() => {
                       changeRole(member);
                     }}
-                  >
-                    {member.role === "admin" ? "Make agent" : "Make admin"}
-                  </Button>
+                  />
                 ) : null}
-                <Button
+                <ActionButton
                   variant="ghost"
-                  size="sm"
+                  icon={member.active ? "user-minus" : "user-check"}
+                  label={member.active ? "Deactivate" : "Reactivate"}
                   disabled={busy}
                   aria-label={`${member.active ? "Deactivate" : "Reactivate"} ${member.name}`}
                   // Taking away someone's access is the one action here that hurts if misclicked.
@@ -131,9 +143,7 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
                     if (member.active) deactivate(member);
                     else change(member, { active: true });
                   }}
-                >
-                  {member.active ? "Deactivate" : "Reactivate"}
-                </Button>
+                />
               </div>
             ) : null}
           </li>

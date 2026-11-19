@@ -189,7 +189,7 @@ values
          {"type": "text", "text": "."}]}]},
        {"type": "listItem", "content": [{"type": "paragraph", "content": [
          {"type": "text", "text": "Choose "},
-         {"type": "text", "marks": [{"type": "bold"}], "text": "Add team member"},
+         {"type": "text", "marks": [{"type": "bold"}], "text": "Invite"},
          {"type": "text", "text": " and enter their name and email address."}]}]},
        {"type": "listItem", "content": [{"type": "paragraph", "content": [
          {"type": "text", "text": "Tell them to sign in. A code is emailed to them each time."}]}]}]},

@@ -1,5 +1,5 @@
 import { type TeamMember } from "@helpwren/core";
-import { ConfirmProvider, Toaster } from "@helpwren/design-system";
+import { ConfirmProvider, Toaster, TooltipProvider } from "@helpwren/design-system";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,10 +31,12 @@ const sam: TeamMember = {
 
 function renderList(members: TeamMember[] = [ada, sam]) {
   render(
-    <ConfirmProvider>
-      <TeamList members={members} currentId={ada.id} canEdit />
-      <Toaster />
-    </ConfirmProvider>,
+    <TooltipProvider>
+      <ConfirmProvider>
+        <TeamList members={members} currentId={ada.id} canEdit />
+        <Toaster />
+      </ConfirmProvider>
+    </TooltipProvider>,
   );
 }
 

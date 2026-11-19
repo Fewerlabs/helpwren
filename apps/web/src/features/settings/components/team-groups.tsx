@@ -2,6 +2,7 @@
 
 import { type Team, type TeamMember } from "@helpwren/core";
 import {
+  ActionButton,
   Avatar,
   Button,
   Dialog,
@@ -12,7 +13,6 @@ import {
   DialogTitle,
   EmptyState,
   FieldList,
-  Icon,
   toast,
   useConfirm,
   type FieldItem,
@@ -204,16 +204,14 @@ export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
           </p>
         </div>
         {canEdit ? (
-          <Button
-            size="sm"
+          <ActionButton
             variant="secondary"
+            icon="plus"
+            label="New team"
             onClick={() => {
               setEditing(null);
             }}
-          >
-            <Icon name="plus" />
-            New team
-          </Button>
+          />
         ) : null}
       </header>
 
@@ -231,16 +229,17 @@ export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
           {teams.map((team) => {
             const people = members.filter((member) => team.memberIds.includes(member.id));
             return (
-              <li key={team.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <li key={team.id} className="flex items-center gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{team.name}</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground truncate text-xs">
                     {people.length === 0
                       ? "Nobody yet"
                       : `${people.length} ${people.length === 1 ? "person" : "people"}`}
                   </p>
                 </div>
-                <div className="flex -space-x-1.5" aria-hidden="true">
+                {/* On a phone the count above says it, and the room goes to the name. */}
+                <div className="flex shrink-0 -space-x-1.5 max-sm:hidden" aria-hidden="true">
                   {people.slice(0, FACES).map((member) => (
                     <Avatar
                       key={member.id}
@@ -257,27 +256,25 @@ export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
                   ) : null}
                 </div>
                 {canEdit ? (
-                  <div className="flex gap-1">
-                    <Button
+                  <div className="flex shrink-0 gap-1">
+                    <ActionButton
                       variant="ghost"
-                      size="sm"
+                      icon="pencil-simple"
+                      label="Edit"
                       aria-label={`Edit ${team.name}`}
                       onClick={() => {
                         setEditing(team);
                       }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
+                    />
+                    <ActionButton
                       variant="ghost"
-                      size="sm"
+                      icon="trash"
+                      label="Remove"
                       aria-label={`Remove ${team.name}`}
                       onClick={() => {
                         remove(team);
                       }}
-                    >
-                      Remove
-                    </Button>
+                    />
                   </div>
                 ) : null}
               </li>

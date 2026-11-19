@@ -154,8 +154,6 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
       {
         id: "priority",
         header: "Priority",
-        className: "max-md:hidden",
-        headerClassName: "max-md:hidden",
         cell: (ticket) => (
           <InlineSelect
             label={`Priority of ${ticketLabel(ticket)}`}
@@ -172,8 +170,6 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
       {
         id: "assignee",
         header: "Assignee",
-        className: "max-md:hidden",
-        headerClassName: "max-md:hidden",
         cell: (ticket) => {
           const assignee = team.find((member) => member.id === ticket.assigneeId);
           return (
@@ -272,6 +268,40 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
                   columns={columns}
                   rows={list.items}
                   getRowKey={(ticket) => ticket.id}
+                  // A phone has room for the subject and a line under it, so the row is read,
+                  // then opened to change it.
+                  renderMobileRow={(ticket) => {
+                    const assignee = team.find((member) => member.id === ticket.assigneeId);
+                    const group = teams.find((item) => item.id === ticket.teamId);
+                    return (
+                      <button
+                        type="button"
+                        className="hover:bg-muted/50 focus-visible:outline-ring grid w-full gap-1.5 px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+                        onClick={() => {
+                          onOpen(ticket.id);
+                        }}
+                      >
+                        <span className="flex items-baseline gap-2">
+                          <span className="text-muted-foreground shrink-0 font-mono text-xs">
+                            {ticketLabel(ticket)}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate font-medium">
+                            {ticket.subject ?? ticket.lastMessagePreview}
+                          </span>
+                          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                            {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
+                          <StatusChip status={statuses[ticket.status].chip} size="sm" />
+                          <PriorityLabel priority={ticket.priority} />
+                          <span className="min-w-0 truncate">
+                            {assignee?.name ?? group?.name ?? "Unassigned"}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  }}
                   loading={list.isFetching}
                   empty={
                     <EmptyState

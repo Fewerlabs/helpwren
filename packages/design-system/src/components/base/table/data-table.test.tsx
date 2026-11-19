@@ -161,4 +161,65 @@ describe("DataTable", () => {
     expect(row).toHaveAttribute("data-ticket", "1");
     expect(row).toHaveClass("cursor-pointer");
   });
+
+  describe("with a mobile renderer", () => {
+    // jsdom applies no CSS, so both the table and the list are in the page; the classes decide
+    // which one a screen shows.
+    it("draws a list item per row beside the table, each shown below md only", () => {
+      render(
+        <DataTable
+          {...base}
+          renderMobileRow={(ticket) => <a href={`/tickets/${ticket.id}`}>{ticket.subject}</a>}
+        />,
+      );
+      const list = screen.getByRole("list", { name: "Tickets" });
+      expect(within(list).getAllByRole("listitem")).toHaveLength(4);
+      expect(within(list).getByRole("link", { name: "Refund" })).toHaveAttribute(
+        "href",
+        "/tickets/1",
+      );
+      expect(list.parentElement).toHaveClass("md:hidden");
+      expect(screen.getByRole("table").parentElement).toHaveClass("max-md:hidden");
+    });
+
+    it("keeps the rows in the same order as the sorted table", async () => {
+      const user = userEvent.setup();
+      render(<DataTable {...base} renderMobileRow={(ticket) => ticket.subject} />);
+
+      await user.click(screen.getByRole("button", { name: /Subject/ }));
+
+      const items = within(screen.getByRole("list")).getAllByRole("listitem");
+      expect(items.map((item) => item.textContent)).toEqual(subjects());
+    });
+
+    it("shows the empty content once, for the table and the list alike", () => {
+      render(
+        <DataTable
+          {...base}
+          rows={[]}
+          empty={<p>No tickets match.</p>}
+          renderMobileRow={(ticket) => ticket.subject}
+        />,
+      );
+      expect(screen.getAllByText("No tickets match.")).toHaveLength(1);
+    });
+
+    it("lets rows be selected from the list", async () => {
+      const onSelectedKeysChange = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <DataTable
+          {...base}
+          selectable
+          onSelectedKeysChange={onSelectedKeysChange}
+          renderMobileRow={(ticket) => ticket.subject}
+        />,
+      );
+
+      const list = screen.getByRole("list");
+      await user.click(within(list).getByRole("checkbox", { name: "Select row 2" }));
+
+      expect(onSelectedKeysChange).toHaveBeenCalledWith([2]);
+    });
+  });
 });

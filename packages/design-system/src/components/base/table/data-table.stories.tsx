@@ -232,6 +232,31 @@ export const CompactStripedSticky: Story = {
   ),
 };
 
+/**
+ * With `renderMobileRow`, a narrow screen gets a list in place of the table: the subject first,
+ * then a line of what else matters, and the whole row is one link. Narrow the window to see it.
+ */
+export const MobileRows: Story = {
+  render: () => (
+    <DataTable
+      {...base}
+      renderMobileRow={(ticket) => (
+        <a
+          href="https://helpwren.fewerlabs.dev"
+          className="hover:bg-muted/50 grid gap-1 px-3 py-2.5"
+        >
+          <span className="truncate font-medium">{ticket.subject}</span>
+          <span className="text-muted-foreground flex items-center gap-2 text-xs">
+            <StatusChip status={ticket.status} size="sm" />
+            <span className="font-mono">#{ticket.number}</span>
+            <span className="truncate">{ticket.contact}</span>
+          </span>
+        </a>
+      )}
+    />
+  ),
+};
+
 /** The parts on their own, for a table laid out by hand. */
 export const Parts: Story = {
   render: () => (

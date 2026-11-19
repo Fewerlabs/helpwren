@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ActionButton,
   Button,
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
   FieldList,
-  Icon,
   type FieldItem,
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,15 +80,13 @@ export function InviteDialog() {
 
   return (
     <>
-      <Button
-        size="sm"
+      <ActionButton
+        icon="user-plus"
+        label="Invite"
         onClick={() => {
           setOpen(true);
         }}
-      >
-        <Icon name="plus" />
-        Add team member
-      </Button>
+      />
       <Dialog
         open={open}
         onOpenChange={(next) => {

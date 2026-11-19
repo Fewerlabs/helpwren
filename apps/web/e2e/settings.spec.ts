@@ -212,7 +212,7 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   // An admin has no controls for their own access.
   await expect(team.getByRole("button", { name: /Ada Okafor/ })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Add team member" }).click();
+  await page.getByRole("button", { name: "Invite" }).click();
   const dialog = page.getByRole("dialog", { name: "Add a team member" });
   await dialog.getByLabel("Name").fill(NEW_MEMBER.name);
   await dialog.getByLabel("Work email").fill(NEW_MEMBER.email);
@@ -281,6 +281,6 @@ test("an agent who is not an admin can read settings and change nothing", async 
 
   await page.getByRole("link", { name: "Team" }).click();
   await expect(page.getByRole("list", { name: "Team members" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add team member" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Invite" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Deactivate/ })).toHaveCount(0);
 });

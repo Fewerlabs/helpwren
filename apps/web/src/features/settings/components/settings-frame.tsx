@@ -100,13 +100,15 @@ export interface SettingsSectionProps {
  * On a narrow screen the two stack.
  */
 export function SettingsSection({ title, description, children }: SettingsSectionProps) {
+  // `grid-cols-1` is a track that can shrink. The grid's default track grows to its widest
+  // child, so a long line of code widened the page on a phone instead of scrolling in its box.
   return (
-    <section className="border-rule grid gap-x-10 gap-y-4 border-t py-6 md:grid-cols-[13rem_minmax(0,1fr)]">
+    <section className="border-rule grid grid-cols-1 gap-x-10 gap-y-4 border-t py-6 md:grid-cols-[13rem_minmax(0,1fr)]">
       <div className="grid content-start gap-1">
         <h3 className="font-medium">{title}</h3>
         <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
       </div>
-      <div className="grid min-w-0 content-start gap-4">{children}</div>
+      <div className="grid min-w-0 grid-cols-1 content-start gap-4">{children}</div>
     </section>
   );
 }

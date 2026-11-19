@@ -103,6 +103,13 @@ export interface DataTableProps<Row> {
   striped?: boolean;
   /** Extra props for a row, such as `className`, `data-*` or event handlers. */
   rowProps?: (row: Row, index: number) => ComponentProps<"tr">;
+  /**
+   * Draws each row as an item of a list on a narrow screen, below `md`, in place of the table,
+   * whose columns would otherwise be cut down to one or two or scroll out of sight. Return the
+   * row's content; make it one link or button when the row opens something, so all of it can
+   * be tapped.
+   */
+  renderMobileRow?: (row: Row, index: number) => ReactNode;
   messages?: Partial<DataTableMessages>;
   className?: string;
   containerClassName?: string;
@@ -155,6 +162,7 @@ export function DataTable<Row>({
   stickyHeader = false,
   striped = false,
   rowProps,
+  renderMobileRow,
   messages: overrides,
   className,
   containerClassName,
@@ -217,13 +225,14 @@ export function DataTable<Row>({
   const columnCount = columns.length + (selectable ? 1 : 0);
   const hasFooter = columns.some((column) => column.footer !== undefined);
   const showSkeleton = loading && rows.length === 0;
+  const showEmpty = !showSkeleton && rows.length === 0;
 
-  return (
+  const table = (
     <Table
       data-slot="data-table"
       aria-busy={loading || undefined}
       className={className}
-      containerClassName={containerClassName}
+      containerClassName={cn(renderMobileRow && "max-md:hidden", containerClassName)}
     >
       <TableCaption className={showCaption ? undefined : "sr-only"}>{caption}</TableCaption>
       <TableHeader>
@@ -306,7 +315,7 @@ export function DataTable<Row>({
               </TableRow>
             ))
           : null}
-        {!showSkeleton && rows.length === 0 ? (
+        {showEmpty && !renderMobileRow ? (
           <TableRow className="hover:bg-transparent">
             <TableCell
               colSpan={columnCount}
@@ -381,5 +390,64 @@ export function DataTable<Row>({
         </TableFooter>
       ) : null}
     </Table>
+  );
+
+  if (!renderMobileRow) {
+    return table;
+  }
+
+  // Both are drawn and CSS picks one, so the server renders the right one for any screen. The
+  // empty content is drawn once, under both, so a page never holds two copies of it.
+  return (
+    <>
+      {table}
+      <div data-slot="data-table-list" aria-busy={loading || undefined} className="md:hidden">
+        {loading && rows.length > 0 ? <LinearProgress label={messages.loading} /> : null}
+        <ul
+          aria-label={typeof caption === "string" ? caption : undefined}
+          className="divide-rule divide-y"
+        >
+          {showSkeleton
+            ? Array.from({ length: loadingRows }, (_, rowIndex) => (
+                <li key={rowIndex} className="grid gap-2 p-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </li>
+              ))
+            : null}
+          {keyed.map(({ row, index, key }) => {
+            const selected = selection.includes(key);
+            return (
+              <li
+                key={key}
+                data-state={selected ? "selected" : undefined}
+                className="data-[state=selected]:bg-muted flex items-start"
+              >
+                {selectable ? (
+                  <span className="flex py-3 pl-3">
+                    <Checkbox
+                      aria-label={messages.selectRow(key)}
+                      checked={selected}
+                      disabled={!(isRowSelectable?.(row) ?? true)}
+                      onCheckedChange={(checked) => {
+                        changeSelection(
+                          checked === true
+                            ? [...selection, key]
+                            : selection.filter((item) => item !== key),
+                        );
+                      }}
+                    />
+                  </span>
+                ) : null}
+                <div className="min-w-0 flex-1">{renderMobileRow(row, index)}</div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      {showEmpty ? (
+        <div className="text-muted-foreground py-10 text-center">{empty ?? messages.empty}</div>
+      ) : null}
+    </>
   );
 }
