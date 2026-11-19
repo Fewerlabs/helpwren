@@ -4,17 +4,21 @@ import {
   hashKey,
   keepPreviousData,
   useInfiniteQuery,
+  useQueries,
   useQuery,
   type QueryKey,
 } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type Key, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
+import { useMediaQuery } from "#lib/media-query";
 import { useScrollableFocus } from "#lib/scrollable-focus";
 
 import { Wren } from "../../illustrations/wren";
 import { Button } from "../base/button/button";
+import { readPageSize, rememberPageSize } from "../base/pagination/page-size-memory";
 import {
+  defaultPageSizeOptions,
   Pagination,
   type PaginationNoun,
   type PaginationState,
@@ -62,9 +66,13 @@ export interface QueryListMessages {
   /** The previous and next page buttons' names and tooltips. */
   previous: string;
   next: string;
+  /** The name of the page footer's navigation landmark, such as "Contacts pages". */
+  pagination: string;
+  /** The rows-per-page picker's name. */
+  pageSize: string;
 }
 
-const defaultMessages: QueryListMessages = {
+export const defaultQueryListMessages: QueryListMessages = {
   loading: "Loading",
   empty: "Nothing here yet.",
   error: "This could not be loaded.",
@@ -74,6 +82,8 @@ const defaultMessages: QueryListMessages = {
   end: "You've reached the end.",
   previous: "Previous page",
   next: "Next page",
+  pagination: "Pagination",
+  pageSize: "Rows per page",
 };
 
 /** Pass it to `Pagination` to draw the footer when you render the list yourself. */
@@ -81,6 +91,13 @@ export interface QueryListPagination extends PaginationState {
   /** Known only when the server returns `total` and you pass `pageSize`. */
   pageCount: number | undefined;
   isFetching: boolean;
+  /**
+   * `load-more` on a narrow screen, where the next page is added under the rows on screen
+   * with `loadMore` instead of replacing them. See `mobilePagination`.
+   */
+  mode: "pages" | "load-more";
+  /** Changes the rows per page, which goes back to the first page. */
+  setPageSize: (pageSize: number) => void;
 }
 
 /** Everything about the list, for `children` as a function when you render it all yourself. */
@@ -91,6 +108,12 @@ export interface QueryListState<Item> {
   error: unknown;
   /** True whenever a request is running, including background refreshes. */
   isFetching: boolean;
+  /**
+   * True while the items on screen are being refreshed or replaced by another page, which is
+   * when a progress bar shows. A list that refreshes itself on `refetchInterval` does it
+   * quietly, so a bar does not flash every few seconds.
+   */
+  isRefreshing: boolean;
   isFetchingMore: boolean;
   hasMore: boolean;
   /** True in infinite mode once more than one page was loaded and no pages remain. */
@@ -101,7 +124,25 @@ export interface QueryListState<Item> {
   pagination: QueryListPagination | undefined;
 }
 
-export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
+/** The parts of the page footer a list can turn off or change. Shared with `QueryTable`. */
+export interface QueryListFooterOptions {
+  /** What the items are, for the page footer's count: "4 contacts". */
+  noun?: PaginationNoun | undefined;
+  /** Set false to leave the page footer out altogether. Default true. */
+  showPagination?: boolean | undefined;
+  /** Shows "1–25 of 132" in the footer. Default true. */
+  showSummary?: boolean | undefined;
+  /** Shows previous and next, or Load more on a phone. Default true. */
+  showPageControls?: boolean | undefined;
+  /**
+   * The sizes the rows-per-page picker offers. Default 10, 25, 50 and 100; `false` hides it.
+   * The picker needs `pageSize`, which is where it starts.
+   */
+  pageSizeOptions?: readonly number[] | false | undefined;
+}
+
+export interface QueryListProps<Item, Cursor = unknown>
+  extends QueryBehaviour, QueryListFooterOptions {
   /** Identifies this list in the cache. Include every filter the request depends on. */
   queryKey: QueryKey;
   /** Fetches one page. */
@@ -114,12 +155,31 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   pagination?: "infinite" | "pages" | "none";
   /** Infinite mode: load the next page on `scroll` (default) or with a `button`. */
   loadMoreOn?: "scroll" | "button";
-  pageSize?: number;
+  /**
+   * How many items a page holds. In pages mode it is where the rows-per-page picker starts,
+   * or, with `onPageSizeChange`, the size on screen.
+   */
+  pageSize?: number | undefined;
+  /** Pages mode, controlled size: called with the size chosen in the picker. */
+  onPageSizeChange?: ((pageSize: number) => void) | undefined;
+  /**
+   * Pages mode: remembers the rows-per-page choice in this browser under this name, such as
+   * `"contacts"`, so the table opens at that size next time.
+   */
+  pageSizeKey?: string | undefined;
   /** Pages mode, controlled. */
-  page?: number;
+  page?: number | undefined;
   /** Pages mode, uncontrolled: where it starts, and where it goes back to when `queryKey` changes. */
   defaultPage?: number;
-  onPageChange?: (page: number) => void;
+  onPageChange?: ((page: number) => void) | undefined;
+  /**
+   * Pages mode, on a narrow screen: `load-more` (default) swaps previous and next for a Load
+   * more button that adds the next page under the rows already shown, which suits a thumb
+   * better than paging. `pages` keeps previous and next.
+   */
+  mobilePagination?: "load-more" | "pages" | undefined;
+  /** The screen width in pixels below which `mobilePagination` applies. Default 768, Tailwind's `md`. */
+  mobileBreakpoint?: number | undefined;
 
   /** Renders one item. Not needed when `children` is a function. */
   renderItem?: (item: Item, index: number) => ReactNode;
@@ -132,14 +192,12 @@ export interface QueryListProps<Item, Cursor = unknown> extends QueryBehaviour {
   renderError?: (context: QueryErrorContext) => ReactNode;
   /** Replaces the page footer, which shows in pages mode whenever there are items. */
   renderPagination?: (pagination: QueryListPagination) => ReactNode;
-  /** What the items are, for the page footer's count: "4 contacts". */
-  noun?: PaginationNoun;
   /** Replaces the end-of-list marker shown in infinite mode. Return `null` for none. */
   renderEnd?: () => ReactNode;
   /** Content above and below the items, shown once there are items. */
   header?: ReactNode;
   footer?: ReactNode;
-  messages?: Partial<QueryListMessages>;
+  messages?: Partial<QueryListMessages> | undefined;
   /**
    * Classes for the outer box: border, background, radius, scrolling. Keep padding off it.
    * If it scrolls, it becomes a tab stop while its content overflows.
@@ -183,6 +241,48 @@ function statusOf(
   return isError ? "error" : "empty";
 }
 
+/**
+ * The page footer for a list's state, with the parts the list asked for. `QueryList` and
+ * `QueryTable` both draw it, so every paged list has the same one.
+ */
+export function QueryListFooter<Item>({
+  state,
+  messages,
+  noun,
+  showPagination = true,
+  showSummary,
+  showPageControls,
+  pageSizeOptions,
+}: QueryListFooterOptions & {
+  state: QueryListState<Item>;
+  messages: Pick<QueryListMessages, "pagination" | "previous" | "next" | "pageSize" | "loadMore">;
+}) {
+  const { pagination } = state;
+  if (!pagination || !showPagination) {
+    return null;
+  }
+  return (
+    <Pagination
+      pagination={pagination}
+      mode={pagination.mode}
+      onLoadMore={state.loadMore}
+      loadingMore={state.isFetchingMore}
+      onPageSizeChange={pagination.setPageSize}
+      pageSizeOptions={pageSizeOptions}
+      showSummary={showSummary}
+      showControls={showPageControls}
+      noun={noun}
+      messages={{
+        label: messages.pagination,
+        previous: messages.previous,
+        next: messages.next,
+        pageSize: messages.pageSize,
+        loadMore: messages.loadMore,
+      }}
+    />
+  );
+}
+
 function ListView<Item, Cursor>({
   state,
   pagination: mode = "infinite",
@@ -196,6 +296,10 @@ function ListView<Item, Cursor>({
   renderPagination,
   renderEnd,
   noun,
+  showPagination,
+  showSummary,
+  showPageControls,
+  pageSizeOptions,
   header,
   footer,
   messages: overrides,
@@ -205,7 +309,7 @@ function ListView<Item, Cursor>({
   itemClassName,
   "aria-label": ariaLabel,
 }: ViewProps<Item, Cursor>) {
-  const messages = { ...defaultMessages, ...overrides };
+  const messages = { ...defaultQueryListMessages, ...overrides };
   const sentinel = useRef<HTMLDivElement | null>(null);
   // A caller may make the list its own scrolling box; a keyboard must be able to scroll it.
   const scrollable = useScrollableFocus<HTMLDivElement>();
@@ -323,15 +427,19 @@ function ListView<Item, Cursor>({
             </div>
           )
         ) : null}
-        {state.pagination
-          ? (renderPagination?.(state.pagination) ?? (
-              <Pagination
-                pagination={state.pagination}
-                {...(noun === undefined ? {} : { noun })}
-                messages={{ previous: messages.previous, next: messages.next }}
-              />
-            ))
-          : null}
+        {state.pagination && renderPagination ? (
+          renderPagination(state.pagination)
+        ) : (
+          <QueryListFooter
+            state={state}
+            messages={messages}
+            noun={noun}
+            showPagination={showPagination}
+            showSummary={showSummary}
+            showPageControls={showPageControls}
+            pageSizeOptions={pageSizeOptions}
+          />
+        )}
         {footer}
       </>
     );
@@ -346,11 +454,7 @@ function ListView<Item, Cursor>({
       {...scrollable}
     >
       {/* With items on screen, loading shows as a bar along the top so the list does not jump. */}
-      <StickyProgress
-        // Loading the next page shows at the bottom instead; the bar is for refreshes.
-        active={isFetching && status === "ready" && !isFetchingMore}
-        label={messages.loading}
-      />
+      <StickyProgress active={state.isRefreshing} label={messages.loading} />
       <div data-slot="query-list-content" className={contentClassName}>
         {body()}
       </div>
@@ -359,7 +463,7 @@ function ListView<Item, Cursor>({
 }
 
 function InfiniteQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
-  const { queryKey, queryFn, pageSize } = props;
+  const { queryKey, queryFn, pageSize, refetchInterval } = props;
   const query = useInfiniteQuery({
     queryKey: [...queryKey, { pagination: "infinite", pageSize }],
     queryFn: ({ pageParam, signal }) =>
@@ -382,6 +486,8 @@ function InfiniteQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
     status: statusOf(query.isPending, query.isError, items.length),
     error: query.error,
     isFetching: query.isFetching,
+    // Loading the next page shows at the bottom instead; the bar is for refreshes.
+    isRefreshing: query.isFetching && !isFetchingNextPage && items.length > 0 && !refetchInterval,
     isFetchingMore: isFetchingNextPage,
     isEnd: pages.length > 1 && !hasNextPage,
     hasMore: hasNextPage,
@@ -404,10 +510,32 @@ function InfiniteQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
 }
 
 function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
-  const { queryKey, queryFn, pageSize, pagination = "pages", onPageChange } = props;
+  const {
+    queryKey,
+    queryFn,
+    pagination = "pages",
+    onPageChange,
+    onPageSizeChange,
+    pageSizeKey,
+    pageSizeOptions = defaultPageSizeOptions,
+    mobilePagination = "load-more",
+    mobileBreakpoint = 768,
+    refetchInterval,
+  } = props;
   const controlled = props.page !== undefined;
   const firstPage = props.defaultPage ?? 1;
   const [internalPage, setInternalPage] = useState(firstPage);
+
+  // The size picked in the footer, unless the caller holds it. It starts from what this browser
+  // chose last time for the same table.
+  const sizeControlled = onPageSizeChange !== undefined;
+  const [chosenSize, setChosenSize] = useState(() =>
+    pageSizeKey === undefined
+      ? undefined
+      : readPageSize(pageSizeKey, pageSizeOptions === false ? undefined : pageSizeOptions),
+  );
+  const pageSize = sizeControlled ? props.pageSize : (chosenSize ?? props.pageSize);
+
   // A new search or filter is a new list, so it starts again from its first page rather than
   // asking for page 3 of results that may have only one. Reset while rendering, so the old
   // page number is never fetched under the new key.
@@ -419,24 +547,57 @@ function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
   }
   const page = pagination === "none" ? 1 : (props.page ?? internalPage);
 
-  const query = useQuery({
-    queryKey: [...queryKey, { pagination, page, pageSize }],
-    queryFn: ({ signal }) => queryFn({ page, cursor: undefined, pageSize, signal }),
-    // The page on screen stays until the next one arrives.
-    placeholderData: keepPreviousData,
+  // On a phone, pages after the one on screen are added below it. How many is reset whenever
+  // the list, the size or the page changes, as those rows belong to another list.
+  const narrow = useMediaQuery(`(max-width: ${mobileBreakpoint - 0.02}px)`);
+  const loadMoreMode = pagination === "pages" && mobilePagination === "load-more" && narrow;
+  const appendedFor = `${keyHash}:${pageSize}:${page}`;
+  const [appended, setAppended] = useState({ for: appendedFor, count: 0 });
+  if (appended.for !== appendedFor) {
+    setAppended({ for: appendedFor, count: 0 });
+  }
+  const appendedCount = appended.for === appendedFor ? appended.count : 0;
+
+  // Every page, on screen or appended, is asked for under the same key, so a page loaded on a
+  // phone is already there when the window widens, and the other way round.
+  const pageQuery = (number: number) => ({
+    queryKey: [...queryKey, { pagination, page: number, pageSize }],
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      queryFn({ page: number, cursor: undefined, pageSize, signal }),
     ...behaviour(props),
   });
 
-  const items = query.data?.items ?? [];
+  const query = useQuery({
+    ...pageQuery(page),
+    // The page on screen stays until the next one arrives.
+    placeholderData: keepPreviousData,
+  });
+  const more = useQueries({
+    queries: loadMoreMode
+      ? Array.from({ length: appendedCount }, (_, index) => pageQuery(page + index + 1))
+      : [],
+  });
+
+  // The rows run on only as far as the pages have arrived, so none is shown out of order.
+  const firstMissing = more.findIndex((result) => result.data === undefined);
+  const loaded = firstMissing === -1 ? more : more.slice(0, firstMissing);
+  const items = [
+    ...(query.data?.items ?? []),
+    ...loaded.flatMap((result) => result.data?.items ?? []),
+  ];
+  const last = loaded.at(-1)?.data ?? query.data;
   const total = query.data?.total;
   const pageCount =
     total !== undefined && pageSize !== undefined && pageSize > 0
       ? Math.max(1, Math.ceil(total / pageSize))
       : undefined;
+  const lastLoadedPage = page + loaded.length;
   const hasNext =
     pageCount === undefined
-      ? query.data?.nextCursor !== undefined && query.data.nextCursor !== null
-      : page < pageCount;
+      ? last?.nextCursor !== undefined && last.nextCursor !== null
+      : lastLoadedPage < pageCount;
+  const isFetchingMore = more.some((result) => result.data === undefined && result.isFetching);
+  const failed = more.filter((result) => result.isError);
   const { refetch } = query;
 
   // The list can shrink under the page on screen, as people leave a live list or rows are
@@ -455,18 +616,33 @@ function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
     }
   }, [lastPage, controlled, onPageChange]);
 
+  function setPage(next: number) {
+    if (!controlled) {
+      setInternalPage(next);
+    }
+    onPageChange?.(next);
+  }
+
   const state: QueryListState<Item> = {
     items,
     total,
     status: statusOf(query.isPending, query.isError, items.length),
-    error: query.error,
-    isFetching: query.isFetching,
-    isFetchingMore: false,
+    error: query.error ?? failed[0]?.error ?? null,
+    isFetching: query.isFetching || isFetchingMore,
+    // Another page or filter always shows the bar; a list that polls refreshes quietly.
+    isRefreshing:
+      query.isFetching && items.length > 0 && (!refetchInterval || query.isPlaceholderData),
+    isFetchingMore,
     isEnd: false,
-    hasMore: false,
-    loadMore: () => undefined,
+    hasMore: loadMoreMode && hasNext,
+    loadMore: () => {
+      if (loadMoreMode && hasNext && !isFetchingMore) {
+        setAppended({ for: appendedFor, count: appendedCount + 1 });
+      }
+    },
     retry: () => {
-      void refetch();
+      if (query.isError) void refetch();
+      for (const result of failed) void result.refetch();
     },
     refetch: () => {
       void refetch();
@@ -483,11 +659,20 @@ function PagedQueryList<Item, Cursor>(props: QueryListProps<Item, Cursor>) {
             hasPrevious: page > 1,
             hasNext,
             isFetching: query.isFetching,
-            setPage: (next) => {
-              if (!controlled) {
-                setInternalPage(next);
+            mode: loadMoreMode ? "load-more" : "pages",
+            setPage,
+            setPageSize: (next) => {
+              if (pageSizeKey !== undefined) {
+                rememberPageSize(pageSizeKey, next);
               }
-              onPageChange?.(next);
+              if (!sizeControlled) {
+                setChosenSize(next);
+              }
+              onPageSizeChange?.(next);
+              // Page 4 of 25 is not page 4 of 100, so a new size starts from the top.
+              if (page !== 1) {
+                setPage(1);
+              }
             },
           },
   };

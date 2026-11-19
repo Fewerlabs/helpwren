@@ -89,8 +89,8 @@ export const NotFound: Story = {
       queryKey={["stories", "missing"]}
       queryFn={() => Promise.resolve(null)}
       messages={{
-        empty: "This contact no longer exists.",
-        emptyDescription: "They may have been merged into another contact.",
+        notFound: "This contact no longer exists.",
+        notFoundDescription: "They may have been merged into another contact.",
       }}
     >
       {(contact) => <p>{contact.name}</p>}
@@ -107,6 +107,55 @@ export const ErrorWithRetry: Story = {
         await wait(400, signal);
         throw new Error("Network error");
       }}
+    >
+      {(contact) => <p>{contact.name}</p>}
+    </QueryDetail>
+  ),
+};
+
+/** The first load: a record panel's shape, a name beside an avatar and sections of facts. */
+export const Skeleton: Story = {
+  render: () => (
+    <QueryDetail<Contact>
+      className="border-line bg-card overflow-clip rounded-xl"
+      queryKey={["stories", "contact-loading"]}
+      queryFn={() => new Promise(() => undefined)}
+    >
+      {(contact) => <p>{contact.name}</p>}
+    </QueryDetail>
+  ),
+};
+
+/** A view of another shape, such as an editor, opens with the loader instead. */
+export const Loader: Story = {
+  render: () => (
+    <QueryDetail<Contact>
+      {...card}
+      placeholder="loader"
+      queryKey={["stories", "contact-loader"]}
+      queryFn={() => new Promise(() => undefined)}
+    >
+      {(contact) => <p>{contact.name}</p>}
+    </QueryDetail>
+  ),
+};
+
+/** Not found, with a way out of the panel. */
+export const NotFoundWithClose: Story = {
+  render: () => (
+    <QueryDetail<Contact>
+      {...card}
+      queryKey={["stories", "missing-close"]}
+      queryFn={() => Promise.resolve(null)}
+      messages={{
+        notFound: "This contact could not be found.",
+        notFoundDescription: "They may have been merged into another contact.",
+      }}
+      notFoundAction={
+        <Button variant="secondary" size="sm">
+          Close
+        </Button>
+      }
     >
       {(contact) => <p>{contact.name}</p>}
     </QueryDetail>

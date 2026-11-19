@@ -25,3 +25,13 @@ Element.prototype.hasPointerCapture = () => false;
 Element.prototype.setPointerCapture = () => undefined;
 Element.prototype.releasePointerCapture = () => undefined;
 Element.prototype.scrollIntoView = () => undefined;
+
+// Every screen is wide unless a test says otherwise, by stubbing its own.
+window.matchMedia = (query: string) =>
+  // The components listen with addEventListener, which EventTarget gives; the deprecated
+  // addListener and removeListener the type still lists are never called.
+  Object.assign(new EventTarget(), {
+    matches: false,
+    media: query,
+    onchange: null,
+  }) as MediaQueryList;
