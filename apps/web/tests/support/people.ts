@@ -25,18 +25,29 @@ export async function newGuest(): Promise<Person> {
   return { id: data.user.id, headers: { authorization: `Bearer ${data.session.access_token}` } };
 }
 
-/** A signed-in team member from the demo data. */
+/**
+ * A signed-in team member from the demo data. Each new code replaces the last, so when another
+ * test run signs the same person in at the same moment this code may be stale: then a new one
+ * is asked for.
+ */
 export async function signInAgent(email: string): Promise<Person> {
-  const link = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email });
-  if (link.error) throw link.error;
+  for (let attempt = 1; ; attempt += 1) {
+    const link = await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email });
+    if (link.error) throw link.error;
 
-  const { data, error } = await browserClient().auth.verifyOtp({
-    email,
-    token: link.data.properties.email_otp,
-    type: "email",
-  });
-  if (error || !data.session || !data.user) throw error ?? new Error("No agent session.");
-  return { id: data.user.id, headers: { authorization: `Bearer ${data.session.access_token}` } };
+    const { data, error } = await browserClient().auth.verifyOtp({
+      email,
+      token: link.data.properties.email_otp,
+      type: "email",
+    });
+    if (data.session && data.user) {
+      return {
+        id: data.user.id,
+        headers: { authorization: `Bearer ${data.session.access_token}` },
+      };
+    }
+    if (attempt === 5) throw error ?? new Error("No agent session.");
+  }
 }
 
 /** Removes the guests a test created, and everything that belongs to them. */

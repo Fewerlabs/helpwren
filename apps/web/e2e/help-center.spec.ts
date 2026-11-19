@@ -5,8 +5,29 @@ import { signInToInbox } from "./support/mailbox";
 
 // Runs against the local Supabase stack and its demo data: three collections holding six
 // published articles and one draft. Visitors do not sign in; only the last test, where an
-// admin changes the branding, does.
+// admin changes the branding, does. Someone trying the app may have written articles of their
+// own, so a collection's count is checked against what the database holds for it.
 const ARTICLE = "/help/getting-started/add-the-chat-to-your-website";
+
+/**
+ * A collection's card, which says how many published articles it holds: on the help center the
+ * public ones, in the chat those shown there too.
+ */
+async function collectionCard(name: string, slug: string, place: "help center" | "chat") {
+  const { data: collection } = await database
+    .from("collections")
+    .select("id")
+    .eq("slug", slug)
+    .single();
+  const { count } = await database
+    .from("articles")
+    .select("id", { count: "exact", head: true })
+    .eq("collection_id", collection?.id ?? "")
+    .eq("status", "published")
+    .in("visibility", place === "chat" ? ["public", "in_app"] : ["public"]);
+  const articles = count === 1 ? "1 article" : `${count ?? 0} articles`;
+  return { name: new RegExp(`${name}.*${articles}`, "s"), count: count ?? 0 };
+}
 
 test.afterAll(async () => {
   await database.from("settings").delete().eq("key", "help_center");
@@ -18,17 +39,20 @@ test("a visitor browses from the home page to an article", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "How can we help?" })).toBeVisible();
 
   // Collections are cards with how many articles each holds; the draft is not counted.
-  await expect(page.getByRole("link", { name: /Getting started.*4 articles/s })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Troubleshooting.*1 article/s })).toBeVisible();
+  const gettingStarted = await collectionCard("Getting started", "getting-started", "help center");
+  const troubleshooting = await collectionCard("Troubleshooting", "troubleshooting", "help center");
+  expect(gettingStarted.count).toBeGreaterThanOrEqual(4);
+  await expect(page.getByRole("link", { name: gettingStarted.name })).toBeVisible();
+  await expect(page.getByRole("link", { name: troubleshooting.name })).toBeVisible();
   await expect(page.getByRole("list", { name: "Popular articles" })).toContainText(
     "The chat does not appear",
   );
 
-  await page.getByRole("link", { name: /Getting started.*4 articles/s }).click();
+  await page.getByRole("link", { name: gettingStarted.name }).click();
   await expect(page).toHaveURL(/\/help\/getting-started$/);
   await expect(page.getByRole("heading", { level: 1, name: "Getting started" })).toBeVisible();
   const articles = page.getByRole("list", { name: "Articles in Getting started" });
-  await expect(articles.getByRole("link")).toHaveCount(4);
+  await expect(articles.getByRole("link")).toHaveCount(gettingStarted.count);
 
   await articles.getByRole("link", { name: /Add the chat to your website/ }).click();
   await expect(page).toHaveURL(new RegExp(`${ARTICLE}$`));
@@ -102,8 +126,12 @@ test("a visitor searches the help center", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/help\/search\?q=tag(\+|%20)manager$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText('Results for "tag manager"');
+  // Every published article the words find is listed, the demo's among them.
   const results = page.getByRole("list", { name: "Search results" });
-  await expect(results.getByRole("link")).toHaveCount(1);
+  const { data: found } = await database
+    .rpc("search_articles", { query: "tag manager" })
+    .eq("status", "published");
+  await expect(results.getByRole("link")).toHaveCount(found?.length ?? 0);
   await expect(results).toContainText("Add the chat to your website");
 
   // A draft is never found, and a search with no match says so.
@@ -216,9 +244,17 @@ test("an admin brands the help center, and visitors see it at once", async ({ pa
 test("a visitor finds and reads an article inside the chat", async ({ page }) => {
   await page.goto("/chat");
 
-  // The home screen suggests the articles the team put forward.
+  // The home screen suggests the articles the team put forward, the latest first.
+  const { data: latest } = await database
+    .from("articles")
+    .select("title")
+    .eq("status", "published")
+    .eq("featured", true)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .single();
   const suggested = page.getByRole("region", { name: "Suggested articles" });
-  await expect(suggested.getByRole("button", { name: /The chat does not appear/ })).toBeVisible();
+  await expect(suggested.getByRole("button", { name: latest?.title ?? "" })).toBeVisible();
 
   await page
     .getByRole("navigation", { name: "Chat" })
@@ -226,7 +262,8 @@ test("a visitor finds and reads an article inside the chat", async ({ page }) =>
     .click();
 
   // The Help tab lists the collections; opening one shows its articles.
-  await page.getByRole("button", { name: /Account and billing.*2 articles/s }).click();
+  const billing = await collectionCard("Account and billing", "account-and-billing", "chat");
+  await page.getByRole("button", { name: billing.name }).click();
   await expect(page.getByRole("heading", { name: "Account and billing" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Change who can sign in/ })).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
@@ -267,7 +304,8 @@ test("a host embeds the help center without its chrome, and is told its height",
   const frame = page.frameLocator("#help");
 
   // The content alone: no brand header, no footer, no credit, no launcher.
-  await expect(frame.getByRole("link", { name: /Getting started.*4 articles/s })).toBeVisible();
+  const gettingStarted = await collectionCard("Getting started", "getting-started", "help center");
+  await expect(frame.getByRole("link", { name: gettingStarted.name })).toBeVisible();
   // Whatever the branding test before this one called it, the search is there.
   await expect(frame.getByRole("searchbox")).toBeVisible();
   await expect(frame.getByRole("link", { name: "Powered by Helpwren" })).toHaveCount(0);
@@ -279,7 +317,7 @@ test("a host embeds the help center without its chrome, and is told its height",
     .toBeGreaterThan(300);
 
   // Links stay in the frame and in the embedded form, with the host's options.
-  await frame.getByRole("link", { name: /Getting started.*4 articles/s }).click();
+  await frame.getByRole("link", { name: gettingStarted.name }).click();
   await frame.getByRole("link", { name: /Add the chat to your website/ }).click();
   await expect(
     frame.getByRole("heading", { level: 1, name: "Add the chat to your website" }),

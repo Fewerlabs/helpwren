@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { database, removeContactByEmail } from "./support/database";
+import { RUN, database, removeContactByEmail } from "./support/database";
 
 // The widget on a site of its own: examples/plain-html, served from another origin than the
 // app. Runs against the local Supabase stack and its demo data.
 const SITE = "http://127.0.0.1:4100/";
-const VISITOR = { name: "Tomas Lind", email: "tomas.e2e@example.org" };
+const VISITOR = { name: `Tomas Lind ${RUN}`, email: `tomas.${RUN}@example.org` };
 const AGENT_ID = "a0000000-0000-4000-8000-000000000002";
 
 async function setAllowedDomains(domains: string[] | null) {

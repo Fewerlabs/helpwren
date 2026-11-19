@@ -1,15 +1,29 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createHelpwrenClient } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { browserClient, serverClient } from "./support/local-supabase";
+import { keepSettings, newAgent, removeAccounts, runMarker, signIn } from "./support/test-data";
 
-// These run against the local database and its demo data (supabase/seed.sql), where Ada is an
-// admin and Sam is an agent.
+// These run against the shared local database, where Ada (from the demo data) is an admin and
+// Sam an agent. Settings are one per install, so these tests set the ones they read, and put
+// back afterwards whatever was there before; files they upload are removed.
+const run = runMarker();
+const BRAND = `Demo ${run}`;
+const TOUCHED = [
+  "brand",
+  "guest_details",
+  "sources",
+  "allowed_domains",
+  "widget",
+  "chat_page",
+  "help_center",
+];
+let restoreSettings: () => Promise<void> = () => Promise.resolve();
+const uploaded: { bucket: string; path: string }[] = [];
+const madeAgents: string[] = [];
+
 async function signedIn(email: string) {
-  const client = createHelpwrenClient({ supabase: browserClient() });
-  const result = await client.auth.verifyLoginCode(email, await issueLoginCode(email));
-  if (!result.ok) throw new Error(`Could not sign in as ${email}.`);
-  return client;
+  return (await signIn(email)).client;
 }
 
 async function storedValue(key: string) {
@@ -21,24 +35,29 @@ async function storedValue(key: string) {
   return data;
 }
 
+/** Remembers a file uploaded by its public address, to remove it after. */
+function rememberUpload(url: string) {
+  const [bucket = "", ...path] = url.split("/storage/v1/object/public/")[1]?.split("/") ?? [];
+  uploaded.push({ bucket, path: path.join("/") });
+}
+
+beforeAll(async () => {
+  restoreSettings = await keepSettings(TOUCHED);
+  const { error } = await serverClient()
+    .from("settings")
+    .upsert([
+      { key: "brand", value: { name: BRAND }, is_public: true },
+      { key: "guest_details", value: "email_or_phone", is_public: true },
+      { key: "sources", value: ["web", "web_app"], is_public: false },
+    ]);
+  if (error) throw error;
+});
+
 afterAll(async () => {
   const admin = serverClient();
-  await admin
-    .from("settings")
-    .delete()
-    .in("key", ["allowed_domains", "widget", "chat_page", "help_center"]);
-  const sam = "a0000000-0000-4000-8000-000000000002";
-  const { data: photos } = await admin.storage.from("avatars").list(sam);
-  if (photos?.length) {
-    await admin.storage.from("avatars").remove(photos.map((photo) => `${sam}/${photo.name}`));
-  }
-  const { data: logos } = await admin.storage.from("brand").list();
-  if (logos?.length) await admin.storage.from("brand").remove(logos.map((logo) => logo.name));
-  await admin
-    .from("settings")
-    .update({ value: { name: "Helpwren Demo" } })
-    .eq("key", "brand");
-  await admin.from("settings").update({ value: "email_or_phone" }).eq("key", "guest_details");
+  for (const { bucket, path } of uploaded) await admin.storage.from(bucket).remove([path]);
+  await restoreSettings();
+  await removeAccounts(madeAgents);
 });
 
 const newVisitor = () => createHelpwrenClient({ supabase: browserClient() });
@@ -47,7 +66,7 @@ describe("settings.getAll", () => {
   it("gives a team member every setting", async () => {
     const client = await signedIn("sam@example.com");
     await expect(client.settings.getAll()).resolves.toMatchObject({
-      brand: { name: "Helpwren Demo" },
+      brand: { name: BRAND },
       guestDetails: "email_or_phone",
       sources: ["web", "web_app"],
     });
@@ -56,7 +75,7 @@ describe("settings.getAll", () => {
   it("gives a visitor defaults in place of anything that is not public", async () => {
     const visitor = createHelpwrenClient({ supabase: browserClient() });
     await expect(visitor.settings.getAll()).resolves.toMatchObject({
-      brand: { name: "Helpwren Demo" },
+      brand: { name: BRAND },
       sources: ["web"],
     });
   });
@@ -124,11 +143,27 @@ describe("settings.update", () => {
 
 describe("agents.list", () => {
   it("gives a team member the whole team, by name", async () => {
+    // Two more, whose names sort before and after the demo's.
+    const first = await newAgent(`Aaron ${run}`, "admin");
+    const last = await newAgent(`Zoe ${run}`);
+    madeAgents.push(first.id, last.id);
+
     const client = await signedIn("sam@example.com");
     const team = await client.agents.list();
 
-    expect(team.map((member) => member.name)).toEqual(["Ada Okafor", "Sam Rivera"]);
-    expect(team[0]).toMatchObject({ email: "ada@example.com", role: "admin", active: true });
+    // Others may have joined the team too; these four must come in this order among them.
+    const known = [first.name, "Ada Okafor", "Sam Rivera", last.name];
+    expect(team.map((member) => member.name).filter((name) => known.includes(name))).toEqual(known);
+    expect(team.find((member) => member.name === "Ada Okafor")).toMatchObject({
+      email: "ada@example.com",
+      role: "admin",
+      active: true,
+    });
+    expect(team.find((member) => member.id === last.id)).toMatchObject({
+      email: last.email,
+      role: "agent",
+      active: true,
+    });
   });
 
   it("gives a visitor nobody", async () => {
@@ -151,6 +186,7 @@ describe("branding", () => {
     const client = await signedIn("ada@example.com");
     const result = await client.settings.uploadLogo(png());
     if (!result.ok) throw new Error(`The upload was refused: ${result.reason}`);
+    rememberUpload(result.url);
 
     const loaded = await fetch(result.url);
     expect(loaded.status).toBe(200);
@@ -182,6 +218,7 @@ describe("branding", () => {
     const agent = await signedIn("sam@example.com");
     const stored = await agent.agents.uploadPhoto(png());
     if (!stored.ok) throw new Error(`The upload was refused: ${stored.reason}`);
+    rememberUpload(stored.url);
     expect(stored.url).toContain("/storage/v1/object/public/avatars/");
     expect((await fetch(stored.url)).status).toBe(200);
 

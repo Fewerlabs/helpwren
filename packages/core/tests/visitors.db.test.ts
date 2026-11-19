@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createHelpwrenClient, type Database } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { browserClient, serverClient } from "./support/local-supabase";
+import { signIn } from "./support/test-data";
 
 // Browsers are written by the app's server, so these put them in with the secret key and read
 // them as a team member, against the local database and its demo data.
@@ -12,13 +13,7 @@ const arriving = `core-test-${crypto.randomUUID()}`;
 const priyas = `core-test-${crypto.randomUUID()}`;
 
 async function signedInAgent() {
-  const client = createHelpwrenClient({ supabase: browserClient() });
-  const result = await client.auth.verifyLoginCode(
-    "sam@example.com",
-    await issueLoginCode("sam@example.com"),
-  );
-  if (!result.ok) throw new Error("Could not sign in.");
-  return client;
+  return (await signIn("sam@example.com")).client;
 }
 
 beforeAll(async () => {

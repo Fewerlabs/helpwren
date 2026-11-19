@@ -1,11 +1,11 @@
 import { expect, test, type Browser } from "@playwright/test";
 
-import { removeContactByEmail } from "./support/database";
+import { RUN, removeContactByEmail } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // A visitor and a team member, each in their own browser, seeing each other type. Runs against
 // the local Supabase stack, Realtime included, and its demo data.
-const VISITOR = { name: "Tomas Berg", email: "tomas.e2e@example.org" };
+const VISITOR = { name: `Tomas Berg ${RUN}`, email: `tomas.${RUN}@example.org` };
 const AGENT = "sam@example.com";
 
 test.beforeEach(async () => {
@@ -71,7 +71,7 @@ test("the team member sees the visitor typing", async ({ browser }) => {
 
   await chat.getByRole("textbox", { name: "Your message" }).pressSequentially("And on holidays");
   await expect(inbox.getByRole("status").filter({ hasText: "is typing" })).toHaveText(
-    /Tomas Berg is typing…/,
+    new RegExp(`${VISITOR.name} is typing…`),
   );
 
   await Promise.all(contexts.map((context) => context.close()));
