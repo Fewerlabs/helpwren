@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { database, removeContactByEmail } from "./support/database";
+import { RUN, database, removeContactByEmail } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // A visitor opens a ticket themselves, from the chat, and the team finds it as one. Runs
 // against the local Supabase stack and its demo data.
-const VISITOR = { name: "Tomas Vega", email: "tomas.e2e@example.org" };
+const VISITOR = { name: `Tomas Vega ${RUN}`, email: `tomas.${RUN}@example.org` };
 
 async function restore() {
   await removeContactByEmail(VISITOR.email);
@@ -55,7 +55,9 @@ test("a visitor submits a ticket from the chat, and the team sees who opened it"
   await expect(row).toContainText(VISITOR.name);
   await row.getByRole("button", { name: "Refund for a late delivery" }).click();
   await expect(
-    inbox.getByRole("log", { name: "Messages" }).getByText(/Tomas Vega opened ticket #\d{4}/),
+    inbox
+      .getByRole("log", { name: "Messages" })
+      .getByText(new RegExp(`${VISITOR.name} opened ticket #\\d{4}`)),
   ).toBeVisible();
 
   await agentContext.close();

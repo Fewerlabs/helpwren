@@ -7,6 +7,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 // These run against the local database and its demo data, where Sam is an agent.
 const SAM = "a0000000-0000-4000-8000-000000000002";
 const userIds: string[] = [];
+// In every address, so a run never meets the accounts of another running alongside.
+const run = crypto.randomUUID().slice(0, 8);
 
 /** A contact with an email address and a conversation they started. */
 async function newConversation(email: string, ticketSubject?: string) {
@@ -72,7 +74,7 @@ afterAll(async () => {
 
 describe("processEmailQueue", () => {
   it("emails a contact the replies they have not read, once, after the wait", async () => {
-    const address = "queue.unread@example.org";
+    const address = `queue.unread.${run}@example.org`;
     const conversationId = await newConversation(address);
     await agentReplies(conversationId, "It ships tomorrow.");
     await agentReplies(conversationId, "Here is the tracking <link>.");
@@ -105,7 +107,7 @@ describe("processEmailQueue", () => {
   });
 
   it("sends nothing for a reply the contact has already read", async () => {
-    const address = "queue.read@example.org";
+    const address = `queue.read.${run}@example.org`;
     const conversationId = await newConversation(address);
     await agentReplies(conversationId, "All sorted.");
     await supabaseAdmin
@@ -123,7 +125,7 @@ describe("processEmailQueue", () => {
   });
 
   it("tells a contact where their ticket stands when the team changes it", async () => {
-    const address = "queue.status@example.org";
+    const address = `queue.status.${run}@example.org`;
     const conversationId = await newConversation(address, "Late delivery");
     const change = (from: string, to: string) =>
       supabaseAdmin.from("conversation_events").insert({
@@ -150,7 +152,7 @@ describe("processEmailQueue", () => {
   });
 
   it("tries again when the provider cannot be reached, and gives up on a refusal", async () => {
-    const address = "queue.retry@example.org";
+    const address = `queue.retry.${run}@example.org`;
     const conversationId = await newConversation(address);
     await agentReplies(conversationId, "Still there?");
     await makeDue(conversationId);

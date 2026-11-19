@@ -1,21 +1,32 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 
 import { createHelpwrenClient, type Typist } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { browserClient, serverClient } from "./support/local-supabase";
+import { newAgent, removeAccounts, runMarker, signIn } from "./support/test-data";
 
 // These run against the local stack, Realtime included, and its demo data (supabase/seed.sql).
 const guestIds: string[] = [];
+const agentIds: string[] = [];
+
+/** Waits until a stream of values has gone a second without a new one. */
+async function settled(values: readonly unknown[]) {
+  let seen = -1;
+  await vi.waitFor(
+    () => {
+      const now = values.length;
+      const quiet = now === seen;
+      seen = now;
+      if (!quiet) throw new Error("Still changing.");
+    },
+    { interval: 1000, timeout: 10_000 },
+  );
+}
 
 function newClient() {
   return createHelpwrenClient({ supabase: browserClient() });
 }
 
-async function signedInAgent(email: string) {
-  const client = newClient();
-  const result = await client.auth.verifyLoginCode(email, await issueLoginCode(email));
-  if (!result.ok) throw new Error(`Could not sign in as ${email}.`);
-  return { client, agent: result.agent };
-}
+const signedInAgent = (email: string) => signIn(email);
 
 async function newGuestWithConversation() {
   const client = newClient();
@@ -35,6 +46,7 @@ afterAll(async () => {
   const admin = serverClient();
   await admin.from("conversations").delete().in("contact_id", guestIds);
   await Promise.all(guestIds.map((id) => admin.auth.admin.deleteUser(id)));
+  await removeAccounts(agentIds);
 });
 
 describe("typing", () => {
@@ -92,11 +104,17 @@ describe("typing", () => {
 
 describe("presence", () => {
   it("counts the team as online for a visitor with no session, while the dashboard is open", async () => {
+    // Someone may have the dashboard open as Ada or Sam, and one person is counted once, so a
+    // team member of the test's own makes the change.
+    const member = await newAgent(`Presence ${runMarker()}`);
+    agentIds.push(member.id);
     const visitor = newClient();
-    const { client: team } = await signedInAgent("ada@example.com");
+    const { client: team } = await signIn(member.email);
 
     const counts: number[] = [];
     const stopWatching = await visitor.presence.team.watch((online) => counts.push(online));
+    // Who is already online arrives a moment after joining.
+    await settled(counts);
     const before = counts.at(-1) ?? 0;
 
     const leave = await team.presence.team.join();

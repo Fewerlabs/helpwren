@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Starts from the demo's settings, and puts back whatever was set before when the run ends.
+  globalSetup: "./e2e/support/global-setup.ts",
   // The tests share one database and one test mailbox.
   workers: 1,
   forbidOnly: Boolean(process.env.CI),

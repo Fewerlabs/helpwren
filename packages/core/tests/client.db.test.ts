@@ -2,19 +2,58 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { createHelpwrenClient } from "../src";
 import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import {
+  keepSettings,
+  newAccount,
+  newAgent,
+  removeAccounts,
+  runMarker,
+  uniqueEmail,
+} from "./support/test-data";
 
 // These run against the local database and its demo data (supabase/seed.sql).
-const ADMIN = "ada@example.com";
-const OUTSIDER = "outsider@example.com";
+const PUBLIC_SETTINGS = [
+  "brand",
+  "widget",
+  "chat_page",
+  "help_center",
+  "tickets",
+  "guest_details",
+  "visitors",
+];
+const OUTSIDER = uniqueEmail("outsider");
 
 function newClient() {
   return createHelpwrenClient({ supabase: browserClient() });
 }
 
 describe("settings.getPublic", () => {
-  it("reads the public settings with no session", async () => {
+  // Whatever someone trying the app has set is put back afterwards.
+  const brand = `Brand ${runMarker()}`;
+  let restore: () => Promise<void> = () => Promise.resolve();
+
+  beforeAll(async () => {
+    restore = await keepSettings(PUBLIC_SETTINGS);
+    const admin = serverClient();
+    await admin
+      .from("settings")
+      .delete()
+      .in("key", ["widget", "chat_page", "help_center", "tickets"]);
+    const { error } = await admin.from("settings").upsert([
+      { key: "brand", value: { name: brand }, is_public: true },
+      { key: "guest_details", value: "email_or_phone", is_public: true },
+      { key: "visitors", value: { tracking: true, liveList: true }, is_public: true },
+    ]);
+    if (error) throw error;
+  });
+
+  afterAll(async () => {
+    await restore();
+  });
+
+  it("reads the public settings with no session, with defaults for what is not set", async () => {
     await expect(newClient().settings.getPublic()).resolves.toEqual({
-      brand: { name: "Helpwren Demo" },
+      brand: { name: brand },
       widget: { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] },
       chatPage: { headerStyle: "brand" },
       helpCenter: { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true },
@@ -32,42 +71,44 @@ describe("agents.me", () => {
 });
 
 describe("signing in", () => {
-  let outsiderId: string;
+  // A team member of these tests' own: each new code replaces the last, so signing in as
+  // someone from the demo data would race anyone else signing in as them.
+  const name = `Admin ${runMarker()}`;
+  let adminEmail = "";
+  const made: string[] = [];
 
   beforeAll(async () => {
-    const { data, error } = await serverClient().auth.admin.createUser({
-      email: OUTSIDER,
-      email_confirm: true,
-    });
-    if (error) throw error;
-    outsiderId = data.user.id;
+    made.push(await newAccount(OUTSIDER));
+    const admin = await newAgent(name, "admin");
+    made.push(admin.id);
+    adminEmail = admin.email;
   });
 
   afterAll(async () => {
-    await serverClient().auth.admin.deleteUser(outsiderId);
+    await removeAccounts(made);
   });
 
   it("sends a code to a team member", async () => {
-    await expect(newClient().auth.sendLoginCode(ADMIN)).resolves.toBeUndefined();
+    await expect(newClient().auth.sendLoginCode(adminEmail)).resolves.toBeUndefined();
   });
 
   it("answers the same way for an email nobody has, and creates no account", async () => {
-    const email = "nobody@example.com";
+    const email = uniqueEmail("nobody");
     await expect(newClient().auth.sendLoginCode(email)).resolves.toBeUndefined();
 
-    const { data } = await serverClient().auth.admin.listUsers();
+    const { data } = await serverClient().auth.admin.listUsers({ perPage: 10_000 });
     expect(data.users.map((user) => user.email)).not.toContain(email);
   });
 
   it("signs a team member in with the right code, and out again", async () => {
     const client = newClient();
-    const result = await client.auth.verifyLoginCode(ADMIN, await issueLoginCode(ADMIN));
+    const result = await client.auth.verifyLoginCode(adminEmail, await issueLoginCode(adminEmail));
 
     expect(result).toEqual({
       ok: true,
-      agent: { id: expect.any(String) as string, name: "Ada Okafor", email: ADMIN, role: "admin" },
+      agent: { id: expect.any(String) as string, name, email: adminEmail, role: "admin" },
     });
-    await expect(client.agents.me()).resolves.toMatchObject({ email: ADMIN });
+    await expect(client.agents.me()).resolves.toMatchObject({ email: adminEmail });
 
     await client.auth.signOut();
     await expect(client.agents.me()).resolves.toBeNull();
@@ -75,10 +116,10 @@ describe("signing in", () => {
 
   it("rejects a wrong code", async () => {
     const client = newClient();
-    const code = await issueLoginCode(ADMIN);
+    const code = await issueLoginCode(adminEmail);
     const wrong = code === "000000" ? "111111" : "000000";
 
-    await expect(client.auth.verifyLoginCode(ADMIN, wrong)).resolves.toEqual({
+    await expect(client.auth.verifyLoginCode(adminEmail, wrong)).resolves.toEqual({
       ok: false,
       reason: "invalid_code",
     });
@@ -86,17 +127,17 @@ describe("signing in", () => {
   });
 
   it("rejects a code that is not six digits without asking the server", async () => {
-    await expect(newClient().auth.verifyLoginCode(ADMIN, "12ab")).resolves.toEqual({
+    await expect(newClient().auth.verifyLoginCode(adminEmail, "12ab")).resolves.toEqual({
       ok: false,
       reason: "invalid_code",
     });
   });
 
   it("rejects a code that has already been used", async () => {
-    const code = await issueLoginCode(ADMIN);
-    await newClient().auth.verifyLoginCode(ADMIN, code);
+    const code = await issueLoginCode(adminEmail);
+    await newClient().auth.verifyLoginCode(adminEmail, code);
 
-    await expect(newClient().auth.verifyLoginCode(ADMIN, code)).resolves.toEqual({
+    await expect(newClient().auth.verifyLoginCode(adminEmail, code)).resolves.toEqual({
       ok: false,
       reason: "invalid_code",
     });

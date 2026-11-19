@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createHelpwrenClient, type Message } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { browserClient, serverClient } from "./support/local-supabase";
+import { signIn } from "./support/test-data";
 
 // These run against the local database and its demo data (supabase/seed.sql). Starting a
 // conversation through the API is tested in apps/web, where the API lives; here the server's
@@ -20,12 +21,7 @@ async function newGuest() {
   return { client, session };
 }
 
-async function signedInAgent() {
-  const client = newClient();
-  const result = await client.auth.verifyLoginCode(AGENT, await issueLoginCode(AGENT));
-  if (!result.ok) throw new Error(`Could not sign in as ${AGENT}.`);
-  return { client, agent: result.agent };
-}
+const signedInAgent = () => signIn(AGENT);
 
 async function startConversation(contactId: string, body = "Hello") {
   const { data, error } = await serverClient().rpc("start_conversation", {
@@ -120,8 +116,17 @@ describe("conversations", () => {
 
     const first = await client.conversations.list({ limit: 2 });
     expect(first.items).toHaveLength(2);
-    expect(first.items[0]?.id).toBe(newest);
     expect(first.nextCursor).toBeDefined();
+    // Someone else may have written since, so the new one is near the top, not always first.
+    const times = first.items.map((item) => item.lastMessageAt ?? "");
+    expect(times).toEqual(times.toSorted().toReversed());
+    const recent = await client.conversations.list({ limit: 10 });
+    const at = recent.items.findIndex((item) => item.id === newest);
+    expect(at).toBeGreaterThanOrEqual(0);
+    const newestAt = recent.items[at]?.lastMessageAt ?? "";
+    expect(recent.items.slice(at).every((item) => (item.lastMessageAt ?? "") <= newestAt)).toBe(
+      true,
+    );
 
     const second = await client.conversations.list({ limit: 2, cursor: first.nextCursor });
     expect(second.items.length).toBeGreaterThan(0);
@@ -136,38 +141,60 @@ describe("conversations", () => {
     await startConversation(session.id);
     await startConversation(session.id);
 
-    const four = await client.conversations.list({ page: 1, limit: 4 });
-    const first = await client.conversations.list({ page: 1, limit: 2 });
-    const second = await client.conversations.list({ page: 2, limit: 2 });
+    // Within this guest's conversations, which nothing else adds to while the pages are read.
+    const contactId = session.id;
+    const all = await client.conversations.list({ contactId, page: 1, limit: 4 });
+    const first = await client.conversations.list({ contactId, page: 1, limit: 2 });
+    const second = await client.conversations.list({ contactId, page: 2, limit: 2 });
     const ids = (page: { items: { id: string }[] }) => page.items.map((item) => item.id);
 
-    await expect(client.conversations.count()).resolves.toBe(first.total);
-    expect(second.total).toBe(first.total);
-    expect([...ids(first), ...ids(second)]).toEqual(ids(four));
+    await expect(client.conversations.count({ contactId })).resolves.toBe(3);
+    expect(first.total).toBe(3);
+    expect(second.total).toBe(3);
+    expect(second.items).toHaveLength(1);
+    expect([...ids(first), ...ids(second)]).toEqual(ids(all));
     expect(first.nextCursor).toBeUndefined();
 
-    const theirs = await client.conversations.list({ contactId: session.id, page: 2, limit: 2 });
-    expect(theirs.total).toBe(3);
-    expect(theirs.items).toHaveLength(1);
+    // Everyone's, counted the same way.
+    const everyone = await client.conversations.list({ page: 1, limit: 2 });
+    expect(everyone.total).toBeGreaterThanOrEqual(3);
   });
 
   it("filters by status", async () => {
     const { client } = await signedInAgent();
+    const { session } = await newGuest();
+    const open = await startConversation(session.id);
+    const done = await startConversation(session.id);
+    await client.conversations.update(done, { status: "resolved" });
+    const contactId = session.id;
 
     const resolved = await client.conversations.list({ status: ["resolved"] });
-    expect(resolved.items.length).toBeGreaterThan(0);
     expect(resolved.items.every((item) => item.status === "resolved")).toBe(true);
+    const theirResolved = await client.conversations.list({ contactId, status: ["resolved"] });
+    expect(theirResolved.items.map((item) => item.id)).toEqual([done]);
 
     const active = await client.conversations.list({ status: ["open", "pending"] });
     expect(active.items.some((item) => item.status === "resolved")).toBe(false);
+    const theirActive = await client.conversations.list({ contactId, status: ["open", "pending"] });
+    expect(theirActive.items.map((item) => item.id)).toEqual([open]);
   });
 
   it("counts conversations that match a filter", async () => {
     const { client } = await signedInAgent();
+    const { session } = await newGuest();
+    await startConversation(session.id);
+    const closed = await startConversation(session.id);
+    const resolved = await startConversation(session.id);
+    await client.conversations.update(closed, { status: "closed" });
+    await client.conversations.update(resolved, { status: "resolved" });
+    const contactId = session.id;
 
-    const all = await client.conversations.list({ limit: 100 });
-    await expect(client.conversations.count()).resolves.toBe(all.items.length);
-    await expect(client.conversations.count({ status: ["closed"] })).resolves.toBe(0);
+    await expect(client.conversations.count({ contactId })).resolves.toBe(3);
+    await expect(client.conversations.count({ contactId, status: ["closed"] })).resolves.toBe(1);
+    await expect(
+      client.conversations.count({ contactId, status: ["resolved", "open"] }),
+    ).resolves.toBe(2);
+    expect(await client.conversations.count()).toBeGreaterThanOrEqual(3);
     expect(await client.conversations.count({ status: ["resolved"] })).toBeGreaterThan(0);
   });
 

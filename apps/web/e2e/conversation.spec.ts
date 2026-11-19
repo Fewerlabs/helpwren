@@ -1,18 +1,22 @@
 import { expect, test } from "@playwright/test";
 
-import { removeContactByEmail } from "./support/database";
+import { newContact, removeContactByEmail, removeContacts, RUN } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // A visitor and a team member, each in their own browser, talking to each other. Runs against
 // the local Supabase stack and its demo data.
-const VISITOR = { name: "Noor Haddad", email: "noor.e2e@example.org" };
+const VISITOR = { name: `Noor Haddad ${RUN}`, email: `noor.${RUN}@example.org` };
 const AGENT = "sam@example.com";
+
+const made: string[] = [];
 
 test.beforeEach(async () => {
   await removeContactByEmail(VISITOR.email);
 });
+
 test.afterEach(async () => {
   await removeContactByEmail(VISITOR.email);
+  await removeContacts(made.splice(0));
 });
 
 test("a visitor and a team member hold a conversation, live on both sides", async ({ browser }) => {
@@ -125,7 +129,7 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await rate.getByRole("button", { name: "Send rating" }).click();
   await expect(rate).toHaveCount(0);
   await expect(visitorMessages.getByText("You rated this 4 out of 5")).toBeVisible();
-  await expect(agentMessages.getByText("Noor Haddad rated this 4 out of 5")).toBeVisible();
+  await expect(agentMessages.getByText(`${VISITOR.name} rated this 4 out of 5`)).toBeVisible();
   const ratedDetails = inbox.getByRole("region", { name: "Details" });
   await expect(ratedDetails.getByText("4 out of 5")).toBeVisible();
   await expect(ratedDetails.getByText("“Quick and clear.”")).toBeVisible();
@@ -146,10 +150,30 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
 test("the inbox shows what is open first, and other statuses from the switch on the list", async ({
   page,
 }) => {
+  // One open conversation and one resolved, both just now, so they lead the list.
+  const OPEN = `Do you offer a discount for charities? ${RUN}`;
+  const RESOLVED = `All sorted. Thanks for the quick reply! ${RUN}`;
+  const people = await Promise.all([
+    newContact({
+      kind: "guest",
+      name: `Open ${RUN}`,
+      email: `open.${RUN}@example.org`,
+      messages: [OPEN],
+    }),
+    newContact({
+      kind: "guest",
+      name: `Resolved ${RUN}`,
+      email: `resolved.${RUN}@example.org`,
+      messages: [RESOLVED],
+      status: "resolved",
+    }),
+  ]);
+  made.push(...people.map((person) => person.id));
+
   await signInToInbox(page, AGENT);
   const list = page.getByRole("list", { name: "Conversations" });
-  await expect(list.getByText("Do you offer a discount for charities?")).toBeVisible();
-  await expect(list.getByText("All sorted. Thanks for the quick reply!")).toHaveCount(0);
+  await expect(list.getByText(OPEN)).toBeVisible();
+  await expect(list.getByText(RESOLVED)).toHaveCount(0);
 
   // The navigation says whose conversations; everyone's, to begin with.
   const views = page.getByRole("navigation", { name: "Inbox views" });
@@ -160,13 +184,13 @@ test("the inbox shows what is open first, and other statuses from the switch on 
   await conversations.getByRole("button", { name: "Show: Open" }).click();
   await page.getByRole("option", { name: "Resolved" }).click();
   await expect(page).toHaveURL(/status=resolved/);
-  await expect(list.getByText("All sorted. Thanks for the quick reply!")).toBeVisible();
-  await expect(list.getByText("Do you offer a discount for charities?")).toHaveCount(0);
+  await expect(list.getByText(RESOLVED)).toBeVisible();
+  await expect(list.getByText(OPEN)).toHaveCount(0);
 
   await conversations.getByRole("button", { name: "Show: Resolved" }).click();
   await page.getByRole("option", { name: "All" }).click();
-  await expect(list.getByText("Do you offer a discount for charities?")).toBeVisible();
-  await expect(list.getByText("Resolved")).toBeVisible();
+  await expect(list.getByText(OPEN)).toBeVisible();
+  await expect(list.getByRole("listitem").filter({ hasText: RESOLVED })).toContainText("Resolved");
 
   // Another view starts on what is open again.
   await views.getByRole("link", { name: /Unassigned/ }).click();
