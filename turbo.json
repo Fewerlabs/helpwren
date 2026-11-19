@@ -5,7 +5,7 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "env": ["SUPABASE_SECRET_KEY", "EMAIL_PROVIDER", "SMTP_URL", "RESEND_API_KEY", "CRON_SECRET"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "storybook-static/**"]
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**", "dist/**", "storybook-static/**"]
     },
     "transit": {
       "dependsOn": ["^transit"]
