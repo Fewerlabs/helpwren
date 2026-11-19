@@ -1,7 +1,15 @@
 "use client";
 
 import { type ConversationWithContact, type Message, type TeamMember } from "@helpwren/core";
-import { Avatar, Button, Icon, StatusChip, Tooltip } from "@helpwren/design-system";
+import {
+  ActionButton,
+  Avatar,
+  Button,
+  cn,
+  Icon,
+  StatusChip,
+  Tooltip,
+} from "@helpwren/design-system";
 import { useCallback, useState } from "react";
 
 import { Thread } from "@/features/conversation";
@@ -69,7 +77,7 @@ export function ConversationPanel({
           variant="ghost"
           size="icon-sm"
           aria-label="Back to the list"
-          className={backAlways ? undefined : "md:hidden"}
+          className={cn("max-md:size-10", !backAlways && "md:hidden")}
           onClick={onBack}
         >
           <Icon name="caret-left" />
@@ -83,71 +91,73 @@ export function ConversationPanel({
           ) : null}
           <span className="truncate">{isTicket ? (conversation.subject ?? name) : name}</span>
         </h2>
-        <StatusChip status={statuses[conversation.status].chip} size="sm" />
+        <StatusChip status={statuses[conversation.status].chip} size="sm" className="shrink-0" />
         <span className="flex-1" />
-        {isTicket ? null : (
-          <Tooltip content="Convert to ticket">
+        {/* On a phone these are one set of 40px icon buttons, alike in size and weight, so none
+            reads as more pressing than the others; the words come back from md up. */}
+        <div className="flex shrink-0 items-center gap-1">
+          {isTicket ? null : (
+            <Tooltip content="Convert to ticket">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Convert to ticket"
+                className="max-md:size-10"
+                onClick={() => {
+                  setTicketDialogOpen(true);
+                }}
+              >
+                <Icon name="ticket" />
+              </Button>
+            </Tooltip>
+          )}
+          {conversation.assigneeId === agentId ? null : (
+            <ActionButton
+              variant="ghost"
+              icon="user"
+              label="Assign to me"
+              collapseBelow="md"
+              onClick={() => {
+                change.mutate({ assigneeId: agentId });
+              }}
+            />
+          )}
+          <ActionButton
+            variant="secondary"
+            icon={done ? "arrows-clockwise" : "check-circle"}
+            label={done ? "Reopen" : "Resolve"}
+            collapseBelow="md"
+            // Outlined beside the text buttons on a wide screen; on a phone an icon like the rest.
+            className="max-md:border-transparent max-md:bg-transparent"
+            loading={change.isPending}
+            onClick={() => {
+              if (done) {
+                change.mutate({ status: "open" });
+                return;
+              }
+              void confirmStatus("resolved", conversation).then((confirmed) => {
+                if (confirmed) change.mutate({ status: "resolved" });
+              });
+            }}
+          />
+          <Tooltip content={detailsOpen ? "Hide details" : "Show details"}>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Convert to ticket"
-              onClick={() => {
-                setTicketDialogOpen(true);
-              }}
+              aria-label="Details"
+              aria-pressed={detailsOpen}
+              className="max-md:size-10"
+              onClick={onToggleDetails}
             >
-              <Icon name="ticket" />
+              <Icon
+                name="sidebar-simple"
+                mirrored
+                weight={detailsOpen ? "duotone" : "regular"}
+                className={detailsOpen ? "text-primary" : undefined}
+              />
             </Button>
           </Tooltip>
-        )}
-        {conversation.assigneeId === agentId ? null : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              change.mutate({ assigneeId: agentId });
-            }}
-          >
-            {/* On a phone the header has room for icons only; the words are still read out. */}
-            <Icon name="user" className="md:hidden" />
-            <span className="max-md:sr-only">Assign to me</span>
-          </Button>
-        )}
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={change.isPending}
-          onClick={() => {
-            if (done) {
-              change.mutate({ status: "open" });
-              return;
-            }
-            void confirmStatus("resolved", conversation).then((confirmed) => {
-              if (confirmed) change.mutate({ status: "resolved" });
-            });
-          }}
-        >
-          <Icon
-            name={done ? "arrows-clockwise" : "check-circle"}
-            className={done ? "md:hidden" : undefined}
-          />
-          <span className="max-md:sr-only">{done ? "Reopen" : "Resolve"}</span>
-        </Button>
-        <Tooltip content={detailsOpen ? "Hide details" : "Show details"}>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Details"
-            aria-pressed={detailsOpen}
-            onClick={onToggleDetails}
-          >
-            <Icon
-              name="sidebar-simple"
-              mirrored
-              weight={detailsOpen ? "duotone" : "regular"}
-              className={detailsOpen ? "text-primary" : undefined}
-            />
-          </Button>
-        </Tooltip>
+        </div>
       </PanelHeader>
       <Thread
         key={conversation.id}
