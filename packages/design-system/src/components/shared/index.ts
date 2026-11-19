@@ -26,3 +26,8 @@ export {
 } from "./rich-text/rich-text";
 export { RichTextEditor, type RichTextEditorProps } from "./rich-text-editor/rich-text-editor";
 export { SearchField, type SearchFieldProps } from "./search-field/search-field";
+export {
+  TypingIndicator,
+  typingLabel,
+  type TypingIndicatorProps,
+} from "./typing-indicator/typing-indicator";

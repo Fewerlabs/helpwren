@@ -376,7 +376,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       teaserSeen = false;
     }
     paintTeaser();
-    if (changed) for (const listener of listeners[open ? "open" : "close"]) listener();
+    if (changed) {
+      post({ channel: CHANNEL, type: "panel", open });
+      for (const listener of listeners[open ? "open" : "close"]) listener();
+    }
   }
 
   const isOpen = () => mounted?.panel.dataset.open === "true";
@@ -495,6 +498,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       page: { url: window.location.href, title: document.title },
       ...(document.referrer ? { referrer: document.referrer } : {}),
       closable: !inline,
+      open: isOpen(),
       identified: identity?.token !== undefined,
     };
     // Addressed to the app's origin only, so no other site loaded in the frame could read it.

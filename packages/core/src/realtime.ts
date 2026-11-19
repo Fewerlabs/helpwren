@@ -10,7 +10,13 @@ export type Unsubscribe = () => Promise<void>;
 const CHANGE_EVENTS = ["INSERT", "UPDATE"] as const;
 type ChangeEvent = (typeof CHANGE_EVENTS)[number];
 
-type Listener = (event: ChangeEvent, record: unknown) => void;
+/** Who is present on a channel: one entry per person, by their presence key. */
+export type PresenceState = Record<string, unknown[]>;
+
+interface Listener {
+  onBroadcast?: ((event: string, payload: unknown) => void) | undefined;
+  onPresence?: ((state: PresenceState) => void) | undefined;
+}
 
 /** One open channel, shared by everyone listening to its topic. */
 interface SharedChannel {
@@ -25,17 +31,45 @@ interface SharedChannel {
 // makes that the common case, not a rare one.
 const channelsByClient = new WeakMap<HelpwrenSupabaseClient, Map<string, SharedChannel>>();
 
-function open(supabase: HelpwrenSupabaseClient, topic: string, shared: SharedChannel) {
+function channelsOf(supabase: HelpwrenSupabaseClient) {
+  let channels = channelsByClient.get(supabase);
+  if (!channels) {
+    channels = new Map();
+    channelsByClient.set(supabase, channels);
+  }
+  return channels;
+}
+
+function open(
+  supabase: HelpwrenSupabaseClient,
+  topic: string,
+  shared: SharedChannel,
+  presence: boolean,
+) {
   return (async () => {
     // Private channels check the listener's session, so it has to be handed over first.
     await supabase.realtime.setAuth();
-    const channel = supabase.channel(topic, { config: { private: true } });
+    // Presence is keyed by person, so someone with the screen open in two tabs counts once.
+    // Someone with no session never shows themselves, so any key will do for them.
+    let key: string = crypto.randomUUID();
+    if (presence) {
+      const { data } = await supabase.auth.getClaims();
+      if (data) key = data.claims.sub;
+    }
+    const channel = supabase.channel(topic, {
+      config: { private: true, ...(presence ? { presence: { key } } : {}) },
+    });
     shared.channel = channel;
 
-    for (const event of CHANGE_EVENTS) {
-      channel.on("broadcast", { event }, (message) => {
-        const payload = message.payload as { record?: unknown } | undefined;
-        for (const listener of shared.listeners) listener(event, payload?.record);
+    channel.on("broadcast", { event: "*" }, (message) => {
+      for (const listener of shared.listeners) {
+        listener.onBroadcast?.(message.event, message.payload);
+      }
+    });
+    if (presence) {
+      channel.on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        for (const listener of shared.listeners) listener.onPresence?.(state);
       });
     }
 
@@ -54,24 +88,27 @@ function open(supabase: HelpwrenSupabaseClient, topic: string, shared: SharedCha
   })();
 }
 
+export interface JoinOptions extends Listener {
+  /** Whether the channel carries presence. Fixed by whoever opens the topic first. */
+  presence?: boolean;
+}
+
+/** A place on a shared channel, for sending on it and showing oneself, until `leave`. */
+export interface ChannelHandle {
+  channel: RealtimeChannel;
+  leave: Unsubscribe;
+}
+
 /**
- * Listens for rows the database broadcasts on a private channel, and resolves once the server
- * has accepted the subscription. Rows that do not match the schema are skipped: a newer server
- * must not be able to crash an older client.
+ * Joins a private channel, or the one already open on this client for the same topic, and
+ * resolves once the server has accepted it. Rejects when the access rules turn the caller away.
  */
-export async function listenForRows<Schema extends z.ZodType>(
+export async function joinChannel(
   supabase: HelpwrenSupabaseClient,
   topic: string,
-  events: readonly ChangeEvent[],
-  schema: Schema,
-  onRow: (row: z.infer<Schema>, event: ChangeEvent) => void,
-): Promise<Unsubscribe> {
-  let channels = channelsByClient.get(supabase);
-  if (!channels) {
-    channels = new Map();
-    channelsByClient.set(supabase, channels);
-  }
-
+  { presence = false, ...listener }: JoinOptions,
+): Promise<ChannelHandle> {
+  const channels = channelsOf(supabase);
   let shared = channels.get(topic);
   if (!shared) {
     const created: SharedChannel = {
@@ -79,17 +116,11 @@ export async function listenForRows<Schema extends z.ZodType>(
       listeners: new Set(),
       ready: Promise.resolve(),
     };
-    created.ready = open(supabase, topic, created);
+    created.ready = open(supabase, topic, created, presence);
     channels.set(topic, created);
     shared = created;
   }
   const joined = shared;
-
-  const listener: Listener = (event, record) => {
-    if (!events.includes(event)) return;
-    const row = schema.safeParse(record);
-    if (row.success) onRow(row.data, event);
-  };
   joined.listeners.add(listener);
 
   const leave: Unsubscribe = async () => {
@@ -108,5 +139,62 @@ export async function listenForRows<Schema extends z.ZodType>(
     await leave();
     throw error;
   }
+  if (!joined.channel) throw new HelpwrenError(`Could not join "${topic}".`);
+  // Someone joining a presence channel late still needs to know who is already there.
+  if (presence) listener.onPresence?.(joined.channel.presenceState());
+  return { channel: joined.channel, leave };
+}
+
+/**
+ * Shows the caller as present on a joined channel. Rejects, and leaves, when the access rules
+ * do not let them be seen there: Realtime answers a refused presence with an error, not by
+ * closing the channel.
+ */
+export async function trackOn({ channel, leave }: ChannelHandle): Promise<Unsubscribe> {
+  const answer = await channel.track({});
+  if (answer !== "ok") {
+    await leave();
+    throw new HelpwrenError(`Could not be present on "${channel.topic}": ${answer}.`);
+  }
+  return leave;
+}
+
+/**
+ * Sends an event on a channel this client already has open, and does nothing when it has none:
+ * a browser only sends where it is also listening, which is what keeps channels few.
+ */
+export async function sendOnOpenChannel(
+  supabase: HelpwrenSupabaseClient,
+  topic: string,
+  event: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const shared = channelsOf(supabase).get(topic);
+  if (!shared) return;
+  await shared.ready.catch(() => undefined);
+  if (shared.channel?.state !== "joined") return;
+  await shared.channel.send({ type: "broadcast", event, payload });
+}
+
+/**
+ * Listens for rows the database broadcasts on a private channel, and resolves once the server
+ * has accepted the subscription. Rows that do not match the schema are skipped: a newer server
+ * must not be able to crash an older client.
+ */
+export async function listenForRows<Schema extends z.ZodType>(
+  supabase: HelpwrenSupabaseClient,
+  topic: string,
+  events: readonly ChangeEvent[],
+  schema: Schema,
+  onRow: (row: z.infer<Schema>, event: ChangeEvent) => void,
+): Promise<Unsubscribe> {
+  const { leave } = await joinChannel(supabase, topic, {
+    onBroadcast: (event, payload) => {
+      const change = CHANGE_EVENTS.find((name) => name === event);
+      if (!change || !events.includes(change)) return;
+      const row = schema.safeParse((payload as { record?: unknown } | undefined)?.record);
+      if (row.success) onRow(row.data, change);
+    },
+  });
   return leave;
 }

@@ -94,6 +94,22 @@
     }
   }
 
+  /* One of TypingIndicator's three dots, rising and fading in turn. */
+  --animate-typing: typing 1.2s ease-in-out infinite;
+
+  @keyframes typing {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(-3px);
+      opacity: 1;
+    }
+  }
+
   /* Minimum touch target: min-h-target, size-target */
   --spacing-target: 2.75rem;
 

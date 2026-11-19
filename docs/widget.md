@@ -140,11 +140,27 @@ moves in a single-page app (`history.pushState`, `replaceState`, the back button
 changes), with these messages to the frame:
 
 ```js
-// When the frame is ready, as before, now with where the visitor came from:
-{ channel: "helpwren", type: "hello", page: { url, title }, referrer: "https://...", closable, identified }
+// When the frame is ready, as before, now with where the visitor came from and whether the
+// chat is open:
+{ channel: "helpwren", type: "hello", page: { url, title }, referrer: "https://...", closable, open, identified }
 // When the page changes without loading, or the tab is hidden or shown:
 { channel: "helpwren", type: "page", page: { url, title }, visible: true }
+// When the visitor opens or closes the chat:
+{ channel: "helpwren", type: "panel", open: true }
 ```
+
+## Whether the team is online
+
+The chat's home screen and the top of a conversation say **We're online**, with a green dot,
+while anyone on the team has the dashboard open, and **We'll reply as soon as we can** when
+nobody does. The chat finds out over a live connection, which it holds only while the chat is
+open and its page is showing: a page view with the chat closed holds nothing open. That is what
+`open` in `hello` and the `panel` message are for. A host that leaves `open` out, such as a
+mobile app showing the chat as a whole screen, counts as open.
+
+Inside a conversation the visitor also sees "Ada is typing…", with the team member's photo,
+while someone on the team writes a reply (never a note), and the team sees the visitor typing.
+Nothing on your page is needed for either.
 
 The chat's `unread` message to the page carries the newest unread reply as well, which the
 widget shows beside the launcher. Clicking it opens that conversation:

@@ -116,6 +116,21 @@ insert into public.notes (conversation_id, author_id, body) values
   ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001',
    'Billing address was changed in February. Check whether the March invoice was issued first.');
 
+-- Saved replies the whole team can use, typed after `/` in the reply box. No test counts them.
+insert into public.saved_replies (title, body, shortcut, visibility, created_by) values
+  ('Greeting',
+   'Hi {contact.first_name}, thanks for getting in touch! I''m {agent.first_name} from {brand.name}. How can I help?',
+   'hi', 'team', 'a0000000-0000-4000-8000-000000000001'),
+  ('Looking into it',
+   'Thanks, {contact.first_name}. I''m looking into this now and will get back to you shortly.',
+   'looking', 'team', 'a0000000-0000-4000-8000-000000000001'),
+  ('Ticket created',
+   'I''ve opened {conversation.number} for this, so nothing gets lost. We''ll write to {contact.email} as soon as there''s news.',
+   'ticket', 'team', 'a0000000-0000-4000-8000-000000000002'),
+  ('Closing',
+   'Glad that''s sorted, {contact.first_name}! If anything else comes up, just reply here. Have a great day.' || E'\n\n' || '{agent.name}, {brand.name}',
+   'thanks', 'team', 'a0000000-0000-4000-8000-000000000002');
+
 insert into public.settings (key, value, is_public) values
   ('brand', '{"name": "Helpwren Demo"}', true),
   ('audiences', '["customer", "business"]', false),

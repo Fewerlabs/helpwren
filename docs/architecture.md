@@ -143,6 +143,39 @@ the contact page's side panels. A team member's first message waits on the row u
 browser takes it up through `POST /api/visitors/outreach`. Nothing here uses Realtime, and a
 browsing visitor gets no Auth user. See [ADR 0020](decisions/0020-live-visitors.md).
 
+### Live channels
+
+Everything live travels on private Realtime channels, which the access rules on
+`realtime.messages` open by the channel's name (`helpwren_listen` and `helpwren_listen_team` to
+listen, `helpwren_send` to send). `packages/core/src/realtime.ts` opens one channel per topic for
+each client and shares it among everything on screen that needs it.
+
+| Channel             | Sent by              | Carries                                     | Heard by                          |
+| ------------------- | -------------------- | ------------------------------------------- | --------------------------------- |
+| `inbox`             | the database         | conversations as they change                | the team                          |
+| `contact:<user id>` | the database         | that contact's conversations as they change | that contact                      |
+| `conversation:<id>` | the database         | the conversation's messages and events      | its contact and the team          |
+| `notes:<id>`        | the database         | internal notes                              | the team                          |
+| `typing:<id>`       | browsers (broadcast) | who is typing a reply                       | its contact and the team          |
+| `viewing:<id>`      | browsers (presence)  | which team members have it open             | the team                          |
+| `presence:team`     | browsers (presence)  | which team members have the dashboard open  | anyone, with or without a session |
+
+A conversation's `typing:` and `viewing:` channels are joined only while it is open on screen
+(`src/features/conversation/hooks/use-typing.ts`, `src/features/inbox/hooks/use-viewers.ts`).
+The dashboard shell joins `presence:team` (`src/features/dashboard/hooks/use-team-presence.ts`),
+and the chat watches it only while the chat is open, to say "We're online"
+(`src/features/chat/hooks/use-team-online.ts`). Nothing on these three is stored. See
+[ADR 0021](decisions/0021-typing-presence-and-saved-replies.md).
+
+### Saved replies
+
+`saved_replies` holds the team's prepared answers and each agent's personal ones, with an
+optional `/shortcut`. `savedReplies` in the client library lists, creates, changes and removes
+them, and `fillPlaceholders` fills `{contact.first_name}` and the rest. `src/features/saved-replies`
+holds Settings > Saved replies and the reply box's picker (`useSavedReplyPicker`), which the
+`conversation` feature's `Composer` uses on the team's side. See
+[ADR 0021](decisions/0021-typing-presence-and-saved-replies.md).
+
 ### Attachments
 
 A message can carry up to five files. The reply box uploads each one to the private
@@ -305,7 +338,7 @@ between screens does not refetch what was loaded a moment ago.
 | `/help/sitemap.xml`, `/robots.txt`  | The help center's pages for search engines, and what they may read                                                                                                          |
 | `/dashboard`                        | The team's screens, behind one sign-in check. Redirects to the inbox                                                                                                        |
 | `/dashboard/inbox`                  | The inbox: views (including tickets), conversations, the open one and its details. `?view=` and `?c=` are in the address                                                    |
-| `/dashboard/settings`               | Settings: workspace pages admins change and agents read, and each person's own Profile and Notifications                                                                    |
+| `/dashboard/settings`               | Settings: workspace pages admins change and agents read, Saved replies, which every agent adds to, and each person's own Profile and Notifications                          |
 | `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                                                                                    |
 | `/dashboard/visitors`               | Who is on the site now, refreshed every fifteen seconds, and one visitor's details, pages and a first message. `?visitor=` is in the address                                |
 | `/dashboard/help`                   | The Help center section: collections, a table of articles to search and filter, and `/dashboard/help/{id}`, the editor                                                      |
