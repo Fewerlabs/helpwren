@@ -7,6 +7,13 @@ export interface EmailMessage {
   html?: string | undefined;
   /** Where a reply should go, when it is not the sender. */
   replyTo?: string | undefined;
+  /**
+   * Message-IDs, without angle brackets, that let mail apps show a conversation's emails as one
+   * thread: this email's own, and the ones it follows.
+   */
+  messageId?: string | undefined;
+  inReplyTo?: string | undefined;
+  references?: readonly string[] | undefined;
 }
 
 /** Who an email is from: the install's name and its sending address. */
