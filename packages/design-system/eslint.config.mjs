@@ -15,8 +15,9 @@ const phosphor = {
   message: phosphorMessage,
 };
 const ui = { group: ["**/components/ui", "**/components/ui/**", "**/ui/*"], message: uiMessage };
+// TanStack's other libraries, such as Virtual for long lists, fetch nothing and may be used.
 const query = {
-  group: ["@tanstack/*"],
+  group: ["@tanstack/react-query", "@tanstack/query-*"],
   message:
     "Only the data layer may fetch. Take data as props here, or build the component in components/data.",
 };

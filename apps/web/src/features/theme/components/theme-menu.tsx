@@ -3,7 +3,12 @@
 import { cn, Icon, Popover, PopoverContent, PopoverTrigger } from "@helpwren/design-system";
 import { useRef, useState } from "react";
 
-import { setThemePreference, useThemePreference, type ThemePreference } from "@/lib/theme";
+import {
+  setThemePreference,
+  useTheme,
+  useThemePreference,
+  type ThemePreference,
+} from "@/lib/theme";
 
 import { themeChoices as choices } from "../choices";
 
@@ -21,6 +26,9 @@ export interface ThemeMenuProps {
  */
 export function ThemeMenu({ className, side = "bottom", align = "end" }: ThemeMenuProps) {
   const preference = useThemePreference();
+  // The button shows the theme on screen, a sun or a moon, which reads as a theme button at a
+  // glance; a monitor for System did not. The menu says which choice is in force.
+  const onScreen = useTheme();
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const shown = choices.find((choice) => choice.value === preference) ?? choices[2];
@@ -47,7 +55,7 @@ export function ThemeMenu({ className, side = "bottom", align = "end" }: ThemeMe
             className,
           )}
         >
-          <Icon name={shown?.icon ?? "desktop"} className="size-[1.125rem]" />
+          <Icon name={onScreen === "dark" ? "moon" : "sun"} className="size-[1.125rem]" />
         </button>
       </PopoverTrigger>
       <PopoverContent side={side} align={align} className="w-40 p-1" aria-label="Theme">

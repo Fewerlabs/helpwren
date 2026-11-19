@@ -1,4 +1,4 @@
-# 0022: Limits on abuse
+# 0023: Limits on abuse
 
 - **Status:** accepted
 - **Date:** 2026-11-19

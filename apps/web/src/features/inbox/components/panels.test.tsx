@@ -30,6 +30,7 @@ function conversation(overrides: Partial<ConversationWithContact> = {}): Convers
     lastMessageAt: new Date().toISOString(),
     unreadForContact: 0,
     unreadForAgents: 2,
+    viaEmail: false,
     createdAt: "2026-11-18T10:00:00Z",
     contact: {
       id: "22222222-2222-4222-8222-222222222222",

@@ -141,6 +141,49 @@ select cron.schedule('helpwren-push', '* * * * *', $$
 $$);
 ```
 
+### Replies by email
+
+Contacts can answer an email from their mail app, and the answer lands in the conversation. Turn
+it on under Settings → Email → Replies by email: a reply address on a domain your provider
+receives mail for (say `reply@support.example.com`), the provider, and its secret. The page
+shows the webhook address to paste into the provider and a checklist for each one:
+
+- **Resend:** add the domain in Resend, turn on receiving and add its MX record; add a webhook for
+  `email.received`; paste its signing secret. Replies are read through Resend's API, with the
+  server's `RESEND_API_KEY` or a key saved on the page.
+- **Postmark:** point the domain's MX record at `inbound.postmarkapp.com` and set it as the
+  inbound domain; make a secret on the page and paste the webhook address, which carries it.
+- **Anything else:** make a secret and have your provider or bridge post each email as JSON,
+  signed like the sample on the page.
+
+IMAP polling, for any mailbox, is not built yet.
+
+To try it locally without a provider, choose "Another provider", make a secret, and save. Start a
+chat as a visitor with an email address, reply from the inbox, and post the visitor's answer as
+the provider would. The reply address is the `Reply-To` of the email the visitor is sent, so set
+up any provider for sending (an SMTP test inbox will do) and copy that `reply+…` address into
+`TO`:
+
+```bash
+SECRET='whsec_…'   # shown once, when you made it
+TO='reply+<token>@support.example.com'
+BODY=$(jq -nc --arg to "$TO" '{
+  from: "Visitor <visitor@example.org>",
+  to: [$to],
+  subject: "Re: New reply",
+  text: "Thanks!\n\nOn Wed, 19 Nov 2026, Support <\($to)> wrote:\n> Your earlier reply",
+  messageId: "<try-1@example.org>"
+}')
+T=$(date +%s)
+SIG=$(printf '%s.%s' "$T" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -hex | sed 's/^.* //')
+curl -X POST http://localhost:3000/api/email/inbound/generic \
+  -H 'Content-Type: application/json' -H "helpwren-signature: t=$T,v1=$SIG" -d "$BODY"
+```
+
+The answer is `{"outcome":"added"}`, and "Thanks!" shows in the inbox marked "via email". Post it
+again and the answer is `duplicate`; change the token and it is `ignored`, with the reason in the
+app's log.
+
 ### On Supabase's free plan
 
 Supabase pauses a free project after about a week with little activity, and the chat is down

@@ -11,6 +11,7 @@ import {
   Button,
   cn,
   EmptyState,
+  Icon,
   MessageBubble,
   Skeleton,
   TypingIndicator,
@@ -28,6 +29,16 @@ import { MessageAttachments } from "./message-attachments";
 // In the inbox a bubble stays short of the full width, so the two sides read apart. A phone has
 // little width to give away, so there it may run wider.
 const COMPACT_WIDTH = "max-w-[72%] max-md:max-w-[85%]";
+
+/** Marks a message the contact sent by replying to an email. */
+function ViaEmail() {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <Icon name="envelope" />
+      via email
+    </span>
+  );
+}
 
 export interface ThreadProps {
   conversationId: string;
@@ -211,6 +222,7 @@ export function Thread({
                       : {})}
                     author={otherName}
                     time={formatMessageTime(entry.item.createdAt)}
+                    {...(entry.item.channel === "email" ? { footer: <ViaEmail /> } : {})}
                     {...(entry.item.attachments.length > 0
                       ? {
                           attachments: (

@@ -1,15 +1,10 @@
 import { type ArticleSummary, type Collection } from "@helpwren/core";
-import { Icon, type IconName, iconNames } from "@helpwren/design-system";
+import { CollectionIcon, Icon } from "@helpwren/design-system";
 import Link from "next/link";
 
 import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
 
 import { articlePath, collectionPath } from "../urls";
-
-/** A collection's icon, or the book when it names one this version does not have. */
-export function iconOf(name: string): IconName {
-  return (iconNames as readonly string[]).includes(name) ? (name as IconName) : "book-open";
-}
 
 export interface CollectionGridProps {
   collections: readonly (Pick<Collection, "id" | "name" | "slug" | "description" | "icon"> & {
@@ -33,10 +28,10 @@ export function CollectionGrid({ collections, embed = null }: CollectionGridProp
             className="group bg-muted/50 hover:border-rule hover:bg-muted focus-visible:outline-ring flex flex-col rounded-2xl border border-transparent p-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <span className="flex items-center gap-2.5 font-medium">
-              <Icon
-                name={iconOf(collection.icon)}
+              <CollectionIcon
+                name={collection.icon}
                 weight="duotone"
-                className="text-foreground size-5 shrink-0"
+                className="text-foreground size-5"
               />
               <span className="text-pretty">{collection.name}</span>
             </span>

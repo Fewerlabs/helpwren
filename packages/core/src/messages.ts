@@ -14,6 +14,8 @@ const messageRowSchema = z.object({
   sender_role: z.enum(["guest", "user", "agent", "system"]),
   body: z.string().nullable(),
   attachments: z.array(attachmentSchema).default([]),
+  // Missing from messages in a client's cache from before email replies.
+  channel: z.enum(["chat", "email"]).default("chat"),
   created_at: z.string(),
 });
 
@@ -24,13 +26,15 @@ export const messageSchema = messageRowSchema.transform((row) => ({
   senderRole: row.sender_role,
   body: row.body ?? "",
   attachments: row.attachments,
+  /** `email` for a reply the contact sent from their mail app. */
+  channel: row.channel,
   createdAt: row.created_at,
 }));
 
 export type Message = z.infer<typeof messageSchema>;
 
 const MESSAGE_COLUMNS =
-  "id, conversation_id, sender_id, sender_role, body, attachments, created_at";
+  "id, conversation_id, sender_id, sender_role, body, attachments, channel, created_at";
 
 export interface ListMessagesOptions {
   /** `nextCursor` from the previous page, to load older messages. */

@@ -107,6 +107,8 @@ const conversationRowSchema = z.object({
   last_message_at: z.string().nullable(),
   unread_for_contact: z.number().int(),
   unread_for_agents: z.number().int(),
+  // Missing from rows in a client's cache from before email replies.
+  via_email: z.boolean().default(false),
   created_at: z.string(),
 });
 
@@ -129,6 +131,8 @@ export const conversationSchema = conversationRowSchema.transform((row) => ({
   lastMessageAt: row.last_message_at,
   unreadForContact: row.unread_for_contact,
   unreadForAgents: row.unread_for_agents,
+  /** Whether the contact has answered by email as well as in the chat. */
+  viaEmail: row.via_email,
   createdAt: row.created_at,
 }));
 
@@ -156,7 +160,7 @@ const CONVERSATION_COLUMNS =
   "id, contact_id, status, type, ticket_number, subject, priority, source, context, assignee_id, " +
   "team_id, " +
   "last_message_preview, last_message_at, " +
-  "unread_for_contact, unread_for_agents, created_at";
+  "unread_for_contact, unread_for_agents, via_email, created_at";
 const WITH_CONTACT = `${CONVERSATION_COLUMNS}, contact:contacts!inner(id, kind, verified, name, email, phone)`;
 
 export interface Page<Item> {
@@ -194,6 +198,17 @@ export interface ListConversationsOptions extends ConversationFilter {
    */
   page?: number | undefined;
   /** How many to return, or how many a page holds. Default 25. */
+  limit?: number | undefined;
+  /**
+   * Only those that match this search, as `search` finds them: by who they are with, what was
+   * said, or a ticket's number or subject. Used when paging by number, where the filter and
+   * `total` then cover every match. Blank means no search.
+   */
+  search?: string | undefined;
+}
+
+export interface SearchConversationsOptions {
+  /** The most to return. Default 50. */
   limit?: number | undefined;
 }
 
@@ -307,10 +322,17 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
       const limit = options.limit ?? 25;
       if (options.page !== undefined) {
         const from = (options.page - 1) * limit;
+        const searchText = options.search?.trim();
+        // A search reads from the search function instead of the table, so the filter, the
+        // paging and the count all happen in the database, over every match. The function
+        // takes its count option when called; the table takes it in `select`.
+        const rows = searchText
+          ? supabase
+              .rpc("search_conversations", { query: searchText }, { count: "exact" })
+              .select(WITH_CONTACT)
+          : supabase.from("conversations").select(WITH_CONTACT, { count: "exact" });
         const { data, count, error } = await applyFilter(
-          supabase
-            .from("conversations")
-            .select(WITH_CONTACT, { count: "exact" })
+          rows
             .order("last_message_at", { ascending: false })
             // Rows active at the same moment keep one order, so none repeats across pages.
             .order("id")
@@ -372,16 +394,19 @@ export function createConversations(supabase: HelpwrenSupabaseClient, api: Api) 
     /**
      * Finds conversations by who they are with, by what was said in them, or by a ticket's
      * number or subject, most recently active first, optionally within a filter. Searching by
-     * text starts at two characters; less than that finds nothing.
+     * text starts at two characters; less than that finds nothing. A short list: 50 at most
+     * unless `limit` says otherwise. To page through every match, use `list` with `search`.
      */
     async search(
       text: string,
       filter: ConversationFilter = {},
+      { limit = 50 }: SearchConversationsOptions = {},
     ): Promise<ConversationWithContact[]> {
+      // The database returns every match, so the short list is cut here.
       const { data, error } = await applyFilter(
         supabase.rpc("search_conversations", { query: text }).select(WITH_CONTACT),
         filter,
-      );
+      ).limit(limit);
       if (error) throw unexpected("search the conversations", error);
       return z.array(conversationWithContactSchema).parse(data);
     },

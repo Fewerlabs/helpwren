@@ -4,7 +4,7 @@
 - **Scope:** everything a visitor without an account can reach before a public launch: the API
   routes, the database's access rules and functions, storage, Realtime channels, and the headers
   pages are served with.
-- **Decision record:** [ADR 0022](../decisions/0022-abuse-limits.md)
+- **Decision record:** [ADR 0023](../decisions/0023-abuse-limits.md)
 
 Severity is what an attacker could do before the fix, on an install with default settings:
 

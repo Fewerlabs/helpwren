@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
   // The same on every response. The Content-Security-Policy, which depends on the install's
   // settings, is set per page by the proxy (src/proxy.ts).
   headers: () => Promise.resolve([{ source: "/:path*", headers: [...BASE_HEADERS] }]),
+  // The icon route reads Phosphor's SVG files from disk, so a deployment has to carry them.
+  outputFileTracingIncludes: {
+    "/api/icons/**": ["./node_modules/@phosphor-icons/core/assets/**/*.svg"],
+  },
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
   },
