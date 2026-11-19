@@ -3,6 +3,7 @@ import { cn } from "@helpwren/design-system";
 import { type CSSProperties } from "react";
 
 import { bannerStyle, PageHalftone } from "@/features/help-center";
+import { ThemeMenu } from "@/features/theme";
 import { accentStyle } from "@/lib/accent";
 
 import { Chat } from "./chat";
@@ -59,6 +60,11 @@ export function ChatPage({ settings, preview = false, chatClassName }: ChatPageP
       )}
       style={accentStyle(brand)}
     >
+      {/* The page is the install's own, so a reader can choose light or dark, as on the help
+          center. Not in the preview, where the dashboard's own theme is in force. */}
+      {preview ? null : (
+        <ThemeMenu className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-3 right-3 size-9 rounded-lg sm:top-4 sm:right-4" />
+      )}
       {kind === "glow" ? (
         // Two glows off the top corners, one in each of the brand's colours.
         <div
