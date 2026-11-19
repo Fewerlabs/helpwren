@@ -23,7 +23,7 @@ export const collectionSchema = collectionRowSchema.transform((row) => ({
   /** Its part of the address: `/help/{slug}`. */
   slug: row.slug,
   description: row.description,
-  /** The name of a design-system icon, such as `book-open`. */
+  /** The name of any Phosphor icon, such as `book-open`. Older names Phosphor renamed still draw. */
   icon: row.icon,
   position: row.position,
   updatedAt: row.updated_at,

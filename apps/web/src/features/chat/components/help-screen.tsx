@@ -4,6 +4,7 @@ import { type ArticleSummary } from "@helpwren/core";
 import {
   AppLoader,
   Button,
+  CollectionIcon,
   EmptyState,
   Icon,
   QueryDetail,
@@ -13,7 +14,7 @@ import {
 } from "@helpwren/design-system";
 import { useState } from "react";
 
-import { ArticleFeedback, iconOf as collectionIcon } from "@/features/help-center";
+import { ArticleFeedback } from "@/features/help-center";
 import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
@@ -180,10 +181,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
                 });
               }}
             >
-              <Icon
-                name={collectionIcon(collection.icon)}
-                className="text-foreground size-5 shrink-0"
-              />
+              <CollectionIcon name={collection.icon} className="text-foreground size-5" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{collection.name}</span>
                 <span className="text-muted-foreground block text-xs">

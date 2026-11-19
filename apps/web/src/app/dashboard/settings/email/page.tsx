@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { requireAgent } from "@/features/agent-auth";
 import { EmailForm, SettingsPage } from "@/features/settings";
 import { getEmailAdapter } from "@/lib/email";
+import { summariseInbound } from "@/lib/email/inbound";
+import { env } from "@/lib/env";
 import { getHelpwren } from "@/lib/helpwren";
 
 export const metadata: Metadata = { title: "Email" };
@@ -10,7 +12,7 @@ export const metadata: Metadata = { title: "Email" };
 export default async function EmailSettingsPage() {
   const agent = await requireAgent();
   const helpwren = await getHelpwren();
-  const settings = await helpwren.settings.getAll();
+  const [settings, inbound] = await Promise.all([helpwren.settings.getAll(), summariseInbound()]);
   const canEdit = agent.role === "admin";
 
   return (
@@ -23,6 +25,8 @@ export default async function EmailSettingsPage() {
         settings={settings}
         provider={getEmailAdapter()?.name ?? null}
         testAddress={agent.email}
+        inbound={inbound}
+        origin={new URL(env.NEXT_PUBLIC_APP_URL).origin}
         canEdit={canEdit}
       />
     </SettingsPage>

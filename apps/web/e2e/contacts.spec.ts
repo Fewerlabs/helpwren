@@ -25,9 +25,12 @@ test("a team member browses, filters and searches contacts, and opens one", asyn
   await page.getByRole("searchbox", { name: "Search contacts" }).fill("northwind");
   await expect(table.getByText("Jonas Berg")).toBeVisible();
   await expect(table.getByText("Priya Nair")).toHaveCount(0);
+  // The search is in the address, so a reload or a shared link finds the same people.
+  await expect(page).toHaveURL(/q=northwind/);
   // The footer shows how many there are, even when they fit on one page.
   const footer = page.getByRole("navigation", { name: "Contacts pages" });
-  await expect(footer).toContainText(/^\d+ contacts?$/);
+  await expect(footer.getByText(/^\d+ contacts?$/)).toBeVisible();
+  await expect(footer.getByRole("combobox", { name: "Rows per page" })).toHaveText("25");
   await expect(footer.getByRole("button", { name: "Next page" })).toBeDisabled();
 
   // Opening someone shows how to reach them and their conversations.
@@ -43,6 +46,33 @@ test("a team member browses, filters and searches contacts, and opens one", asyn
   await details.getByRole("link", { name: /March invoice/ }).click();
   await expect(page).toHaveURL(/\/dashboard\/inbox\?view=all&c=/);
   await expect(page.getByRole("log", { name: "Messages" })).toContainText("wrong billing address");
+});
+
+test("a filtered, paged contacts address opens the same view", async ({ page }) => {
+  await signInToInbox(page, "sam@example.com");
+  // Users who have written, ten to a page: what a teammate would get from a shared link.
+  await page.goto("/dashboard/contacts?show=users&conversations=some&size=10&q=northwind");
+
+  const segments = page.getByRole("navigation", { name: "Contact segments" });
+  await expect(segments.getByRole("link", { name: /Users/ })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.getByRole("searchbox", { name: "Search contacts" })).toHaveValue("northwind");
+  await expect(page.getByRole("button", { name: "Conversations: Has written" })).toBeVisible();
+  const footer = page.getByRole("navigation", { name: "Contacts pages" });
+  await expect(footer.getByRole("combobox", { name: "Rows per page" })).toHaveText("10");
+  const table = page.getByRole("table", { name: "Contacts" });
+  await expect(table.getByText("Jonas Berg")).toBeVisible();
+  await expect(table.getByText("Priya Nair")).toHaveCount(0);
+
+  // Back returns to the view before, filters and all.
+  await segments.getByRole("link", { name: /Everyone/ }).click();
+  await expect(page).toHaveURL(/\/dashboard\/contacts$/);
+  await page.goBack();
+  await expect(page.getByRole("searchbox", { name: "Search contacts" })).toHaveValue("northwind");
+  await expect(footer.getByRole("combobox", { name: "Rows per page" })).toHaveText("10");
+  await expect(page.getByRole("button", { name: "Conversations: Has written" })).toBeVisible();
 });
 
 test("a team member searches the inbox by what was said and by who said it", async ({ page }) => {

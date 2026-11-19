@@ -6,6 +6,7 @@ import { z } from "zod";
 import { env } from "@/lib/env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+import { replyAddressFor, threadHeaders } from "./inbound";
 import { sendEmail, type EmailMessage, type SendEmailResult } from "./index";
 import { renderEmail } from "./template";
 
@@ -23,6 +24,7 @@ const conversationSchema = z.object({
   ticket_number: z.number().nullable(),
   subject: z.string().nullable(),
   context: z.record(z.string(), z.unknown()),
+  contact_id: z.uuid(),
   unread_for_contact: z.number(),
   contact: z.object({ name: z.string().nullable(), email: z.string().nullable() }),
 });
@@ -78,10 +80,28 @@ async function unreadReplies(conversation: Conversation) {
   }));
 }
 
+/** Said in every email that can be answered by replying to it. */
+const REPLY_HINT = "Reply to this email, or continue in the chat.";
+
+/**
+ * Who a contact's answer goes to and how mail apps thread it: the signed reply address while
+ * replying by email is on, and Message-IDs that put every email about a conversation together.
+ */
+async function addressing(settings: Settings, conversation: Conversation) {
+  const replyTo = await replyAddressFor(
+    settings.email.inbound,
+    conversation.id,
+    conversation.contact_id,
+  );
+  const domain = (settings.email.inbound.address ?? settings.email.fromAddress)?.split("@")[1];
+  return { replyTo, ...(domain ? threadHeaders(conversation.id, domain) : {}) };
+}
+
 function replyEmail(
   settings: Settings,
   conversation: Conversation,
   quotes: readonly { from: string; text: string }[],
+  answerable: boolean,
 ): Omit<EmailMessage, "to"> {
   const brand = settings.brand.name;
   const ticket = conversation.type === "ticket" ? ticketName(conversation) : "";
@@ -89,7 +109,10 @@ function replyEmail(
   const { html, text } = renderEmail(settings.brand, {
     preview: quotes.at(-1)?.text ?? "",
     heading: `You have ${count} from ${brand}`,
-    body: [ticket ? `About your ticket ${ticket}.` : "Here is what was said while you were away."],
+    body: [
+      ticket ? `About your ticket ${ticket}.` : "Here is what was said while you were away.",
+      ...(answerable ? [REPLY_HINT] : []),
+    ],
     quotes,
     action: { label: "Continue the conversation", url: returnAddress(conversation) },
     footer: `You are getting this because you wrote to ${brand} and have not read the reply yet.`,
@@ -101,6 +124,7 @@ function statusEmail(
   settings: Settings,
   conversation: Conversation,
   to: keyof typeof statusNames,
+  answerable: boolean,
 ): Omit<EmailMessage, "to"> {
   const brand = settings.brand.name;
   const ticket = ticketName(conversation);
@@ -113,6 +137,7 @@ function statusEmail(
       done
         ? "If it is not sorted, write back in the conversation and it will open again."
         : "You can add to it in the conversation at any time.",
+      ...(answerable ? [REPLY_HINT] : []),
     ],
     action: { label: "Open the conversation", url: returnAddress(conversation) },
     footer: `You are getting this because you opened a ticket with ${brand}.`,
@@ -160,7 +185,7 @@ export async function processEmailQueue(send: Send = sendEmail): Promise<QueueRu
     supabaseAdmin
       .from("conversations")
       .select(
-        "id, type, ticket_number, subject, context, unread_for_contact, contact:contacts!inner(name, email)",
+        "id, type, ticket_number, subject, context, contact_id, unread_for_contact, contact:contacts!inner(name, email)",
       )
       .in("id", [...new Set(jobs.map((job) => job.conversation_id))]),
   ]);
@@ -179,8 +204,10 @@ export async function processEmailQueue(send: Send = sendEmail): Promise<QueueRu
     if (!to || !settings.email.replies || conversation.unread_for_contact === 0) {
       await finish(replies, "skipped");
     } else if (replies.length > 0) {
-      const email = replyEmail(settings, conversation, await unreadReplies(conversation));
-      await finish(replies, outcomeOf(await send({ to, ...email })));
+      const headers = await addressing(settings, conversation);
+      const quotes = await unreadReplies(conversation);
+      const email = replyEmail(settings, conversation, quotes, headers.replyTo !== undefined);
+      await finish(replies, outcomeOf(await send({ to, ...email, ...headers })));
     }
 
     // Only where the ticket stands now is news; a change that was changed again is not.
@@ -198,8 +225,10 @@ export async function processEmailQueue(send: Send = sendEmail): Promise<QueueRu
       .eq("id", latest.event_id)
       .single();
     if (event.error) throw event.error;
-    const email = statusEmail(settings, conversation, statusEventSchema.parse(event.data).data.to);
-    await finish([latest.id], outcomeOf(await send({ to, ...email })));
+    const headers = await addressing(settings, conversation);
+    const status = statusEventSchema.parse(event.data).data.to;
+    const email = statusEmail(settings, conversation, status, headers.replyTo !== undefined);
+    await finish([latest.id], outcomeOf(await send({ to, ...email, ...headers })));
   }
 
   return run;

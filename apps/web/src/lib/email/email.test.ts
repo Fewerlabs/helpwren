@@ -11,6 +11,9 @@ const message = {
   text: "Hello Priya",
   html: "<p>Hello Priya</p>",
   replyTo: "reply+abc@acme.example",
+  messageId: "helpwren.c1.m1@acme.example",
+  inReplyTo: "helpwren.c1@acme.example",
+  references: ["helpwren.c1@acme.example"],
 };
 
 describe("the SMTP adapter", () => {
@@ -29,6 +32,9 @@ describe("the SMTP adapter", () => {
       text: "Hello Priya",
       html: "<p>Hello Priya</p>",
       replyTo: "reply+abc@acme.example",
+      messageId: "<helpwren.c1.m1@acme.example>",
+      inReplyTo: "<helpwren.c1@acme.example>",
+      references: ["<helpwren.c1@acme.example>"],
     });
   });
 
@@ -72,6 +78,11 @@ describe("the Resend adapter", () => {
       text: "Hello Priya",
       html: "<p>Hello Priya</p>",
       reply_to: "reply+abc@acme.example",
+      headers: {
+        "Message-ID": "<helpwren.c1.m1@acme.example>",
+        "In-Reply-To": "<helpwren.c1@acme.example>",
+        References: "<helpwren.c1@acme.example>",
+      },
     });
   });
 

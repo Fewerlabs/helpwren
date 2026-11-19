@@ -22,6 +22,11 @@ export function createSmtpAdapter(
           text: message.text,
           ...(message.html === undefined ? {} : { html: message.html }),
           ...(message.replyTo === undefined ? {} : { replyTo: message.replyTo }),
+          ...(message.messageId === undefined ? {} : { messageId: `<${message.messageId}>` }),
+          ...(message.inReplyTo === undefined ? {} : { inReplyTo: `<${message.inReplyTo}>` }),
+          ...(message.references === undefined
+            ? {}
+            : { references: message.references.map((id) => `<${id}>`) }),
         });
         return { ok: true };
       } catch (error) {

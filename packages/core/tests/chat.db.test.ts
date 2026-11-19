@@ -213,6 +213,32 @@ describe("messages", () => {
     expect(nextCursor).toBeUndefined();
   });
 
+  it("says which messages came by email, live and when listed", async () => {
+    const { client, session } = await newGuest();
+    const agent = await signedInAgent();
+    const id = await startConversation(session.id, "First");
+    const agentSaw = collector<Message>();
+    const stop = await agent.client.messages.subscribe(id, agentSaw.add);
+
+    // Only the server can add a reply by email: the inbound route, after checking it.
+    const { data, error } = await serverClient().rpc("receive_email_reply", {
+      conversation_id: id,
+      sender: "guest@example.org",
+      email_id: `chat-test-${id}@example.org`,
+      body: "Answered from my inbox",
+    });
+    if (error) throw error;
+    expect(data).toBe("added");
+    await agentSaw.waitFor(1);
+    expect(agentSaw.items[0]).toMatchObject({ body: "Answered from my inbox", channel: "email" });
+    await stop();
+
+    const { items } = await client.messages.list(id);
+    expect(items.map((message) => message.channel)).toEqual(["chat", "email"]);
+    const { items: inbox } = await agent.client.conversations.list();
+    expect(inbox.find((conversation) => conversation.id === id)?.viaEmail).toBe(true);
+  });
+
   it("loads older messages a page at a time", async () => {
     const { client, session } = await newGuest();
     const id = await startConversation(session.id, "1");

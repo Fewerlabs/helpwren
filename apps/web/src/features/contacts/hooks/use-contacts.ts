@@ -33,14 +33,9 @@ export function useSegmentCounts(): Partial<Record<ContactSegment["id"], number>
   return { everyone: guest + user, users: user, guests: guest };
 }
 
-const SEGMENT = "show";
+/** The key of the segment in the address (`/dashboard/contacts?show=guests`). Everyone without it. */
+export const SEGMENT = "show";
 const SELECTED = "contact";
-
-/** The segment in the address (`/dashboard/contacts?show=guests`). Everyone, unless it says otherwise. */
-export function useContactSegment(): ContactSegment {
-  const id = useSearchParams().get(SEGMENT);
-  return contactSegments.find((segment) => segment.id === id) ?? contactSegments[0];
-}
 
 export function segmentHref(segment: ContactSegment): string {
   return segment.id === "everyone"
