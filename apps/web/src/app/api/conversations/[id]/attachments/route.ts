@@ -1,26 +1,13 @@
-import { randomUUID } from "node:crypto";
-
-import { ATTACHMENT_MAX_BYTES, type Attachment } from "@helpwren/core";
+import { ATTACHMENT_MAX_BYTES } from "@helpwren/core";
 import { z } from "zod";
 
 import { isBlocked } from "@/lib/api/blocked";
 import { getCaller } from "@/lib/api/caller";
-import { detectAttachmentType } from "@/lib/api/file-type";
 import { LIMITS } from "@/lib/api/limits";
 import { checkLimits, requestNetwork } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/respond";
+import { storeAttachment } from "@/lib/api/store-attachment";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-
-const BUCKET = "attachments";
-
-/** The most files one conversation's folder holds, sent or not, so a folder cannot fill a disk. */
-const FILES_PER_CONVERSATION = 200;
-
-/** A name that is safe as part of a path. What the person called the file is kept beside it. */
-function safeName(name: string): string {
-  const cleaned = name.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
-  return cleaned.slice(-80) || "file";
-}
 
 /**
  * Stores a file in a conversation, for a message to carry. The conversation's own contact and
@@ -67,29 +54,22 @@ export async function POST(
   if (!(file instanceof File)) return apiError("invalid_request", "Send the file as `file`.");
   if (file.size > ATTACHMENT_MAX_BYTES) return apiError("too_large", "Files can be 10 MB at most.");
   const named = form?.get("name");
-  const name = (typeof named === "string" && named.trim() ? named : file.name).slice(0, 200);
+  const name = typeof named === "string" && named.trim() ? named : file.name;
 
-  const type = detectAttachmentType(new Uint8Array(await file.arrayBuffer()), file.type);
-  if (!type) {
+  const result = await storeAttachment(conversation.id, {
+    bytes: new Uint8Array(await file.arrayBuffer()),
+    name,
+    type: file.type,
+  });
+  if (!result.ok) {
+    if (result.reason === "too_large") return apiError("too_large", "Files can be 10 MB at most.");
+    if (result.reason === "full") {
+      return apiError("rate_limited", "This conversation holds as many files as it can.");
+    }
     return apiError(
       "unsupported",
       "That kind of file cannot be sent. Try an image, a PDF or a document.",
     );
   }
-
-  const bucket = supabaseAdmin.storage.from(BUCKET);
-  const { data: stored, error: listError } = await bucket.list(conversation.id, {
-    limit: FILES_PER_CONVERSATION,
-  });
-  if (listError) throw listError;
-  if (stored.length >= FILES_PER_CONVERSATION) {
-    return apiError("rate_limited", "This conversation holds as many files as it can.");
-  }
-
-  const path = `${conversation.id}/${randomUUID()}-${safeName(name)}`;
-  const { error: uploadError } = await bucket.upload(path, file, { contentType: type });
-  if (uploadError) throw uploadError;
-
-  const attachment: Attachment = { path, name, type, size: file.size };
-  return Response.json(attachment, { status: 201 });
+  return Response.json(result.attachment, { status: 201 });
 }

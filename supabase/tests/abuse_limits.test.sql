@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(36);
+select plan(37);
 
 -- Shared request counts.
 select tests.act_as_server();
@@ -78,6 +78,17 @@ select tests.act_as_server();
 select throws_ok(
   $$ select public.start_conversation(tests.uid('guest_a'), 'Hello again', 'web') $$,
   'HW403', null, 'nor start a conversation'
+);
+
+select tests.act_as_owner();
+update public.contacts set email = 'guest.a@example.test' where id = tests.uid('guest_a');
+select tests.act_as_server();
+select is(
+  public.receive_email_reply(
+    tests.thing('guest_a_conversation'), 'Guest.A@example.test', 'blocked-reply-1', 'Me again'
+  ),
+  'blocked',
+  'nor write by replying to an email'
 );
 
 select tests.act_as('agent');

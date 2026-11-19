@@ -77,8 +77,10 @@ by being valid UTF-8 with no markup), refuses anything else (HTML, SVG, XML, pro
 it under `<conversation id>/<random>-<name>` with the type it found. It refuses blocked contacts,
 and holds at most 200 files per conversation. Browsers, agents included, have no insert policy on
 the bucket any more. Links to pictures open in place; links to every other file are signed as
-downloads, so Storage sends `Content-Disposition: attachment`. The per-folder read rule and the
-check that a message only names files in its own conversation's folder were already right.
+downloads, so Storage sends `Content-Disposition: attachment`. Files that arrive with a reply by
+email take the same path (`storeAttachment`), so they are checked the same way. The per-folder
+read rule and the check that a message only names files in its own conversation's folder were
+already right.
 
 ### 3. Article ratings could be inserted without limit (High)
 
@@ -107,7 +109,8 @@ no longer insert.
   off, so a half-done setup never locks visitors out. Verified users are never asked.
 - A contact's page has **Block** and **Block with their network**. A blocked contact cannot
   write, start a conversation or send a file; a blocked network cannot start a conversation, and
-  no contact who last wrote from it can write. Every block and unblock is written to
+  no contact who last wrote from it can write. A blocked contact's reply by email is recorded and
+  not added (`receive_email_reply` answers `blocked`). Every block and unblock is written to
   `audit_events`, with who did it. The network is stored only as a keyed hash.
 
 ### 5. The dashboard, sign-in page and help center could be framed (Medium)
@@ -240,6 +243,8 @@ forged from a browser.
 | `POST`, `DELETE /api/devices`                | anyone with a token or session | the adapter, or the session              | push token (format), app (from settings)                     |
 | `POST /api/articles/[id]/feedback`           | anyone                         | nobody; counted by network               | helpful or not; the article must be published                |
 | `GET /api/widget`                            | anyone, any site               | nobody                                   | nothing; public settings only                                |
+| `POST /api/email/inbound/[provider]`         | the email provider             | the provider's signature, checked first  | the email; its reply address is signed as well               |
+| `GET /api/icons/[weight]/[name]`             | anyone                         | nobody                                   | the icon's name, only from Phosphor's own list               |
 | `POST /api/jobs/*`                           | the scheduler                  | `CRON_SECRET`, compared in constant time | nothing                                                      |
 
 No route redirects to an address from the request. CORS is open only on `GET /api/widget` and

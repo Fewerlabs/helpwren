@@ -442,3 +442,89 @@ as $$
   order by ts_rank_cd(a.search, terms.wanted) desc, a.updated_at desc
   limit 50;
 $$;
+
+-- A blocked contact cannot write by replying to an email either. The reply is recorded and not
+-- added, as one from the wrong address is. Returns `blocked` for it; otherwise as before.
+alter table public.inbound_emails drop constraint inbound_emails_outcome_check;
+alter table public.inbound_emails add constraint inbound_emails_outcome_check
+  check (outcome in ('added', 'wrong_sender', 'rate_limited', 'blocked'));
+
+create or replace function public.receive_email_reply(
+  conversation_id uuid,
+  sender text,
+  email_id text,
+  body text,
+  attachments jsonb default '[]'
+) returns text
+language plpgsql set search_path = ''
+as $$
+declare
+  -- A person replying by hand does not write twenty emails an hour into one conversation; a
+  -- mail loop or a flood does.
+  per_hour constant integer := 20;
+  conversation public.conversations;
+  contact public.contacts;
+  from_address text := lower(trim(sender));
+  outcome text;
+  record_id uuid;
+  new_message_id uuid;
+begin
+  select * into conversation from public.conversations c
+  where c.id = receive_email_reply.conversation_id;
+  if not found then
+    return 'unknown';
+  end if;
+  select * into strict contact from public.contacts where id = conversation.contact_id;
+
+  if contact.email is null or lower(contact.email) <> from_address then
+    outcome := 'wrong_sender';
+  elsif private.is_blocked(contact.id) then
+    outcome := 'blocked';
+  elsif (
+    select count(*) from public.inbound_emails e
+    where e.conversation_id = conversation.id
+      and e.sender = from_address
+      and e.outcome = 'added'
+      and e.received_at > now() - interval '1 hour'
+  ) >= per_hour then
+    outcome := 'rate_limited';
+  else
+    outcome := 'added';
+  end if;
+
+  -- Claimed first, so two deliveries of one email at the same moment add one message.
+  insert into public.inbound_emails (email_id, conversation_id, sender, outcome)
+  values (receive_email_reply.email_id, conversation.id, from_address, outcome)
+  on conflict on constraint inbound_emails_email_id_key do nothing
+  returning id into record_id;
+  if record_id is null then
+    return 'duplicate';
+  end if;
+  if outcome <> 'added' then
+    return outcome;
+  end if;
+
+  -- A reply reopens the conversation, closed as well as resolved: the status email tells the
+  -- contact that writing back opens it again. The change is the contact's, so it is recorded as
+  -- theirs and sends them no status email.
+  update public.conversations c set
+    via_email = true,
+    status = case when c.status in ('resolved', 'closed') then 'open' else c.status end
+  where c.id = conversation.id;
+  update public.conversation_events ev set actor_id = contact.id
+  where ev.conversation_id = conversation.id
+    and ev.kind = 'status_changed'
+    and ev.data ->> 'to' = 'open'
+    and ev.actor_id is null
+    and ev.created_at = now();
+
+  insert into public.messages (conversation_id, sender_id, sender_role, body, channel, attachments)
+  -- An email that was only files has no words.
+  values (conversation.id, contact.id, contact.kind, nullif(body, ''), 'email', attachments)
+  returning id into new_message_id;
+
+  update public.inbound_emails set message_id = new_message_id where id = record_id;
+  return 'added';
+end;
+$$;
+

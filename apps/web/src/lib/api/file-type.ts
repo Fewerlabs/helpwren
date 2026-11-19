@@ -1,4 +1,4 @@
-import { type ATTACHMENT_TYPES } from "@helpwren/core";
+import { ATTACHMENT_TYPES } from "@helpwren/core";
 
 type AttachmentType = (typeof ATTACHMENT_TYPES)[number];
 
@@ -28,8 +28,8 @@ function isText(bytes: Uint8Array): boolean {
 }
 
 /**
- * What a file really is, from its bytes, when that is one of the types the chat accepts. `null`
- * for anything else: a page of HTML named `photo.png`, a program named `report.pdf`, a picture
+ * What a file really is, from its bytes, when it was sent as one of the types the chat accepts
+ * and is one of them. `null` for anything else: a page of HTML named `photo.png`, a program named `report.pdf`, a picture
  * drawn in SVG. A file whose name only got the kind wrong, such as a PNG named `.jpg`, is kept
  * as what it is.
  *
@@ -38,6 +38,9 @@ function isText(bytes: Uint8Array): boolean {
  * Word and Excel files are ZIPs, so the ZIP is checked to hold a document or a workbook.
  */
 export function detectAttachmentType(bytes: Uint8Array, claimed: string): AttachmentType | null {
+  // A file sent as something not on the list is refused whatever its bytes say: a program's
+  // first bytes can happen to read as text.
+  if (!(ATTACHMENT_TYPES as readonly string[]).includes(claimed)) return null;
   const detected = ((): AttachmentType | readonly AttachmentType[] | null => {
     if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
     if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";

@@ -25,7 +25,7 @@ describe("detectAttachmentType", () => {
     expect(detectAttachmentType(zip("word/document.xml"), "application/msword")).toBe(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     );
-    expect(detectAttachmentType(zip("xl/workbook.xml"), "text/plain")).toBe(
+    expect(detectAttachmentType(zip("xl/workbook.xml"), "application/vnd.ms-excel")).toBe(
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     expect(detectAttachmentType(zip("payload.exe"), "application/zip")).toBeNull();
@@ -45,5 +45,7 @@ describe("detectAttachmentType", () => {
   it("refuses programs and anything that is not text", () => {
     expect(detectAttachmentType(bytes("MZ", [0x90, 0x00, 0x03]), "application/pdf")).toBeNull();
     expect(detectAttachmentType(bytes([0xc3, 0x28]), "text/plain")).toBeNull();
+    // Two bytes that read as text are still a program when that is what was sent.
+    expect(detectAttachmentType(bytes("MZ"), "application/x-msdownload")).toBeNull();
   });
 });
