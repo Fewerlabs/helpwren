@@ -26,6 +26,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { TeamAvatar } from "../brand";
 import { chatKeys } from "../hooks/use-chat";
+import { existingVisitorId } from "../hooks/use-visitor-tracking";
 import {
   type PendingStart,
   useClaimed,
@@ -254,6 +255,7 @@ export function StartForm({
 
     // What the page said about the visitor, for the team to see beside the conversation.
     const context = { ...pageContext, ...(claimed?.id ? { claimedUserId: claimed.id } : {}) };
+    const visitorId = existingVisitorId();
 
     try {
       // The session is created here, with the first message, not when the chat is opened.
@@ -275,6 +277,8 @@ export function StartForm({
         // The page the chat is on, when the widget script reported one.
         ...(page ? { page } : {}),
         ...(Object.keys(context).length > 0 ? { context } : {}),
+        // The browser that has been checking in, so the team sees its details on the contact.
+        ...(visitorId ? { visitorId } : {}),
       });
 
       if (result.ok) {

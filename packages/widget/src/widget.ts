@@ -3,6 +3,7 @@ import {
   CHANNEL,
   isFrameMessage,
   type IdentityState,
+  type LatestUnread,
   type PageContext,
   type PageMessage,
   type VisitorDetails,
@@ -143,6 +144,9 @@ interface Teaser {
 /** Remembers, for this visit, that the welcome message has been seen or dismissed. */
 const TEASER_SEEN = "helpwren.welcome-seen";
 
+/** Tells one reply from another: a new message in the same conversation is a new reply. */
+const replyKey = (reply: LatestUnread) => `${reply.conversationId}:${reply.preview}`;
+
 interface Mounted {
   host: HTMLElement;
   teaser: Teaser | undefined;
@@ -182,6 +186,11 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   let teaserSeen = false;
   let frameReady = false;
   let waitingStart: PageMessage | undefined;
+  // The newest unread reply, shown beside the launcher in place of the welcome message.
+  let latest: LatestUnread | undefined;
+  // The reply the visitor waved away. A newer one shows again.
+  let dismissedReply: string | undefined;
+  let stopWatchingPage: (() => void) | undefined;
 
   /** Whether the visitor has already seen or dismissed the welcome message on this visit. */
   function readTeaserSeen(): boolean {
@@ -214,17 +223,28 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     setOpen(true);
   }
 
-  /** The welcome message beside the launcher: who it is from, what it says, and its replies. */
+  /** The unread reply to show beside the launcher, unless the visitor waved it away. */
+  function replyToShow(): LatestUnread | undefined {
+    if (unread === 0 || !latest) return undefined;
+    return dismissedReply === replyKey(latest) ? undefined : latest;
+  }
+
+  /**
+   * Beside the launcher: the newest unread reply from the team when there is one, otherwise the
+   * welcome message. Either way, who it is from and what it says; the welcome adds its replies.
+   */
   function paintTeaser() {
     const teaser = mounted?.teaser;
     if (!mounted || !teaser) return;
     const { welcome, quickReplies, name, logo } = appearance;
     const open = mounted.panel.dataset.open === "true";
-    teaser.box.hidden =
-      open || teaserSeen || !showWelcome || (!welcome && quickReplies.length === 0);
+    const reply = previewing ? undefined : replyToShow();
+    teaser.box.hidden = reply
+      ? open
+      : open || teaserSeen || !showWelcome || (!welcome && quickReplies.length === 0);
 
     teaser.name.textContent = name;
-    teaser.message.textContent = welcome ?? "How can we help?";
+    teaser.message.textContent = reply ? reply.preview : (welcome ?? "How can we help?");
     if (logo) {
       const image = document.createElement("img");
       image.alt = "";
@@ -234,17 +254,35 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       teaser.avatar.textContent = Array.from(name.trim())[0]?.toUpperCase() ?? "";
     }
     teaser.replies.replaceChildren(
-      ...quickReplies.map((reply) => {
+      ...(reply ? [] : quickReplies).map((quickReply) => {
         const chip = document.createElement("button");
         chip.type = "button";
         chip.className = "chip";
-        chip.textContent = reply;
+        chip.textContent = quickReply;
         chip.addEventListener("click", () => {
-          startConversation({ reply });
+          startConversation({ reply: quickReply });
         });
         return chip;
       }),
     );
+  }
+
+  /** The teaser was clicked: the reply's conversation, or a new one from the welcome. */
+  function openTeaser() {
+    const reply = replyToShow();
+    if (!reply || !mounted) {
+      startConversation();
+      return;
+    }
+    post({ channel: CHANNEL, type: "open", conversationId: reply.conversationId });
+    setOpen(true);
+  }
+
+  function dismissTeaser() {
+    const reply = replyToShow();
+    if (reply) dismissedReply = replyKey(reply);
+    else markTeaserSeen();
+    paintTeaser();
   }
 
   /** Puts the appearance on the widget. Every value has been checked by `parseAppearance`. */
@@ -346,14 +384,74 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     setOpen(!isOpen());
   };
 
-  function setUnread(count: number) {
+  function setUnread(count: number, newest: LatestUnread | undefined) {
+    const before = latest ? replyKey(latest) : undefined;
+    latest = count > 0 ? newest : undefined;
+    if ((latest ? replyKey(latest) : undefined) !== before) paintTeaser();
     if (count === unread) return;
     unread = count;
     if (mounted?.badge) {
       mounted.badge.hidden = count === 0;
       mounted.badge.textContent = count > 99 ? "99+" : String(count);
     }
+    paintTeaser();
     for (const listener of listeners.unread) listener(count);
+  }
+
+  /**
+   * Tells the chat which page it is on whenever that changes without a page load, as in a
+   * single-page app, and when the tab is hidden or shown, so it checks in only while someone
+   * is looking. `history.pushState` and `replaceState` fire no event, so they are wrapped.
+   */
+  function watchPage(): () => void {
+    let lastUrl = window.location.href;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const report = () => {
+      post({
+        channel: CHANNEL,
+        type: "page",
+        page: { url: window.location.href, title: document.title },
+        visible: document.visibilityState === "visible",
+      });
+    };
+    const onNavigate = () => {
+      // A moment later, so the app has set the new page's title.
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (window.location.href === lastUrl) return;
+        lastUrl = window.location.href;
+        report();
+      }, 100);
+    };
+
+    const { history } = window;
+    const pushState = history.pushState.bind(history);
+    const replaceState = history.replaceState.bind(history);
+    const wrappedPush: History["pushState"] = (...args) => {
+      pushState(...args);
+      onNavigate();
+    };
+    const wrappedReplace: History["replaceState"] = (...args) => {
+      replaceState(...args);
+      onNavigate();
+    };
+    window.history.pushState = wrappedPush;
+    window.history.replaceState = wrappedReplace;
+    window.addEventListener("popstate", onNavigate);
+    window.addEventListener("hashchange", onNavigate);
+    document.addEventListener("visibilitychange", report);
+
+    return () => {
+      clearTimeout(timer);
+      // Put back only our own wrapper: something wrapped after us keeps working.
+      if (window.history.pushState === wrappedPush) window.history.pushState = pushState;
+      if (window.history.replaceState === wrappedReplace) {
+        window.history.replaceState = replaceState;
+      }
+      window.removeEventListener("popstate", onNavigate);
+      window.removeEventListener("hashchange", onNavigate);
+      document.removeEventListener("visibilitychange", report);
+    };
   }
 
   function post(message: PageMessage) {
@@ -395,6 +493,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       channel: CHANNEL,
       type: "hello",
       page: { url: window.location.href, title: document.title },
+      ...(document.referrer ? { referrer: document.referrer } : {}),
       closable: !inline,
       identified: identity?.token !== undefined,
     };
@@ -420,7 +519,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         mounted.frame.contentWindow?.postMessage(waitingStart, appOrigin);
         waitingStart = undefined;
       }
-    } else if (event.data.type === "unread") setUnread(event.data.count);
+    } else if (event.data.type === "unread") setUnread(event.data.count, event.data.latest);
     else if (event.data.type === "identity") {
       const { state } = event.data;
       onIdentity(state === "failed" ? { state, reason: event.data.reason } : { state });
@@ -484,18 +583,13 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         message.className = "teaser-message";
         words.append(name, message);
         open.append(avatar, words);
-        open.addEventListener("click", () => {
-          startConversation();
-        });
+        open.addEventListener("click", openTeaser);
         const dismiss = document.createElement("button");
         dismiss.type = "button";
         dismiss.className = "teaser-close";
         dismiss.setAttribute("aria-label", "Dismiss");
         dismiss.innerHTML = dismissIcon;
-        dismiss.addEventListener("click", () => {
-          markTeaserSeen();
-          paintTeaser();
-        });
+        dismiss.addEventListener("click", dismissTeaser);
         card.append(open, dismiss);
         const replies = document.createElement("div");
         replies.className = "teaser-replies";
@@ -531,6 +625,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       applyLayout(options.layout);
       setOpen(options.open === true);
       window.addEventListener("message", onMessage);
+      // A preview is not a visit, so it reports no pages.
+      if (!previewing) stopWatchingPage = watchPage();
       (container ?? document.body).append(host);
 
       if (options.preview) {
@@ -563,6 +659,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     destroy() {
       if (!mounted) return;
       window.removeEventListener("message", onMessage);
+      stopWatchingPage?.();
+      stopWatchingPage = undefined;
+      latest = undefined;
+      dismissedReply = undefined;
       for (const trigger of triggers) {
         trigger.removeEventListener("click", toggle);
         trigger.removeAttribute("aria-expanded");

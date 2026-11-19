@@ -50,6 +50,12 @@ interface ChatState {
   setPreview: (preview: boolean) => void;
   page: HostPage | null;
   setPage: (page: HostPage) => void;
+  /** Where the visitor came to the host page from, when its widget script said. */
+  referrer: string | null;
+  setReferrer: (referrer: string | null) => void;
+  /** Whether the host page's tab is showing. The chat checks in only while it is. */
+  hostVisible: boolean;
+  setHostVisible: (visible: boolean) => void;
   claimed: ClaimedIdentity | null;
   setClaimed: (claimed: ClaimedIdentity | null) => void;
   /** What the page wants the team to know about where the visitor is. */
@@ -67,6 +73,8 @@ const initial = {
   screen: { name: "home" },
   tab: "home",
   page: null,
+  referrer: null,
+  hostVisible: true,
   preview: false,
   pendingStart: null,
   claimed: null,
@@ -77,6 +85,12 @@ const useChatStore = create<ChatState>()((set) => ({
   ...initial,
   setPage: (page) => {
     set({ page });
+  },
+  setReferrer: (referrer) => {
+    set({ referrer });
+  },
+  setHostVisible: (hostVisible) => {
+    set({ hostVisible });
   },
   setClaimed: (claimed) => {
     set({ claimed });
@@ -112,6 +126,10 @@ export const usePageContext = () => useChatStore((state) => state.context);
 export const useSetPageContext = () => useChatStore((state) => state.setContext);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);
+export const useReferrer = () => useChatStore((state) => state.referrer);
+export const useSetReferrer = () => useChatStore((state) => state.setReferrer);
+export const useHostVisible = () => useChatStore((state) => state.hostVisible);
+export const useSetHostVisible = () => useChatStore((state) => state.setHostVisible);
 
 /** For tests: puts the store back to its starting state. */
 export function resetChatStore() {

@@ -20,6 +20,8 @@ export type PageMessage =
       type: "hello";
       /** The page the chat is on. An app, which has none, leaves it out. */
       page?: { url: string; title: string };
+      /** Where the visitor came to the page from (`document.referrer`), when the browser says. */
+      referrer?: string;
       /** False when the chat is the content of the page and has nothing to close into. */
       closable?: boolean;
       /**
@@ -36,6 +38,17 @@ export type PageMessage =
   | { channel: typeof CHANNEL; type: "identify"; token?: string; details?: VisitorDetails }
   /** The visitor logged out of the page. The chat forgets who they were. */
   | { channel: typeof CHANNEL; type: "reset" }
+  /**
+   * The visitor moved to another page without loading one (a single-page app), or the tab was
+   * hidden or shown. The chat checks in with the install when the page changes, and stops
+   * checking in while the tab is hidden.
+   */
+  | {
+      channel: typeof CHANNEL;
+      type: "page";
+      page: { url: string; title: string };
+      visible: boolean;
+    }
   /** What the page wants the team to know about where the visitor is. Replaces what was sent. */
   | { channel: typeof CHANNEL; type: "context"; context: PageContext }
   /** Shows one of the visitor's conversations, as when they tap a notification about it. */
@@ -72,13 +85,39 @@ export type IdentityState =
 export type FrameMessage =
   /** The chat has started and is listening. Sent to any origin, because it carries nothing. */
   | { channel: typeof CHANNEL; type: "ready" }
-  | { channel: typeof CHANNEL; type: "unread"; count: number }
+  /**
+   * How many replies the visitor has not read. `latest`, while there are any, is the newest
+   * unread conversation and the start of its last message, for the page to show beside the
+   * launcher.
+   */
+  | { channel: typeof CHANNEL; type: "unread"; count: number; latest?: LatestUnread }
   /** The visitor pressed the close button inside the chat. */
   | { channel: typeof CHANNEL; type: "close" }
   /** The answer to `identify` and `reset`. */
   | ({ channel: typeof CHANNEL; type: "identity" } & IdentityState);
 
+/** The newest reply the visitor has not read. The preview is plain text, shown as text. */
+export interface LatestUnread {
+  conversationId: string;
+  preview: string;
+}
+
+/** The longest preview the chat sends, and so the longest the page accepts. */
+export const PREVIEW_MAX_LENGTH = 300;
+
 const FAILURES = ["expired", "rejected", "off", "error"] as const;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isLatestUnread(data: unknown): data is LatestUnread {
+  if (typeof data !== "object" || data === null) return false;
+  const latest = data as Record<string, unknown>;
+  return (
+    typeof latest.conversationId === "string" &&
+    UUID.test(latest.conversationId) &&
+    typeof latest.preview === "string" &&
+    latest.preview.length <= PREVIEW_MAX_LENGTH
+  );
+}
 
 export function isFrameMessage(data: unknown): data is FrameMessage {
   if (typeof data !== "object" || data === null) return false;
@@ -93,6 +132,7 @@ export function isFrameMessage(data: unknown): data is FrameMessage {
     message.type === "unread" &&
     typeof message.count === "number" &&
     Number.isInteger(message.count) &&
-    message.count >= 0
+    message.count >= 0 &&
+    (message.latest === undefined || isLatestUnread(message.latest))
   );
 }

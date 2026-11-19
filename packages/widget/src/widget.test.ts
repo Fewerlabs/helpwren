@@ -593,3 +593,144 @@ describe("the host page's own controls", () => {
     );
   });
 });
+
+describe("where the visitor is", () => {
+  function frameWindow() {
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    return frame.contentWindow;
+  }
+
+  it("says where the visitor came from in its greeting", () => {
+    Object.defineProperty(document, "referrer", {
+      value: "https://search.example.org/",
+      configurable: true,
+    });
+    widget.init();
+    const post = vi.spyOn(frameWindow(), "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hello", referrer: "https://search.example.org/" }),
+      APP,
+    );
+    Reflect.deleteProperty(document, "referrer");
+  });
+
+  it("tells the chat when a single-page app moves to another page, and stops when removed", async () => {
+    const start = window.location.href;
+    widget.init();
+    receive({ channel: "helpwren", type: "ready" });
+    const post = vi.spyOn(frameWindow(), "postMessage");
+
+    window.history.pushState(null, "", "/pricing");
+    document.title = "Pricing";
+    await vi.waitFor(() => {
+      expect(post).toHaveBeenCalledWith(
+        {
+          channel: "helpwren",
+          type: "page",
+          page: { url: new URL("/pricing", start).href, title: "Pricing" },
+          visible: true,
+        },
+        APP,
+      );
+    });
+
+    // The same address again is not a new page.
+    post.mockClear();
+    window.history.replaceState(null, "", "/pricing");
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(post).not.toHaveBeenCalled();
+
+    widget.destroy();
+    window.history.pushState(null, "", start);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(post).not.toHaveBeenCalled();
+    document.title = "";
+  });
+
+  it("tells the chat when the tab is hidden", () => {
+    widget.init();
+    receive({ channel: "helpwren", type: "ready" });
+    const post = vi.spyOn(frameWindow(), "postMessage");
+
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "page", visible: false }),
+      APP,
+    );
+    Reflect.deleteProperty(document, "visibilityState");
+  });
+});
+
+describe("a new reply beside the launcher", () => {
+  const CONVERSATION = "0b7c4f1e-8a5d-4c2b-9f3e-1a2b3c4d5e6f";
+  const teaser = () => {
+    const box = host().shadowRoot?.querySelector<HTMLElement>(".teaser");
+    if (!box) throw new Error("There is no teaser.");
+    return box;
+  };
+
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
+  it("shows the reply's start, opens its conversation when clicked, and goes when read", () => {
+    widget.init();
+    receive({ channel: "helpwren", type: "ready" });
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+
+    receive({
+      channel: "helpwren",
+      type: "unread",
+      count: 1,
+      latest: { conversationId: CONVERSATION, preview: "Can I <i>help</i> you choose a plan?" },
+    });
+    expect(teaser().hidden).toBe(false);
+    // Shown as text, never read as markup.
+    expect(teaser().textContent).toContain("Can I <i>help</i> you choose a plan?");
+    expect(parts().badge?.textContent).toBe("1");
+
+    teaser().querySelector<HTMLButtonElement>(".teaser-open")?.click();
+    expect(post).toHaveBeenCalledWith(
+      { channel: "helpwren", type: "open", conversationId: CONVERSATION },
+      APP,
+    );
+    expect(parts().panel.dataset.open).toBe("true");
+    expect(teaser().hidden).toBe(true);
+
+    widget.hide();
+    receive({ channel: "helpwren", type: "unread", count: 0 });
+    expect(teaser().hidden).toBe(true);
+  });
+
+  it("stays dismissed until a newer reply arrives", () => {
+    widget.init();
+    receive({ channel: "helpwren", type: "ready" });
+    const latest = { conversationId: CONVERSATION, preview: "Hello" };
+    receive({ channel: "helpwren", type: "unread", count: 1, latest });
+    teaser().querySelector<HTMLButtonElement>(".teaser-close")?.click();
+    expect(teaser().hidden).toBe(true);
+
+    receive({
+      channel: "helpwren",
+      type: "unread",
+      count: 2,
+      latest: { ...latest, preview: "Are you still there?" },
+    });
+    expect(teaser().hidden).toBe(false);
+  });
+
+  it.each([
+    ["an id that is not one", { conversationId: "../../x", preview: "Hi" }],
+    ["a preview that is too long", { conversationId: CONVERSATION, preview: "x".repeat(301) }],
+  ])("ignores an unread message with %s", (_, latest) => {
+    widget.init();
+    receive({ channel: "helpwren", type: "unread", count: 1, latest });
+    expect(parts().badge?.hidden).toBe(true);
+  });
+});
