@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   FieldList,
+  IconPicker,
   toast,
   useConfirm,
   type FieldItem,
@@ -22,7 +23,6 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { collectionHref, HELP_PATH, useArticlesChanged } from "../hooks/use-articles";
 import { collectionFormSchema, type CollectionFormValues } from "../schemas";
-import { IconPicker } from "./icon-picker";
 
 export interface CollectionDialogProps {
   /** The collection to change, or `null` to make a new one. */

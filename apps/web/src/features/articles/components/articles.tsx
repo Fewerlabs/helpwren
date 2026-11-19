@@ -5,6 +5,7 @@ import {
   ActionButton,
   Badge,
   Button,
+  CollectionIcon,
   DataTable,
   EmptyState,
   FilterBar,
@@ -23,12 +24,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { DashboardPage, Panel, PanelHeader, type PageNavItem } from "@/features/dashboard";
+import {
+  DashboardPage,
+  Panel,
+  PanelHeader,
+  type PageNavIconProps,
+  type PageNavItem,
+} from "@/features/dashboard";
 import { formatTimeAgo } from "@/lib/format-time";
 import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
-import { collectionIcon } from "../collection-icons";
 import {
   ARTICLES_QUERY_KEY,
   collectionHref,
@@ -176,7 +182,7 @@ export function Articles() {
       ...(collections.data ?? []).map((item) => ({
         href: collectionHref(item.slug),
         label: item.name,
-        icon: collectionIcon(item.icon),
+        icon: (props: PageNavIconProps) => <CollectionIcon name={item.icon} {...props} />,
         count: item.articleCount,
         active: collection?.id === item.id,
         group: "Collections",

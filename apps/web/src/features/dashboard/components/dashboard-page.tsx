@@ -1,13 +1,20 @@
 "use client";
 
-import { cn, Icon, type IconName } from "@helpwren/design-system";
+import { cn, Icon, type IconName, type IconWeight } from "@helpwren/design-system";
 import Link from "next/link";
 import { Fragment, useEffect, useRef, type ReactNode } from "react";
+
+/** How the navigation draws an item's icon, so one drawn by the item matches the others. */
+export interface PageNavIconProps {
+  weight: IconWeight;
+  className: string;
+}
 
 export interface PageNavItem {
   href: string;
   label: string;
-  icon?: IconName;
+  /** One of the app's icons, or a function that draws another, such as a collection's own. */
+  icon?: IconName | ((props: PageNavIconProps) => ReactNode);
   /** A number shown at the end of the row, such as how many conversations a view holds. */
   count?: number | undefined;
   active: boolean;
@@ -37,6 +44,16 @@ export interface DashboardPageProps {
 }
 
 const card = "border-rule bg-card overflow-hidden rounded-xl border";
+
+/** An item's icon: filled in and coloured while its page is open. */
+function navIcon({ icon, active }: PageNavItem): ReactNode {
+  if (!icon) return null;
+  const props: PageNavIconProps = {
+    weight: active ? "duotone" : "regular",
+    className: cn("size-4", active && "text-primary"),
+  };
+  return typeof icon === "function" ? icon(props) : <Icon name={icon} {...props} />;
+}
 
 /**
  * The frame of every dashboard section: one card holding the section's navigation, the list it
@@ -106,13 +123,7 @@ export function DashboardPage({
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
-                    {item.icon ? (
-                      <Icon
-                        name={item.icon}
-                        weight={item.active ? "duotone" : "regular"}
-                        className={cn("size-4", item.active && "text-primary")}
-                      />
-                    ) : null}
+                    {navIcon(item)}
                     <span className="flex-1 truncate">{item.label}</span>
                     {item.count === undefined ? null : (
                       <span className="text-muted-foreground text-xs font-normal tabular-nums">

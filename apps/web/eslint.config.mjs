@@ -37,4 +37,32 @@ export default [
     files: ["src/features/**/*.{ts,tsx}"],
     rules: { "no-restricted-imports": ["error", boundaries] },
   },
+  {
+    // The icon route serves Phosphor's SVG files, so it reads Phosphor's catalogue itself.
+    // Icon components still come from the design system.
+    files: ["src/app/api/icons/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            ...boundaries.patterns.filter(
+              (pattern) => !pattern.group.includes("@phosphor-icons/*"),
+            ),
+            {
+              group: [
+                "@phosphor-icons/react",
+                "@phosphor-icons/react/*",
+                "lucide-react",
+                "radix-ui",
+                "@radix-ui/*",
+              ],
+              message: "Use the components and the Icon from @helpwren/design-system.",
+            },
+            featureInternals,
+          ],
+        },
+      ],
+    },
+  },
 ];
