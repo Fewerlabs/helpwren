@@ -20,6 +20,9 @@ not write the type a second time.
 - Feature code imports UI from `@helpwren/design-system`, never from a component's file path.
 - Code outside a feature imports that feature only through its `index.ts`.
 - Icons come from the `Icon` component. Only its registry may import the icon library.
+- An icon people choose from all of Phosphor, such as a collection's, is drawn with
+  `CollectionIcon`, which loads its SVG from `/api/icons`, and chosen with `IconPicker`. Never
+  import arbitrary Phosphor components to draw one.
 
 ## Use the component that already does it
 

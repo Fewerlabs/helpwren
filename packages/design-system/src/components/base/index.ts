@@ -30,6 +30,12 @@ export type { ComboboxResolver } from "./combobox/use-resolved-options";
 export { Checkbox, type CheckboxProps } from "./checkbox/checkbox";
 export { ChoiceCards, type ChoiceCard, type ChoiceCardsProps } from "./choice-cards/choice-cards";
 export {
+  CollectionIcon,
+  ICON_ROUTE,
+  iconUrl,
+  type CollectionIconProps,
+} from "./collection-icon/collection-icon";
+export {
   ColorPicker,
   colorBackground,
   type ColorPickerProps,
