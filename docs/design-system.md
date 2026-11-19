@@ -505,6 +505,12 @@ not colour, and screen readers hear who is speaking. `author` and `time` label i
 a delivery status or attachments, and `note` marks an internal note the contact cannot see. Lay
 bubbles out in a flex column.
 
+**TypingIndicator** says someone on the other side is writing: three dots in a bubble where
+their message will appear, an optional `avatar`, and the words ("Ada is typing…", "Ada and Sam
+are typing…"). It is a polite live region that stays mounted and draws nothing while `names` is
+empty, so screen readers hear each change once. The dots hold still under reduced motion. Put it
+after the last message, inside the scrolling thread.
+
 **ConversationListItem** is one row in a conversation list: avatar, name, the latest message,
 `time`, a `status` chip and an `unread` count. It is a link when given `href` and a button
 otherwise, and `selected` marks the conversation that is open. Use `DataTable` when the list needs

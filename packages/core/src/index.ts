@@ -115,6 +115,15 @@ export {
 } from "./messages";
 export { noteBodySchema, noteSchema, type Note } from "./notes";
 export {
+  TYPING_THROTTLE_MS,
+  TYPING_TIMEOUT_MS,
+  typingEventSchema,
+  type TypingChannel,
+  type TypingEvent,
+  type TypingSender,
+  type Typist,
+} from "./presence";
+export {
   RATING_MAX,
   ratingCommentSchema,
   ratingSchema,
@@ -122,7 +131,30 @@ export {
   type Rating,
   type SubmitRatingResult,
 } from "./ratings";
+export {
+  fillPlaceholders,
+  PLACEHOLDERS,
+  SAMPLE_PLACEHOLDER_VALUES,
+  type Placeholder,
+  type PlaceholderValues,
+} from "./placeholders";
 export { type Unsubscribe } from "./realtime";
+export {
+  SAVED_REPLY_SHORTCUT_MAX_LENGTH,
+  SAVED_REPLY_TITLE_MAX_LENGTH,
+  savedReplyInputSchema,
+  savedReplySchema,
+  savedReplyShortcutSchema,
+  savedReplyVisibilitySchema,
+  type ChangeSavedReplyResult,
+  type CreateSavedReplyResult,
+  type ListSavedRepliesOptions,
+  type RemoveSavedReplyResult,
+  type SavedReply,
+  type SavedReplyFailure,
+  type SavedReplyInput,
+  type SavedReplyVisibility,
+} from "./saved-replies";
 export { type Session } from "./sessions";
 export {
   CONTACT_DEVICES,

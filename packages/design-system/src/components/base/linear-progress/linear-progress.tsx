@@ -37,12 +37,12 @@ export function LinearProgress({
     >
       {determinate ? (
         <div
-          className="bg-primary h-full transition-[width] duration-200"
+          className="bg-primary-fill h-full transition-[width] duration-200"
           style={{ width: `${clamped ?? 0}%` }}
         />
       ) : (
         // With reduced motion the segment does not travel, so it fills the track instead.
-        <div className="bg-primary animate-progress absolute inset-y-0 left-0 w-1/4 motion-reduce:w-full motion-reduce:opacity-60" />
+        <div className="bg-primary-fill animate-progress absolute inset-y-0 left-0 w-1/4 motion-reduce:w-full motion-reduce:opacity-60" />
       )}
     </div>
   );

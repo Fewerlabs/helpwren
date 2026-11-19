@@ -728,6 +728,58 @@ export type Database = {
           },
         ];
       };
+      saved_replies: {
+        Row: {
+          body: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          owner_id: string | null;
+          shortcut: string | null;
+          title: string;
+          updated_at: string;
+          visibility: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          owner_id?: string | null;
+          shortcut?: string | null;
+          title: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          owner_id?: string | null;
+          shortcut?: string | null;
+          title?: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_replies_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "saved_replies_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       secrets: {
         Row: {
           key: string;

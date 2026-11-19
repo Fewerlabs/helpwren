@@ -83,7 +83,7 @@ export function MessageBubble({
                   ? "rounded-xl px-3 py-1.5 text-[0.8125rem]"
                   : "rounded-2xl px-3.5 py-2 text-sm",
                 self
-                  ? "bg-primary text-primary-foreground rounded-br-md"
+                  ? "bg-primary-fill text-primary-fill-foreground rounded-br-md"
                   : "bg-muted text-foreground rounded-bl-md",
                 note && "border-line border-biro bg-card text-card-foreground border-dashed",
               )}

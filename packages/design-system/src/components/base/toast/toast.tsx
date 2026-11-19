@@ -29,7 +29,10 @@ export interface ToasterProps {
 // set the same property on the same element. Those few places are marked important (`!`).
 const toastClassNames = {
   toast: cn(
-    "bg-card text-card-foreground border-rule flex w-(--width) items-start gap-2.5 rounded-xl border px-3.5 py-3 font-sans text-[0.8125rem] leading-5",
+    "bg-card text-card-foreground border-rule flex items-start gap-2.5 rounded-xl border px-3.5 py-3 font-sans text-[0.8125rem] leading-5",
+    // As wide as its words, up to the stack's width, and kept to the side of the screen it
+    // belongs to: centred in a centred stack, against the edge in a corner.
+    "inset-x-0! mx-auto w-fit max-w-(--width) data-[x-position=left]:ml-0 data-[x-position=right]:mr-0",
     "focus-visible:outline-ring! focus-visible:[box-shadow:none]! focus-visible:outline-2! focus-visible:outline-offset-2!",
     // In a closed stack only the front toast is read; the ones behind show as bare cards.
     "data-[expanded=false]:data-[front=false]:*:opacity-0",

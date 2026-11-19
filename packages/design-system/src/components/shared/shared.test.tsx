@@ -13,6 +13,7 @@ import { MarginNote } from "./margin-note/margin-note";
 import { MessageBubble } from "./message-bubble/message-bubble";
 import { PageHeader } from "./page-header/page-header";
 import { SearchField } from "./search-field/search-field";
+import { TypingIndicator, typingLabel } from "./typing-indicator/typing-indicator";
 
 describe("EmptyState", () => {
   it("shows a heading, a description, an action and a decorative wren", () => {
@@ -210,6 +211,21 @@ describe("CodeSnippet", () => {
   });
 });
 
+describe("TypingIndicator", () => {
+  it("says who is typing, politely, and draws nothing while nobody is", () => {
+    const { rerender } = render(<TypingIndicator names={[]} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+
+    rerender(<TypingIndicator names={["Ada"]} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Ada is typing…");
+  });
+
+  it("names two people, and counts more as several", () => {
+    expect(typingLabel(["Ada", "Sam"])).toBe("Ada and Sam are typing…");
+    expect(typingLabel(["Ada", "Sam", "Lee"])).toBe("Several people are typing…");
+  });
+});
+
 describe("MessageBubble", () => {
   it("fills your own messages with the accent and tints the other person's, and says who is speaking", () => {
     render(
@@ -224,10 +240,10 @@ describe("MessageBubble", () => {
     );
     const own = screen.getByText("Thanks");
     const theirs = screen.getByText("You are welcome");
-    expect(own).toHaveClass("bg-primary");
+    expect(own).toHaveClass("bg-primary-fill");
     expect(own).toHaveTextContent("You: Thanks");
     expect(theirs).toHaveClass("bg-muted");
-    expect(theirs).not.toHaveClass("bg-primary");
+    expect(theirs).not.toHaveClass("bg-primary-fill");
     expect(theirs).toHaveTextContent("Ada: You are welcome");
     expect(screen.getByText("10:02")).toBeInTheDocument();
   });

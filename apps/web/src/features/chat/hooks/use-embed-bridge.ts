@@ -16,6 +16,7 @@ import {
   useSetPageContext,
   useSetPendingStart,
   useSetReferrer,
+  useSetShowing,
   useShowScreen,
 } from "../store/chat-store";
 import { useIdentity } from "./use-identity";
@@ -46,6 +47,7 @@ const helloSchema = z.object({
     .optional()
     .catch(undefined),
   closable: z.boolean().optional(),
+  open: z.boolean().optional(),
   identified: z.boolean().optional(),
 });
 
@@ -64,6 +66,7 @@ const laterSchema = z.discriminatedUnion("type", [
       .optional(),
   }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("reset") }),
+  z.object({ channel: z.literal(CHANNEL), type: z.literal("panel"), open: z.boolean() }),
   z.object({
     channel: z.literal(CHANNEL),
     type: z.literal("page"),
@@ -146,6 +149,7 @@ export function useEmbedBridge(unread: UnreadState) {
   const setPage = useSetPage();
   const setReferrer = useSetReferrer();
   const setHostVisible = useSetHostVisible();
+  const setShowing = useSetShowing();
   const setPendingStart = useSetPendingStart();
   const show = useShowScreen();
   const setClaimed = useSetClaimed();
@@ -168,6 +172,9 @@ export function useEmbedBridge(unread: UnreadState) {
     const found = findHost();
     if (!found) return undefined;
     host.current = found;
+    // In a frame, the chat may be loaded behind a closed launcher. Until the page says it is
+    // open, it is not.
+    if (window.parent !== window) setShowing(false);
 
     const tell = (outcome: Promise<IdentityState>) => {
       void outcome.then((state) => {
@@ -198,6 +205,8 @@ export function useEmbedBridge(unread: UnreadState) {
         } else if (message.type === "page") {
           setPage(message.page);
           setHostVisible(message.visible);
+        } else if (message.type === "panel") {
+          setShowing(message.open);
         } else if (message.type === "context") {
           setPageContext(message.context);
         } else if (message.type === "reset") {
@@ -221,6 +230,7 @@ export function useEmbedBridge(unread: UnreadState) {
       setReferrer(hello.data.referrer ?? null);
       setEmbedded(true);
       setClosable(hello.data.closable !== false);
+      setShowing(hello.data.open !== false);
       send(unreadMessage(latestUnread.current));
       // A page that does not vouch for a user gets a guest's chat, whoever was here before.
       // Nothing is said back: the page asked nothing.
@@ -242,6 +252,7 @@ export function useEmbedBridge(unread: UnreadState) {
     setPageContext,
     setPendingStart,
     setReferrer,
+    setShowing,
     show,
   ]);
 

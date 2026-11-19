@@ -45,6 +45,13 @@
   --popover-foreground: var(--ink);
   --primary: var(--helpwren-accent, var(--moss));
   --primary-foreground: var(--helpwren-accent-foreground, #ffffff);
+  /*
+   * What fills a button and what is written on it. The same as the primary colour in light mode;
+   * in dark mode, where the primary colour is a pale green so green text stays readable, a fill
+   * keeps the deep green and white words instead.
+   */
+  --primary-fill: var(--primary);
+  --primary-fill-foreground: var(--primary-foreground);
   --secondary: var(--wash);
   --secondary-foreground: var(--ink);
   --muted: var(--wash);
@@ -93,6 +100,8 @@
   --status-closed-surface: #202020;
 
   --primary-foreground: var(--helpwren-accent-foreground, #0c0c0d);
+  --primary-fill: var(--helpwren-accent, #3d6b57);
+  --primary-fill-foreground: var(--helpwren-accent-foreground, #ffffff);
   --destructive-foreground: #0c0c0d;
 
   color-scheme: dark;

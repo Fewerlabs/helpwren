@@ -130,7 +130,7 @@ function Row({ conversation, assignee, selected, showStatus, onSelect }: RowProp
               </Tooltip>
             ) : null}
             {unread > 0 ? (
-              <span className="bg-primary text-primary-foreground text-2xs grid h-4 min-w-4 place-items-center rounded-full px-1 font-medium">
+              <span className="bg-primary-fill text-primary-fill-foreground text-2xs grid h-4 min-w-4 place-items-center rounded-full px-1 font-medium">
                 {unread}
                 <span className="sr-only"> unread</span>
               </span>

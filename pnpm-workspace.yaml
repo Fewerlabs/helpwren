@@ -38,3 +38,10 @@ minimumReleaseAgeExclude:
 # Dependencies allowed to run install scripts. Everything else is blocked.
 allowBuilds:
   esbuild: true
+
+# Patched versions of two packages that only development tooling pulls in, until their parents
+# ask for them: glob through Storybook's prop-table plugin (GHSA-3g3m-2fjr-6pw4), and minimatch
+# through the shadcn CLI's ts-morph (GHSA-g3hv-75wg-m249). Neither runs in the app itself.
+overrides:
+  "@joshwooding/vite-plugin-react-docgen-typescript>glob": ^14.0.2
+  "@ts-morph/common>minimatch": ^11.0.1

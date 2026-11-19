@@ -568,11 +568,13 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
         <Button
           variant="secondary"
           size="sm"
-          // Publishing the changes is the main action on a phone, so there it is filled.
+          // Publishing the changes is the main action on a phone, so there it is filled, once there
+          // are changes to publish. Disabled, it keeps the plain look, whose text stays readable.
           className={cn(
             !published && "max-md:hidden",
             published &&
-              "max-md:bg-primary max-md:text-primary-foreground max-md:hover:bg-primary/90 max-md:border-transparent max-md:px-2.5",
+              dirty &&
+              "max-md:bg-primary-fill max-md:text-primary-fill-foreground max-md:hover:bg-primary-fill/90 max-md:border-transparent max-md:px-2.5",
           )}
           disabled={!dirty || busy !== null}
           loading={busy === "save"}

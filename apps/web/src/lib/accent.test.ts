@@ -32,6 +32,8 @@ describe("accentStyle", () => {
     expect(accentStyle({ button: "#26231e" })).toEqual({
       "--primary": "#26231e",
       "--primary-foreground": "#ffffff",
+      "--primary-fill": "#26231e",
+      "--primary-fill-foreground": "#ffffff",
       "--ring": "#26231e",
     });
   });

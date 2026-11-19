@@ -28,6 +28,7 @@ import { RatingPrompt } from "./rating-prompt";
 import { ScreenHeader } from "./screen-header";
 import { StartForm } from "./start-form";
 import { TabBar } from "./tab-bar";
+import { TeamStatus } from "./team-status";
 import { TicketBar } from "./ticket-bar";
 
 export interface ChatProps {
@@ -99,8 +100,11 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           onClose={onClose}
           title={
             <>
-              <TeamAvatar size="sm" className="text-2xs size-6" />
-              <span className="truncate">{teamName}</span>
+              <TeamAvatar size="sm" className="text-2xs size-6 shrink-0" />
+              <span className="grid min-w-0 leading-tight">
+                <span className="truncate">{teamName}</span>
+                <TeamStatus className="text-2xs font-normal" />
+              </span>
             </>
           }
         />

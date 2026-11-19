@@ -8,6 +8,7 @@ import { useShowScreen } from "../store/chat-store";
 import { ConversationRow } from "./conversation-row";
 import { SuggestedArticles } from "./help-screen";
 import { CloseButton } from "./screen-header";
+import { TeamStatus } from "./team-status";
 
 export interface HomeScreenProps {
   /** The install's own greeting and the line under it, if it has them. */
@@ -45,6 +46,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
           {greeting ?? "Hi there."}
           <span className="text-muted-foreground block">{intro ?? "How can we help?"}</span>
         </h1>
+        <TeamStatus className="mt-3" />
       </div>
 
       <div className="grid gap-2 px-4 pt-3">

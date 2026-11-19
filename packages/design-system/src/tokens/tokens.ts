@@ -12,6 +12,8 @@ const colorNames = [
   "popover-foreground",
   "primary",
   "primary-foreground",
+  "primary-fill",
+  "primary-fill-foreground",
   "secondary",
   "secondary-foreground",
   "muted",
