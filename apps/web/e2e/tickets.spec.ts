@@ -154,6 +154,9 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   await expect(tickets.getByRole("button", { name: "Status: Open" })).toBeVisible();
   await expect(row).toHaveCount(0);
   await expect(table.getByRole("row").filter({ hasText: "Wrong billing address" })).toBeVisible();
+  await expect(tickets.getByRole("navigation", { name: "Tickets pages" })).toContainText(
+    /tickets?|of \d+/,
+  );
 
   await tickets.getByRole("button", { name: "Status: Open" }).click();
   await page.getByRole("option", { name: "Resolved" }).click();
