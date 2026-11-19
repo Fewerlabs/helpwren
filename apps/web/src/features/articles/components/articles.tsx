@@ -19,6 +19,7 @@ import {
 } from "@helpwren/design-system";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { DashboardPage, Panel, PanelHeader, type PageNavItem } from "@/features/dashboard";
@@ -31,6 +32,7 @@ import {
   ARTICLES_QUERY_KEY,
   collectionHref,
   HELP_PATH,
+  newArticleHref,
   NO_COLLECTION,
   useArticleCounts,
   useArticlesChanged,
@@ -39,7 +41,6 @@ import {
 } from "../hooks/use-articles";
 import { ArticleStatusChip } from "./article-status";
 import { CollectionDialog } from "./collection-dialog";
-import { NewArticleDialog } from "./new-article-dialog";
 
 const PAGE_SIZE = 25;
 
@@ -91,7 +92,10 @@ export function Articles() {
   const [filter, setFilter] = useState<FilterValue>({});
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<"new" | "current" | null>(null);
-  const [starting, setStarting] = useState(false);
+  // The order just chosen by dragging, shown until the saved order comes back, so a dropped
+  // row stays where it was put instead of jumping back while the change is on its way.
+  const [order, setOrder] = useState<{ list: string; ids: readonly string[] } | null>(null);
+  const router = useRouter();
   const searchText = useDebounced(search).trim();
   const status = articleStatusSchema.safeParse(only(filter, "status")).data;
   const visibility = articleVisibilitySchema.safeParse(only(filter, "visibility")).data;
@@ -233,17 +237,21 @@ export function Articles() {
         onPageChange={setPage}
       >
         {(list) => {
-          async function move(index: number, by: -1 | 1) {
-            const ids = list.items.map((article) => article.id);
-            const [moved] = ids.splice(index, 1);
-            if (!moved) return;
-            ids.splice(index + by, 0, moved);
+          const chosen = order?.list === listKey ? order.ids : null;
+          const rows = chosen
+            ? chosen.flatMap((id) => list.items.find((article) => article.id === id) ?? [])
+            : list.items;
+
+          async function reorder(ids: string[]) {
+            setOrder({ list: listKey, ids });
             try {
               await getClient().articles.reorder(ids);
               await changed();
             } catch {
               toast.error("The articles could not be reordered. Try again.");
             }
+            // A later drag may have started meanwhile; its order stays until its own save is back.
+            setOrder((current) => (current?.ids === ids ? null : current));
           }
 
           const columns: DataTableColumn<ArticleSummary>[] = [
@@ -311,81 +319,41 @@ export function Articles() {
               className: "text-muted-foreground tabular-nums",
               cell: (article) => formatTimeAgo(article.updatedAt),
             },
-            {
-              id: "order",
-              header: <span className="sr-only">Order</span>,
-              align: "end",
-              hidden: !canReorder,
-              width: "5rem",
-              cell: (article, index) => orderButtons(article, index),
-            },
           ];
 
-          function orderButtons(article: ArticleSummary, index: number) {
-            return (
-              <span className="flex shrink-0 justify-end">
-                <Tooltip content="Move up">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Move ${article.title} up`}
-                    disabled={index === 0}
-                    onClick={() => void move(index, -1)}
-                  >
-                    <Icon name="arrow-up" />
-                  </Button>
-                </Tooltip>
-                <Tooltip content="Move down">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={`Move ${article.title} down`}
-                    disabled={index === list.items.length - 1}
-                    onClick={() => void move(index, 1)}
-                  >
-                    <Icon name="arrow-down" />
-                  </Button>
-                </Tooltip>
-              </span>
-            );
-          }
-
           // On a phone each article is the title over a line of what else matters, all one link.
-          function mobileRow(article: ArticleSummary, index: number) {
+          function mobileRow(article: ArticleSummary) {
             return (
-              <div className="flex items-center pr-2">
-                <Link
-                  href={`${HELP_PATH}/${article.id}`}
-                  className="hover:bg-muted/50 focus-visible:outline-ring grid min-w-0 flex-1 gap-1.5 px-3 py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span className="truncate font-medium">{article.title}</span>
-                    {article.featured ? (
-                      <Icon
-                        name="star"
-                        weight="fill"
-                        label="Featured"
-                        className="text-ochre size-3.5 shrink-0"
-                      />
-                    ) : null}
-                  </span>
-                  <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
-                    <ArticleStatusChip status={article.status} />
-                    {article.visibility === "in_app" ? (
-                      <span className="shrink-0">Chat only</span>
-                    ) : null}
-                    {shown.kind === "all" ? (
-                      <span className="min-w-0 truncate">
-                        {article.collection?.name ?? "No collection"}
-                      </span>
-                    ) : null}
-                    <span className="ml-auto shrink-0 tabular-nums">
-                      {formatTimeAgo(article.updatedAt)}
+              <Link
+                href={`${HELP_PATH}/${article.id}`}
+                className="hover:bg-muted/50 focus-visible:outline-ring grid min-w-0 gap-1.5 px-3 py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate font-medium">{article.title}</span>
+                  {article.featured ? (
+                    <Icon
+                      name="star"
+                      weight="fill"
+                      label="Featured"
+                      className="text-ochre size-3.5 shrink-0"
+                    />
+                  ) : null}
+                </span>
+                <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
+                  <ArticleStatusChip status={article.status} />
+                  {article.visibility === "in_app" ? (
+                    <span className="shrink-0">Chat only</span>
+                  ) : null}
+                  {shown.kind === "all" ? (
+                    <span className="min-w-0 truncate">
+                      {article.collection?.name ?? "No collection"}
                     </span>
+                  ) : null}
+                  <span className="ml-auto shrink-0 tabular-nums">
+                    {formatTimeAgo(article.updatedAt)}
                   </span>
-                </Link>
-                {canReorder ? orderButtons(article, index) : null}
-              </div>
+                </span>
+              </Link>
             );
           }
 
@@ -428,7 +396,7 @@ export function Articles() {
                     icon="plus"
                     label="New article"
                     onClick={() => {
-                      setStarting(true);
+                      router.push(newArticleHref(collection?.slug));
                     }}
                   />
                 </div>
@@ -455,9 +423,17 @@ export function Articles() {
                     caption={title}
                     density="compact"
                     columns={columns}
-                    rows={list.items}
+                    rows={rows}
                     getRowKey={(article) => article.id}
                     renderMobileRow={mobileRow}
+                    reorder={
+                      canReorder
+                        ? {
+                            label: (article) => article.title,
+                            onReorder: (keys) => void reorder(keys.map(String)),
+                          }
+                        : undefined
+                    }
                     loading={list.isFetching}
                     empty={
                       searchText || filtered ? (
@@ -476,13 +452,8 @@ export function Articles() {
                           title={collection ? "Nothing in this collection yet" : "No articles yet"}
                           description="Write the answers to the questions you are asked most. Visitors find them on your help center and in the chat."
                           action={
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                setStarting(true);
-                              }}
-                            >
-                              Write an article
+                            <Button size="sm" asChild>
+                              <Link href={newArticleHref(collection?.slug)}>Write an article</Link>
                             </Button>
                           }
                         />
@@ -536,12 +507,6 @@ export function Articles() {
         onOpenChange={(open) => {
           if (!open) setEditing(null);
         }}
-      />
-      <NewArticleDialog
-        collections={collections.data ?? []}
-        collectionId={collection?.id}
-        open={starting}
-        onOpenChange={setStarting}
       />
     </DashboardPage>
   );

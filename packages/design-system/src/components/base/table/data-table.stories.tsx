@@ -257,6 +257,33 @@ export const MobileRows: Story = {
   ),
 };
 
+function Reorderable() {
+  const [rows, setRows] = useState(tickets);
+  return (
+    <DataTable
+      {...base}
+      rows={rows}
+      columns={columns.map((column) => ({ ...column, sortable: false }))}
+      reorder={{
+        label: (ticket) => ticket.subject,
+        onReorder: (keys) => {
+          setRows(keys.flatMap((key) => rows.find((ticket) => ticket.number === key) ?? []));
+        },
+      }}
+      renderMobileRow={(ticket) => (
+        <span className="block truncate px-3 py-2.5 font-medium">{ticket.subject}</span>
+      )}
+    />
+  );
+}
+
+/**
+ * With `reorder`, each row has a handle to drag it into a new place, in the table and in the
+ * list alike. With the keyboard: focus a handle, press Space, move with the arrow keys, and press
+ * Space again to drop or Escape to put it back.
+ */
+export const Reorder: Story = { render: () => <Reorderable /> };
+
 /** The parts on their own, for a table laid out by hand. */
 export const Parts: Story = {
   render: () => (

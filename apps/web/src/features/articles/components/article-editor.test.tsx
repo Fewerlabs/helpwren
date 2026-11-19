@@ -1,7 +1,7 @@
 import { type Article, type HelpwrenClient } from "@helpwren/core";
 import { ConfirmProvider, Toaster, TooltipProvider } from "@helpwren/design-system";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -12,8 +12,9 @@ import { ArticleEditor } from "./article-editor";
 // The action runs on the server and the router belongs to Next; neither exists in a unit test.
 vi.mock("../actions", () => ({ refreshHelpCenter: vi.fn(() => Promise.resolve()) }));
 const push = vi.fn();
+const replace = vi.fn();
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -51,6 +52,7 @@ const draft: Article = {
 
 const articles = {
   get: vi.fn(),
+  create: vi.fn(),
   update: vi.fn(),
   publish: vi.fn(),
   unpublish: vi.fn(),
@@ -64,7 +66,7 @@ const client = {
   agents: { list: vi.fn(() => Promise.resolve([])) },
 } as unknown as HelpwrenClient;
 
-async function renderEditor() {
+async function renderEditor(articleId: string | null = draft.id) {
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -72,7 +74,7 @@ async function renderEditor() {
       <HelpwrenProvider getClient={() => client}>
         <TooltipProvider>
           <ConfirmProvider>
-            <ArticleEditor articleId={draft.id} />
+            <ArticleEditor articleId={articleId} />
             <Toaster />
           </ConfirmProvider>
         </TooltipProvider>
@@ -185,6 +187,43 @@ describe("ArticleEditor", () => {
     const dialog = screen.getByRole("alertdialog", { name: "Leave without saving?" });
     await user.click(within(dialog).getByRole("button", { name: "Keep writing" }));
     expect(push).not.toHaveBeenCalled();
+  });
+
+  describe("a new article", () => {
+    it("opens empty with the title focused, and makes nothing from a title alone", async () => {
+      const user = userEvent.setup();
+      await renderEditor(null);
+
+      const title = screen.getByRole("textbox", { name: "Title" });
+      expect(title).toHaveFocus();
+      expect(title).toHaveValue("");
+      expect(screen.getByRole("status")).toHaveTextContent("Not saved yet");
+      expect(screen.queryByRole("button", { name: "Remove article" })).not.toBeInTheDocument();
+
+      await user.type(title, "Reset your password");
+      // Longer than the pause before a new article is made: with no words in it, none is.
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      expect(articles.create).not.toHaveBeenCalled();
+    });
+
+    it("is made when saved, and then takes its own address", async () => {
+      const user = userEvent.setup();
+      articles.create.mockResolvedValue({ ok: true, article: { ...draft, tags: [] } });
+      await renderEditor(null);
+
+      await user.type(screen.getByRole("textbox", { name: "Title" }), "Reset your password");
+      await user.click(screen.getByRole("button", { name: "Save draft" }));
+
+      expect(articles.create).toHaveBeenCalledWith({
+        title: "Reset your password",
+        collectionId: null,
+      });
+      expect(replace).toHaveBeenCalledWith(`/dashboard/help/${draft.id}`);
+      // Saved now, so the address can change without the editor losing anything.
+      await waitFor(() => {
+        expect(screen.getByRole("status").textContent).toMatch(/^Saved/);
+      });
+    });
   });
 
   it("says so when the article does not exist", async () => {

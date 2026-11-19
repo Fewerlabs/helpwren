@@ -1,22 +1,11 @@
 "use client";
 
-import {
-  cn,
-  Icon,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  type IconName,
-} from "@helpwren/design-system";
+import { cn, Icon, Popover, PopoverContent, PopoverTrigger } from "@helpwren/design-system";
 import { useRef, useState } from "react";
 
 import { setThemePreference, useThemePreference, type ThemePreference } from "@/lib/theme";
 
-const choices: readonly { value: ThemePreference; label: string; icon: IconName }[] = [
-  { value: "light", label: "Light", icon: "sun" },
-  { value: "dark", label: "Dark", icon: "moon" },
-  { value: "system", label: "System", icon: "desktop" },
-];
+import { themeChoices as choices } from "../choices";
 
 export interface ThemeMenuProps {
   /** Classes for the button, which shows the choice that is in force. */

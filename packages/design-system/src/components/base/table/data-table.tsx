@@ -10,6 +10,13 @@ import { LinearProgress } from "../linear-progress/linear-progress";
 import { Skeleton } from "../skeleton/skeleton";
 import { focusRing } from "../styles";
 import {
+  defaultSortableRowsMessages,
+  SortableRow,
+  SortableRows,
+  type SortableRowsMessages,
+  type SortableRowState,
+} from "./sortable-rows";
+import {
   Table,
   TableBody,
   TableCaption,
@@ -57,6 +64,10 @@ export interface DataTableMessages {
   selectAll: string;
   selectRow: (key: DataTableKey) => string;
   sortBy: (column: string) => string;
+  /** The header of the column of drag handles, read out but not shown. */
+  reorderColumn: string;
+  /** What the drag handles are called and what screen readers hear while a row is moved. */
+  reorder: SortableRowsMessages;
 }
 
 const defaultMessages: DataTableMessages = {
@@ -65,7 +76,16 @@ const defaultMessages: DataTableMessages = {
   selectAll: "Select all rows",
   selectRow: (key) => `Select row ${key}`,
   sortBy: (column) => `Sort by ${column}`,
+  reorderColumn: "Order",
+  reorder: defaultSortableRowsMessages,
 };
+
+export interface DataTableReorder<Row> {
+  /** Called with every row's key in the new order, once a row is dropped somewhere new. */
+  onReorder: (keys: DataTableKey[]) => void;
+  /** Names a row for its drag handle and for what screen readers hear, such as its title. */
+  label: (row: Row) => string;
+}
 
 export interface DataTableProps<Row> {
   columns: readonly DataTableColumn<Row>[];
@@ -110,9 +130,22 @@ export interface DataTableProps<Row> {
    * be tapped.
    */
   renderMobileRow?: (row: Row, index: number) => ReactNode;
+  /**
+   * Lets people put the rows in their own order: each row gets a handle to drag by pointer or
+   * touch, or to move with the keyboard. The table draws the rows in the order it is given, so
+   * update `rows` from `onReorder`. Leave sorting off while it is on.
+   */
+  reorder?: DataTableReorder<Row> | undefined;
   messages?: Partial<DataTableMessages>;
   className?: string;
   containerClassName?: string;
+}
+
+/** A row with its place and key, as the table draws it. */
+interface Keyed<Row> {
+  row: Row;
+  index: number;
+  key: DataTableKey;
 }
 
 const alignment = { start: "text-left", center: "text-center", end: "text-right" } as const;
@@ -163,6 +196,7 @@ export function DataTable<Row>({
   striped = false,
   rowProps,
   renderMobileRow,
+  reorder,
   messages: overrides,
   className,
   containerClassName,
@@ -198,7 +232,11 @@ export function DataTable<Row>({
       .map(({ row }) => row);
   }, [rows, sortValue, direction, manualSorting]);
 
-  const keyed = sortedRows.map((row, index) => ({ row, index, key: getRowKey(row, index) }));
+  const keyed: Keyed<Row>[] = sortedRows.map((row, index) => ({
+    row,
+    index,
+    key: getRowKey(row, index),
+  }));
   const selectableKeys = keyed
     .filter(({ row }) => isRowSelectable?.(row) ?? true)
     .map(({ key }) => key);
@@ -222,7 +260,7 @@ export function DataTable<Row>({
 
   const cellPadding = density === "compact" ? "py-1.5" : "py-2.5";
   const sticky = stickyHeader ? "bg-card sticky top-0 z-10" : undefined;
-  const columnCount = columns.length + (selectable ? 1 : 0);
+  const columnCount = columns.length + (selectable ? 1 : 0) + (reorder ? 1 : 0);
   const hasFooter = columns.some((column) => column.footer !== undefined);
   const showSkeleton = loading && rows.length === 0;
   const showEmpty = !showSkeleton && rows.length === 0;
@@ -237,6 +275,11 @@ export function DataTable<Row>({
       <TableCaption className={showCaption ? undefined : "sr-only"}>{caption}</TableCaption>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
+          {reorder ? (
+            <TableHead scope="col" className={cn("w-10 pr-0", sticky)}>
+              <span className="sr-only">{messages.reorderColumn}</span>
+            </TableHead>
+          ) : null}
           {selectable ? (
             <TableHead className={cn("w-10", sticky)}>
               <Checkbox
@@ -325,58 +368,25 @@ export function DataTable<Row>({
             </TableCell>
           </TableRow>
         ) : null}
-        {keyed.map(({ row, index, key }) => {
-          const selected = selection.includes(key);
-          const canSelect = isRowSelectable?.(row) ?? true;
-          const { className: rowClassName, ...restRowProps } = rowProps?.(row, index) ?? {};
-          return (
-            <TableRow
-              key={key}
-              data-state={selected ? "selected" : undefined}
-              className={cn(striped && "even:bg-muted/40", rowClassName)}
-              {...restRowProps}
+        {keyed.map((item) =>
+          reorder ? (
+            <SortableRow
+              key={item.key}
+              id={item.key}
+              label={reorder.label(item.row)}
+              messages={messages.reorder}
             >
-              {selectable ? (
-                <TableCell className={cn("w-10", cellPadding)}>
-                  <Checkbox
-                    aria-label={messages.selectRow(key)}
-                    checked={selected}
-                    disabled={!canSelect}
-                    onCheckedChange={(checked) => {
-                      changeSelection(
-                        checked === true
-                          ? [...selection, key]
-                          : selection.filter((item) => item !== key),
-                      );
-                    }}
-                  />
-                </TableCell>
-              ) : null}
-              {columns.map((column) => {
-                const Cell = column.rowHeader ? "th" : TableCell;
-                return (
-                  <Cell
-                    key={column.id}
-                    {...(column.rowHeader ? { scope: "row" as const } : {})}
-                    className={cn(
-                      column.rowHeader &&
-                        "border-rule px-3 text-left align-middle font-medium whitespace-nowrap",
-                      cellPadding,
-                      alignment[column.align ?? "start"],
-                      column.className,
-                    )}
-                  >
-                    {column.cell(row, index)}
-                  </Cell>
-                );
-              })}
-            </TableRow>
-          );
-        })}
+              {(drag) => tableRow(item, drag)}
+            </SortableRow>
+          ) : (
+            tableRow(item, null)
+          ),
+        )}
       </TableBody>
       {hasFooter ? (
         <TableFooter>
           <TableRow className="hover:bg-transparent">
+            {reorder ? <TableCell /> : null}
             {selectable ? <TableCell /> : null}
             {columns.map((column) => (
               <TableCell
@@ -392,58 +402,153 @@ export function DataTable<Row>({
     </Table>
   );
 
+  function tableRow({ row, index, key }: Keyed<Row>, drag: SortableRowState | null) {
+    const selected = selection.includes(key);
+    const canSelect = isRowSelectable?.(row) ?? true;
+    const { className: rowClassName, ...restRowProps } = rowProps?.(row, index) ?? {};
+    return (
+      <TableRow
+        key={key}
+        data-state={selected ? "selected" : undefined}
+        className={cn(
+          striped && "even:bg-muted/40",
+          drag?.dragging && "bg-muted hover:bg-muted",
+          rowClassName,
+        )}
+        {...restRowProps}
+        {...(drag ? { ref: drag.ref, style: drag.style } : {})}
+      >
+        {drag ? (
+          <TableCell className={cn("w-10 pr-0", cellPadding)}>{drag.handle}</TableCell>
+        ) : null}
+        {selectable ? (
+          <TableCell className={cn("w-10", cellPadding)}>
+            <Checkbox
+              aria-label={messages.selectRow(key)}
+              checked={selected}
+              disabled={!canSelect}
+              onCheckedChange={(checked) => {
+                changeSelection(
+                  checked === true ? [...selection, key] : selection.filter((item) => item !== key),
+                );
+              }}
+            />
+          </TableCell>
+        ) : null}
+        {columns.map((column) => {
+          const Cell = column.rowHeader ? "th" : TableCell;
+          return (
+            <Cell
+              key={column.id}
+              {...(column.rowHeader ? { scope: "row" as const } : {})}
+              className={cn(
+                column.rowHeader &&
+                  "border-rule px-3 text-left align-middle font-medium whitespace-nowrap",
+                cellPadding,
+                alignment[column.align ?? "start"],
+                column.className,
+              )}
+            >
+              {column.cell(row, index)}
+            </Cell>
+          );
+        })}
+      </TableRow>
+    );
+  }
+
+  function listItem({ row, index, key }: Keyed<Row>, drag: SortableRowState | null) {
+    // `renderMobileRow` is checked by the caller; this only draws the list beside the table.
+    if (!renderMobileRow) return null;
+    const selected = selection.includes(key);
+    return (
+      <li
+        key={key}
+        data-state={selected ? "selected" : undefined}
+        className={cn(
+          "data-[state=selected]:bg-muted flex items-start",
+          drag && "bg-card items-center pl-1.5",
+          drag?.dragging && "bg-muted shadow-sm",
+        )}
+        {...(drag ? { ref: drag.ref, style: drag.style } : {})}
+      >
+        {drag?.handle}
+        {selectable ? (
+          <span className="flex py-3 pl-3">
+            <Checkbox
+              aria-label={messages.selectRow(key)}
+              checked={selected}
+              disabled={!(isRowSelectable?.(row) ?? true)}
+              onCheckedChange={(checked) => {
+                changeSelection(
+                  checked === true ? [...selection, key] : selection.filter((item) => item !== key),
+                );
+              }}
+            />
+          </span>
+        ) : null}
+        <div className="min-w-0 flex-1">{renderMobileRow(row, index)}</div>
+      </li>
+    );
+  }
+
+  /** Lets the rows inside be dragged into a new order, when reordering is on. */
+  function sortable(content: ReactNode) {
+    if (!reorder) return content;
+    const labels = new Map(keyed.map(({ row, key }) => [key, reorder.label(row)]));
+    return (
+      <SortableRows
+        ids={keyed.map(({ key }) => key)}
+        labelOf={(key) => labels.get(key) ?? String(key)}
+        messages={messages.reorder}
+        onReorder={reorder.onReorder}
+      >
+        {content}
+      </SortableRows>
+    );
+  }
+
   if (!renderMobileRow) {
-    return table;
+    return sortable(table);
   }
 
   // Both are drawn and CSS picks one, so the server renders the right one for any screen. The
   // empty content is drawn once, under both, so a page never holds two copies of it.
   return (
     <>
-      {table}
+      {/* The table and the list each get their own drag area, as only one is ever on screen. */}
+      {sortable(table)}
       <div data-slot="data-table-list" aria-busy={loading || undefined} className="md:hidden">
         {loading && rows.length > 0 ? <LinearProgress label={messages.loading} /> : null}
-        <ul
-          aria-label={typeof caption === "string" ? caption : undefined}
-          className="divide-rule divide-y"
-        >
-          {showSkeleton
-            ? Array.from({ length: loadingRows }, (_, rowIndex) => (
-                <li key={rowIndex} className="grid gap-2 p-3">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </li>
-              ))
-            : null}
-          {keyed.map(({ row, index, key }) => {
-            const selected = selection.includes(key);
-            return (
-              <li
-                key={key}
-                data-state={selected ? "selected" : undefined}
-                className="data-[state=selected]:bg-muted flex items-start"
-              >
-                {selectable ? (
-                  <span className="flex py-3 pl-3">
-                    <Checkbox
-                      aria-label={messages.selectRow(key)}
-                      checked={selected}
-                      disabled={!(isRowSelectable?.(row) ?? true)}
-                      onCheckedChange={(checked) => {
-                        changeSelection(
-                          checked === true
-                            ? [...selection, key]
-                            : selection.filter((item) => item !== key),
-                        );
-                      }}
-                    />
-                  </span>
-                ) : null}
-                <div className="min-w-0 flex-1">{renderMobileRow(row, index)}</div>
-              </li>
-            );
-          })}
-        </ul>
+        {sortable(
+          <ul
+            aria-label={typeof caption === "string" ? caption : undefined}
+            className="divide-rule divide-y"
+          >
+            {showSkeleton
+              ? Array.from({ length: loadingRows }, (_, rowIndex) => (
+                  <li key={rowIndex} className="grid gap-2 p-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </li>
+                ))
+              : null}
+            {keyed.map((item) =>
+              reorder ? (
+                <SortableRow
+                  key={item.key}
+                  id={item.key}
+                  label={reorder.label(item.row)}
+                  messages={messages.reorder}
+                >
+                  {(drag) => listItem(item, drag)}
+                </SortableRow>
+              ) : (
+                listItem(item, null)
+              ),
+            )}
+          </ul>,
+        )}
       </div>
       {showEmpty ? (
         <div className="text-muted-foreground py-10 text-center">{empty ?? messages.empty}</div>

@@ -7,11 +7,20 @@ import type { IconName } from "../icon/registry";
 import { Tooltip } from "../tooltip/tooltip";
 import { Button } from "./button";
 
-// Written out in full, so Tailwind finds every class. The collapsed button is 40px square,
-// the smallest tap target a finger hits reliably.
+// Written out in full, so Tailwind finds every class. The collapsed button is 36px square with
+// a 16px icon, so a row of them stays light beside what they act on; the area a finger can hit
+// reaches out to 44px all round.
 const collapse = {
-  sm: { button: "max-sm:size-10 max-sm:px-0", label: "max-sm:sr-only", tooltip: "sm:hidden" },
-  md: { button: "max-md:size-10 max-md:px-0", label: "max-md:sr-only", tooltip: "md:hidden" },
+  sm: {
+    button: "max-sm:size-9 max-sm:px-0 max-sm:after:-inset-1",
+    label: "max-sm:sr-only",
+    tooltip: "sm:hidden",
+  },
+  md: {
+    button: "max-md:size-9 max-md:px-0 max-md:after:-inset-1",
+    label: "max-md:sr-only",
+    tooltip: "md:hidden",
+  },
 } as const;
 
 export interface ActionButtonProps extends Omit<
