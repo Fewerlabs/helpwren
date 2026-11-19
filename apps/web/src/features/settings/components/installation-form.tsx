@@ -100,6 +100,50 @@ function installTabs(widgetUrl: string): CodeSnippetTab[] {
   ];
 }
 
+/**
+ * Ways to put the help center on a host's own site: inside a frame that grows to fit what it
+ * shows, opened on one collection, or with parts left out.
+ */
+function helpTabs(helpUrl: string, origin: string): CodeSnippetTab[] {
+  const frame = (query: string) =>
+    `<iframe id="helpwren-help" src="${helpUrl}?embed=1${query}" title="Help" style="width: 100%; min-height: 320px; border: 0"></iframe>`;
+  return [
+    {
+      label: "Embed",
+      language: "html",
+      code: [
+        frame(""),
+        "<script>",
+        "  // The help center says how tall it is, so the frame needs no scrollbar of its own.",
+        '  window.addEventListener("message", (event) => {',
+        `    if (event.origin !== "${origin}") return;`,
+        "    const message = event.data;",
+        '    if (message?.channel !== "helpwren" || message.type !== "help-height") return;',
+        '    document.getElementById("helpwren-help").style.height = message.height + "px";',
+        "  });",
+        "</script>",
+      ].join("\n"),
+    },
+    {
+      label: "One collection",
+      language: "html",
+      code: [
+        "<!-- Opens on a collection, by its slug. Use q= to open on a search instead. -->",
+        frame("&collection=getting-started"),
+      ].join("\n"),
+    },
+    {
+      label: "Options",
+      language: "html",
+      code: [
+        "<!-- hide: any of search, collections, feedback, chat, separated by commas. -->",
+        "<!-- accent: your colour as six hex digits, without the #. -->",
+        frame("&hide=search,chat&accent=1d4ed8"),
+      ].join("\n"),
+    },
+  ];
+}
+
 export interface InstallationFormProps {
   settings: Settings;
   /** The public address of this install, which the snippet loads the widget from. */
@@ -119,6 +163,7 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
 
   const origin = appUrl.replace(/\/$/, "");
   const chatUrl = `${origin}/chat`;
+  const helpUrl = `${origin}/help`;
 
   async function save(values: InstallationValues) {
     setSaved(false);
@@ -174,8 +219,27 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
         />
       </SettingsSection>
       <SettingsSection
+        title="Help center"
+        description="Link to your help center, or show it inside a page of your own site. Embedded, it comes without its header and footer, fills the space you give it, and tells your page how tall it is."
+      >
+        <CodeSnippet
+          variant="inline"
+          aria-label="Help center link"
+          code={helpUrl}
+          copyLabel="Copy link"
+          copiedLabel="Link copied"
+          copiedMessage="Link copied"
+          openHref={helpUrl}
+        />
+        <CodeSnippet
+          tabs={helpTabs(helpUrl, origin)}
+          tabsLabel="Ways to embed the help center"
+          copiedMessage="Snippet copied"
+        />
+      </SettingsSection>
+      <SettingsSection
         title="Allowed domains"
-        description="The sites that may show your chat. Other sites are refused by the visitor's browser."
+        description="The sites that may show your chat or your help center in a frame. Other sites are refused by the visitor's browser."
       >
         <FieldList
           control={form.control}

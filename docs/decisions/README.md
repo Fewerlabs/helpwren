@@ -19,3 +19,5 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0012 | [File attachments](0012-attachments.md)                                        |
 | 0013 | [Sessions for the host product's users](0013-sessions-for-identified-users.md) |
 | 0014 | [Identity adapters and the signed token](0014-identity-adapters.md)            |
+| 0015 | [Sending email](0015-email.md)                                                 |
+| 0016 | [The knowledge base and the public help center](0016-knowledge-base.md)        |

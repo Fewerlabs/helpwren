@@ -1,14 +1,25 @@
 import { type PageContext } from "@helpwren/core";
 import { create } from "zustand";
 
-/** Which screen of the chat is showing. Home and Messages are the two tabs. */
+/** Which screen of the chat is showing. Home, Messages and Help are the tabs. */
 export type Screen =
   | { name: "home" }
   | { name: "messages" }
+  | { name: "help" }
   | { name: "start" }
+  /** One collection of help articles, opened from the Help tab. */
+  | { name: "collection"; collection: OpenCollection }
+  /** A help article, read without leaving the chat. `from` is the collection it was opened in. */
+  | { name: "article"; slug: string; from?: OpenCollection }
   /** The form for opening a ticket, in place of a chat. */
   | { name: "ticket" }
   | { name: "conversation"; id: string };
+
+/** The collection a visitor is looking through: enough to name it and list its articles. */
+export interface OpenCollection {
+  id: string;
+  name: string;
+}
 
 /** The page the chat is embedded in, as its widget script reported it. */
 export interface HostPage {
@@ -48,7 +59,7 @@ interface ChatState {
   pendingStart: PendingStart | null;
   setPendingStart: (start: PendingStart | null) => void;
   /** The tab a sub-screen was opened from, which is where its back arrow returns to. */
-  tab: "home" | "messages";
+  tab: "home" | "messages" | "help";
   show: (screen: Screen) => void;
 }
 
@@ -81,7 +92,7 @@ const useChatStore = create<ChatState>()((set) => ({
   },
   show: (screen) => {
     set(
-      screen.name === "home" || screen.name === "messages"
+      screen.name === "home" || screen.name === "messages" || screen.name === "help"
         ? { screen, tab: screen.name }
         : { screen },
     );

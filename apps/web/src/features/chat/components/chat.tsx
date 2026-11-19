@@ -19,6 +19,7 @@ import {
 import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { usePreviewSettings } from "../hooks/use-preview-settings";
 import { usePreview, useScreen, useSetPreview, useShowScreen, useTab } from "../store/chat-store";
+import { ArticleScreen, CollectionScreen, HelpScreen } from "./help-screen";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
 import { RatingPrompt } from "./rating-prompt";
@@ -104,6 +105,28 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     );
   }
 
+  if (screen.name === "collection") {
+    return <CollectionScreen collection={screen.collection} onBack={back} onClose={onClose} />;
+  }
+
+  if (screen.name === "article") {
+    const { from } = screen;
+    return (
+      <ArticleScreen
+        slug={screen.slug}
+        // Back to the collection it was opened in, when there was one.
+        onBack={
+          from
+            ? () => {
+                show({ name: "collection", collection: from });
+              }
+            : back
+        }
+        onClose={onClose}
+      />
+    );
+  }
+
   if (screen.name === "ticket" && settings.tickets.fromChat) {
     return (
       <>
@@ -141,6 +164,8 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     <>
       {screen.name === "messages" ? (
         <MessagesScreen conversations={earlier} teamName={teamName} onClose={onClose} />
+      ) : screen.name === "help" ? (
+        <HelpScreen onClose={onClose} />
       ) : (
         <HomeScreen
           greeting={settings.widget.greeting}
@@ -150,7 +175,11 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           onClose={onClose}
         />
       )}
-      <TabBar current={screen.name === "messages" ? "messages" : "home"} unread={unread} />
+      <TabBar
+        current={screen.name === "messages" || screen.name === "help" ? screen.name : "home"}
+        unread={unread}
+        poweredBy={settings.brand.poweredBy !== false}
+      />
     </>
   );
 }

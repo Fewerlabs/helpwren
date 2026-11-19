@@ -324,6 +324,15 @@ describe("ArticleCard", () => {
     expect(link).toHaveTextContent("When you get your money back.");
     expect(link).toHaveTextContent("Updated 3 days ago");
   });
+
+  it("wears an icon when it stands for a collection", () => {
+    render(
+      <ArticleCard href="/help/billing" icon="credit-card" title="Billing" meta="4 articles" />,
+    );
+    const link = screen.getByRole("link", { name: /Billing/ });
+    // The icon is decoration: the name says what the collection is.
+    expect(link.querySelector('svg[data-slot="icon"]')).toHaveAttribute("aria-hidden", "true");
+  });
 });
 
 describe("MarginNote", () => {

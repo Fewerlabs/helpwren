@@ -328,7 +328,7 @@ saved later.
 **Badge** is a small label for a tag, a category or a count. Variants: `neutral`, `outline` and
 `accent`. It carries no status meaning.
 
-**Avatar** shows a person or organisation as their picture, or their initials while it loads or if
+**Avatar** sits on a card's surface with a hairline edge, like the cards around it. It shows a person or organisation as their picture, or their initials while it loads or if
 there is none. `name` is required and is its accessible name. Sizes: `sm`, `md`, `lg`.
 
 **Kbd** shows a keyboard key or shortcut in the monospace font.
@@ -461,6 +461,16 @@ that failed to load, write what went wrong and offer a retry with no drawing (`s
 the wren is for calm moments. A whole page that failed or does not exist is the exception, and
 has the `error` and `not-found` scenes.
 
+**AppLoader** is the loading state for a page, a panel or anything else with nothing to show
+yet: the wren draws itself on its twig, gives a small hop, and is drawn again for as long as the
+wait lasts. `label` says what is loading ("Opening the article") and is announced; `size` is
+`sm`, `md` or `lg`; `bird={false}` draws a line of handwriting in place of the wren, for a
+screen that carries someone else's brand; `fill={false}` stops it filling its container. It is
+the default first-load state of `QueryList` and `QueryDetail`. People who prefer reduced motion
+see the drawing finished and still. Use `Skeleton` only where the shape of what is coming is
+known and helps, such as the rows of a table (`DataTable` does this itself), and `Spinner`
+inside a button or beside a line of text.
+
 **SearchField** is an `Input` set up for search: a magnifying glass, a clear button once there is
 text (Escape clears too), an optional `shortcut` hint while empty, and a `loading` spinner. Enter
 calls `onSearch`. Give it an `aria-label` or wrap it in a `Field`. For choosing from results in a
@@ -499,7 +509,39 @@ otherwise, and `selected` marks the conversation that is open. Use `DataTable` w
 columns and sorting.
 
 **ArticleCard** is a help article in a list or grid: `category`, `title`, `summary` and `meta`.
+With `icon` it stands for a whole collection of articles, with the icon in a tile above the name.
 The whole card is one link. Use a plain `Link` for an article mentioned in running text.
+
+**RichText** draws a rich-text document as a page: headings, paragraphs, lists, quotes, code,
+pictures and callouts (`Note`, `Tip`, `Warning`). Give it the `doc` that `RichTextEditor`
+produced. It runs on the server and loads none of the editor's code. It is safe to show
+whatever was written: it draws only the kinds of node and mark it knows, and follows only web,
+email and phone addresses and paths on the same site, so a document cannot become markup or a
+script. `richTextHeadings(doc)` lists the headings with the same `id`s the page gives them, for
+a table of contents. The typography is the `.hw-rich-text` class in the stylesheet, shared with
+the editor so writing looks like the published page.
+
+**RichTextEditor** is where long writing is done, such as a help article. It works the way
+Notion does: the page is only the writing, with no toolbar above it.
+
+- Typing `/` opens a menu of blocks, narrowed by what is typed next: text, heading, subheading,
+  bulleted and numbered lists, quote, code block, the three callouts, divider and picture. The
+  arrow keys move through it and Enter chooses. The "Add block" button under the writing opens
+  the same menu, for touch screens and for anyone who has not found the slash.
+- Selecting words brings up a small bar: heading, subheading, bold, italic, strikethrough,
+  inline code and link. A link's address is typed into the bar itself.
+- Markdown shortcuts work as typed: `## ` and `### ` for headings, `- ` and `1. ` for lists,
+  `> ` for a quote, three backticks for code, `---` for a divider, `**bold**` and `` `code` ``.
+- `uploadImage(file)` stores a picture and returns its address (or `null` if it failed, after
+  you have said why with a `toast`). With it, pictures can be chosen, pasted or dropped in, and
+  a selected picture can be given a description. Without it the editor offers no pictures.
+- It is uncontrolled: `defaultValue` is the document to start from and `onChange` reports the
+  whole document after every change. Give it a new `key` to start again from another document.
+  `disabled` shows the writing and allows no changes.
+
+It is built on [Tiptap](https://tiptap.dev) (see
+[ADR 0016](decisions/0016-knowledge-base.md)); nothing outside this component imports it. Use a
+`Textarea` for a few plain lines, such as a message or a description.
 
 **Highlight** marks a word or short phrase with the yellow highlighter, or with a wavy red-pen
 underline (`variant="pen"`). It sits behind a word, never a paragraph.
@@ -611,7 +653,7 @@ States it draws for you, each replaceable:
 
 | State                                 | Default                                    | Replace with                |
 | ------------------------------------- | ------------------------------------------ | --------------------------- |
-| First load                            | Skeleton rows (`loadingRows`)              | `renderLoading`             |
+| First load                            | `AppLoader` with `messages.loading`        | `renderLoading`             |
 | No items                              | `EmptyState` with `messages.empty`         | `renderEmpty`               |
 | Failed with nothing to show           | A message and a "Try again" button         | `renderError`               |
 | Failed with items showing (load more) | A compact message and retry under the list | `renderError`               |
@@ -641,7 +683,7 @@ Also: `header` and `footer` around the items, `messages` for every piece of text
 </QueryDetail>
 ```
 
-It draws the first load (`renderLoading`), not found when `queryFn` returns `null` or `isEmpty`
+It draws the first load (`AppLoader` with `messages.loading`, or `renderLoading`), not found when `queryFn` returns `null` or `isEmpty`
 says so (`renderEmpty`), and failure with a retry (`renderError`). Once the item is showing, a
 refresh keeps it on screen under the progress bar. Two components with the same `queryKey` share
 one request and one cached result.

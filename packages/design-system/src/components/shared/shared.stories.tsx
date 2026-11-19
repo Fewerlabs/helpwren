@@ -234,6 +234,20 @@ export const ArticleCards: Story = {
         title="Change or cancel a booking"
         summary="Move a booking to another time, or cancel it and see what is refunded."
       />
+      <ArticleCard
+        href="https://helpwren.fewerlabs.dev"
+        icon="rocket-launch"
+        title="Getting started"
+        summary="Set up your account and add the chat to your site."
+        meta="3 articles"
+      />
+      <ArticleCard
+        href="https://helpwren.fewerlabs.dev"
+        icon="credit-card"
+        title="Account and billing"
+        summary="Plans, invoices and who can sign in."
+        meta="2 articles"
+      />
     </div>
   ),
 };

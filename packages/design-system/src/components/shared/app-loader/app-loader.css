@@ -1,0 +1,84 @@
+/*
+ * The app loader: a drawing that draws itself, holds for a moment and is taken away again,
+ * for as long as something is loading. People who prefer reduced motion see it finished.
+ */
+[data-slot="app-loader"] .hw-loader-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="app-loader"] .hw-loader-line {
+    animation: hw-loader-draw 2.6s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+  }
+
+  /* The details follow the outline, as a hand would add them. */
+  [data-slot="app-loader"] .hw-loader-line[data-part="detail"] {
+    animation-name: hw-loader-detail;
+  }
+
+  [data-slot="app-loader"] .hw-loader-eye {
+    animation: hw-loader-eye 2.6s linear infinite;
+  }
+
+  [data-slot="app-loader"] .hw-loader-hop {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: hw-loader-hop 2.6s ease-in-out infinite;
+  }
+}
+
+@keyframes hw-loader-draw {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  42%,
+  78% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes hw-loader-detail {
+  0%,
+  30% {
+    stroke-dashoffset: 1;
+  }
+  52%,
+  78% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes hw-loader-eye {
+  0%,
+  44% {
+    opacity: 0;
+  }
+  50%,
+  80% {
+    opacity: 1;
+  }
+  90%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* One small hop once the wren is drawn, before the line is taken away. */
+@keyframes hw-loader-hop {
+  0%,
+  56%,
+  72%,
+  100% {
+    transform: translateY(0);
+  }
+  64% {
+    transform: translateY(-3px);
+  }
+}

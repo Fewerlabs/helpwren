@@ -7,3 +7,5 @@
 @import "../tokens/tokens.css";
 @import "../tokens/theme.css";
 @import "../illustrations/illustrations.css";
+@import "../components/shared/rich-text/rich-text.css";
+@import "../components/shared/app-loader/app-loader.css";

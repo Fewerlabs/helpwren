@@ -39,6 +39,11 @@ const brandSchema = z.object({
   button: accentColorSchema.optional(),
   /** A second colour. With it, large surfaces such as the launcher fade from `accent` to this. */
   accentTo: accentColorSchema.optional(),
+  /**
+   * `false` hides the small "Powered by Helpwren" in the chat and the help center. Left out,
+   * it shows, so settings saved before this existed keep their credit.
+   */
+  poweredBy: z.boolean().optional(),
 });
 
 export type Brand = z.infer<typeof brandSchema>;
@@ -71,13 +76,68 @@ const widgetSchema = z.object({
 
 export type WidgetSettings = z.infer<typeof widgetSchema>;
 
-/** What the chat page and the help center say at the top, in place of the usual wording. */
+/** What the chat page says at the top, in place of the usual wording. */
 const pageTextSchema = z.object({
   title: z.string().min(1).optional(),
   intro: z.string().min(1).optional(),
 });
 
 export type PageText = z.infer<typeof pageTextSchema>;
+
+/** The most links the help center's header and footer hold. */
+export const HELP_HEADER_LINKS_MAX = 4;
+export const HELP_FOOTER_LINKS_MAX = 6;
+
+/** A link to somewhere on the web, or a path on the same site such as `/pricing`. */
+const linkAddressSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .regex(/^(https?:\/\/\S+|\/(?!\/)\S*|mailto:\S+)$/);
+
+export const helpLinkSchema = z.object({
+  label: z.string().trim().min(1).max(40),
+  url: linkAddressSchema,
+});
+export type HelpLink = z.infer<typeof helpLinkSchema>;
+
+/**
+ * What fills the top of the help center: the page's own paper colour, the brand's colour or
+ * gradient, or a picture.
+ */
+export const helpHeaderStyleSchema = z.enum(["plain", "brand", "image"]);
+export type HelpHeaderStyle = z.infer<typeof helpHeaderStyleSchema>;
+
+/** How the public help center looks and what it says. Everything has a default. */
+const helpCenterSchema = z.object({
+  /** The heading at the top, in place of "How can we help?" */
+  title: z.string().min(1).optional(),
+  /** The line under it. */
+  intro: z.string().min(1).optional(),
+  headerStyle: helpHeaderStyleSchema.default("brand"),
+  /** The address of the picture behind the header, for the `image` style. */
+  headerImage: z.url().optional(),
+  /** The hint inside the search box, in place of "Search for articles". */
+  searchPlaceholder: z.string().min(1).optional(),
+  /** Links beside the logo, such as back to the main site. */
+  headerLinks: z.array(helpLinkSchema).max(HELP_HEADER_LINKS_MAX).default([]),
+  /** Links at the foot of every page, such as the terms and the privacy policy. */
+  footerLinks: z.array(helpLinkSchema).max(HELP_FOOTER_LINKS_MAX).default([]),
+  /** Whether help pages show the chat launcher, so a reader can ask when an article falls short. */
+  showChat: z.boolean().default(true),
+  /** The home page's title for search engines and browser tabs, in place of the usual one. */
+  seoTitle: z.string().min(1).optional(),
+  /** The home page's description for search engines. */
+  seoDescription: z.string().min(1).optional(),
+  /**
+   * Where visitors reach the help center, when that is not this install's own address: for
+   * example `https://example.com/help`, served through a rewrite. Search engines are told
+   * this is the one true address of every page.
+   */
+  url: z.url().optional(),
+});
+
+export type HelpCenterSettings = z.infer<typeof helpCenterSchema>;
 
 /** How tickets come in. */
 const ticketsSchema = z.object({
@@ -105,7 +165,7 @@ const storedSettingsSchema = z.object({
   tickets: ticketsSchema.default({ fromChat: true }),
   /** Who the install's emails are from. Without an address it sends none. */
   email: emailSchema.default(() => emailSchema.parse({})),
-  help_center: pageTextSchema.default({}),
+  help_center: helpCenterSchema.default(() => helpCenterSchema.parse({})),
   guest_details: guestDetailsSchema.default("email"),
   /**
    * The sites that may show the chat in a frame, as hosts such as `example.com` or
@@ -141,7 +201,7 @@ export const publicSettingsSchema = z.object({
   brand: brandSchema,
   widget: widgetSchema,
   chatPage: pageTextSchema,
-  helpCenter: pageTextSchema,
+  helpCenter: helpCenterSchema,
   tickets: ticketsSchema,
   guestDetails: guestDetailsSchema,
 });
@@ -184,6 +244,7 @@ export const settingsPatchSchema = z
       accent: accentColorSchema.optional(),
       accentTo: accentColorSchema.optional(),
       button: accentColorSchema.optional(),
+      poweredBy: z.boolean().optional(),
     }),
     widget: z.object({
       position: widgetPositionSchema,
@@ -205,7 +266,23 @@ export const settingsPatchSchema = z
       replies: z.boolean(),
       status: z.boolean(),
     }),
-    helpCenter: pageTextPatchSchema,
+    helpCenter: pageTextPatchSchema.extend({
+      headerStyle: helpHeaderStyleSchema,
+      headerImage: z.url().max(2000).optional(),
+      searchPlaceholder: z.string().trim().min(1).max(60).optional(),
+      headerLinks: z.array(helpLinkSchema).max(HELP_HEADER_LINKS_MAX),
+      footerLinks: z.array(helpLinkSchema).max(HELP_FOOTER_LINKS_MAX),
+      showChat: z.boolean(),
+      seoTitle: z.string().trim().min(1).max(70).optional(),
+      seoDescription: z.string().trim().min(1).max(200).optional(),
+      url: z
+        .url()
+        .max(500)
+        .regex(/^https?:\/\//)
+        // Paths are joined to it, so it carries no slash of its own at the end.
+        .transform((value) => value.replace(/\/+$/, ""))
+        .optional(),
+    }),
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
   })
@@ -215,7 +292,7 @@ export type SettingsPatch = z.input<typeof settingsPatchSchema>;
 
 export type UpdateSettingsResult = { ok: true } | { ok: false; reason: "forbidden" };
 
-/** Where logos are kept, and what one may be. The bucket enforces the same limits. */
+/** Where the brand's pictures are kept, and what one may be. The bucket enforces the same limits. */
 const LOGO_BUCKET = "brand";
 export const LOGO_MAX_BYTES = 1024 * 1024;
 export const LOGO_TYPES = {
@@ -245,6 +322,28 @@ const storage = {
 const NOT_ALLOWED = "42501";
 
 export function createSettings(supabase: HelpwrenSupabaseClient) {
+  /** Puts a picture in the brand's bucket under a new name that starts with what it is. */
+  async function uploadBrandImage(file: Blob, kind: string): Promise<UploadLogoResult> {
+    const extension = (LOGO_TYPES as Record<string, string | undefined>)[file.type];
+    if (!extension) return { ok: false, reason: "unsupported" };
+    if (file.size > LOGO_MAX_BYTES) return { ok: false, reason: "too_large" };
+
+    const path = `${kind}-${crypto.randomUUID()}.${extension}`;
+    const bucket = supabase.storage.from(LOGO_BUCKET);
+    const { error } = await bucket.upload(path, file, {
+      contentType: file.type,
+      cacheControl: "31536000",
+    });
+    if (error) {
+      // Storage reports a refusal by the access rules as a 403.
+      if ("statusCode" in error && String(error.statusCode) === "403") {
+        return { ok: false, reason: "forbidden" };
+      }
+      throw new HelpwrenError("Could not store the picture.", { cause: error });
+    }
+    return { ok: true, url: bucket.getPublicUrl(path).data.publicUrl };
+  }
+
   return {
     /** Every setting. For team members; a visitor gets the defaults for anything not public. */
     async getAll(): Promise<Settings> {
@@ -276,26 +375,11 @@ export function createSettings(supabase: HelpwrenSupabaseClient) {
      * Stores a logo and gives back its public address, to save as `brand.logo`. Only an admin
      * may. Each upload gets a new address, so a changed logo is never served from a cache.
      */
-    async uploadLogo(file: Blob): Promise<UploadLogoResult> {
-      const extension = (LOGO_TYPES as Record<string, string | undefined>)[file.type];
-      if (!extension) return { ok: false, reason: "unsupported" };
-      if (file.size > LOGO_MAX_BYTES) return { ok: false, reason: "too_large" };
+    uploadLogo: (file: Blob): Promise<UploadLogoResult> => uploadBrandImage(file, "logo"),
 
-      const path = `logo-${crypto.randomUUID()}.${extension}`;
-      const bucket = supabase.storage.from(LOGO_BUCKET);
-      const { error } = await bucket.upload(path, file, {
-        contentType: file.type,
-        cacheControl: "31536000",
-      });
-      if (error) {
-        // Storage reports a refusal by the access rules as a 403.
-        if ("statusCode" in error && String(error.statusCode) === "403") {
-          return { ok: false, reason: "forbidden" };
-        }
-        throw new HelpwrenError("Could not store the logo.", { cause: error });
-      }
-      return { ok: true, url: bucket.getPublicUrl(path).data.publicUrl };
-    },
+    /** Stores the picture for the help center's header, to save as `helpCenter.headerImage`. */
+    uploadHeaderImage: (file: Blob): Promise<UploadLogoResult> =>
+      uploadBrandImage(file, "help-header"),
 
     async getPublic(): Promise<PublicSettings> {
       const { data, error } = await supabase

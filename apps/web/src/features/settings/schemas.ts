@@ -7,6 +7,9 @@ import {
 import {
   agentRoleSchema,
   guestDetailsSchema,
+  HELP_FOOTER_LINKS_MAX,
+  HELP_HEADER_LINKS_MAX,
+  helpHeaderStyleSchema,
   QUICK_REPLIES_MAX,
   QUICK_REPLY_MAX_LENGTH,
   settingsPatchSchema,
@@ -41,6 +44,21 @@ export const memberChangeSchema = z.object({
 export type MemberChange = z.infer<typeof memberChangeSchema>["change"];
 
 const hex = /^#[0-9a-f]{6}$/;
+
+/** One row of the help center's header or footer links, as typed. */
+const linkRowSchema = z.object({
+  label: z.string().trim().min(1, "Give the link a name.").max(40, "Keep the name short."),
+  url: z
+    .string()
+    .trim()
+    .max(500)
+    .regex(
+      /^(https?:\/\/\S+|\/(?!\/)\S*|mailto:\S+)$/,
+      "Enter a web address such as https://example.com, or a path such as /pricing.",
+    ),
+});
+export type LinkRow = z.infer<typeof linkRowSchema>;
+
 /** Everything on the Branding page. Text left empty goes back to Helpwren's own wording. */
 export const brandingSchema = z.object({
   brandName: z
@@ -55,6 +73,7 @@ export const brandingSchema = z.object({
   accentTo: z.union([z.literal(""), z.string().regex(hex)]),
   /** The colour of buttons. The same as `accent` when they follow the brand. */
   button: z.string().regex(hex),
+  poweredBy: z.boolean(),
   position: widgetPatchSchema.shape.position,
   offsetX: widgetPatchSchema.shape.offsetX,
   offsetY: widgetPatchSchema.shape.offsetY,
@@ -69,6 +88,28 @@ export const brandingSchema = z.object({
   chatIntro: z.string().trim().max(200, "Keep this under 200 characters."),
   helpTitle: z.string().trim().max(80, "Keep the title under 80 characters."),
   helpIntro: z.string().trim().max(200, "Keep this under 200 characters."),
+  helpHeaderStyle: helpHeaderStyleSchema,
+  /** The address of the uploaded header picture. Empty for none. */
+  helpHeaderImage: z.string(),
+  helpSearchPlaceholder: z.string().trim().max(60, "Keep this under 60 characters."),
+  helpHeaderLinks: z
+    .array(linkRowSchema)
+    .max(HELP_HEADER_LINKS_MAX, `Add ${HELP_HEADER_LINKS_MAX} links at most.`),
+  helpFooterLinks: z
+    .array(linkRowSchema)
+    .max(HELP_FOOTER_LINKS_MAX, `Add ${HELP_FOOTER_LINKS_MAX} links at most.`),
+  helpShowChat: z.boolean(),
+  helpSeoTitle: z.string().trim().max(70, "Keep the title under 70 characters."),
+  helpSeoDescription: z.string().trim().max(200, "Keep this under 200 characters."),
+  /** Where visitors reach the help center, when it is served from another site. Empty for here. */
+  helpUrl: z.union([
+    z.literal(""),
+    z
+      .string()
+      .trim()
+      .max(500)
+      .regex(/^https?:\/\/\S+$/, "Enter the full address, such as https://example.com/help."),
+  ]),
 });
 export type BrandingValues = z.infer<typeof brandingSchema>;
 
@@ -88,6 +129,8 @@ export function brandingToSettings(values: BrandingValues) {
       accent: own ? values.accent : undefined,
       accentTo: own ? text(values.accentTo) : undefined,
       button: values.button === values.accent ? undefined : values.button,
+      // Saved only when turned off, so the stored brand stays as short as it was.
+      poweredBy: values.poweredBy ? undefined : false,
     },
     widget: {
       position: values.position,
@@ -100,7 +143,23 @@ export function brandingToSettings(values: BrandingValues) {
       quickReplies: values.quickReplies,
     },
     chatPage: { title: text(values.chatTitle), intro: text(values.chatIntro) },
-    helpCenter: { title: text(values.helpTitle), intro: text(values.helpIntro) },
+    helpCenter: {
+      title: text(values.helpTitle),
+      intro: text(values.helpIntro),
+      // A picture style with no picture would be an empty band, so it falls back to the brand's.
+      headerStyle:
+        values.helpHeaderStyle === "image" && !values.helpHeaderImage
+          ? "brand"
+          : values.helpHeaderStyle,
+      headerImage: text(values.helpHeaderImage),
+      searchPlaceholder: text(values.helpSearchPlaceholder),
+      headerLinks: values.helpHeaderLinks,
+      footerLinks: values.helpFooterLinks,
+      showChat: values.helpShowChat,
+      seoTitle: text(values.helpSeoTitle),
+      seoDescription: text(values.helpSeoDescription),
+      url: text(values.helpUrl.replace(/\/+$/, "")),
+    },
   } satisfies Patch;
 }
 

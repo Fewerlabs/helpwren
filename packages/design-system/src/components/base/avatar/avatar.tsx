@@ -38,11 +38,15 @@ export function Avatar({ name, src, size = "md", className, ...props }: AvatarPr
     <UiAvatar
       role="img"
       aria-label={name}
-      className={cn(sizes[size], "after:border-line", className)}
+      // A card's surface and a hairline, like the cards and panels it sits among.
+      className={cn(sizes[size], "after:border-rule", className)}
       {...props}
     >
       {src ? <UiAvatarImage src={src} alt="" /> : null}
-      <UiAvatarFallback aria-hidden="true" className="text-[length:inherit] font-medium">
+      <UiAvatarFallback
+        aria-hidden="true"
+        className="bg-card text-muted-foreground text-[length:inherit] font-medium"
+      >
         {initials(name)}
       </UiAvatarFallback>
     </UiAvatar>

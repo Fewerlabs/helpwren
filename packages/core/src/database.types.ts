@@ -34,6 +34,149 @@ export type Database = {
         };
         Relationships: [];
       };
+      article_feedback: {
+        Row: {
+          article_id: string;
+          created_at: string;
+          helpful: boolean;
+          id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          article_id: string;
+          created_at?: string;
+          helpful: boolean;
+          id?: string;
+        };
+        Update: {
+          article_id?: string;
+          created_at?: string;
+          helpful?: boolean;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "article_feedback_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "articles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      articles: {
+        Row: {
+          author_id: string | null;
+          body: NonNullable<Json>;
+          collection_id: string | null;
+          created_at: string;
+          featured: boolean;
+          id: string;
+          meta_description: string | null;
+          meta_title: string | null;
+          position: number;
+          published_at: string | null;
+          search: unknown;
+          slug: string;
+          status: string;
+          summary: string | null;
+          tags: string[];
+          title: string;
+          updated_at: string;
+          visibility: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id?: string | null;
+          body?: NonNullable<Json>;
+          collection_id?: string | null;
+          created_at?: string;
+          featured?: boolean;
+          id?: string;
+          meta_description?: string | null;
+          meta_title?: string | null;
+          position?: number;
+          published_at?: string | null;
+          search?: never;
+          slug: string;
+          status?: string;
+          summary?: string | null;
+          tags?: string[];
+          title: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Update: {
+          author_id?: string | null;
+          body?: NonNullable<Json>;
+          collection_id?: string | null;
+          created_at?: string;
+          featured?: boolean;
+          id?: string;
+          meta_description?: string | null;
+          meta_title?: string | null;
+          position?: number;
+          published_at?: string | null;
+          search?: never;
+          slug?: string;
+          status?: string;
+          summary?: string | null;
+          tags?: string[];
+          title?: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "articles_collection_id_fkey";
+            columns: ["collection_id"];
+            isOneToOne: false;
+            referencedRelation: "collections";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      collections: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          icon: string;
+          id: string;
+          name: string;
+          position: number;
+          slug: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          name: string;
+          position?: number;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          name?: string;
+          position?: number;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       contacts: {
         Row: {
           attributes: NonNullable<Json>;
@@ -499,6 +642,23 @@ export type Database = {
       };
     };
     Views: {
+      article_feedback_totals: {
+        Row: {
+          article_id: string;
+          helpful: number | null;
+          unhelpful: number | null;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "article_feedback_article_id_fkey";
+            columns: ["article_id"];
+            isOneToOne: false;
+            referencedRelation: "articles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       contact_summaries: {
         Row: {
           conversation_count: number | null;
@@ -572,6 +732,37 @@ export type Database = {
         };
       };
       merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
+      reorder_articles: { Args: { ids: string[] }; Returns: undefined };
+      reorder_collections: { Args: { ids: string[] }; Returns: undefined };
+      search_articles: {
+        Args: { query: string };
+        Returns: {
+          author_id: string | null;
+          body: NonNullable<Json>;
+          collection_id: string | null;
+          created_at: string;
+          featured: boolean;
+          id: string;
+          meta_description: string | null;
+          meta_title: string | null;
+          position: number;
+          published_at: string | null;
+          search: unknown;
+          slug: string;
+          status: string;
+          summary: string | null;
+          tags: string[];
+          title: string;
+          updated_at: string;
+          visibility: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "articles";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       search_conversations: {
         Args: { query: string };
         Returns: {

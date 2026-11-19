@@ -73,7 +73,7 @@ export default tseslint.config(
       "**/*.config.{ts,mts}",
       "**/.storybook/**",
       "**/*.stories.{ts,tsx}",
-      "**/src/app/**/{page,layout,loading,error,not-found,template,default,global-error,route}.{ts,tsx}",
+      "**/src/app/**/{page,layout,loading,error,not-found,template,default,global-error,route,sitemap,robots}.{ts,tsx}",
     ],
     rules: { "import-x/no-default-export": "off" },
   },

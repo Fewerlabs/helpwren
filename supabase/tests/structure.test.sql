@@ -26,9 +26,18 @@ select is_empty(
   $$
     select table_name, privilege_type from information_schema.role_table_grants
     where table_schema = 'public' and grantee = 'anon'
-      and (table_name, privilege_type) <> ('settings', 'SELECT')
+      and (table_name, privilege_type) not in (
+        ('settings', 'SELECT'),
+        -- The deliberate exceptions, each still narrowed by its policies. The help center is
+        -- public: anyone may read a published article and the collection it is in.
+        ('collections', 'SELECT'),
+        ('articles', 'SELECT'),
+        -- "Was this helpful?" is answered by readers with no session. They may add an
+        -- answer to a published article and can read none.
+        ('article_feedback', 'INSERT')
+      )
   $$,
-  'visitors with no session are granted nothing except reading settings'
+  'visitors with no session may only read settings and the help center, and rate an article'
 );
 
 select is_empty(

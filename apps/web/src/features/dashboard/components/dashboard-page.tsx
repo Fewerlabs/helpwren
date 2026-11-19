@@ -22,6 +22,8 @@ export interface DashboardPageProps {
   nav: readonly PageNavItem[];
   /** Names the navigation for assistive technology, such as "Inbox views". */
   navLabel?: string;
+  /** Something to do from the navigation, under its last item: a button such as "New collection". */
+  navAction?: ReactNode;
   /**
    * A column that belongs with the navigation, in the same card: the list a view selects from,
    * such as the inbox's conversations.
@@ -45,6 +47,7 @@ export function DashboardPage({
   title,
   nav,
   navLabel,
+  navAction,
   list,
   listHiddenWhenNarrow = false,
   className,
@@ -120,6 +123,7 @@ export function DashboardPage({
                 </Fragment>
               ))}
             </nav>
+            {navAction ? <div className="max-md:hidden">{navAction}</div> : null}
           </aside>
           {list ? <div className="flex min-h-0 min-w-0 flex-col md:w-[18.5rem]">{list}</div> : null}
         </div>
