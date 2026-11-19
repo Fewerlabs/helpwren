@@ -23,6 +23,7 @@ import {
 import { useId, useState, type ReactNode } from "react";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
+import { ContactVisitor } from "@/features/visitors";
 
 import { contactName } from "../contact-name";
 import { useConfirmStatus } from "../hooks/use-confirm-status";
@@ -52,10 +53,12 @@ interface SectionProps {
   title: string;
   icon: IconName;
   children: ReactNode;
+  /** The children draw their own list, in place of label and value rows. */
+  bare?: boolean;
 }
 
 /** A group of details that can be folded away, so the panel stays short as more are added. */
-function Section({ title, icon, children }: SectionProps) {
+function Section({ title, icon, children, bare = false }: SectionProps) {
   const [open, setOpen] = useState(true);
   const contentId = useId();
 
@@ -84,9 +87,13 @@ function Section({ title, icon, children }: SectionProps) {
         </button>
       </h3>
       <Expandable open={open} id={contentId}>
-        <dl className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 pb-3 text-xs">
-          {children}
-        </dl>
+        {bare ? (
+          <div className="px-3 pb-3">{children}</div>
+        ) : (
+          <dl className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 pb-3 text-xs">
+            {children}
+          </dl>
+        )}
       </Expandable>
     </section>
   );
@@ -269,6 +276,15 @@ export function DetailsPanel({
             {contact.phone ? <Link href={`tel:${contact.phone}`}>{contact.phone}</Link> : missing}
           </Row>
         </Section>
+        <ContactVisitor
+          contactId={contact.id}
+          factsClassName="grid-cols-[4.5rem_minmax(0,1fr)]"
+          frame={(content) => (
+            <Section title="Visitor" icon="globe" bare>
+              {content}
+            </Section>
+          )}
+        />
       </div>
     </Panel>
   );

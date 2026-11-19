@@ -13,10 +13,21 @@ export type VisitorDevice = z.infer<typeof visitorDeviceSchema>;
 /** A page on the web. Shown to the team as a link, so nothing but http and https. */
 const webAddressSchema = z.url({ protocol: /^https?$/ }).max(2000);
 
+/** A page and its title. A page with no title has none, rather than an empty one. */
+const pageSchema = z.object({
+  url: webAddressSchema,
+  title: z
+    .string()
+    .trim()
+    .max(300)
+    .optional()
+    .transform((title) => (title === "" ? undefined : title)),
+});
+
 /** What the chat sends when it checks in. Browser and location are worked out by the server. */
 export const visitorCheckInInputSchema = z.object({
   visitorId: visitorIdSchema,
-  page: z.object({ url: webAddressSchema, title: z.string().trim().max(300).optional() }),
+  page: pageSchema,
   /** The address the visitor came to the page from, if the browser says. */
   referrer: webAddressSchema.optional(),
   /** The browser's language, such as `en-GB`. */
@@ -36,9 +47,7 @@ export const claimOutreachInputSchema = z.object({
   visitorId: visitorIdSchema,
   source: z.string().trim().min(1).max(40).default("web"),
   /** The page the chat is on, kept with the conversation as when a visitor starts one. */
-  page: z
-    .object({ url: webAddressSchema, title: z.string().trim().max(300).optional() })
-    .optional(),
+  page: pageSchema.optional(),
 });
 export type ClaimOutreachInput = z.input<typeof claimOutreachInputSchema>;
 

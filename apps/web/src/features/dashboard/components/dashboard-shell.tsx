@@ -13,6 +13,8 @@ import { Sidebar } from "./sidebar";
 export interface DashboardShellProps {
   agent: Agent;
   signOut: ReactNode;
+  /** Sections the install has switched off, left out of the sidebar. */
+  hiddenSections?: readonly string[];
   children: ReactNode;
 }
 
@@ -21,7 +23,7 @@ export interface DashboardShellProps {
  * team member, and the one confirmation dialog and stack of toasts, all of which the sections
  * share.
  */
-export function DashboardShell({ agent, signOut, children }: DashboardShellProps) {
+export function DashboardShell({ agent, signOut, hiddenSections, children }: DashboardShellProps) {
   return (
     <HelpwrenProvider getClient={getDashboardClient}>
       <ConfirmProvider>
@@ -34,7 +36,11 @@ export function DashboardShell({ agent, signOut, children }: DashboardShellProps
           )}
         >
           <Notifier agentId={agent.id} />
-          <Sidebar agent={agent} signOut={signOut} />
+          <Sidebar
+            agent={agent}
+            signOut={signOut}
+            {...(hiddenSections ? { hiddenSections } : {})}
+          />
           <main className="min-h-0 min-w-0 flex-1">{children}</main>
           {/* At the top: the bottom corners hold the reply box's Send button and the sidebar. */}
           <Toaster position="top-center" />

@@ -14,6 +14,7 @@ import {
 import { useMemo, useState } from "react";
 
 import { DashboardPage, Panel, PanelHeader } from "@/features/dashboard";
+import { countryFlag, countryName } from "@/features/visitors";
 import { formatTimeAgo } from "@/lib/format-time";
 import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
@@ -85,6 +86,31 @@ export function Contacts() {
         cell: (contact) => contact.email ?? contact.phone ?? "Not given",
       },
       { id: "kind", header: "Type", cell: (contact) => <KindBadge contact={contact} /> },
+      {
+        id: "country",
+        header: "Country",
+        className: "text-muted-foreground max-xl:hidden",
+        headerClassName: "max-xl:hidden",
+        cell: ({ visitor }) => {
+          const country = visitor?.location.country;
+          return country ? (
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden="true">{countryFlag(country)}</span>
+              <span className="truncate">{countryName(country)}</span>
+            </span>
+          ) : (
+            "Unknown"
+          );
+        },
+      },
+      {
+        id: "seen",
+        header: "Last seen",
+        align: "end",
+        className: "text-muted-foreground tabular-nums max-md:hidden",
+        headerClassName: "max-md:hidden",
+        cell: ({ visitor }) => (visitor?.lastSeenAt ? formatTimeAgo(visitor.lastSeenAt) : "Never"),
+      },
       {
         id: "conversations",
         header: "Conversations",
