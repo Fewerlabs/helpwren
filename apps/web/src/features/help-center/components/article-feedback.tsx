@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Icon } from "@helpwren/design-system";
-import { useSyncExternalStore, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { getReaderClient } from "../client";
 
@@ -23,8 +23,8 @@ function useAnswered(articleId: string): boolean {
 }
 
 /**
- * "Was this helpful?" under an article. One answer per browser: it is remembered there, so the
- * question is not asked again on the next visit.
+ * "Was this helpful?" under an article: the question on one side, the two answers on the
+ * other. One answer per browser: it is remembered there, so the question is not asked again.
  */
 export function ArticleFeedback({ articleId }: { articleId: string }) {
   const before = useAnswered(articleId);
@@ -52,24 +52,24 @@ export function ArticleFeedback({ articleId }: { articleId: string }) {
   return (
     <section
       aria-label="Feedback"
-      className="border-rule bg-card flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-2xl border px-5 py-4"
+      className="flex min-h-9 flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm"
     >
       {before || state === "thanked" ? (
-        <p role="status" className="flex items-center gap-2 font-medium">
-          <Icon name="check-circle" className="text-primary size-5" />
+        <p role="status" className="text-muted-foreground flex items-center gap-2">
+          <Icon name="check-circle" className="text-primary size-4.5" />
           Thanks for letting us know.
         </p>
       ) : (
         <>
-          <p className="font-medium">
+          <p className="text-muted-foreground">
             Was this helpful?
             {state === "failed" ? (
-              <span role="alert" className="text-destructive ml-2 text-sm font-normal">
+              <span role="alert" className="text-destructive ml-2">
                 That did not send. Try again.
               </span>
             ) : null}
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant="secondary"
               size="sm"

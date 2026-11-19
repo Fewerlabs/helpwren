@@ -155,9 +155,9 @@ are the team's. See [ADR 0016](decisions/0016-knowledge-base.md).
 An article's body is a document tree, written with `RichTextEditor` and drawn with `RichText`,
 both in the design system. The public pages load none of the editor.
 
-The public pages are drawn for each request and never while building. What they read is kept
-under the tag in `src/lib/help-center-cache.ts`; `refreshHelpCenter` (articles) and
-`saveBranding` clear it, so a change shows at once.
+The public pages are drawn for each request and never while building, when there is no
+database to ask. Nothing is kept between requests, so a published article or a change of
+branding shows on the very next visit; within one request each question is asked once.
 
 **Embedding.** A host shows the help center in a frame with `/help?embed=1`. `src/proxy.ts`
 checks the options, limits framing to the allowed domains and passes what it accepted to the

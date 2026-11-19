@@ -1,157 +1,154 @@
 import { richTextToPlainText, type Article, type ArticleSummary } from "@helpwren/core";
-import { cn, RichText, richTextHeadings, type RichTextHeading } from "@helpwren/design-system";
+import { Icon, RichText, richTextHeadings } from "@helpwren/design-system";
+import Link from "next/link";
 
 import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
 
 import { formatDate, readingMinutes } from "../format";
-import { collectionPath, HELP_PATH } from "../urls";
+import { articlePath, collectionPath, HELP_PATH } from "../urls";
 import { ArticleFeedback } from "./article-feedback";
 import { Breadcrumbs } from "./breadcrumbs";
-import { ArticleList } from "./collection-grid";
+import { Contents } from "./contents";
 import { ChatLink } from "./help-chat";
-
-function Contents({ headings }: { headings: readonly RichTextHeading[] }) {
-  return (
-    <ul className="grid gap-1.5 text-sm">
-      {headings.map((heading) => (
-        <li key={heading.id} className={cn(heading.level > 2 && "pl-3")}>
-          <a
-            href={`#${heading.id}`}
-            className="text-muted-foreground hover:text-foreground focus-visible:outline-ring block rounded-sm text-pretty focus-visible:outline-2"
-          >
-            {heading.text}
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export interface ArticleViewProps {
   article: Article;
   /** Who wrote it, when the help center should say. */
   author?: string | undefined;
-  /** Other articles in the same collection, to read next. */
-  related: readonly ArticleSummary[];
+  /** The articles before and after this one in its collection, to read on without going back. */
+  previous?: ArticleSummary | undefined;
+  next?: ArticleSummary | undefined;
   /** Leaves out the parts that only make sense once it is published, for a preview of a draft. */
   preview?: boolean;
   /** Set inside a host's frame: links stay in the embedded form, and hidden parts are left out. */
   embed?: HelpEmbed | null;
 }
 
+function Neighbour({
+  article,
+  direction,
+  embed,
+}: {
+  article: ArticleSummary;
+  direction: "Previous" | "Next";
+  embed: HelpEmbed | null;
+}) {
+  if (!article.collection) return null;
+  const next = direction === "Next";
+  return (
+    <Link
+      href={withEmbed(articlePath(article.collection.slug, article.slug), embed)}
+      className={`group border-rule hover:border-edge focus-visible:outline-ring flex flex-col gap-1 rounded-xl border px-4 py-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${
+        next ? "items-end text-right sm:col-start-2" : "items-start"
+      }`}
+    >
+      <span className="font-medium text-pretty">{article.title}</span>
+      <span className="text-muted-foreground flex items-center gap-1 text-xs">
+        {next ? null : <Icon name="caret-left" className="size-3" />}
+        {direction}
+        {next ? <Icon name="caret-right" className="size-3" /> : null}
+      </span>
+    </Link>
+  );
+}
+
 /**
- * One article as a reader sees it: the way back up, the title, the body with a table of
- * contents beside it, then whether it helped, what to read next and how to reach a person.
+ * One article as a reader sees it: which collection it is in, the title, the body, then
+ * whether it helped, what comes before and after it, and how to reach a person. On a wide
+ * screen its table of contents sits in the page's right column; here it folds away above the
+ * body for narrow ones.
  */
 export function ArticleView({
   article,
   author,
-  related,
+  previous,
+  next,
   preview = false,
   embed = null,
 }: ArticleViewProps) {
   const hidden = (part: "feedback" | "chat") => embed?.hide.includes(part) ?? false;
   const headings = richTextHeadings(article.body);
   const minutes = readingMinutes(richTextToPlainText(article.body));
-  // Two headings make a table of contents; one is only the article's own outline.
-  const hasContents = headings.length >= 2;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
-      <Breadcrumbs
-        crumbs={[
-          { label: "Help center", href: withEmbed(HELP_PATH, embed) },
-          ...(article.collection
-            ? [
-                {
-                  label: article.collection.name,
-                  href: withEmbed(collectionPath(article.collection.slug), embed),
-                },
-              ]
-            : []),
-          { label: article.title },
-        ]}
-      />
+    <article>
+      {embed ? (
+        // Inside a frame there is no list of articles beside the page, so the way back is here.
+        <div className="mb-5">
+          <Breadcrumbs
+            crumbs={[
+              { label: "Help center", href: withEmbed(HELP_PATH, embed) },
+              ...(article.collection
+                ? [
+                    {
+                      label: article.collection.name,
+                      href: withEmbed(collectionPath(article.collection.slug), embed),
+                    },
+                  ]
+                : []),
+              { label: article.title },
+            ]}
+          />
+        </div>
+      ) : article.collection ? (
+        <Link
+          href={collectionPath(article.collection.slug)}
+          className="text-primary focus-visible:outline-ring mb-2 inline-block rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
+        >
+          {article.collection.name}
+        </Link>
+      ) : null}
 
-      <div
-        className={cn(
-          "mt-6 grid gap-x-14 gap-y-8",
-          hasContents && "lg:grid-cols-[minmax(0,1fr)_15rem]",
-        )}
-      >
-        <article className="max-w-3xl min-w-0">
-          <header>
-            <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {article.title}
-            </h1>
-            {article.summary ? (
-              <p className="text-muted-foreground mt-3 text-lg text-pretty">{article.summary}</p>
-            ) : null}
-            <p className="text-muted-foreground mt-4 flex flex-wrap gap-x-2 text-sm">
-              {author ? <span>Written by {author}</span> : null}
-              {author ? <span aria-hidden="true">·</span> : null}
-              <span>
-                Updated <time dateTime={article.updatedAt}>{formatDate(article.updatedAt)}</time>
-              </span>
-              <span aria-hidden="true">·</span>
-              <span>{minutes} min read</span>
-            </p>
-          </header>
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-[2.125rem] sm:leading-tight">
+          {article.title}
+        </h1>
+        {article.summary ? (
+          <p className="text-muted-foreground mt-2.5 text-lg text-pretty">{article.summary}</p>
+        ) : null}
+        <p className="text-muted-foreground mt-4 flex flex-wrap gap-x-2 text-sm">
+          {author ? <span>Written by {author}</span> : null}
+          {author ? <span aria-hidden="true">·</span> : null}
+          <span>
+            Updated <time dateTime={article.updatedAt}>{formatDate(article.updatedAt)}</time>
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>{minutes} min read</span>
+        </p>
+      </header>
 
-          {hasContents ? (
-            // On a narrow screen the contents fold away above the article.
-            <details className="border-rule bg-card mt-6 rounded-xl border px-4 py-3 lg:hidden">
-              <summary className="cursor-pointer font-medium">On this page</summary>
-              <div className="mt-3">
-                <Contents headings={headings} />
-              </div>
-            </details>
+      {headings.length >= 2 ? (
+        <details className="border-rule mt-6 rounded-xl border px-4 py-3 xl:hidden">
+          <summary className="cursor-pointer text-sm font-medium">On this page</summary>
+          <div className="mt-3">
+            <Contents headings={headings} />
+          </div>
+        </details>
+      ) : null}
+
+      <RichText doc={article.body} className="mt-8" />
+
+      {preview ? null : (
+        <div className="border-rule mt-12 grid gap-8 border-t pt-6">
+          {hidden("feedback") ? null : <ArticleFeedback articleId={article.id} />}
+
+          {previous || next ? (
+            <nav aria-label="More in this collection" className="grid gap-3 sm:grid-cols-2">
+              {previous ? (
+                <Neighbour article={previous} direction="Previous" embed={embed} />
+              ) : null}
+              {next ? <Neighbour article={next} direction="Next" embed={embed} /> : null}
+            </nav>
           ) : null}
 
-          <RichText doc={article.body} className="mt-8" />
-
-          {preview ? null : (
-            <div className="mt-12 grid gap-10">
-              {hidden("feedback") ? null : <ArticleFeedback articleId={article.id} />}
-
-              {related.length > 0 ? (
-                <section aria-labelledby="related-articles">
-                  <h2 id="related-articles" className="mb-3 text-lg font-semibold">
-                    Related articles
-                  </h2>
-                  <ArticleList label="Related articles" articles={related} embed={embed} />
-                </section>
-              ) : null}
-
-              {hidden("chat") ? null : (
-                <section
-                  aria-labelledby="still-need-help"
-                  className="bg-muted/60 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-2xl px-6 py-6"
-                >
-                  <div>
-                    <h2 id="still-need-help" className="text-lg font-semibold">
-                      Still need help?
-                    </h2>
-                    <p className="text-muted-foreground mt-1">
-                      Send us a message and a person on our team will answer.
-                    </p>
-                  </div>
-                  <ChatLink newTab={embed !== null} />
-                </section>
-              )}
-            </div>
+          {hidden("chat") ? null : (
+            <p className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+              Still need help?
+              <ChatLink newTab={embed !== null} />
+            </p>
           )}
-        </article>
-
-        {hasContents ? (
-          <aside className="max-lg:hidden">
-            <nav aria-label="On this page" className="sticky top-8">
-              <p className="text-2xs mb-3 font-mono tracking-wider uppercase">On this page</p>
-              <Contents headings={headings} />
-            </nav>
-          </aside>
-        ) : null}
-      </div>
-    </div>
+        </div>
+      )}
+    </article>
   );
 }

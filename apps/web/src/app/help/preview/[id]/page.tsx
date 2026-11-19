@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { requireAgent } from "@/features/agent-auth";
-import { ArticleView, HelpHeader, helpMetadata } from "@/features/help-center";
-import { getHelpSettings } from "@/lib/help-center-data";
+import { ArticleView, helpMetadata, HelpShell } from "@/features/help-center";
+import { getHelpCollections, getHelpSettings } from "@/lib/help-center-data";
 import { getHelpwren } from "@/lib/helpwren";
 
 type Props = PageProps<"/help/preview/[id]">;
@@ -21,8 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HelpPreviewPage({ params }: Props) {
   await requireAgent();
   const helpwren = await getHelpwren();
-  const [settings, article, team] = await Promise.all([
+  const [settings, collections, article, team] = await Promise.all([
     getHelpSettings(),
+    getHelpCollections(),
     helpwren.articles.get((await params).id),
     helpwren.agents.list(),
   ]);
@@ -39,15 +40,17 @@ export default async function HelpPreviewPage({ params }: Props) {
           ? "Preview. This article is published."
           : "Preview of a draft. Only your team can see this page."}
       </p>
-      <HelpHeader settings={settings} variant="inner" />
-      <main>
+      <HelpShell
+        settings={settings}
+        collections={collections}
+        current={{ collection: article.collection?.slug, article: article.slug }}
+      >
         <ArticleView
           article={article}
           author={team.find((member) => member.id === article.authorId)?.name}
-          related={[]}
           preview
         />
-      </main>
+      </HelpShell>
     </>
   );
 }

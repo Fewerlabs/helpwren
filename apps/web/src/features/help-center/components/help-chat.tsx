@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Icon } from "@helpwren/design-system";
+import { Icon } from "@helpwren/design-system";
 import { createWidget, type HelpwrenWidget } from "helpwren";
 import { useEffect } from "react";
 
@@ -31,20 +31,19 @@ export function HelpChatLauncher() {
  */
 export function ChatLink({ newTab = false }: { newTab?: boolean }) {
   return (
-    <Button asChild>
-      <a
-        href="/chat"
-        // Inside a host's frame the chat would be a frame within a frame, so it gets a tab.
-        {...(newTab ? { target: "_blank", rel: "noopener" } : {})}
-        onClick={(event) => {
-          if (!widget) return;
-          event.preventDefault();
-          widget.show();
-        }}
-      >
-        <Icon name="chat-circle" />
-        Chat with us
-      </a>
-    </Button>
+    <a
+      href="/chat"
+      className="text-primary focus-visible:outline-ring inline-flex items-center gap-1.5 rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
+      // Inside a host's frame the chat would be a frame within a frame, so it gets a tab.
+      {...(newTab ? { target: "_blank", rel: "noopener" } : {})}
+      onClick={(event) => {
+        if (!widget) return;
+        event.preventDefault();
+        widget.show();
+      }}
+    >
+      <Icon name="chat-circle" className="size-4" />
+      Chat with us
+    </a>
   );
 }

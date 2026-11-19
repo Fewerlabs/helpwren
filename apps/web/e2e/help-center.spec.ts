@@ -24,7 +24,7 @@ test("a visitor browses from the home page to an article", async ({ page }) => {
     "The chat does not appear",
   );
 
-  await page.getByRole("link", { name: /Getting started/ }).click();
+  await page.getByRole("link", { name: /Getting started.*3 articles/s }).click();
   await expect(page).toHaveURL(/\/help\/getting-started$/);
   await expect(page.getByRole("heading", { level: 1, name: "Getting started" })).toBeVisible();
   const articles = page.getByRole("list", { name: "Articles in Getting started" });
@@ -36,15 +36,20 @@ test("a visitor browses from the home page to an article", async ({ page }) => {
     page.getByRole("heading", { level: 1, name: "Add the chat to your website" }),
   ).toBeVisible();
 
-  // The way back up, a table of contents made from the headings, and what to read next.
-  const crumbs = page.getByRole("navigation", { name: "Breadcrumb" });
-  await expect(crumbs.getByRole("link", { name: "Getting started" })).toBeVisible();
+  // The list of every article beside the page marks where the reader is.
+  const list = page.getByRole("complementary").getByRole("navigation", { name: "All articles" });
+  await expect(list.getByRole("link", { name: "Read your invoice" })).toBeVisible();
+  await expect(list.getByRole("link", { name: "Add the chat to your website" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  // A table of contents made from the headings, what comes next, and a way to a person.
   await page
     .getByRole("navigation", { name: "On this page" })
     .getByRole("link", { name: "Check it works" })
     .click();
   await expect(page).toHaveURL(/#check-it-works$/);
-  await expect(page.getByRole("list", { name: "Related articles" })).toContainText(
+  await expect(page.getByRole("navigation", { name: "More in this collection" })).toContainText(
     "Invite your team",
   );
   await expect(page.getByRole("link", { name: "Chat with us" })).toBeVisible();
@@ -139,9 +144,10 @@ test("an admin brands the help center, and visitors see it at once", async ({ pa
   await page.goto("/dashboard/settings/branding");
   await page.getByRole("tab", { name: "Help center" }).click();
 
-  await page.getByLabel("Title").fill("Acme answers");
+  await page.getByLabel("Title", { exact: true }).fill("Acme answers");
   await page.getByLabel("Search hint").fill("Search Acme help");
-  await page.getByRole("radio", { name: "Plain" }).check();
+  // The radio itself is hidden under its card, which is what a person presses.
+  await page.getByRole("radiogroup", { name: "Background" }).getByText("Plain").click();
   await page.getByRole("button", { name: "Add link" }).first().click();
   await page.getByLabel("Header link 1 name").fill("Back to Acme");
   await page.getByLabel("Header link 1 address").fill("https://acme.example");
@@ -168,7 +174,14 @@ test("an admin brands the help center, and visitors see it at once", async ({ pa
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
-  await expect(page.getByText("On this page")).toBeVisible();
+  await expect(page.getByRole("article").getByText("On this page")).toBeVisible();
+  // The list of articles slides in over the page; it does not push the article down.
+  await page.getByRole("button", { name: "Browse all articles" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "All articles" }).getByRole("link", {
+      name: "Invite your team",
+    }),
+  ).toBeVisible();
 });
 
 test("a visitor finds and reads an article inside the chat", async ({ page }) => {
@@ -182,6 +195,14 @@ test("a visitor finds and reads an article inside the chat", async ({ page }) =>
     .getByRole("navigation", { name: "Chat" })
     .getByRole("button", { name: "Help" })
     .click();
+
+  // The Help tab lists the collections; opening one shows its articles.
+  await page.getByRole("button", { name: /Account and billing.*2 articles/s }).click();
+  await expect(page.getByRole("heading", { name: "Account and billing" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Change who can sign in/ })).toBeVisible();
+  await page.getByRole("button", { name: "Back" }).click();
+
+  // Search looks across every collection.
   await page.getByRole("searchbox", { name: "Search for help" }).fill("invoice");
   await page.getByRole("button", { name: /Read your invoice/ }).click();
 
@@ -191,4 +212,60 @@ test("a visitor finds and reads an article inside the chat", async ({ page }) =>
   await expect(page).toHaveURL(/\/chat$/);
   await page.getByRole("button", { name: /Still need help/ }).click();
   await expect(page.getByRole("heading", { name: "New conversation" })).toBeVisible();
+});
+
+test("a host embeds the help center without its chrome, and is told its height", async ({
+  page,
+  baseURL,
+}) => {
+  // A page standing in for the host's, with the help center in a frame, as the snippet on the
+  // Installation page sets it up.
+  const origin = baseURL ?? "";
+  // A plain page of this install stands in for the host's, so nothing of the app's own is on
+  // it. (A browser will not let a page from nowhere frame a local address.)
+  await page.goto("/robots.txt");
+  await page.setContent(`
+    <iframe id="help" title="Help" style="width: 100%; min-height: 320px; border: 0"
+      src="${origin}/help?embed=1&hide=chat&accent=1d4ed8"></iframe>
+    <script>
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        if (message?.channel !== "helpwren" || message.type !== "help-height") return;
+        document.getElementById("help").style.height = message.height + "px";
+        window.reported = message.height;
+      });
+    </script>`);
+  const frame = page.frameLocator("#help");
+
+  // The content alone: no brand header, no footer, no credit, no launcher.
+  await expect(frame.getByRole("link", { name: /Getting started.*3 articles/s })).toBeVisible();
+  // Whatever the branding test before this one called it, the search is there.
+  await expect(frame.getByRole("searchbox")).toBeVisible();
+  await expect(frame.getByRole("link", { name: "Powered by Helpwren" })).toHaveCount(0);
+  await expect(frame.getByRole("heading", { level: 1 })).toHaveCount(0);
+
+  // The frame is as tall as what it shows.
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { reported?: number }).reported ?? 0))
+    .toBeGreaterThan(300);
+
+  // Links stay in the frame and in the embedded form, with the host's options.
+  await frame.getByRole("link", { name: /Getting started.*3 articles/s }).click();
+  await frame.getByRole("link", { name: /Add the chat to your website/ }).click();
+  await expect(
+    frame.getByRole("heading", { level: 1, name: "Add the chat to your website" }),
+  ).toBeVisible();
+  await expect(frame.getByText("Was this helpful?")).toBeVisible();
+  await expect(frame.getByRole("link", { name: "Chat with us" })).toHaveCount(0);
+  await expect(frame.getByRole("link", { name: "Powered by Helpwren" })).toHaveCount(0);
+  expect(page.frames().at(-1)?.url()).toContain("embed=1&hide=chat&accent=1d4ed8");
+
+  // A host can open it on a collection or a search, and unknown options are dropped.
+  await page.goto("/help?embed=1&collection=troubleshooting&hide=nonsense&accent=red");
+  await expect(page).toHaveURL(/\/help\/troubleshooting\?embed=1$/);
+  await page.goto("/help?embed=1&q=invoice");
+  await expect(page).toHaveURL(/\/help\/search\?q=invoice&embed=1$/);
+  await expect(page.getByRole("list", { name: "Search results" })).toContainText(
+    "Read your invoice",
+  );
 });

@@ -1,12 +1,10 @@
 import { type PublicSettings } from "@helpwren/core";
-import { ArticleCard } from "@helpwren/design-system";
 
 import { accentStyle } from "@/lib/accent";
 
-import { countArticles } from "../format";
-import { iconOf } from "./collection-grid";
-import { HelpFooter } from "./help-footer";
-import { HelpHeader } from "./help-header";
+import { CollectionGrid } from "./collection-grid";
+import { HelpHero } from "./help-hero";
+import { HelpShell } from "./help-shell";
 
 export interface PreviewCollection {
   name: string;
@@ -23,30 +21,36 @@ export interface HelpHomePreviewProps {
 
 /**
  * The help center's home page, drawn from settings that may not be saved yet, for the preview
- * beside the Branding form. It is built from the same header and footer as the real page, so
- * the preview cannot drift from it. Nothing in it can be followed or typed into.
+ * beside the Branding form. It is the real page's own frame, greeting and cards, so the
+ * preview cannot drift from it. Nothing in it can be followed or typed into.
  */
 export function HelpHomePreview({ settings, collections }: HelpHomePreviewProps) {
+  // The preview has the names and counts, not the articles themselves, so each collection
+  // gets as many stand-ins as it has articles.
+  const shown = collections.map((collection, index) => ({
+    id: `preview-${index}`,
+    slug: `preview-${index}`,
+    name: collection.name,
+    description: collection.description,
+    icon: collection.icon,
+    articles: Array.from({ length: collection.articleCount }, (_, at) => ({
+      id: `preview-${index}-${at}`,
+      slug: `preview-${index}-${at}`,
+      title: at === 0 ? "A first article" : at === 1 ? "Another article" : "One more article",
+    })),
+  }));
+
   return (
     <div
-      inert
-      className="bg-background text-foreground flex min-h-full flex-col"
+      className="bg-background text-foreground relative isolate flex min-h-full flex-col overflow-hidden"
       style={accentStyle(settings.brand)}
     >
-      <HelpHeader settings={settings} variant="home" inert />
-      <div className="mx-auto grid w-full max-w-6xl flex-1 content-start gap-4 px-8 py-12 sm:grid-cols-2 lg:grid-cols-3">
-        {collections.map((collection) => (
-          <ArticleCard
-            key={collection.name}
-            href="#"
-            icon={iconOf(collection.icon)}
-            title={collection.name}
-            {...(collection.description ? { summary: collection.description } : {})}
-            meta={countArticles(collection.articleCount)}
-          />
-        ))}
-      </div>
-      <HelpFooter settings={settings} inert />
+      <HelpShell settings={settings} collections={shown} home inert>
+        <HelpHero settings={settings} />
+        <div className="mt-10">
+          <CollectionGrid collections={shown} />
+        </div>
+      </HelpShell>
     </div>
   );
 }

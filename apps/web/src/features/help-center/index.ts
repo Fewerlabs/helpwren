@@ -4,15 +4,16 @@ export { ArticleFeedback } from "./components/article-feedback";
 export { ArticleView, type ArticleViewProps } from "./components/article-view";
 export { Breadcrumbs, type Crumb } from "./components/breadcrumbs";
 export { ArticleList, CollectionGrid, iconOf } from "./components/collection-grid";
+export { Contents } from "./components/contents";
 export { EmbedFrame } from "./components/embed-frame";
 export { HelpChatLauncher } from "./components/help-chat";
-export { HelpFooter } from "./components/help-footer";
+export { HelpHero } from "./components/help-hero";
 export {
   HelpHomePreview,
   type HelpHomePreviewProps,
   type PreviewCollection,
 } from "./components/help-home-preview";
-export { HelpHeader, type HelpHeaderProps } from "./components/help-header";
+export { HelpShell, type HelpShellProps } from "./components/help-shell";
 export { JsonLd } from "./components/json-ld";
 export { countArticles } from "./format";
 export { helpMetadata, type HelpPage } from "./metadata";

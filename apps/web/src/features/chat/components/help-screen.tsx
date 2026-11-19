@@ -13,11 +13,11 @@ import {
 } from "@helpwren/design-system";
 import { useState } from "react";
 
-import { ArticleFeedback } from "@/features/help-center";
+import { ArticleFeedback, iconOf as collectionIcon } from "@/features/help-center";
 import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
-import { useShowScreen } from "../store/chat-store";
+import { useShowScreen, type OpenCollection } from "../store/chat-store";
 import { ScreenHeader } from "./screen-header";
 
 /** The start of every help query's key in the chat. */
@@ -29,14 +29,14 @@ const SUGGESTED = 3;
 // A line of handwriting, not the wren: this screen wears the customer's brand.
 const loading = () => <AppLoader bird={false} size="sm" label="Loading articles" />;
 
-function ArticleRow({ article }: { article: ArticleSummary }) {
+function ArticleRow({ article, from }: { article: ArticleSummary; from?: OpenCollection }) {
   const show = useShowScreen();
   return (
     <button
       type="button"
-      className="hover:bg-muted focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
+      className="hover:bg-primary/10 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
       onClick={() => {
-        show({ name: "article", slug: article.slug });
+        show({ name: "article", slug: article.slug, ...(from ? { from } : {}) });
       }}
     >
       <span className="min-w-0 flex-1">
@@ -105,7 +105,10 @@ export function SuggestedArticles() {
   );
 }
 
-/** The Help tab: search the articles, or browse them, without leaving the chat. */
+/**
+ * The Help tab: the collections to look through, as a help center lists them, and a search
+ * across every article. Nothing here leaves the chat.
+ */
 export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) {
   const getClient = useHelpwren();
   const show = useShowScreen();
@@ -123,27 +126,19 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
           onValueChange={setSearch}
         />
       </div>
-      <QueryList
-        queryKey={[...HELP_QUERY_KEY, "list", query]}
-        queryFn={async () => {
-          const client = getClient();
-          // Words typed: the best matches. Nothing typed: every article, the featured first.
-          if (query) return { items: await client.articles.search(query, { limit: 20 }) };
-          const page = await client.articles.list({ status: "published", pageSize: 50 });
-          return {
-            items: [...page.items].sort(
-              (first, second) => Number(second.featured) - Number(first.featured),
-            ),
-          };
-        }}
-        pagination="none"
-        className="min-h-0 flex-1 overflow-y-auto"
-        contentClassName="px-1 pb-4"
-        getItemKey={(article) => article.id}
-        renderItem={(article) => <ArticleRow article={article} />}
-        renderLoading={loading}
-        renderEmpty={() =>
-          query ? (
+      {query ? (
+        <QueryList
+          queryKey={[...HELP_QUERY_KEY, "search", query]}
+          queryFn={async () => ({
+            items: await getClient().articles.search(query, { limit: 20 }),
+          })}
+          pagination="none"
+          className="min-h-0 flex-1 overflow-y-auto"
+          contentClassName="px-1 pb-4"
+          getItemKey={(article) => article.id}
+          renderItem={(article) => <ArticleRow article={article} />}
+          renderLoading={loading}
+          renderEmpty={() => (
             <EmptyState
               scene="no-results"
               bird={false}
@@ -162,7 +157,48 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
                 </Button>
               }
             />
-          ) : (
+          )}
+        />
+      ) : (
+        <QueryList
+          queryKey={[...HELP_QUERY_KEY, "collections"]}
+          queryFn={async () => ({ items: await getClient().collections.list() })}
+          pagination="none"
+          className="min-h-0 flex-1 overflow-y-auto"
+          contentClassName="px-1 pb-4"
+          header={<h2 className="text-muted-foreground px-4 pb-1 text-xs">Browse by topic</h2>}
+          getItemKey={(collection) => collection.id}
+          renderItem={(collection) => (
+            <button
+              type="button"
+              className="hover:bg-primary/10 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
+              onClick={() => {
+                show({
+                  name: "collection",
+                  collection: { id: collection.id, name: collection.name },
+                });
+              }}
+            >
+              <span className="bg-primary/10 text-primary grid size-9 shrink-0 place-items-center rounded-lg">
+                <Icon
+                  name={collectionIcon(collection.icon)}
+                  weight="duotone"
+                  className="size-4.5"
+                />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{collection.name}</span>
+                <span className="text-muted-foreground block text-xs">
+                  {collection.articleCount === 1
+                    ? "1 article"
+                    : `${collection.articleCount} articles`}
+                </span>
+              </span>
+              <Icon name="caret-right" className="text-muted-foreground size-4 shrink-0" />
+            </button>
+          )}
+          renderLoading={loading}
+          renderEmpty={() => (
             <EmptyState
               scene="first-article"
               bird={false}
@@ -171,10 +207,52 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
               title="No articles yet"
               description="Send us a message and we will help."
             />
-          )
-        }
-      />
+          )}
+        />
+      )}
     </div>
+  );
+}
+
+export interface CollectionScreenProps {
+  collection: OpenCollection;
+  onBack: () => void;
+  onClose?: (() => void) | undefined;
+}
+
+/** One collection's articles, in the order the team set, opened from the Help tab. */
+export function CollectionScreen({ collection, onBack, onClose }: CollectionScreenProps) {
+  const getClient = useHelpwren();
+  return (
+    <>
+      <ScreenHeader title={collection.name} onBack={onBack} onClose={onClose} />
+      <QueryList
+        queryKey={[...HELP_QUERY_KEY, "collection", collection.id]}
+        queryFn={async () => {
+          const page = await getClient().articles.list({
+            collectionId: collection.id,
+            status: "published",
+            pageSize: 100,
+          });
+          return { items: page.items };
+        }}
+        pagination="none"
+        className="min-h-0 flex-1 overflow-y-auto"
+        contentClassName="px-1 pb-4"
+        getItemKey={(article) => article.id}
+        renderItem={(article) => <ArticleRow article={article} from={collection} />}
+        renderLoading={loading}
+        renderEmpty={() => (
+          <EmptyState
+            scene="first-article"
+            bird={false}
+            size="sm"
+            className="pt-8"
+            title="Nothing in this collection yet"
+          />
+        )}
+      />
+    </>
   );
 }
 

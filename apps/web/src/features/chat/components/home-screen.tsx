@@ -50,7 +50,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
       <div className="grid gap-2 px-4 pt-3">
         <button
           type="button"
-          className="border-line border-input bg-card hover:bg-muted focus-visible:outline-ring flex h-12 w-full items-center justify-between rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="border-line border-input bg-card hover:border-primary hover:bg-primary/10 focus-visible:outline-ring flex h-12 w-full items-center justify-between rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           onClick={() => {
             show({ name: "start" });
           }}
@@ -61,7 +61,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
         {tickets ? (
           <button
             type="button"
-            className="border-line border-input bg-card hover:bg-muted focus-visible:outline-ring flex h-12 w-full items-center gap-2.5 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="border-line border-input bg-card hover:border-primary hover:bg-primary/10 focus-visible:outline-ring flex h-12 w-full items-center gap-2.5 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             onClick={() => {
               show({ name: "ticket" });
             }}

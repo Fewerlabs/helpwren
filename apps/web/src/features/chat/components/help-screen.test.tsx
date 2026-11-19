@@ -8,10 +8,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { resetChatStore, useScreen } from "../store/chat-store";
-import { ArticleScreen, HelpScreen, SuggestedArticles } from "./help-screen";
+import { ArticleScreen, CollectionScreen, HelpScreen, SuggestedArticles } from "./help-screen";
 
 // Feedback has a client of its own, which a unit test has no database for.
-vi.mock("@/features/help-center", () => ({ ArticleFeedback: () => <p>Was this helpful?</p> }));
+vi.mock("@/features/help-center", () => ({
+  ArticleFeedback: () => <p>Was this helpful?</p>,
+  iconOf: () => "book-open",
+}));
 
 const summary = (overrides: Partial<ArticleSummary>): ArticleSummary => ({
   id: "11111111-1111-4111-8111-111111111111",
@@ -41,7 +44,9 @@ const install = summary({
 });
 
 const articles = { list: vi.fn(), search: vi.fn(), getBySlug: vi.fn() };
-const client = { articles } as unknown as HelpwrenClient;
+const collections = { list: vi.fn() };
+const client = { articles, collections } as unknown as HelpwrenClient;
+const billing = { id: "33333333-3333-4333-8333-333333333333", name: "Billing" };
 
 /** Shows which screen the chat is on, so a test can see where a tap led. */
 function Where() {
@@ -70,24 +75,37 @@ describe("the chat's Help", () => {
     articles.search.mockResolvedValue([invoice]);
   });
 
-  it("lists the articles with the featured ones first, and opens one in the chat", async () => {
+  it("lists the collections, and opens one to show its articles", async () => {
     const user = userEvent.setup();
+    collections.list.mockResolvedValue([
+      { ...billing, slug: "billing", description: null, icon: "credit-card", articleCount: 2 },
+    ]);
     renderChat(<HelpScreen />);
 
-    const rows = await screen.findAllByRole("button", { name: /website|invoice/ });
-    expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("Add the chat to your website"),
-      expect.stringContaining("Read your invoice"),
-    ]);
-
-    await user.click(screen.getByRole("button", { name: /Read your invoice/ }));
+    await user.click(await screen.findByRole("button", { name: /Billing.*2 articles/s }));
     expect(screen.getByRole("status")).toHaveTextContent(
-      '{"name":"article","slug":"read-your-invoice"}',
+      `{"name":"collection","collection":${JSON.stringify(billing)}}`,
+    );
+  });
+
+  it("shows a collection's articles, and remembers where one was opened from", async () => {
+    const user = userEvent.setup();
+    renderChat(<CollectionScreen collection={billing} onBack={vi.fn()} />);
+
+    await user.click(await screen.findByRole("button", { name: /Read your invoice/ }));
+    expect(articles.list).toHaveBeenCalledWith({
+      collectionId: billing.id,
+      status: "published",
+      pageSize: 100,
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `{"name":"article","slug":"read-your-invoice","from":${JSON.stringify(billing)}}`,
     );
   });
 
   it("searches as the visitor types, and offers a message when nothing matches", async () => {
     const user = userEvent.setup();
+    collections.list.mockResolvedValue([]);
     renderChat(<HelpScreen />);
 
     await user.type(screen.getByRole("searchbox", { name: "Search for help" }), "invoice");

@@ -35,7 +35,9 @@ test("a team member browses, searches and filters the articles", async ({ page }
   await expect(troubleshooting.getByText("Messages arrive late")).toBeVisible();
   await expect(troubleshooting.getByText("The chat does not appear")).toHaveCount(0);
 
-  // Search looks through the words of every article, wherever it is filed.
+  // Search looks through the words of every article, wherever it is filed. The filter stays
+  // on from one collection to the next, so it is taken off first.
+  await page.getByRole("button", { name: "Remove the Status filter" }).click();
   await collections.getByRole("link", { name: /All articles/ }).click();
   await page.getByRole("searchbox", { name: "Search articles" }).fill("tag manager");
   await expect(table.getByText("Add the chat to your website")).toBeVisible();
@@ -50,7 +52,9 @@ test("a team member writes an article, publishes it and takes it down again", as
   await page.getByRole("button", { name: "New collection" }).click();
   const collectionForm = page.getByRole("dialog", { name: "New collection" });
   await collectionForm.getByLabel("Name").fill("Shipping (e2e)");
-  await collectionForm.getByRole("radio", { name: "Parcel" }).check();
+  // The radio itself is hidden under its icon, which is what a person presses.
+  await collectionForm.getByTitle("Parcel").click();
+  await expect(collectionForm.getByRole("radio", { name: "Parcel" })).toBeChecked();
   await collectionForm.getByRole("button", { name: "Add collection" }).click();
   await expect(page).toHaveURL(/collection=shipping-e2e/);
   await expect(page.getByText("Nothing in this collection yet")).toBeVisible();

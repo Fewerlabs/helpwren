@@ -7,8 +7,9 @@ import {
   canonicalUrl,
   CollectionGrid,
   collectionPath,
-  HelpHeader,
+  HelpHero,
   helpMetadata,
+  HelpShell,
   JsonLd,
   searchPath,
 } from "@/features/help-center";
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return helpMetadata(await getHelpSettings());
 }
 
-/** The help center's home: the greeting and search, then every collection as a card. */
+/** The help center's home: the greeting and search, every collection as a card, and the articles put forward. */
 export default async function HelpHomePage() {
   const [settings, collections, embed] = await Promise.all([
     getHelpSettings(),
@@ -36,50 +37,43 @@ export default async function HelpHomePage() {
   );
 
   return (
-    <>
-      <HelpHeader settings={settings} variant="home" embed={embed} />
-      <main
-        className={
-          embed
-            ? "mx-auto w-full max-w-3xl px-4 py-5"
-            : "mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 sm:py-14"
-        }
-      >
-        {collections.length === 0 ? (
-          // The book and pencil alone: the wren is our mark, and this page wears theirs.
-          <EmptyState
-            scene="first-article"
-            bird={false}
-            headingLevel={2}
-            title="Articles are on their way"
-            description="There is nothing here yet. Check back soon."
-          />
-        ) : (
-          <div className="grid gap-12">
-            {showCollections ? (
-              <section aria-labelledby="collections">
-                <h2 id="collections" className="sr-only">
-                  Browse by topic
-                </h2>
-                <CollectionGrid collections={collections} embed={embed} />
-              </section>
-            ) : null}
-            {featured.length > 0 ? (
-              <section aria-labelledby="popular-articles" className="mx-auto w-full max-w-3xl">
-                <h2 id="popular-articles" className="mb-4 text-xl font-semibold tracking-tight">
-                  Popular articles
-                </h2>
-                <ArticleList
-                  label="Popular articles"
-                  articles={featured}
-                  showCollection
-                  embed={embed}
-                />
-              </section>
-            ) : null}
-          </div>
-        )}
-      </main>
+    <HelpShell settings={settings} collections={collections} embed={embed} home>
+      {embed ? null : <HelpHero settings={settings} />}
+      {collections.length === 0 ? (
+        // The book and pencil alone: the wren is our mark, and this page wears theirs.
+        <EmptyState
+          scene="first-article"
+          bird={false}
+          headingLevel={2}
+          className="mt-10"
+          title="Articles are on their way"
+          description="There is nothing here yet. Check back soon."
+        />
+      ) : (
+        <div className={embed ? "grid gap-8" : "mt-10 grid gap-12"}>
+          {showCollections ? (
+            <section aria-labelledby="collections">
+              <h2 id="collections" className="sr-only">
+                Browse by topic
+              </h2>
+              <CollectionGrid collections={collections} embed={embed} />
+            </section>
+          ) : null}
+          {featured.length > 0 ? (
+            <section aria-labelledby="popular-articles">
+              <h2 id="popular-articles" className="mb-3 text-lg font-semibold tracking-tight">
+                Popular articles
+              </h2>
+              <ArticleList
+                label="Popular articles"
+                articles={featured}
+                showCollection
+                embed={embed}
+              />
+            </section>
+          ) : null}
+        </div>
+      )}
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -93,6 +87,6 @@ export default async function HelpHomePage() {
           },
         }}
       />
-    </>
+    </HelpShell>
   );
 }

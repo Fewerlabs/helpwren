@@ -70,10 +70,12 @@ inside its own pages as well as link to them.
   applies, `Article` and `BreadcrumbList` data. `/help/sitemap.xml` lists every page and
   `robots.txt` points to it.
 - **Read as a visitor with no session, whoever is asking**, so a signed-in team member sees what
-  the public sees, and one answer can be kept for everybody.
-- **Kept between requests, not built ahead.** Pages are drawn per request, because a build has
-  no database to ask. What they read is kept for five minutes under one tag, and saving an
-  article or the branding clears it at once.
+  the public sees.
+- **Drawn per request, and nothing is kept between requests.** A build has no database to
+  ask, so pages are not built ahead. Keeping answers under a tag and clearing it on save was
+  tried first; Next serves the old answer once more after a tag is cleared, so a newly
+  published article was missing on the first visit and an unpublished one still readable.
+  Three small queries a request is the price of a change showing at once.
 - **The address can be someone else's.** When the help center is served through a rewrite on
   the customer's own site, the `help_center.url` setting is the canonical address of every page.
 - **It follows the device's light or dark setting**, with a button to switch.

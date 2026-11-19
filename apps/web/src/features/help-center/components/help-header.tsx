@@ -1,51 +1,31 @@
 import { type PublicSettings } from "@helpwren/core";
 import { cn, Icon, Logo } from "@helpwren/design-system";
 import Link from "next/link";
+import { type ReactNode } from "react";
 
 import { embedQuery, type HelpEmbed } from "@/lib/help-embed";
 
-import { heroStyle } from "../hero";
 import { HELP_PATH } from "../urls";
 import { ThemeToggle } from "./theme-toggle";
 
-export interface HelpHeaderProps {
-  settings: PublicSettings;
-  /**
-   * `home` is the tall band with the greeting and a large search. `inner` is the slim band on
-   * every other page, with the search beside the name.
-   */
-  variant: "home" | "inner";
-  /** What was searched for, kept in the box on the results page. */
-  query?: string;
-  /**
-   * Set when the help center is inside a frame on a host's site. The host's page has its own
-   * header, so this one shrinks to the search alone, or to nothing if that is hidden too.
-   */
-  embed?: HelpEmbed | null;
-  /**
-   * Draws the header without its links working, for the preview in Branding, where following
-   * one would leave the form.
-   */
-  inert?: boolean;
-}
-
 const DEFAULT_PLACEHOLDER = "Search for articles";
 
-function SearchBox({
-  settings,
-  query,
-  large,
-  embed,
-}: {
+export interface SearchBoxProps {
   settings: PublicSettings;
+  /** What was searched for, kept in the box on the results page. */
   query?: string | undefined;
-  large: boolean;
+  /** `lg` is the one under the greeting; `sm` sits in the top bar. */
+  size: "sm" | "lg";
   embed?: HelpEmbed | null | undefined;
-}) {
+  className?: string;
+}
+
+/** The help center's search, as a plain form: it works before any script has loaded. */
+export function SearchBox({ settings, query, size, embed, className }: SearchBoxProps) {
   const placeholder = settings.helpCenter.searchPlaceholder ?? DEFAULT_PLACEHOLDER;
+  const large = size === "lg";
   return (
-    // A plain form: searching works before any script has loaded, and without one.
-    <form action={`${HELP_PATH}/search`} role="search" className="relative w-full">
+    <form action={`${HELP_PATH}/search`} role="search" className={cn("relative w-full", className)}>
       {/* Inside a frame, the results page has to be the embedded form too. */}
       {embed
         ? [...new URLSearchParams(embedQuery(embed))].map(([name, value]) => (
@@ -67,109 +47,70 @@ function SearchBox({
         placeholder={placeholder}
         autoComplete="off"
         className={cn(
-          "bg-card text-foreground placeholder:text-muted-foreground focus-visible:outline-ring w-full border border-transparent outline-offset-2 focus-visible:outline-2 [&::-webkit-search-cancel-button]:hidden",
-          large
-            ? "h-14 rounded-2xl pr-5 pl-12 text-base shadow-[0_8px_30px_rgb(38_35_30/0.12)]"
-            : "h-10 rounded-xl pr-3 pl-9 text-sm",
+          "border-rule bg-card text-foreground placeholder:text-muted-foreground focus:border-ring focus-visible:outline-ring w-full border outline-offset-2 transition-colors focus-visible:outline-2 [&::-webkit-search-cancel-button]:hidden",
+          large ? "h-12 rounded-xl pr-4 pl-12 text-base" : "h-9 rounded-lg pr-3 pl-9 text-sm",
         )}
       />
     </form>
   );
 }
 
-/** The brand's mark and name, which lead back to the help center's home. */
-function Brand({ settings }: { settings: PublicSettings }) {
-  const { brand } = settings;
-  return (
-    <Link
-      href={HELP_PATH}
-      className="focus-visible:outline-ring flex min-w-0 items-center gap-2.5 rounded-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-4"
-    >
-      {brand.logo ? (
-        // eslint-disable-next-line @next/next/no-img-element -- from the install's own storage, whose host the optimiser does not know
-        <img src={brand.logo} alt="" className="h-8 w-auto max-w-32 rounded-md object-contain" />
-      ) : (
-        <Logo variant="mark" size={28} label="" className="text-current" />
-      )}
-      <span className="truncate">{brand.name}</span>
-      <span className="opacity-70 max-sm:hidden">Help center</span>
-    </Link>
-  );
+export interface HelpHeaderProps {
+  settings: PublicSettings;
+  query?: string | undefined;
+  /** Leaves the search out of the bar, on the home page, where a large one sits under the greeting. */
+  search?: boolean;
+  /** The button that opens the list of articles on a narrow screen, at the start of the bar. */
+  browse?: ReactNode;
 }
 
 /**
- * The top of every help center page, in the brand's colours: its mark and name, its own links,
- * and the search. On the home page it also carries the greeting.
+ * The bar across the top of every help center page, which stays in place while the page
+ * scrolls: the customer's mark and name, their own links, the search and the theme button.
  */
-export function HelpHeader({
-  settings,
-  variant,
-  query,
-  embed = null,
-  inert = false,
-}: HelpHeaderProps) {
-  const { helpCenter } = settings;
-  const hero = heroStyle(settings);
-  const home = variant === "home";
-
-  if (embed) {
-    return embed.hide.includes("search") ? null : (
-      <header className="mx-auto w-full max-w-3xl px-4 pt-4">
-        <div className="border-rule rounded-xl border">
-          <SearchBox settings={settings} query={query} large={false} embed={embed} />
-        </div>
-      </header>
-    );
-  }
-
+export function HelpHeader({ settings, query, search = true, browse }: HelpHeaderProps) {
+  const { brand, helpCenter } = settings;
   return (
-    <header
-      inert={inert}
-      style={hero.style}
-      className={cn("relative", hero.plain && "border-rule bg-background border-b")}
-    >
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-5 sm:px-8">
-        <Brand settings={settings} />
-        {home ? null : (
-          <div className="mx-auto w-full max-w-md max-md:hidden">
-            <SearchBox settings={settings} query={query} large={false} />
-          </div>
-        )}
-        <nav
-          aria-label="Site"
-          className={cn("flex shrink-0 items-center gap-1 text-sm", home && "ml-auto")}
+    <header className="border-rule bg-background/85 sticky top-0 z-30 border-b backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-[90rem] items-center gap-3 px-4 sm:px-6 lg:gap-5">
+        {browse}
+        <Link
+          href={HELP_PATH}
+          className="focus-visible:outline-ring flex min-w-0 shrink-0 items-center gap-2.5 rounded-lg text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-4"
         >
+          {brand.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- from the install's own storage, whose host the optimiser does not know
+            <img
+              src={brand.logo}
+              alt=""
+              className="h-7 w-auto max-w-28 rounded-md object-contain"
+            />
+          ) : (
+            <Logo variant="mark" size={24} label="" className="text-primary" />
+          )}
+          <span className="truncate">{brand.name}</span>
+          <span className="text-muted-foreground font-normal max-sm:hidden">Help center</span>
+        </Link>
+
+        <nav aria-label="Site" className="flex items-center gap-1 text-sm max-md:hidden">
           {helpCenter.headerLinks.map((link) => (
             <a
               key={`${link.label}:${link.url}`}
               href={link.url}
-              className="focus-visible:outline-ring rounded-lg px-2.5 py-1.5 font-medium opacity-80 transition-opacity hover:opacity-100 focus-visible:outline-2 max-sm:hidden"
+              className="text-muted-foreground hover:text-foreground focus-visible:outline-ring rounded-md px-2.5 py-1.5 transition-colors focus-visible:outline-2"
             >
               {link.label}
             </a>
           ))}
-          <ThemeToggle />
         </nav>
-      </div>
 
-      {home ? (
-        <div className="mx-auto max-w-2xl px-5 pt-10 pb-16 text-center sm:pt-14 sm:pb-20">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            {helpCenter.title ?? "How can we help?"}
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-base text-pretty opacity-80">
-            {helpCenter.intro ?? "Answers to common questions, written by our team."}
-          </p>
-          <div className="mt-8">
-            <SearchBox settings={settings} large />
-          </div>
+        <div className="ml-auto flex items-center gap-2">
+          {search ? (
+            <SearchBox settings={settings} query={query} size="sm" className="w-64 max-md:hidden" />
+          ) : null}
+          <ThemeToggle />
         </div>
-      ) : (
-        // On a phone the search has a row of its own under the name.
-        <div className="px-5 pb-4 md:hidden">
-          <SearchBox settings={settings} query={query} large={false} />
-        </div>
-      )}
+      </div>
     </header>
   );
 }

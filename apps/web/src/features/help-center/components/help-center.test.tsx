@@ -6,8 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getReaderClient } from "../client";
 import { ArticleFeedback } from "./article-feedback";
 import { ArticleView } from "./article-view";
-import { HelpFooter } from "./help-footer";
-import { HelpHeader } from "./help-header";
+import { Contents } from "./contents";
+import { HelpHero } from "./help-hero";
+import { HelpShell } from "./help-shell";
 import { JsonLd } from "./json-ld";
 
 vi.mock("../client", () => ({ getReaderClient: vi.fn() }));
@@ -55,64 +56,138 @@ const article: Article = {
   },
 };
 
-describe("HelpHeader", () => {
-  it("greets on the home page, in the brand's words, with a search that works as a form", () => {
-    render(<HelpHeader settings={settings} variant="home" />);
-    expect(screen.getByRole("heading", { level: 1, name: "Acme answers" })).toBeInTheDocument();
-    const search = screen.getByRole("search");
-    expect(search).toHaveAttribute("action", "/help/search");
-    expect(within(search).getByRole("searchbox", { name: "Search Acme help" })).toHaveAttribute(
-      "name",
-      "q",
+const nav = [
+  {
+    id: "22222222-2222-4222-8222-222222222222",
+    name: "Billing",
+    slug: "billing",
+    icon: "credit-card",
+    articles: [
+      { id: article.id, title: article.title, slug: article.slug },
+      { id: "33333333-3333-4333-8333-333333333333", title: "Pay by card", slug: "pay-by-card" },
+    ],
+  },
+];
+
+describe("HelpShell", () => {
+  it("frames a page with the brand's bar, the whole list of articles and the footer", () => {
+    render(
+      <HelpShell
+        settings={settings}
+        collections={nav}
+        current={{ collection: "billing", article: "read-your-invoice" }}
+        query="refund"
+      >
+        <p>The page</p>
+      </HelpShell>,
     );
     expect(screen.getByRole("link", { name: "Back to Acme" })).toHaveAttribute(
       "href",
       "https://acme.example",
     );
-  });
+    // The search is a plain form, and keeps what was searched for.
+    const [search] = screen.getAllByRole("search");
+    expect(search).toHaveAttribute("action", "/help/search");
+    expect(screen.getAllByRole("searchbox", { name: "Search Acme help" })[0]).toHaveValue("refund");
 
-  it("keeps what was searched for in the box on inner pages", () => {
-    render(<HelpHeader settings={settings} variant="inner" query="refund" />);
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
-    for (const box of screen.getAllByRole("searchbox")) expect(box).toHaveValue("refund");
-  });
-});
+    // Every article is one step away, and the one on screen is marked.
+    const [list] = screen.getAllByRole("navigation", { name: "All articles" });
+    if (!list) throw new Error("The list of articles was not drawn.");
+    expect(within(list).getByRole("link", { name: "Read your invoice" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(list).getByRole("link", { name: "Pay by card" })).toHaveAttribute(
+      "href",
+      "/help/billing/pay-by-card",
+    );
 
-describe("HelpFooter", () => {
-  it("shows the brand's links and one small credit", () => {
-    render(<HelpFooter settings={settings} />);
     expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
     expect(screen.getByRole("link", { name: "Powered by Helpwren" })).toBeInTheDocument();
     expect(screen.getByText(/© \d{4} Acme/)).toBeInTheDocument();
   });
+
+  it("draws only the search and the page inside a host's frame", () => {
+    const { rerender } = render(
+      <HelpShell settings={settings} collections={nav} embed={{ hide: [] }}>
+        <p>The page</p>
+      </HelpShell>,
+    );
+    expect(screen.getByText("The page")).toBeInTheDocument();
+    expect(screen.getByRole("searchbox")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Powered by Helpwren" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "All articles" })).toBeNull();
+    // Searching from inside the frame stays in the embedded form.
+    expect(document.querySelector('input[type="hidden"][name="embed"]')).toHaveValue("1");
+
+    rerender(
+      <HelpShell settings={settings} collections={nav} embed={{ hide: ["search"] }}>
+        <p>The page</p>
+      </HelpShell>,
+    );
+    expect(screen.queryByRole("searchbox")).toBeNull();
+  });
+});
+
+describe("HelpHero", () => {
+  it("greets in the brand's words, with a large search", () => {
+    render(<HelpHero settings={settings} />);
+    expect(screen.getByRole("heading", { level: 1, name: "Acme answers" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Search Acme help" })).toHaveAttribute(
+      "name",
+      "q",
+    );
+  });
 });
 
 describe("ArticleView", () => {
-  it("draws the way back, the article and a table of contents from its headings", () => {
-    render(<ArticleView article={article} related={[]} />);
+  const other = { ...article, id: "33333333-3333-4333-8333-333333333333", title: "Pay by card" };
+
+  it("says which collection the article is in, and offers what comes next", () => {
+    render(<ArticleView article={article} next={other} />);
+    expect(screen.getByRole("link", { name: "Billing" })).toHaveAttribute("href", "/help/billing");
+    expect(screen.getByRole("heading", { level: 1, name: "Read your invoice" })).toBeVisible();
+    expect(screen.getByText("Was this helpful?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Chat with us" })).toBeInTheDocument();
+    const more = screen.getByRole("navigation", { name: "More in this collection" });
+    expect(within(more).getByRole("link", { name: /Pay by card.*Next/s })).toBeInTheDocument();
+  });
+
+  it("leaves the extras out of a preview, and what a host hid out of its frame", () => {
+    const { rerender } = render(<ArticleView article={article} next={other} preview />);
+    expect(screen.queryByText("Was this helpful?")).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "More in this collection" })).toBeNull();
+
+    rerender(<ArticleView article={article} next={other} embed={{ hide: ["feedback", "chat"] }} />);
+    expect(screen.queryByText("Was this helpful?")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Chat with us" })).toBeNull();
+    // Inside the frame the way back is a breadcrumb, and links keep the frame's options.
     const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(crumbs).getByRole("link", { name: "Billing" })).toHaveAttribute(
       "href",
-      "/help/billing",
+      "/help/billing?embed=1&hide=feedback%2Cchat",
     );
-    expect(screen.getByRole("heading", { level: 1, name: "Read your invoice" })).toBeVisible();
-    const contents = screen.getByRole("navigation", { name: "On this page" });
-    expect(within(contents).getByRole("link", { name: "Change the address" })).toHaveAttribute(
+  });
+});
+
+describe("Contents", () => {
+  it("lists the article's headings as links to them", () => {
+    render(
+      <Contents
+        headings={[
+          { id: "download-an-invoice", text: "Download an invoice", level: 2 },
+          { id: "change-the-address", text: "Change the address", level: 2 },
+        ]}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Change the address" })).toHaveAttribute(
       "href",
       "#change-the-address",
     );
-    expect(screen.getByText("Was this helpful?")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Chat with us" })).toBeInTheDocument();
-  });
-
-  it("lists related articles, and leaves the extras out of a preview", () => {
-    const other = { ...article, id: "33333333-3333-4333-8333-333333333333", title: "Pay by card" };
-    const { rerender } = render(<ArticleView article={article} related={[other]} />);
-    expect(screen.getByRole("list", { name: "Related articles" })).toHaveTextContent("Pay by card");
-
-    rerender(<ArticleView article={article} related={[other]} preview />);
-    expect(screen.queryByText("Was this helpful?")).toBeNull();
-    expect(screen.queryByRole("list", { name: "Related articles" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Download an invoice" })).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
   });
 });
 

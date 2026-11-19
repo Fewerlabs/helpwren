@@ -17,7 +17,7 @@ describe("settings.getPublic", () => {
       brand: { name: "Helpwren Demo" },
       widget: { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] },
       chatPage: {},
-      helpCenter: {},
+      helpCenter: { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true },
       tickets: { fromChat: true },
       guestDetails: "email_or_phone",
     });

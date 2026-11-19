@@ -1,36 +1,26 @@
 import { type PublicSettings } from "@helpwren/core";
 import { type CSSProperties } from "react";
 
-import { brandFill, readableOn } from "@/lib/accent";
-
 /**
- * What paints the band at the top of the help center, and the colour of the words on it:
- * the page's own paper, the brand's colour or gradient, or a picture under a dark wash so
- * white words stay readable whatever the picture is.
+ * What sits behind the greeting on the help center's home page:
+ * - `glow`: a soft wash of the brand's colour in the corner, fading out with no edge
+ * - `image`: a banner with the customer's picture, darkened so white words stay readable
+ * - `plain`: nothing but the page
  */
-export function heroStyle({ brand, helpCenter }: PublicSettings): {
-  style: CSSProperties;
-  /** True when the band is the page's own colour, so it needs a hairline to end it. */
-  plain: boolean;
-} {
-  if (helpCenter.headerStyle === "image" && helpCenter.headerImage) {
-    return {
-      plain: false,
-      style: {
-        color: "#ffffff",
-        backgroundImage: `linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.5)), url(${JSON.stringify(helpCenter.headerImage)})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      },
-    };
-  }
-  if (helpCenter.headerStyle === "plain") return { plain: true, style: {} };
-  const fill = brandFill(brand);
-  return fill && brand.accent
-    ? { plain: false, style: { background: fill, color: readableOn(brand.accent) } }
-    : // No colour of their own yet: the theme's, which is Helpwren's green until they choose one.
-      {
-        plain: false,
-        style: { background: "var(--primary)", color: "var(--primary-foreground)" },
-      };
+export type HeroKind = "glow" | "image" | "plain";
+
+export function heroKind({ helpCenter }: PublicSettings): HeroKind {
+  if (helpCenter.headerStyle === "plain") return "plain";
+  // A picture style with no picture falls back to the brand's colour.
+  return helpCenter.headerStyle === "image" && helpCenter.headerImage ? "image" : "glow";
+}
+
+/** The banner's picture under a dark wash, for the `image` kind. */
+export function bannerStyle(image: string): CSSProperties {
+  return {
+    color: "#ffffff",
+    backgroundImage: `linear-gradient(rgb(0 0 0 / 0.5), rgb(0 0 0 / 0.5)), url(${JSON.stringify(image)})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
 }

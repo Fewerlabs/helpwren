@@ -7,11 +7,19 @@ export type Screen =
   | { name: "messages" }
   | { name: "help" }
   | { name: "start" }
-  /** A help article, read without leaving the chat. */
-  | { name: "article"; slug: string }
+  /** One collection of help articles, opened from the Help tab. */
+  | { name: "collection"; collection: OpenCollection }
+  /** A help article, read without leaving the chat. `from` is the collection it was opened in. */
+  | { name: "article"; slug: string; from?: OpenCollection }
   /** The form for opening a ticket, in place of a chat. */
   | { name: "ticket" }
   | { name: "conversation"; id: string };
+
+/** The collection a visitor is looking through: enough to name it and list its articles. */
+export interface OpenCollection {
+  id: string;
+  name: string;
+}
 
 /** The page the chat is embedded in, as its widget script reported it. */
 export interface HostPage {

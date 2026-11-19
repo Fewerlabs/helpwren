@@ -5,8 +5,6 @@ import { useCallback } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
-import { refreshHelpCenter } from "../actions";
-
 /** The start of every help center query's key, so one refresh reaches them all. */
 export const ARTICLES_QUERY_KEY = ["articles"] as const;
 
@@ -55,16 +53,11 @@ export function useShown(collections: readonly Collection[] | undefined): Shown 
   return collection ? { kind: "collection", collection } : { kind: "all" };
 }
 
-/**
- * Call after anything in the help center changes: it reloads this screen's lists and tells the
- * server, so the public pages show the change too.
- */
+/** Call after anything in the help center changes: it reloads every list on this screen. */
 export function useArticlesChanged() {
   const queryClient = useQueryClient();
-  return useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ARTICLES_QUERY_KEY }),
-      refreshHelpCenter(),
-    ]);
-  }, [queryClient]);
+  return useCallback(
+    () => queryClient.invalidateQueries({ queryKey: ARTICLES_QUERY_KEY }),
+    [queryClient],
+  );
 }

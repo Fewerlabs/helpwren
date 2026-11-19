@@ -1,30 +1,29 @@
 import type { ReactNode } from "react";
 
-import { EmbedFrame, HelpChatLauncher, HelpFooter } from "@/features/help-center";
+import { EmbedFrame, HelpChatLauncher } from "@/features/help-center";
 import { accentStyle } from "@/lib/accent";
 import { getHelpSettings } from "@/lib/help-center-data";
 import { getHelpEmbed } from "@/lib/help-embed-request";
 
-// Drawn for each request and never while building, when there is no database to ask. What the
-// pages read from the database is kept between requests instead (`lib/help-center-data`).
+// Drawn for each request and never while building, when there is no database to ask. So a
+// published article or a change of branding shows on the very next visit.
 export const dynamic = "force-dynamic";
 
 /**
- * The frame of the public help center: the customer's colours on everything inside, their
- * footer, and the chat launcher when they want one here. A host that embeds the help center
- * (`?embed=1`) gets the content without any of that. Each page draws its own header,
- * because the home page's is tall and the others' is slim.
+ * Around every help center page: the customer's colours on everything inside, and the chat
+ * launcher when they want one here. Each page draws its own frame (`HelpShell`), because only
+ * the page knows where in the list of articles the reader is. A host that embeds the help
+ * center (`?embed=1`) gets the content in its own colour if it gave one, and no launcher.
  */
 export default async function HelpLayout({ children }: { children: ReactNode }) {
   const [settings, embed] = await Promise.all([getHelpSettings(), getHelpEmbed()]);
 
-  // Inside a host's frame: the content alone, with no footer and no launcher of its own, in
-  // the host's colour if it gave one. It fills the frame and is never smaller than is usable.
   if (embed) {
     const brand = embed.accent
       ? { accent: embed.accent, accentTo: undefined, button: undefined }
       : settings.brand;
     return (
+      // It fills the frame it is given and is never smaller than is usable.
       <div
         className="bg-background text-foreground flex min-h-80 min-w-72 flex-col"
         style={accentStyle(brand)}
@@ -37,11 +36,10 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
 
   return (
     <div
-      className="bg-background text-foreground flex min-h-dvh flex-col"
+      className="bg-background text-foreground relative isolate flex min-h-dvh flex-col"
       style={accentStyle(settings.brand)}
     >
       {children}
-      <HelpFooter settings={settings} />
       {settings.helpCenter.showChat ? <HelpChatLauncher /> : null}
     </div>
   );

@@ -1,4 +1,5 @@
 import { richTextToPlainText } from "@helpwren/core";
+import { richTextHeadings } from "@helpwren/design-system";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 
@@ -7,8 +8,9 @@ import {
   ArticleView,
   canonicalUrl,
   collectionPath,
-  HelpHeader,
+  Contents,
   helpMetadata,
+  HelpShell,
   JsonLd,
 } from "@/features/help-center";
 import { getHelpArticle, getHelpCollections, getHelpSettings } from "@/lib/help-center-data";
@@ -17,16 +19,14 @@ import { getHelpEmbed } from "@/lib/help-embed-request";
 
 type Props = PageProps<"/help/[collection]/[article]">;
 
-/** How many other articles from the collection are offered under one. */
-const RELATED = 4;
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [settings, article] = await Promise.all([
     getHelpSettings(),
     getHelpArticle((await params).article),
   ]);
-  if (!article?.collection)
+  if (!article?.collection) {
     return helpMetadata(settings, { title: "Page not found", noindex: true });
+  }
   return helpMetadata(settings, {
     title: article.metaTitle ?? article.title,
     description:
@@ -53,7 +53,8 @@ export default async function HelpArticlePage({ params }: Props) {
   }
 
   const siblings = collections.find((item) => item.id === article.collectionId)?.articles ?? [];
-  const related = siblings.filter((item) => item.id !== article.id).slice(0, RELATED);
+  const place = siblings.findIndex((item) => item.id === article.id);
+  const headings = richTextHeadings(article.body);
   const url = canonicalUrl(settings, articlePath(article.collection.slug, article.slug));
   const organisation = {
     "@type": "Organization",
@@ -62,11 +63,27 @@ export default async function HelpArticlePage({ params }: Props) {
   };
 
   return (
-    <>
-      <HelpHeader settings={settings} variant="inner" embed={embed} />
-      <main>
-        <ArticleView article={article} related={related} embed={embed} />
-      </main>
+    <HelpShell
+      settings={settings}
+      collections={collections}
+      current={{ collection: article.collection.slug, article: article.slug }}
+      embed={embed}
+      aside={
+        // Two headings make a table of contents; one is only the article's own outline.
+        headings.length >= 2 ? (
+          <nav aria-label="On this page">
+            <p className="mb-3 text-sm font-semibold">On this page</p>
+            <Contents headings={headings} />
+          </nav>
+        ) : null
+      }
+    >
+      <ArticleView
+        article={article}
+        previous={place > 0 ? siblings[place - 1] : undefined}
+        next={place >= 0 ? siblings[place + 1] : undefined}
+        embed={embed}
+      />
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -97,6 +114,6 @@ export default async function HelpArticlePage({ params }: Props) {
           ],
         }}
       />
-    </>
+    </HelpShell>
   );
 }
