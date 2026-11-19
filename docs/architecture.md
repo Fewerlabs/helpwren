@@ -131,6 +131,18 @@ The layouts follow a common shape for support tools, which people already know h
 chat opens on a home screen with tabs along the bottom, and the inbox is three panels side by
 side. The look is Helpwren's own.
 
+### Live visitors
+
+While the install tracks visitors, the chat checks in through `POST /api/visitors` about once a
+minute while its page is showing (`src/features/chat/hooks/use-visitor-tracking.ts`). The route
+reads the browser from the User-Agent (`src/lib/user-agent.ts`) and the place from the hosting
+platform's headers (`src/lib/geo.ts`), and `record_visit` keeps one row per browser in
+`visitors`, copying the details to its contact. `src/features/visitors` is the dashboard's
+Visitors section, which polls every fifteen seconds, and the "Visitor" part of the inbox's and
+the contact page's side panels. A team member's first message waits on the row until the
+browser takes it up through `POST /api/visitors/outreach`. Nothing here uses Realtime, and a
+browsing visitor gets no Auth user. See [ADR 0020](decisions/0020-live-visitors.md).
+
 ### Attachments
 
 A message can carry up to five files. The reply box uploads each one to the private
@@ -293,6 +305,7 @@ between screens does not refetch what was loaded a moment ago.
 | `/dashboard/inbox`                  | The inbox: views (including tickets), conversations, the open one and its details. `?view=` and `?c=` are in the address                                                    |
 | `/dashboard/settings`               | Settings: workspace pages admins change and agents read, and each person's own Profile and Notifications                                                                    |
 | `/dashboard/contacts`               | Everyone who has written: a searchable table, and one person's details and conversations                                                                                    |
+| `/dashboard/visitors`               | Who is on the site now, refreshed every fifteen seconds, and one visitor's details, pages and a first message. `?visitor=` is in the address                                |
 | `/dashboard/help`                   | The Help center section: collections, a table of articles to search and filter, and `/dashboard/help/{id}`, the editor                                                      |
 | `/login`                            | Sign-in for team members                                                                                                                                                    |
 | `/widget.js`                        | The widget script, built from `packages/widget`                                                                                                                             |
@@ -305,6 +318,9 @@ between screens does not refetch what was loaded a moment ago.
 | `POST /api/devices`                 | Registers a phone for pushes, from an app's own token or a Helpwren session                                                                                                 |
 | `DELETE /api/devices`               | Stops pushes to a phone                                                                                                                                                     |
 | `POST /api/jobs/push`               | Sends the pushes that are due. Called every minute by the scheduler, with `CRON_SECRET`                                                                                     |
+| `POST /api/visitors`                | A browser checking in with its page. No session needed; answers whether a message from the team is waiting. 410 while tracking is off                                       |
+| `POST /api/visitors/outreach`       | Takes up the team's waiting message for this browser, as a conversation of the caller's session                                                                             |
+| `POST /api/visitors/{id}/outreach`  | A team member leaves a first message for a visitor. `DELETE` takes it back                                                                                                  |
 
 ## The design system
 
