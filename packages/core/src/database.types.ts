@@ -1093,6 +1093,8 @@ export type Database = {
         Args: { query: string };
         Returns: {
           author_id: string | null;
+          author_name: string | null;
+          author_photo: string | null;
           body: NonNullable<Json>;
           collection_id: string | null;
           created_at: string;
