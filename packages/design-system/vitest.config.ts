@@ -31,9 +31,11 @@ export default defineConfig({
         // Pre-bundle these so Vite does not discover them mid-run and reload the tests.
         optimizeDeps: {
           include: [
+            "@phosphor-icons/core",
             "@phosphor-icons/react/ssr",
             "@hookform/resolvers/zod",
             "@tanstack/react-query",
+            "@tanstack/react-virtual",
             "@tiptap/core",
             "@tiptap/extension-drag-handle-react",
             "@tiptap/extension-image",
