@@ -38,6 +38,8 @@ export interface InstallOptions {
   /** Replace values already in the env file with the ones given now. Secrets are never replaced. */
   overwrite: boolean;
   skipPrereqs: boolean;
+  /** Docker only: write the configuration and stop, to review it before anything starts. */
+  noStart?: boolean;
 }
 
 function reportChecks(ctx: Context, checks: Check[]): void {
@@ -250,6 +252,12 @@ async function installDocker(ctx: Context, options: InstallOptions): Promise<str
   );
   writeEnvFile(file, generated.text);
   reportEnv(ctx, file, answers, generated);
+
+  if (options.noStart) {
+    ctx.out.step("Not started (--no-start)");
+    ctx.out.info("Review the files, then run `pnpm helpwren install --mode docker` again.");
+    return appUrl;
+  }
 
   ctx.out.step("Starting the database");
   if (

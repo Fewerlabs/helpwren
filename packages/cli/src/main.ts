@@ -30,6 +30,7 @@ Install options (each also read from the environment variable in brackets)
   --demo-data                Load the demo data (off unless asked)
   --overwrite                Replace values already in the env file (never secrets)
   --skip-prereqs             Do not check Node, pnpm and Docker
+  --no-start                 Docker: write the configuration only, start nothing
 
 Upgrade options
   --dry-run                  Show what would happen and change nothing
@@ -55,6 +56,7 @@ const { values, positionals } = parseArgs({
     "demo-data": { type: "boolean" },
     overwrite: { type: "boolean", default: false },
     "skip-prereqs": { type: "boolean", default: false },
+    start: { type: "boolean", default: true },
     "dry-run": { type: "boolean", default: false },
     pull: { type: "boolean", default: true },
     backup: { type: "boolean" },
@@ -93,6 +95,7 @@ async function main(): Promise<void> {
     const options: InstallOptions = {
       overwrite: values.overwrite,
       skipPrereqs: values["skip-prereqs"],
+      noStart: !values.start,
       ...withValue("mode", mode === undefined ? undefined : installModeSchema.parse(mode)),
       ...withValue("appUrl", given(values["app-url"], env.NEXT_PUBLIC_APP_URL)),
       ...withValue("supabaseUrl", given(values["supabase-url"], env.NEXT_PUBLIC_SUPABASE_URL)),
