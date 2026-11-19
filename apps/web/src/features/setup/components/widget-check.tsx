@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon, QueryDetail, Spinner } from "@helpwren/design-system";
+import { Icon, QueryDetail } from "@helpwren/design-system";
 
 import { formatTimeAgo } from "@/lib/format-time";
 
@@ -37,7 +37,11 @@ export function WidgetCheck() {
       contentClassName="p-4"
       renderEmpty={() => (
         <p aria-live="polite" className="flex items-center gap-3 p-4 text-sm">
-          <Spinner className="size-4" />
+          {/* Not a Spinner: its status role would compete with the page's own save messages. */}
+          <Icon
+            name="arrows-clockwise"
+            className="text-muted-foreground size-4 animate-spin motion-reduce:animate-none"
+          />
           <span>
             Waiting for the widget on your site. Paste the snippet below, then open a page that has
             it.
