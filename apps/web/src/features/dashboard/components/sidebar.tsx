@@ -13,7 +13,7 @@ import {
 } from "@helpwren/design-system";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useId, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { ThemeMenu, ThemeSwitch } from "@/features/theme";
 
@@ -99,7 +99,6 @@ export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
  */
 function AccountMenu({ agent, signOut }: SidebarProps) {
   const [open, setOpen] = useState(false);
-  const themeLabel = useId();
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -134,12 +133,7 @@ function AccountMenu({ agent, signOut }: SidebarProps) {
           <span className="sr-only">Your profile</span>
         </Link>
         {/* On a phone the theme button leaves the bar, so the choice is made here. */}
-        <div className="flex items-center justify-between gap-3 py-1 pr-1 pl-2.5 md:hidden">
-          <span id={themeLabel} className="text-sm">
-            Theme
-          </span>
-          <ThemeSwitch aria-labelledby={themeLabel} />
-        </div>
+        <ThemeSwitch className="my-0.5 md:hidden [&>*]:flex-1" />
         {signOut}
       </PopoverContent>
     </Popover>

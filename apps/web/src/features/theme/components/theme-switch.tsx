@@ -8,8 +8,8 @@ import { setThemePreference, useThemePreference, type ThemePreference } from "@/
 import { themeChoices } from "../choices";
 
 export interface ThemeSwitchProps {
-  /** The id of the visible label that names the switch. */
-  "aria-labelledby": string;
+  /** What the switch is called for assistive technology, where no words are shown beside it. */
+  label?: string;
   className?: string;
 }
 
@@ -18,7 +18,7 @@ export interface ThemeSwitchProps {
  * inside a menu, where a second popover would be one too many. It is a radio group, so the arrow
  * keys move between the three and Tab moves past them.
  */
-export function ThemeSwitch({ "aria-labelledby": labelledBy, className }: ThemeSwitchProps) {
+export function ThemeSwitch({ label = "Theme", className }: ThemeSwitchProps) {
   const preference = useThemePreference();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -45,7 +45,7 @@ export function ThemeSwitch({ "aria-labelledby": labelledBy, className }: ThemeS
   return (
     <div
       role="radiogroup"
-      aria-labelledby={labelledBy}
+      aria-label={label}
       className={cn("bg-muted flex gap-0.5 rounded-lg p-0.5", className)}
     >
       {themeChoices.map((choice, index) => {
