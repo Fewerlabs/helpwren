@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { HelpwrenError } from "./errors";
 import { type HelpwrenSupabaseClient } from "./supabase";
+import { visitorDeviceSchema } from "./visitors";
 
 export const contactKindSchema = z.enum(["guest", "user"]);
 export type ContactKind = z.infer<typeof contactKindSchema>;
@@ -15,6 +16,20 @@ const contactSummaryRowSchema = z.object({
   phone: z.string().nullable(),
   org_name: z.string().nullable(),
   created_at: z.string(),
+  country: z.string().nullable(),
+  region: z.string().nullable(),
+  city: z.string().nullable(),
+  browser: z.string().nullable(),
+  os: z.string().nullable(),
+  device: visitorDeviceSchema.nullable(),
+  language: z.string().nullable(),
+  timezone: z.string().nullable(),
+  first_seen_at: z.string().nullable(),
+  last_seen_at: z.string().nullable(),
+  session_count: z.number().int().nullable(),
+  last_page_url: z.string().nullable(),
+  last_page_title: z.string().nullable(),
+  referrer: z.string().nullable(),
   conversation_count: z.number().int(),
   last_active_at: z.string().nullable(),
 });
@@ -32,6 +47,28 @@ export const contactSummarySchema = contactSummaryRowSchema.transform((row) => (
   conversationCount: row.conversation_count,
   /** When they last wrote or were written to. */
   lastActiveAt: row.last_active_at,
+  /**
+   * What the browser they used last said about them, as the chat checks in. `null` when theirs
+   * never has, as for someone who wrote before this existed or with visitor tracking off.
+   */
+  visitor:
+    row.last_seen_at === null
+      ? null
+      : {
+          location: { country: row.country, region: row.region, city: row.city },
+          browser: row.browser,
+          os: row.os,
+          device: row.device,
+          language: row.language,
+          timezone: row.timezone,
+          firstSeenAt: row.first_seen_at,
+          lastSeenAt: row.last_seen_at,
+          sessionCount: row.session_count,
+          lastPage: row.last_page_url
+            ? { url: row.last_page_url, title: row.last_page_title }
+            : null,
+          referrer: row.referrer,
+        },
 }));
 
 /** A contact with how many conversations they have and when they were last active. */
@@ -55,7 +92,9 @@ export interface ContactsPage {
 }
 
 const COLUMNS =
-  "id, kind, verified, name, email, phone, org_name, created_at, conversation_count, last_active_at";
+  "id, kind, verified, name, email, phone, org_name, created_at, " +
+  "country, region, city, browser, os, device, language, timezone, first_seen_at, last_seen_at, " +
+  "session_count, last_page_url, last_page_title, referrer, conversation_count, last_active_at";
 
 /** Characters that have a meaning in a filter and so cannot be searched for as themselves. */
 const FILTER_SYNTAX = /[,()%*\\"]/g;

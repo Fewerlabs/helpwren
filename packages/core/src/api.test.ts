@@ -53,6 +53,17 @@ describe("createApi", () => {
     });
   });
 
+  it("deletes with the session as a bearer token", async () => {
+    const fetch = answering(200, { id: "c1" });
+    await createApi(supabaseWith("token-123"), { fetch }).delete("/api/things/c1", schema);
+
+    expect(fetch).toHaveBeenCalledWith("/api/things/c1", {
+      method: "DELETE",
+      headers: { "content-type": "application/json", authorization: "Bearer token-123" },
+      body: "{}",
+    });
+  });
+
   it("returns a failure the server sent on purpose", async () => {
     const fetch = answering(429, { error: { code: "rate_limited", message: "Slow down." } });
     const api = createApi(supabaseWith("t"), { fetch });

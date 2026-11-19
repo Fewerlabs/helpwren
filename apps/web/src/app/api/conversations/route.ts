@@ -21,7 +21,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const input = startConversationInputSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
-  const { message, source, contact, page, ticket, context } = input.data;
+  const { message, source, contact, page, ticket, context, visitorId } = input.data;
 
   const [settingRows, known] = await Promise.all([
     supabaseAdmin.from("settings").select("key, value"),
@@ -71,6 +71,15 @@ export async function POST(request: Request): Promise<Response> {
   if (error) {
     if (error.code === RATE_LIMITED_SQLSTATE) return apiError("rate_limited", error.message);
     throw error;
+  }
+
+  // The browser they wrote from is theirs now, and the team sees its details on the contact.
+  if (visitorId && settings.visitors.tracking) {
+    const linked = await supabaseAdmin.rpc("link_visitor", {
+      visitor_id: visitorId,
+      contact_id: caller.id,
+    });
+    if (linked.error) throw linked.error;
   }
   return Response.json({ conversationId }, { status: 201 });
 }
