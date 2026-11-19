@@ -23,6 +23,10 @@ export const generalSchema = z.object({
   guestDetails: guestDetailsSchema,
   /** Whether a visitor can open a ticket themselves from the chat. */
   ticketsFromChat: z.boolean(),
+  /** Whether the chat checks in, so the team sees who is on the site and where. */
+  trackVisitors: z.boolean(),
+  /** Whether the Visitors section lists them live and lets the team write first. */
+  liveVisitors: z.boolean(),
 });
 export type GeneralValues = z.infer<typeof generalSchema>;
 

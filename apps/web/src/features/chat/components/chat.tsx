@@ -2,7 +2,8 @@
 
 import { type Message, type PublicSettings } from "@helpwren/core";
 import { cn, Skeleton } from "@helpwren/design-system";
-import { useCallback, useEffect } from "react";
+import { PREVIEW_MAX_LENGTH } from "helpwren/protocol";
+import { useCallback, useEffect, useMemo } from "react";
 
 import { Thread } from "@/features/conversation";
 import { accentStyle } from "@/lib/accent";
@@ -18,6 +19,7 @@ import {
 } from "../hooks/use-chat";
 import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { usePreviewSettings } from "../hooks/use-preview-settings";
+import { useVisitorTracking } from "../hooks/use-visitor-tracking";
 import { usePreview, useScreen, useSetPreview, useShowScreen, useTab } from "../store/chat-store";
 import { ArticleScreen, CollectionScreen, HelpScreen } from "./help-screen";
 import { HomeScreen } from "./home-screen";
@@ -54,7 +56,22 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const teamName = settings.brand.name;
   const earlier = conversations.data ?? [];
   const unread = earlier.reduce((total, item) => total + item.unreadForContact, 0);
-  const bridge = useEmbedBridge(unread);
+  // The list is newest first, so the first with something unread holds the newest reply.
+  const newest = earlier.find((item) => item.unreadForContact > 0 && item.lastMessagePreview);
+  const newestId = newest?.id;
+  const newestPreview = newest?.lastMessagePreview?.slice(0, PREVIEW_MAX_LENGTH);
+  const unreadState = useMemo(
+    () => ({
+      count: unread,
+      latest:
+        newestId && newestPreview
+          ? { conversationId: newestId, preview: newestPreview }
+          : undefined,
+    }),
+    [unread, newestId, newestPreview],
+  );
+  const bridge = useEmbedBridge(unreadState);
+  useVisitorTracking(settings, source);
   const onClose = bridge.embedded && bridge.closable ? bridge.close : undefined;
   // Someone who has written before, or whom the host product vouches for, is not asked who
   // they are.

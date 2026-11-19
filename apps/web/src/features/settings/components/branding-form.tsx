@@ -171,6 +171,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
     helpCenter,
     guestDetails: settings.guestDetails,
     tickets: settings.tickets,
+    visitors: settings.visitors,
   }));
   const draft = useMemo(() => {
     const parsed = brandingSchema.safeParse(values);
@@ -179,9 +180,10 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           ...brandingToSettings(parsed.data),
           guestDetails: settings.guestDetails,
           tickets: settings.tickets,
+          visitors: settings.visitors,
         }
       : null;
-  }, [settings.guestDetails, settings.tickets, values]);
+  }, [settings.guestDetails, settings.tickets, settings.visitors, values]);
   if (draft && JSON.stringify(draft) !== JSON.stringify(shown)) setShown(draft);
 
   const identity: Fields = [

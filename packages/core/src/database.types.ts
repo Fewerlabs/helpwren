@@ -187,44 +187,86 @@ export type Database = {
         Row: {
           attributes: NonNullable<Json>;
           audience: string | null;
+          browser: string | null;
+          city: string | null;
+          country: string | null;
           created_at: string;
+          device: string | null;
           email: string | null;
           external_id: string | null;
+          first_seen_at: string | null;
           id: string;
           kind: string;
+          language: string | null;
+          last_page_title: string | null;
+          last_page_url: string | null;
+          last_seen_at: string | null;
           name: string | null;
           org_id: string | null;
           org_name: string | null;
+          os: string | null;
           phone: string | null;
+          referrer: string | null;
+          region: string | null;
+          session_count: number | null;
+          timezone: string | null;
           verified: boolean;
         };
         ComputedFields: never;
         Insert: {
           attributes?: NonNullable<Json>;
           audience?: string | null;
+          browser?: string | null;
+          city?: string | null;
+          country?: string | null;
           created_at?: string;
+          device?: string | null;
           email?: string | null;
           external_id?: string | null;
+          first_seen_at?: string | null;
           id: string;
           kind?: string;
+          language?: string | null;
+          last_page_title?: string | null;
+          last_page_url?: string | null;
+          last_seen_at?: string | null;
           name?: string | null;
           org_id?: string | null;
           org_name?: string | null;
+          os?: string | null;
           phone?: string | null;
+          referrer?: string | null;
+          region?: string | null;
+          session_count?: number | null;
+          timezone?: string | null;
           verified?: boolean;
         };
         Update: {
           attributes?: NonNullable<Json>;
           audience?: string | null;
+          browser?: string | null;
+          city?: string | null;
+          country?: string | null;
           created_at?: string;
+          device?: string | null;
           email?: string | null;
           external_id?: string | null;
+          first_seen_at?: string | null;
           id?: string;
           kind?: string;
+          language?: string | null;
+          last_page_title?: string | null;
+          last_page_url?: string | null;
+          last_seen_at?: string | null;
           name?: string | null;
           org_id?: string | null;
           org_name?: string | null;
+          os?: string | null;
           phone?: string | null;
+          referrer?: string | null;
+          region?: string | null;
+          session_count?: number | null;
+          timezone?: string | null;
           verified?: boolean;
         };
         Relationships: [];
@@ -777,6 +819,111 @@ export type Database = {
         };
         Relationships: [];
       };
+      visitors: {
+        Row: {
+          browser: string | null;
+          city: string | null;
+          contact_id: string | null;
+          country: string | null;
+          device: string | null;
+          first_seen_at: string;
+          id: string;
+          language: string | null;
+          last_seen_at: string;
+          os: string | null;
+          outreach_conversation_id: string | null;
+          page_title: string | null;
+          page_url: string;
+          pending_agent_id: string | null;
+          pending_at: string | null;
+          pending_message: string | null;
+          recent_pages: NonNullable<Json>;
+          referrer: string | null;
+          region: string | null;
+          session_count: number;
+          session_started_at: string;
+          timezone: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          browser?: string | null;
+          city?: string | null;
+          contact_id?: string | null;
+          country?: string | null;
+          device?: string | null;
+          first_seen_at?: string;
+          id: string;
+          language?: string | null;
+          last_seen_at?: string;
+          os?: string | null;
+          outreach_conversation_id?: string | null;
+          page_title?: string | null;
+          page_url: string;
+          pending_agent_id?: string | null;
+          pending_at?: string | null;
+          pending_message?: string | null;
+          recent_pages?: NonNullable<Json>;
+          referrer?: string | null;
+          region?: string | null;
+          session_count?: number;
+          session_started_at?: string;
+          timezone?: string | null;
+        };
+        Update: {
+          browser?: string | null;
+          city?: string | null;
+          contact_id?: string | null;
+          country?: string | null;
+          device?: string | null;
+          first_seen_at?: string;
+          id?: string;
+          language?: string | null;
+          last_seen_at?: string;
+          os?: string | null;
+          outreach_conversation_id?: string | null;
+          page_title?: string | null;
+          page_url?: string;
+          pending_agent_id?: string | null;
+          pending_at?: string | null;
+          pending_message?: string | null;
+          recent_pages?: NonNullable<Json>;
+          referrer?: string | null;
+          region?: string | null;
+          session_count?: number;
+          session_started_at?: string;
+          timezone?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "visitors_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contact_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visitors_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visitors_outreach_conversation_id_fkey";
+            columns: ["outreach_conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "visitors_pending_agent_id_fkey";
+            columns: ["pending_agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
     };
     Views: {
       article_feedback_totals: {
@@ -798,15 +945,29 @@ export type Database = {
       };
       contact_summaries: {
         Row: {
+          browser: string | null;
+          city: string | null;
           conversation_count: number | null;
+          country: string | null;
           created_at: string;
+          device: string | null;
           email: string | null;
+          first_seen_at: string | null;
           id: string;
           kind: string;
+          language: string | null;
           last_active_at: string | null;
+          last_page_title: string | null;
+          last_page_url: string | null;
+          last_seen_at: string | null;
           name: string | null;
           org_name: string | null;
+          os: string | null;
           phone: string | null;
+          referrer: string | null;
+          region: string | null;
+          session_count: number | null;
+          timezone: string | null;
           verified: boolean;
         };
         ComputedFields: never;
@@ -856,6 +1017,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      claim_visitor_outreach: {
+        Args: { contact_id: string; context?: Json; source: string; visitor_id: string };
+        Returns: string;
+      };
       identify_contact: {
         Args: {
           attributes?: Json;
@@ -870,15 +1035,29 @@ export type Database = {
         Returns: {
           attributes: NonNullable<Json>;
           audience: string | null;
+          browser: string | null;
+          city: string | null;
+          country: string | null;
           created_at: string;
+          device: string | null;
           email: string | null;
           external_id: string | null;
+          first_seen_at: string | null;
           id: string;
           kind: string;
+          language: string | null;
+          last_page_title: string | null;
+          last_page_url: string | null;
+          last_seen_at: string | null;
           name: string | null;
           org_id: string | null;
           org_name: string | null;
+          os: string | null;
           phone: string | null;
+          referrer: string | null;
+          region: string | null;
+          session_count: number | null;
+          timezone: string | null;
           verified: boolean;
         };
         SetofOptions: {
@@ -888,13 +1067,34 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      link_visitor: { Args: { contact_id: string; visitor_id: string }; Returns: undefined };
       merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
+      record_visit: {
+        Args: {
+          browser?: string;
+          city?: string;
+          contact_id?: string;
+          country?: string;
+          device?: string;
+          language?: string;
+          os?: string;
+          page_title?: string;
+          page_url: string;
+          referrer?: string;
+          region?: string;
+          timezone?: string;
+          visitor_id: string;
+        };
+        Returns: boolean;
+      };
       reorder_articles: { Args: { ids: string[] }; Returns: undefined };
       reorder_collections: { Args: { ids: string[] }; Returns: undefined };
       search_articles: {
         Args: { query: string };
         Returns: {
           author_id: string | null;
+          author_name: string | null;
+          author_photo: string | null;
           body: NonNullable<Json>;
           collection_id: string | null;
           created_at: string;

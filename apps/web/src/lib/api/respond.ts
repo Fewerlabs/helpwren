@@ -10,6 +10,7 @@ const statuses: Record<ApiErrorCode, number> = {
   token_expired: 401,
   token_rejected: 401,
   identity_unavailable: 503,
+  disabled: 410,
 };
 
 /** A failed API response, in the one shape every route uses. */

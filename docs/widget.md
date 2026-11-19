@@ -124,6 +124,42 @@ else's email into the console only mislabels your own chat.
 `setContext` values are shown to the team as "From the page". Like labels, they are the page's
 word and are never treated as fact.
 
+## Who is on your site
+
+While **Track visitors** is on (Settings > General), the chat checks in with your install about
+once a minute while its page is showing, at once when the page changes, and never while the tab
+is hidden. It sends the page's address and title, where the visitor came from, the browser's
+language and time zone, and a random id it keeps in its own storage. The install works out the
+browser, system and device from the request, and the country, region and city from your hosting
+platform's headers when it sends them (Vercel and Cloudflare do). There is no lookup of the
+address, and visitors' IP addresses are never stored. The team sees who is on the site in
+**Visitors**, and once someone writes, the same details beside their conversations.
+
+Nothing is needed on your page for this. The widget tells the chat about each page, including
+moves in a single-page app (`history.pushState`, `replaceState`, the back button and hash
+changes), with these messages to the frame:
+
+```js
+// When the frame is ready, as before, now with where the visitor came from:
+{ channel: "helpwren", type: "hello", page: { url, title }, referrer: "https://...", closable, identified }
+// When the page changes without loading, or the tab is hidden or shown:
+{ channel: "helpwren", type: "page", page: { url, title }, visible: true }
+```
+
+The chat's `unread` message to the page carries the newest unread reply as well, which the
+widget shows beside the launcher. Clicking it opens that conversation:
+
+```js
+{ channel: "helpwren", type: "unread", count: 1, latest: { conversationId: "…", preview: "Hi! Can I help?" } }
+```
+
+`latest` is left out when nothing is unread. The preview is plain text of at most 300
+characters, and the widget shows it as text.
+
+A team member can write first to someone in Visitors. The message waits until that visitor's
+chat next checks in, then arrives like any reply: a count on the launcher and the message beside
+it.
+
 ## What a page cannot do
 
 The page around the chat never sees a visitor's messages, and it cannot send one for them. Text

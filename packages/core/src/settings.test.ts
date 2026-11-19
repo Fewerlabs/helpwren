@@ -19,6 +19,7 @@ const defaults = {
   guestDetails: "email",
   allowedDomains: [],
   sources: ["web"],
+  visitors: { tracking: true, liveList: true },
 };
 
 describe("parseSettings", () => {
@@ -28,6 +29,7 @@ describe("parseSettings", () => {
         { key: "brand", value: { name: "Acme" } },
         { key: "guest_details", value: "phone" },
         { key: "sources", value: ["web", "ios"] },
+        { key: "visitors", value: { liveList: false } },
       ]),
     ).toEqual({
       brand: { name: "Acme" },
@@ -39,6 +41,7 @@ describe("parseSettings", () => {
       guestDetails: "phone",
       allowedDomains: [],
       sources: ["web", "ios"],
+      visitors: { tracking: true, liveList: false },
     });
   });
 
@@ -97,6 +100,8 @@ describe("parsePublicSettings", () => {
       helpCenter,
       tickets: { fromChat: true },
       guestDetails: "email",
+      // The chat reads it to decide whether to check in.
+      visitors: { tracking: true, liveList: true },
     });
   });
 });

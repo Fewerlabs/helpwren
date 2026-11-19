@@ -14,6 +14,7 @@ import NextLink from "next/link";
 import { type ReactNode } from "react";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
+import { ContactVisitor } from "@/features/visitors";
 import { formatTimeAgo } from "@/lib/format-time";
 import { useHelpwren } from "@/lib/helpwren-context";
 
@@ -109,6 +110,17 @@ export function ContactDetails({ contactId, onClose, className }: ContactDetails
                   <Row label="First seen">{dateFormat.format(new Date(contact.firstSeenAt))}</Row>
                 </dl>
               </section>
+
+              <ContactVisitor
+                contactId={contact.id}
+                factsClassName="grid-cols-[5rem_minmax(0,1fr)]"
+                frame={(content) => (
+                  <section className="border-rule border-b pb-3">
+                    <h3 className={eyebrow}>Visitor</h3>
+                    <div className="px-3">{content}</div>
+                  </section>
+                )}
+              />
 
               <section>
                 <h3 className={eyebrow}>Conversations</h3>

@@ -66,8 +66,13 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
   const result = await helpwren.settings.update({
     guestDetails: parsed.data.guestDetails,
     tickets: { fromChat: parsed.data.ticketsFromChat },
+    visitors: { tracking: parsed.data.trackVisitors, liveList: parsed.data.liveVisitors },
   });
-  if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
+  if (result.ok) {
+    revalidatePath(SETTINGS_PATH, "layout");
+    // The dashboard's sidebar shows the Visitors section only while its list is on.
+    revalidatePath("/dashboard", "layout");
+  }
   return result;
 }
 

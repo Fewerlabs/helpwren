@@ -5,7 +5,7 @@ import { FieldList, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { saveGeneral } from "../actions";
 import { generalSchema, type GeneralValues } from "../schemas";
@@ -24,7 +24,7 @@ export interface GeneralFormProps {
   canEdit: boolean;
 }
 
-/** What guests are asked for, and whether they can open tickets. */
+/** What guests are asked for, whether they can open tickets, and seeing who is on the site. */
 export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
@@ -33,8 +33,11 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
     defaultValues: {
       guestDetails: settings.guestDetails,
       ticketsFromChat: settings.tickets.fromChat,
+      trackVisitors: settings.visitors.tracking,
+      liveVisitors: settings.visitors.liveList,
     },
   });
+  const tracking = useWatch({ control: form.control, name: "trackVisitors" });
 
   const guestFields: FieldItem<GeneralValues>[] = [
     {
@@ -50,6 +53,22 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
       label: "Let people submit a ticket from the chat",
       type: "switch",
       hint: 'Adds "Submit a ticket" beside "Send us a message". Your team can still turn any conversation into a ticket.',
+    },
+  ];
+  const visitorFields: FieldItem<GeneralValues>[] = [
+    {
+      name: "trackVisitors",
+      label: "Track visitors",
+      type: "switch",
+      hint: "The chat tells Helpwren which page someone is on while it is open, and contacts get their browser, device, language and location. Location comes from your hosting platform when it provides one; visitors' IP addresses are never stored.",
+    },
+    {
+      name: "liveVisitors",
+      label: "Live visitors",
+      type: "switch",
+      hint: tracking
+        ? "Shows who is on your site right now in Visitors, and lets your team start a conversation with them."
+        : "Needs Track visitors: without it there is nobody to list.",
     },
   ];
   const disabled = !canEdit || form.formState.isSubmitting;
@@ -88,6 +107,12 @@ export function GeneralForm({ settings, canEdit }: GeneralFormProps) {
         description="A ticket is a conversation with a number and a subject, for things that take more than one reply."
       >
         <FieldList control={form.control} fields={ticketFields} disabled={disabled} />
+      </SettingsSection>
+      <SettingsSection
+        title="Visitors"
+        description="See who is on your site, where they are and what they are reading, and write to them first."
+      >
+        <FieldList control={form.control} fields={visitorFields} disabled={disabled} />
       </SettingsSection>
       {canEdit ? (
         <SaveBar

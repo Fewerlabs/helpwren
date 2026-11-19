@@ -32,6 +32,12 @@ export type IdentifyResult =
   | { ok: true; userId: string; mergedConversations: number }
   | { ok: false; reason: IdentifyFailure };
 
+/**
+ * The id the chat makes up for a browser and keeps in its own storage. It names a browser, not
+ * a person, and proves nothing about who is using it.
+ */
+export const visitorIdSchema = z.string().regex(/^[A-Za-z0-9_-]{16,64}$/);
+
 /** What a page may tell the team about where the visitor is: a few plain values, by name. */
 export const CONTEXT_MAX_KEYS = 20;
 export const pageContextSchema = z

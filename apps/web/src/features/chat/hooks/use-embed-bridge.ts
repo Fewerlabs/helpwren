@@ -1,24 +1,50 @@
 import { MESSAGE_MAX_LENGTH, pageContextSchema } from "@helpwren/core";
-import { CHANNEL, type FrameMessage, type IdentityState } from "helpwren/protocol";
+import {
+  CHANNEL,
+  type FrameMessage,
+  type IdentityState,
+  type LatestUnread,
+} from "helpwren/protocol";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import {
   usePreview,
   useSetClaimed,
+  useSetHostVisible,
   useSetPage,
   useSetPageContext,
   useSetPendingStart,
+  useSetReferrer,
   useShowScreen,
 } from "../store/chat-store";
 import { useIdentity } from "./use-identity";
 
+/** How many replies the visitor has not read, and the newest of them, for the page to show. */
+export interface UnreadState {
+  count: number;
+  latest: LatestUnread | undefined;
+}
+
+function unreadMessage({ count, latest }: UnreadState): FrameMessage {
+  return { channel: CHANNEL, type: "unread", count, ...(latest ? { latest } : {}) };
+}
+
 // The page's side of this is the widget script (packages/widget/src/protocol.ts).
+const pageSchema = z.object({ url: z.url().max(2000), title: z.string().max(300) });
+
 const helloSchema = z.object({
   channel: z.literal(CHANNEL),
   type: z.literal("hello"),
   // An app has no page address to give.
-  page: z.object({ url: z.url().max(2000), title: z.string().max(300) }).optional(),
+  page: pageSchema.optional(),
+  // Only a web address is any use to the team. Anything else, such as an app's own scheme, is
+  // dropped rather than turning the whole greeting away.
+  referrer: z
+    .url({ protocol: /^https?$/ })
+    .max(2000)
+    .optional()
+    .catch(undefined),
   closable: z.boolean().optional(),
   identified: z.boolean().optional(),
 });
@@ -38,6 +64,12 @@ const laterSchema = z.discriminatedUnion("type", [
       .optional(),
   }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("reset") }),
+  z.object({
+    channel: z.literal(CHANNEL),
+    type: z.literal("page"),
+    page: pageSchema,
+    visible: z.boolean(),
+  }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("context"), context: pageContextSchema }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("open"), conversationId: z.uuid() }),
 ]);
@@ -110,8 +142,10 @@ const startSchema = z.object({
  * a page that did not embed the chat. Which pages may embed it at all is decided by the
  * install's allowed domains, before this code runs.
  */
-export function useEmbedBridge(unread: number) {
+export function useEmbedBridge(unread: UnreadState) {
   const setPage = useSetPage();
+  const setReferrer = useSetReferrer();
+  const setHostVisible = useSetHostVisible();
   const setPendingStart = useSetPendingStart();
   const show = useShowScreen();
   const setClaimed = useSetClaimed();
@@ -161,6 +195,9 @@ export function useEmbedBridge(unread: number) {
           // From a notification about this conversation. The chat shows it once it is signed
           // in; the access rules decide whether it is theirs to see.
           show({ name: "conversation", id: message.conversationId });
+        } else if (message.type === "page") {
+          setPage(message.page);
+          setHostVisible(message.visible);
         } else if (message.type === "context") {
           setPageContext(message.context);
         } else if (message.type === "reset") {
@@ -181,9 +218,10 @@ export function useEmbedBridge(unread: number) {
 
       pageOrigin.current = event.origin;
       if (hello.data.page) setPage(hello.data.page);
+      setReferrer(hello.data.referrer ?? null);
       setEmbedded(true);
       setClosable(hello.data.closable !== false);
-      send({ channel: CHANNEL, type: "unread", count: latestUnread.current });
+      send(unreadMessage(latestUnread.current));
       // A page that does not vouch for a user gets a guest's chat, whoever was here before.
       // Nothing is said back: the page asked nothing.
       if (!hello.data.identified && !preview) void identity.asGuest();
@@ -194,11 +232,22 @@ export function useEmbedBridge(unread: number) {
     return () => {
       window.removeEventListener("message", onMessage);
     };
-  }, [identity, preview, send, setClaimed, setPage, setPageContext, setPendingStart, show]);
+  }, [
+    identity,
+    preview,
+    send,
+    setClaimed,
+    setHostVisible,
+    setPage,
+    setPageContext,
+    setPendingStart,
+    setReferrer,
+    show,
+  ]);
 
   useEffect(() => {
     latestUnread.current = unread;
-    send({ channel: CHANNEL, type: "unread", count: unread });
+    send(unreadMessage(unread));
   }, [send, unread]);
 
   const close = useCallback(() => {

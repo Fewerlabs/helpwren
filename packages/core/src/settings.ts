@@ -163,6 +163,21 @@ const emailSchema = z.object({
 
 export type EmailSettings = z.infer<typeof emailSchema>;
 
+/**
+ * Seeing who is on the site. Location comes from the hosting platform's headers, and visitors'
+ * addresses are not stored.
+ */
+const visitorsSchema = z.object({
+  /** The chat checks in while the page is open, and contacts get their browser's details. */
+  tracking: z.boolean().default(true),
+  /** The Visitors section of the dashboard, and starting a conversation from it. */
+  liveList: z.boolean().default(true),
+});
+
+export type VisitorSettings = z.infer<typeof visitorsSchema>;
+
+const visitorsDefault = { tracking: true, liveList: true };
+
 const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
   widget: widgetSchema.default(() => widgetSchema.parse({})),
@@ -180,6 +195,7 @@ const storedSettingsSchema = z.object({
   allowed_domains: z.array(allowedDomainSchema).default([]),
   /** Where a conversation may come from, such as the website or a mobile app. */
   sources: z.array(z.string().min(1)).min(1).default(["web"]),
+  visitors: visitorsSchema.default(visitorsDefault),
 });
 
 export const settingsSchema = storedSettingsSchema.transform((stored) => ({
@@ -192,6 +208,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   guestDetails: stored.guest_details,
   allowedDomains: stored.allowed_domains,
   sources: stored.sources,
+  visitors: stored.visitors,
 }));
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -199,7 +216,7 @@ export type Settings = z.infer<typeof settingsSchema>;
 /** The settings anyone may read, including a visitor with no session. */
 export type PublicSettings = Pick<
   Settings,
-  "brand" | "widget" | "chatPage" | "helpCenter" | "tickets" | "guestDetails"
+  "brand" | "widget" | "chatPage" | "helpCenter" | "tickets" | "guestDetails" | "visitors"
 >;
 
 /** For checking settings that arrive from somewhere other than the database, such as a preview. */
@@ -210,6 +227,8 @@ export const publicSettingsSchema = z.object({
   helpCenter: helpCenterSchema,
   tickets: ticketsSchema,
   guestDetails: guestDetailsSchema,
+  // Left out by a preview sent before this existed, which then shows the chat as it is.
+  visitors: visitorsSchema.default(visitorsDefault),
 });
 
 interface SettingRow {
@@ -231,8 +250,9 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, widget, chatPage, helpCenter, tickets, guestDetails } = parseSettings(rows);
-  return { brand, widget, chatPage, helpCenter, tickets, guestDetails };
+  const { brand, widget, chatPage, helpCenter, tickets, guestDetails, visitors } =
+    parseSettings(rows);
+  return { brand, widget, chatPage, helpCenter, tickets, guestDetails, visitors };
 }
 
 const pageTextPatchSchema = z.object({
@@ -294,6 +314,7 @@ export const settingsPatchSchema = z
     }),
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
+    visitors: z.object({ tracking: z.boolean(), liveList: z.boolean() }),
   })
   .partial();
 
@@ -325,6 +346,8 @@ const storage = {
   helpCenter: { key: "help_center", isPublic: true },
   guestDetails: { key: "guest_details", isPublic: true },
   allowedDomains: { key: "allowed_domains", isPublic: false },
+  // Public, because the chat decides from it whether to check in.
+  visitors: { key: "visitors", isPublic: true },
 } as const satisfies Record<keyof SettingsPatch, { key: string; isPublic: boolean }>;
 
 /** Postgres's error code for an action the access rules do not allow. */

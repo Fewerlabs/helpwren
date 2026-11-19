@@ -11,6 +11,7 @@ export interface Section {
 /** The dashboard's sections, in the order the sidebar shows them. */
 export const sections = [
   { href: "/dashboard/inbox", label: "Inbox", icon: "tray" },
+  { href: "/dashboard/visitors", label: "Visitors", icon: "users-three" },
   { href: "/dashboard/help", label: "Help center", icon: "book-open" },
   { href: "/dashboard/contacts", label: "Contacts", icon: "users" },
   { href: "/dashboard/settings", label: "Settings", icon: "gear", bottom: true },

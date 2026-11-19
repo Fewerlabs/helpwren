@@ -24,15 +24,18 @@ export interface SidebarProps {
   agent: Agent;
   /** The sign-out row for the account menu, passed in because signing out belongs to another feature. */
   signOut: ReactNode;
+  /** Sections the install has switched off, by address, such as `/dashboard/visitors`. */
+  hiddenSections?: readonly string[];
 }
 
 /**
  * How the team moves between the dashboard's sections: a slim column of icons down the left,
  * or a bar along the bottom on a phone.
  */
-export function Sidebar({ agent, signOut }: SidebarProps) {
+export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
   const pathname = usePathname();
   const unread = useTeamUnread();
+  const shown = sections.filter((section) => !hiddenSections.includes(section.href));
 
   return (
     <aside className="border-rule flex shrink-0 items-center gap-1 max-md:order-last max-md:h-14 max-md:border-t max-md:px-2 md:w-14 md:flex-col md:border-r md:py-3">
@@ -41,7 +44,7 @@ export function Sidebar({ agent, signOut }: SidebarProps) {
         aria-label="Dashboard"
         className="flex flex-1 items-center gap-1 max-md:justify-around md:flex-col"
       >
-        {sections.map((section) => {
+        {shown.map((section) => {
           const active = pathname === section.href || pathname.startsWith(`${section.href}/`);
           const count = section.href === "/dashboard/inbox" ? unread : 0;
           return (
