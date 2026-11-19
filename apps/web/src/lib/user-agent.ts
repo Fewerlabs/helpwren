@@ -42,7 +42,8 @@ export function parseUserAgent(userAgent: string | null): UserAgentDetails {
   const os = firstMatch(userAgent, systems);
   const tablet =
     /\b(iPad|Tablet)\b/.test(userAgent) || (os === "Android" && !/\bMobile\b/.test(userAgent));
-  const mobile = /\b(Mobi|iPhone|iPod)\b/.test(userAgent);
+  // "Mobi" matches Mobile and Mobi alike, as browsers spell it either way.
+  const mobile = /\bMobi|\b(iPhone|iPod)\b/.test(userAgent);
   return {
     browser: firstMatch(userAgent, browsers),
     os,
