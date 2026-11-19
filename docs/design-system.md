@@ -365,9 +365,11 @@ and class names.
   `containerClassName`), `rowProps` for per-row attributes, and `messages` for every label.
 
 It always needs a `caption`, which names the table for screen readers (`showCaption` makes it
-visible). For paging or infinite scrolling, wrap it in `QueryList` and pass `children` as a
-function. To make a row lead somewhere, put a `Link` or `Button` in a cell rather than making the
-whole row clickable, so it works from the keyboard.
+visible). For a fetched table, use `QueryTable`, which draws its loading, error, empty and paging
+states. To make a row lead somewhere, put a `RowLink` in the first column rather than making the
+whole row clickable, so it works from the keyboard: it is a button, or the link you pass with
+`asChild`, and its name is underlined on hover and focus with a pointer cursor, so every table's
+names look pressable in the same way.
 
 **Table** and its parts (`TableHeader`, `TableBody`, `TableFooter`, `TableRow`, `TableHead`,
 `TableCell`, `TableCaption`) are for a table laid out by hand. Use `DataTable` for anything driven
@@ -646,8 +648,14 @@ and keyboard, such as the dashboard, can ask for 36px and 13px: put the exported
   instead.
 - **`pages`** shows one page at a time with previous and next. The current page stays on screen
   under the progress bar until the next arrives. Pass `pageSize` and return `total` to show
-  "Page 2 of 13". Control it with `page` and `onPageChange`, for example to keep the page in the
-  URL.
+  "1–25 of 132". Control it with `page` and `onPageChange`, for example to keep the page in the
+  URL. The footer has a rows-per-page picker (`pageSizeOptions`, default 10, 25, 50 and 100, or
+  `false`); a new size goes back to page 1. `pageSizeKey` remembers the choice in this browser;
+  `onPageSizeChange` makes the size controlled. `showSummary`, `showPageControls` and
+  `showPagination` turn off the count, the buttons or the whole footer. Below `mobileBreakpoint`
+  (768px), `mobilePagination="load-more"` (the default) swaps previous and next for Load more,
+  which adds the next page under the rows already shown ("Showing 50 of 132") and starts again
+  when the key, the size or the page changes.
 - **`none`** makes a single request with no paging.
 
 States it draws for you, each replaceable:
@@ -672,9 +680,42 @@ the same for its scrolling container. Both use `useScrollableFocus` from `src/li
 any other box that scrolls and may hold nothing focusable.
 
 Also: `header` and `footer` around the items, `messages` for every piece of text, and
-`listClassName` and `itemClassName`. For a table, a grid or anything that is not a list, pass
-`children` as a function: it receives the whole state (`items`, `status`, `total`, `hasMore`,
-`loadMore`, `retry`, `refetch`, `pagination`, and the fetching flags) and you draw everything.
+`listClassName` and `itemClassName`. For a table, use `QueryTable`. For a grid or another layout
+of your own, pass `children` as a function: it receives the whole state (`items`, `status`,
+`total`, `hasMore`, `loadMore`, `retry`, `refetch`, `pagination`, and the fetching flags) and you
+draw everything.
+
+### QueryTable
+
+`QueryList` and `DataTable` together, for a fetched table. The page describes its columns, rows
+and empty copy; the table draws the rest:
+
+```tsx
+<Panel aria-label="Contacts">
+  <QueryTable
+    queryKey={["contacts", search, filters]}
+    queryFn={({ page, pageSize }) => api.contacts.list({ search, page, pageSize })}
+    pageSize={25}
+    noun={{ one: "contact", other: "contacts" }}
+    caption="Contacts"
+    columns={columns}
+    getRowKey={(contact) => contact.id}
+    filtered={search !== ""}
+    empty={<EmptyState title="No contacts yet" />}
+    toolbar={({ total }) => <PanelHeader>Contacts {total}</PanelHeader>}
+  />
+</Panel>
+```
+
+- **First load:** placeholder rows, and placeholder items on a phone. **Refresh:** a progress bar
+  along the top of the rows, which stay on screen. A list on `refetchInterval` refreshes quietly.
+- **Error:** a message (`messages.error`) and Try again; a failed refresh keeps its rows.
+- **Empty:** `empty`, or `emptyFiltered` while `filtered` says a search or filter is narrowing the
+  rows (default "No results" and a hint).
+- **Paging:** the same footer and options as `QueryList`, pinned under the rows, which scroll.
+- `toolbar` goes above the table through every state; as a function it reads the list's state.
+- `renderMobileRow`, `rowProps`, `density` and `caption` go to `DataTable`. `reorder` works as
+  there, and when `onReorder` returns a promise the dropped order stays until it settles.
 
 ### QueryDetail
 
@@ -684,8 +725,11 @@ Also: `header` and `footer` around the items, `messages` for every piece of text
 </QueryDetail>
 ```
 
-It draws the first load (`AppLoader` with `messages.loading`, or `renderLoading`), not found when `queryFn` returns `null` or `isEmpty`
-says so (`renderEmpty`), and failure with a retry (`renderError`). Once the item is showing, a
+It draws the first load as a skeleton in a record panel's shape, a name beside an avatar and
+sections of facts (`placeholder="loader"` for the `AppLoader` instead, or `renderLoading`); not
+found when `queryFn` returns `null` or `isEmpty` says so, with `messages.notFound`,
+`messages.notFoundDescription` and a `notFoundAction` such as Close (or `renderEmpty`); and
+failure with a retry (`renderError`). Once the item is showing, a
 refresh keeps it on screen under the progress bar. Two components with the same `queryKey` share
 one request and one cached result.
 

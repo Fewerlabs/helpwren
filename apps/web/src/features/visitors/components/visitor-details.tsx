@@ -47,9 +47,15 @@ export function VisitorDetails({ visitorId, onClose }: VisitorDetailsProps) {
         refetchInterval={REFRESH_EVERY_MS}
         messages={{
           loading: "Loading visitor",
-          empty: "This visitor could not be found.",
+          notFound: "This visitor could not be found.",
+          notFoundDescription: "Their visit may have ended long enough ago to be cleared.",
           error: "This visitor could not be loaded.",
         }}
+        notFoundAction={
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        }
         className="min-h-0 flex-1 overflow-y-auto"
       >
         {(visitor) => {

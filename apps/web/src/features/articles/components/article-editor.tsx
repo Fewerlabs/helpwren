@@ -17,7 +17,6 @@ import {
   ActionButton,
   Button,
   cn,
-  EmptyState,
   Field,
   Icon,
   Input,
@@ -165,6 +164,7 @@ export function ArticleEditor({ articleId, collectionSlug }: ArticleEditorProps)
           // The collections are what a new article needs first: the one it starts in.
           queryKey={[...ARTICLES_QUERY_KEY, "collections"]}
           queryFn={() => getClient().collections.list()}
+          placeholder="loader"
           messages={{ loading: "Opening the editor" }}
           className="border-rule bg-card h-full overflow-hidden rounded-xl border"
           contentClassName="h-full"
@@ -191,22 +191,21 @@ export function ArticleEditor({ articleId, collectionSlug }: ArticleEditorProps)
         queryFn={() => getClient().articles.get(articleId)}
         // The form keeps its own copy once loaded, so a refresh must not disturb the writing.
         staleTime={Infinity}
-        messages={{ loading: "Opening the article" }}
+        // An editor is not shaped like a record panel, so it opens with the loader.
+        placeholder="loader"
+        messages={{
+          loading: "Opening the article",
+          notFound: "This article does not exist",
+          notFoundDescription: "It may have been removed.",
+        }}
+        notFoundAction={
+          <Button variant="secondary" size="sm" asChild>
+            <Link href={HELP_PATH}>Back to the help center</Link>
+          </Button>
+        }
         className="border-rule bg-card h-full overflow-hidden rounded-xl border"
         // The page inside scrolls in its own columns, so it needs the card's full height.
         contentClassName="h-full"
-        renderEmpty={() => (
-          <EmptyState
-            scene="not-found"
-            title="This article does not exist"
-            description="It may have been removed."
-            action={
-              <Button variant="secondary" size="sm" asChild>
-                <Link href={HELP_PATH}>Back to the help center</Link>
-              </Button>
-            }
-          />
-        )}
       >
         {(article) => <EditorForm key={article.id} article={article} />}
       </QueryDetail>

@@ -171,7 +171,7 @@ test("a team member takes a conversation, makes it a ticket, notes it and resolv
   await ticketSearch.fill(number);
   await expect(table.getByRole("row")).toHaveCount(2);
   await ticketSearch.fill("nothing like this");
-  await expect(tickets.getByText("No tickets match")).toBeVisible();
+  await expect(tickets.getByText("No results")).toBeVisible();
   await ticketSearch.fill("");
   await views.getByRole("link", { name: /My inbox/ }).click();
 

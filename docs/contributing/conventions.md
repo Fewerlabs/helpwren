@@ -27,17 +27,20 @@ Before writing markup for something fetched, chosen or filtered, check the desig
 component draws it, use that component. Do not rebuild its loading, empty and error states by
 hand.
 
-| For                                               | Use                                           |
-| ------------------------------------------------- | --------------------------------------------- |
-| A fetched list, with paging or infinite scrolling | `QueryList`                                   |
-| One fetched record                                | `QueryDetail`                                 |
-| A table driven by data                            | `DataTable`, inside `QueryList` when it pages |
-| Changing a value in place, in a row or a panel    | `InlineSelect`                                |
-| A choice in a form                                | `Select`                                      |
-| Narrowing a list                                  | `FilterBar`, with `SearchField` for text      |
-| Nothing to show, or a failure                     | `EmptyState`                                  |
-| Confirming an action before it happens            | `ConfirmDialog`, or `useConfirm` from code    |
-| Telling the person something happened             | `toast`                                       |
+| For                                                | Use                                            |
+| -------------------------------------------------- | ---------------------------------------------- |
+| A fetched list, with paging or infinite scrolling  | `QueryList`                                    |
+| One fetched record                                 | `QueryDetail`                                  |
+| A fetched table                                    | `QueryTable`, never `DataTable` in `QueryList` |
+| A table of rows you already hold                   | `DataTable`                                    |
+| The name that opens a table's row                  | `RowLink`                                      |
+| A list's page, size, search and filters in the URL | `useListParams` (`apps/web/src/lib`)           |
+| Changing a value in place, in a row or a panel     | `InlineSelect`                                 |
+| A choice in a form                                 | `Select`                                       |
+| Narrowing a list                                   | `FilterBar`, with `SearchField` for text       |
+| Nothing to show, or a failure                      | `EmptyState`                                   |
+| Confirming an action before it happens             | `ConfirmDialog`, or `useConfirm` from code     |
+| Telling the person something happened              | `toast`                                        |
 
 - A component should not call `useQuery` and then branch on `isPending` and `isError` to draw
   skeletons and a retry button. That is what `QueryList` and `QueryDetail` are for.
