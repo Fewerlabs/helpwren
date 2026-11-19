@@ -34,7 +34,7 @@ function ArticleRow({ article, from }: { article: ArticleSummary; from?: OpenCol
   return (
     <button
       type="button"
-      className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
+      className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
       onClick={() => {
         show({ name: "article", slug: article.slug, ...(from ? { from } : {}) });
       }}
@@ -171,7 +171,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
           renderItem={(collection) => (
             <button
               type="button"
-              className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
+              className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-left transition-colors focus-visible:outline-2"
               onClick={() => {
                 show({
                   name: "collection",

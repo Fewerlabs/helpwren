@@ -19,7 +19,7 @@ export function ConversationRow({ conversation, onOpen }: ConversationRowProps) 
   return (
     <button
       type="button"
-      className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors focus-visible:outline-2"
+      className="hover:bg-muted/60 focus-visible:outline-ring flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors focus-visible:outline-2"
       onClick={onOpen}
     >
       <TeamAvatar size="sm" />
