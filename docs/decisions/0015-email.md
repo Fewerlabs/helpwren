@@ -49,3 +49,6 @@ assume a mail provider.
 - An email links back to the page the contact wrote from, where the widget still has their
   session, and falls back to the chat page. It does not sign them in. Answering by email is the
   next step.
+- 2026-11-19: contacts can answer these emails from their mail app, and every email about a
+  conversation now carries a Message-ID chain so mail apps thread them. See
+  [ADR 0022](0022-reply-by-email.md).
