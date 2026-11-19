@@ -179,10 +179,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
                 });
               }}
             >
-              <Icon
-                name={collectionIcon(collection.icon)}
-                className="text-muted-foreground size-5 shrink-0"
-              />
+              <Icon name={collectionIcon(collection.icon)} className="text-brand size-5 shrink-0" />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{collection.name}</span>
                 <span className="text-muted-foreground block text-xs">
