@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(13);
+select plan(14);
 
 select tests.act_as_visitor();
 select throws_ok(
@@ -75,6 +75,18 @@ select tests.act_as('former_agent');
 select is_empty(
   $$ select * from public.search_conversations('Hello from') $$,
   'a deactivated agent finds nothing'
+);
+
+-- There is no cap: the ticket list pages through every match, so all of them come back.
+select tests.act_as_owner();
+insert into public.conversations (contact_id, source, type, subject)
+select tests.uid('guest_a'), 'web', 'ticket', 'Missing parcel ' || n
+from generate_series(1, 60) as n;
+
+select tests.act_as('agent');
+select is(
+  (select count(*) from public.search_conversations('missing parcel')), 60::bigint,
+  'a search returns every match, more than fifty'
 );
 
 select * from finish();

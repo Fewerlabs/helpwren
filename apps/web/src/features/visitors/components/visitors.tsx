@@ -5,19 +5,19 @@ import {
   Avatar,
   Button,
   cn,
-  DataTable,
   type DataTableColumn,
   EmptyState,
   Icon,
   Link,
-  Pagination,
-  QueryList,
+  QueryTable,
+  RowLink,
 } from "@helpwren/design-system";
 import NextLink from "next/link";
 import { useMemo } from "react";
 
 import { DashboardPage, Panel, PanelHeader } from "@/features/dashboard";
 import { useHelpwren } from "@/lib/helpwren-context";
+import { useListParams, type ListParamsOptions } from "@/lib/use-list-params";
 
 import {
   browserLabel,
@@ -36,7 +36,8 @@ import {
 import { VisitorDetails } from "./visitor-details";
 
 const SETTINGS_HREF = "/dashboard/settings/general";
-const PAGE_SIZE = 25;
+
+const listOptions: ListParamsOptions = { pageSizeKey: "visitors" };
 
 export interface VisitorsProps {
   settings: VisitorSettings;
@@ -65,12 +66,14 @@ function SwitchedOff({ tracking }: { tracking: boolean }) {
 
 /**
  * Who is on the site right now: everyone whose chat checked in within the last two minutes,
- * 25 to a page, asked for again every fifteen seconds while the page is open. A refresh keeps
- * the page on screen, or moves back to the last one if people left and it no longer exists. Opening one shows where they
- * are and what they have looked at, and lets the team write to them first.
+ * a page at a time, asked for again every fifteen seconds while the page is open. A refresh
+ * keeps the page on screen, or moves back to the last one if people left and it no longer
+ * exists. Opening one shows where they are and what they have looked at, and lets the team
+ * write to them first.
  */
 export function Visitors({ settings }: VisitorsProps) {
   const getClient = useHelpwren();
+  const list = useListParams(listOptions);
   const [selectedId, select] = useSelectedVisitor();
   const on = settings.tracking && settings.liveList;
 
@@ -83,17 +86,15 @@ export function Visitors({ settings }: VisitorsProps) {
         cell: (visitor) => {
           const name = visitorName(visitor);
           return (
-            <button
-              type="button"
+            <RowLink
+              leading={<Avatar name={name} size="sm" className="text-2xs size-6" />}
               aria-current={visitor.id === selectedId ? "true" : undefined}
-              className="focus-visible:outline-ring flex max-w-full items-center gap-2.5 rounded-md text-left font-medium focus-visible:outline-2 focus-visible:outline-offset-2"
               onClick={() => {
                 select(visitor.id);
               }}
             >
-              <Avatar name={name} size="sm" className="text-2xs size-6" />
-              <span className="truncate">{name}</span>
-            </button>
+              {name}
+            </RowLink>
           );
         },
       },
@@ -172,77 +173,52 @@ export function Visitors({ settings }: VisitorsProps) {
       )}
     >
       {on ? (
-        <QueryList
-          queryKey={[...VISITORS_QUERY_KEY, "live"]}
-          queryFn={({ page, pageSize }) =>
-            getClient().visitors.list({
-              activeWithinSeconds: ACTIVE_WITHIN_SECONDS,
-              page,
-              limit: pageSize,
-            })
-          }
-          pagination="pages"
-          pageSize={PAGE_SIZE}
-          refetchInterval={REFRESH_EVERY_MS}
-        >
-          {(list) => (
-            <Panel aria-label="Live now" className={cn(selectedId && "max-lg:hidden")}>
+        <Panel aria-label="Live now" className={cn(selectedId && "max-lg:hidden")}>
+          <QueryTable
+            queryKey={[...VISITORS_QUERY_KEY, "live"]}
+            queryFn={({ page, pageSize }) =>
+              getClient().visitors.list({
+                activeWithinSeconds: ACTIVE_WITHIN_SECONDS,
+                page,
+                limit: pageSize,
+              })
+            }
+            // Refreshes on its own, quietly: the rows change in place without a progress bar.
+            refetchInterval={REFRESH_EVERY_MS}
+            page={list.page}
+            onPageChange={list.setPage}
+            pageSize={list.pageSize}
+            onPageSizeChange={list.setPageSize}
+            noun={{ one: "visitor", other: "visitors" }}
+            caption="Visitors on your site now"
+            density="compact"
+            columns={columns}
+            getRowKey={(visitor) => visitor.id}
+            rowProps={(visitor) => (visitor.id === selectedId ? { className: "bg-muted" } : {})}
+            empty={
+              <EmptyState
+                scene="visitors"
+                size="sm"
+                className="py-10"
+                title="No one is on your site right now"
+                description="People show up here while a page with your chat is open. The list refreshes on its own."
+              />
+            }
+            messages={{ error: "Visitors could not be loaded.", pagination: "Visitors pages" }}
+            toolbar={({ total }) => (
               <PanelHeader>
                 <h2 className="flex items-baseline gap-1.5 font-semibold">
                   On your site now
-                  {list.total === undefined ? null : (
+                  {total === undefined ? null : (
                     <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                      {list.total}
+                      {total}
                     </span>
                   )}
                 </h2>
               </PanelHeader>
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {list.status === "error" ? (
-                  <EmptyState
-                    scene={false}
-                    size="sm"
-                    className="pt-10"
-                    title="Visitors could not be loaded."
-                    action={
-                      <Button variant="secondary" size="sm" onClick={list.retry}>
-                        Try again
-                      </Button>
-                    }
-                  />
-                ) : (
-                  <DataTable
-                    caption="Visitors on your site now"
-                    density="compact"
-                    columns={columns}
-                    rows={list.items}
-                    getRowKey={(visitor) => visitor.id}
-                    rowProps={(visitor) =>
-                      visitor.id === selectedId ? { className: "bg-muted" } : {}
-                    }
-                    loading={list.status === "loading"}
-                    empty={
-                      <EmptyState
-                        scene="visitors"
-                        size="sm"
-                        className="py-10"
-                        title="No one is on your site right now"
-                        description="People show up here while a page with your chat is open. The list refreshes on its own."
-                      />
-                    }
-                  />
-                )}
-              </div>
-              {list.pagination ? (
-                <Pagination
-                  pagination={list.pagination}
-                  noun={{ one: "visitor", other: "visitors" }}
-                  messages={{ label: "Visitors pages" }}
-                />
-              ) : null}
-            </Panel>
-          )}
-        </QueryList>
+            )}
+          />
+        </Panel>
       ) : (
         <SwitchedOff tracking={settings.tracking} />
       )}

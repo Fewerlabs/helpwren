@@ -13,6 +13,13 @@ export {
   type QueryListPagination,
   type QueryListProps,
   type QueryListRequest,
+  type QueryListFooterOptions,
   type QueryListState,
 } from "./query-list";
+export {
+  QueryTable,
+  type QueryTableMessages,
+  type QueryTableProps,
+  type QueryTableReorder,
+} from "./query-table";
 export type { QueryBehaviour, QueryErrorContext } from "./query-states";

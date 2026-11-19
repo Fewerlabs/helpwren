@@ -83,7 +83,9 @@ export { LinearProgress, type LinearProgressProps } from "./linear-progress/line
 export { Link, type LinkProps } from "./link/link";
 export { OtpInput, type OtpInputProps } from "./otp-input/otp-input";
 export { OptionList, type OptionListOption, type OptionListProps } from "./option-list/option-list";
+export { readPageSize, rememberPageSize } from "./pagination/page-size-memory";
 export {
+  defaultPageSizeOptions,
   Pagination,
   type PaginationMessages,
   type PaginationNoun,
@@ -169,6 +171,7 @@ export {
   type DataTableSort,
   type DataTableSortValue,
 } from "./table/data-table";
+export { RowLink, type RowLinkProps } from "./table/row-link";
 export { type SortableRowsMessages } from "./table/sortable-rows";
 export {
   Table,

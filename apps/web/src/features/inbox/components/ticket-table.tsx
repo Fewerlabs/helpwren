@@ -11,13 +11,12 @@ import {
 } from "@helpwren/core";
 import {
   Button,
-  DataTable,
   EmptyState,
   FilterBar,
   Icon,
   InlineSelect,
-  Pagination,
-  QueryList,
+  QueryTable,
+  RowLink,
   SearchField,
   StatusChip,
   Tooltip,
@@ -25,12 +24,12 @@ import {
   type FilterDefinition,
   type FilterValue,
 } from "@helpwren/design-system";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
 import { formatTimeAgo } from "@/lib/format-time";
 import { useHelpwren } from "@/lib/helpwren-context";
-import { useDebounced } from "@/lib/use-debounced";
+import { useListParams, type ListParamsOptions } from "@/lib/use-list-params";
 
 import { contactName } from "../contact-name";
 import { useConfirmStatus } from "../hooks/use-confirm-status";
@@ -47,7 +46,13 @@ import {
 } from "../options";
 import { PriorityLabel } from "./priority-label";
 
-const PAGE_SIZE = 25;
+// The inbox keeps its own view and open conversation in the address too, so the table's keys
+// carry a prefix: `tickets.status=open&tickets.page=2`.
+const listOptions: ListParamsOptions = {
+  prefix: "tickets",
+  filters: ["status", "priority", "assignee", "team"],
+  pageSizeKey: "tickets",
+};
 
 /** Turns what the filter bar holds into what the database is asked for. No values means any. */
 function toFilter(value: FilterValue): ConversationFilter {
@@ -80,13 +85,11 @@ export interface TicketTableProps {
 export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps) {
   const getClient = useHelpwren();
   const confirmStatus = useConfirmStatus();
-  const [filters, setFilters] = useState<FilterValue>({});
-  const [search, setSearch] = useState("");
-  const searchText = useDebounced(search).trim();
+  const list = useListParams(listOptions);
   // A ticket number counts as enough to search for, however short.
-  const searching = searchText.length >= MIN_SEARCH_LENGTH || /^#?\d+$/.test(searchText);
-  const narrowed = searching || Object.values(filters).some((values) => values.length > 0);
-  const filter = useMemo(() => ({ ...toFilter(filters), type: "ticket" as const }), [filters]);
+  const searching = list.query.length >= MIN_SEARCH_LENGTH || /^#?\d+$/.test(list.query);
+  const search = searching ? list.query : "";
+  const filter = { ...toFilter(list.filters), type: "ticket" as const };
 
   const assignees = useMemo(() => assigneeOptions(team), [team]);
   const definitions = useMemo<FilterDefinition[]>(
@@ -117,15 +120,13 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
         rowHeader: true,
         className: "max-w-0 w-[36%]",
         cell: (ticket) => (
-          <button
-            type="button"
-            className="focus-visible:outline-ring block max-w-full truncate rounded-md text-left font-medium hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+          <RowLink
             onClick={() => {
               onOpen(ticket.id);
             }}
           >
             {ticket.subject ?? ticket.lastMessagePreview}
-          </button>
+          </RowLink>
         ),
       },
       {
@@ -201,139 +202,111 @@ export function TicketTable({ team, teams, onOpen, onChange }: TicketTableProps)
   );
 
   return (
-    <QueryList<ConversationWithContact>
-      // Under the inbox's key, so a change anywhere in the inbox refreshes the table too. A new
-      // filter or search changes the key, which starts the table on page 1.
-      queryKey={[...INBOX_QUERY_KEY, "tickets", filter, searching ? searchText : ""]}
-      queryFn={async ({ page, pageSize = PAGE_SIZE }) => {
-        const client = getClient();
-        if (!searching) {
-          // Filtering and paging are the database's work.
-          return client.conversations.list({ ...filter, page, limit: pageSize });
+    <Panel aria-label="Tickets" className="h-full">
+      <QueryTable<ConversationWithContact>
+        // Under the inbox's key, so a change anywhere in the inbox refreshes the table too.
+        queryKey={[...INBOX_QUERY_KEY, "tickets", filter, search]}
+        // Searching, filtering and paging are all the database's work, so a search reaches
+        // every match and its total is the true one.
+        queryFn={({ page, pageSize }) =>
+          getClient().conversations.list({ ...filter, search, page, limit: pageSize })
         }
-        // A search returns its best few dozen matches at once, so they are paged here.
-        const found = await client.conversations.search(searchText, filter);
-        const start = (page - 1) * pageSize;
-        return { items: found.slice(start, start + pageSize), total: found.length };
-      }}
-      pagination="pages"
-      pageSize={PAGE_SIZE}
-    >
-      {(list) => (
-        <Panel aria-label="Tickets" className="h-full">
-          <PanelHeader>
-            <h2 className="flex items-baseline gap-1.5 font-semibold">
-              Tickets
-              {list.total === undefined ? null : (
-                <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                  {list.total}
+        page={list.page}
+        onPageChange={list.setPage}
+        pageSize={list.pageSize}
+        onPageSizeChange={list.setPageSize}
+        noun={{ one: "ticket", other: "tickets" }}
+        caption="Tickets"
+        density="compact"
+        columns={columns}
+        getRowKey={(ticket) => ticket.id}
+        // A phone has room for the subject and a line under it, so the row is read, then
+        // opened to change it.
+        renderMobileRow={(ticket) => {
+          const assignee = team.find((member) => member.id === ticket.assigneeId);
+          const group = teams.find((item) => item.id === ticket.teamId);
+          return (
+            <button
+              type="button"
+              className="hover:bg-muted/50 focus-visible:outline-ring grid w-full gap-1.5 px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+              onClick={() => {
+                onOpen(ticket.id);
+              }}
+            >
+              <span className="flex items-baseline gap-2">
+                <span className="text-muted-foreground shrink-0 font-mono text-xs">
+                  {ticketLabel(ticket)}
                 </span>
-              )}
-            </h2>
-            <span className="flex-1" />
-            <Tooltip content="Refresh">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Refresh tickets"
-                loading={list.isFetching}
-                onClick={list.refetch}
-              >
-                <Icon name="arrows-clockwise" />
-              </Button>
-            </Tooltip>
-            <SearchField
-              aria-label="Search tickets"
-              placeholder="Search by number, subject or contact"
-              className="bg-muted dark:bg-muted min-h-8 w-72 border-transparent max-sm:w-44"
-              value={search}
-              onValueChange={setSearch}
-              loading={list.isFetching && searchText !== ""}
-            />
-          </PanelHeader>
-          <div className="border-rule border-b px-3 py-2">
-            <FilterBar filters={definitions} value={filters} onValueChange={setFilters} />
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {list.status === "error" ? (
-              <EmptyState
-                scene={false}
-                size="sm"
-                className="pt-10"
-                title="Tickets could not be loaded."
-                action={
-                  <Button variant="secondary" size="sm" onClick={list.retry}>
-                    Try again
-                  </Button>
-                }
+                <span className="min-w-0 flex-1 truncate font-medium">
+                  {ticket.subject ?? ticket.lastMessagePreview}
+                </span>
+                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                  {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
+                </span>
+              </span>
+              <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
+                <StatusChip status={statuses[ticket.status].chip} size="sm" />
+                <PriorityLabel priority={ticket.priority} />
+                <span className="min-w-0 truncate">
+                  {assignee?.name ?? group?.name ?? "Unassigned"}
+                </span>
+              </span>
+            </button>
+          );
+        }}
+        filtered={searching || Object.values(list.filters).some((chosen) => chosen.length > 0)}
+        empty={
+          <EmptyState
+            scene="all-caught-up"
+            size="sm"
+            className="py-10"
+            title="No tickets yet"
+            description="Convert a conversation to a ticket when it needs tracking beyond the chat."
+          />
+        }
+        messages={{ error: "Tickets could not be loaded.", pagination: "Tickets pages" }}
+        toolbar={({ total, isFetching, refetch }) => (
+          <>
+            <PanelHeader>
+              <h2 className="flex items-baseline gap-1.5 font-semibold">
+                Tickets
+                {total === undefined ? null : (
+                  <span className="text-muted-foreground text-xs font-normal tabular-nums">
+                    {total}
+                  </span>
+                )}
+              </h2>
+              <span className="flex-1" />
+              <Tooltip content="Refresh">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Refresh tickets"
+                  loading={isFetching}
+                  onClick={refetch}
+                >
+                  <Icon name="arrows-clockwise" />
+                </Button>
+              </Tooltip>
+              <SearchField
+                aria-label="Search tickets"
+                placeholder="Search by number, subject or contact"
+                className="bg-muted dark:bg-muted min-h-8 w-72 border-transparent max-sm:w-44"
+                value={list.search}
+                onValueChange={list.setSearch}
+                loading={isFetching && list.query !== ""}
               />
-            ) : (
-              <DataTable
-                caption="Tickets"
-                density="compact"
-                columns={columns}
-                rows={list.items}
-                getRowKey={(ticket) => ticket.id}
-                // A phone has room for the subject and a line under it, so the row is read,
-                // then opened to change it.
-                renderMobileRow={(ticket) => {
-                  const assignee = team.find((member) => member.id === ticket.assigneeId);
-                  const group = teams.find((item) => item.id === ticket.teamId);
-                  return (
-                    <button
-                      type="button"
-                      className="hover:bg-muted/50 focus-visible:outline-ring grid w-full gap-1.5 px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
-                      onClick={() => {
-                        onOpen(ticket.id);
-                      }}
-                    >
-                      <span className="flex items-baseline gap-2">
-                        <span className="text-muted-foreground shrink-0 font-mono text-xs">
-                          {ticketLabel(ticket)}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate font-medium">
-                          {ticket.subject ?? ticket.lastMessagePreview}
-                        </span>
-                        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                          {ticket.lastMessageAt ? formatTimeAgo(ticket.lastMessageAt) : ""}
-                        </span>
-                      </span>
-                      <span className="text-muted-foreground flex min-w-0 items-center gap-3 text-xs">
-                        <StatusChip status={statuses[ticket.status].chip} size="sm" />
-                        <PriorityLabel priority={ticket.priority} />
-                        <span className="min-w-0 truncate">
-                          {assignee?.name ?? group?.name ?? "Unassigned"}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                }}
-                loading={list.isFetching}
-                empty={
-                  <EmptyState
-                    scene={narrowed ? false : "all-caught-up"}
-                    size="sm"
-                    className="py-10"
-                    title={narrowed ? "No tickets match" : "No tickets yet"}
-                    description={
-                      narrowed
-                        ? "Try a different search, or remove a filter."
-                        : "Convert a conversation to a ticket when it needs tracking beyond the chat."
-                    }
-                  />
-                }
+            </PanelHeader>
+            <div className="border-rule border-b px-3 py-2">
+              <FilterBar
+                filters={definitions}
+                value={list.filters}
+                onValueChange={list.setFilters}
               />
-            )}
-          </div>
-          {list.pagination ? (
-            <Pagination
-              pagination={list.pagination}
-              noun={{ one: "ticket", other: "tickets" }}
-              messages={{ label: "Tickets pages" }}
-            />
-          ) : null}
-        </Panel>
-      )}
-    </QueryList>
+            </div>
+          </>
+        )}
+      />
+    </Panel>
   );
 }

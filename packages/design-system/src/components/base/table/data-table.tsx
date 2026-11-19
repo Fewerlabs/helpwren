@@ -260,7 +260,9 @@ export function DataTable<Row>({
 
   const cellPadding = density === "compact" ? "py-1.5" : "py-2.5";
   const sticky = stickyHeader ? "bg-card sticky top-0 z-10" : undefined;
-  const columnCount = columns.length + (selectable ? 1 : 0) + (reorder ? 1 : 0);
+  // The drag handle and checkbox cells come before the columns.
+  const leadingCells = (selectable ? 1 : 0) + (reorder ? 1 : 0);
+  const columnCount = columns.length + leadingCells;
   const hasFooter = columns.some((column) => column.footer !== undefined);
   const showSkeleton = loading && rows.length === 0;
   const showEmpty = !showSkeleton && rows.length === 0;
@@ -351,7 +353,11 @@ export function DataTable<Row>({
           ? Array.from({ length: loadingRows }, (_, rowIndex) => (
               <TableRow key={rowIndex} className="hover:bg-transparent">
                 {Array.from({ length: columnCount }, (__, cellIndex) => (
-                  <TableCell key={cellIndex} className={cellPadding}>
+                  <TableCell
+                    key={cellIndex}
+                    // A column hidden on a narrow screen hides its placeholder too.
+                    className={cn(cellPadding, columns[cellIndex - leadingCells]?.className)}
+                  >
                     <Skeleton className="h-4 w-full max-w-40" />
                   </TableCell>
                 ))}

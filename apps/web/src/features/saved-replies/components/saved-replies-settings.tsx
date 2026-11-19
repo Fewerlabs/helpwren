@@ -5,10 +5,9 @@ import {
   ActionButton,
   Badge,
   Button,
-  DataTable,
   EmptyState,
   Icon,
-  QueryList,
+  QueryTable,
   SearchField,
   toast,
   useConfirm,
@@ -158,73 +157,58 @@ export function SavedRepliesSettings({ agent, members }: SavedRepliesSettingsPro
           New reply
         </Button>
       </div>
-      <QueryList
+      <QueryTable<SavedReply>
         queryKey={[...SAVED_REPLIES_QUERY_KEY, "settings", searchText]}
         queryFn={async () => ({
           items: await getClient().savedReplies.list({ search: searchText }),
         })}
         // The whole set, in one go: a team keeps tens of these, not thousands.
         pagination="none"
-      >
-        {(list) => (
-          <DataTable
-            caption="Saved replies"
-            density="compact"
-            columns={columns}
-            rows={list.items}
-            getRowKey={(reply) => reply.id}
-            loading={list.isFetching}
-            renderMobileRow={(reply) => (
-              <div className="flex items-center gap-2 py-2.5 pr-2 pl-3">
-                <div className="grid min-w-0 flex-1 gap-1">
-                  <span className="flex min-w-0 items-baseline gap-2">
-                    <span className="truncate font-medium">{reply.title}</span>
-                    {reply.shortcut ? (
-                      <span className="text-muted-foreground shrink-0 font-mono text-xs">
-                        /{reply.shortcut}
-                      </span>
-                    ) : null}
+        caption="Saved replies"
+        density="compact"
+        columns={columns}
+        getRowKey={(reply) => reply.id}
+        renderMobileRow={(reply) => (
+          <div className="flex items-center gap-2 py-2.5 pr-2 pl-3">
+            <div className="grid min-w-0 flex-1 gap-1">
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="truncate font-medium">{reply.title}</span>
+                {reply.shortcut ? (
+                  <span className="text-muted-foreground shrink-0 font-mono text-xs">
+                    /{reply.shortcut}
                   </span>
-                  <span className="text-muted-foreground flex min-w-0 items-center gap-2 text-xs">
-                    {visibility(reply)}
-                    <span className="truncate">{authorName(reply)}</span>
-                  </span>
-                </div>
-                {actions(reply)}
-              </div>
-            )}
-            empty={
-              searchText ? (
-                <EmptyState
-                  scene="no-results"
-                  size="sm"
-                  className="py-10"
-                  title="No saved replies found"
-                  description="Try other words."
-                />
-              ) : (
-                <EmptyState
-                  scene="conversations"
-                  size="sm"
-                  className="py-10"
-                  title="No saved replies yet"
-                  description="Save the answers you write most often, then type / in any reply to use them."
-                  action={
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setEditing(null);
-                      }}
-                    >
-                      New reply
-                    </Button>
-                  }
-                />
-              )
+                ) : null}
+              </span>
+              <span className="text-muted-foreground flex min-w-0 items-center gap-2 text-xs">
+                {visibility(reply)}
+                <span className="truncate">{authorName(reply)}</span>
+              </span>
+            </div>
+            {actions(reply)}
+          </div>
+        )}
+        filtered={searchText !== ""}
+        empty={
+          <EmptyState
+            scene="conversations"
+            size="sm"
+            className="py-10"
+            title="No saved replies yet"
+            description="Save the answers you write most often, then type / in any reply to use them."
+            action={
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditing(null);
+                }}
+              >
+                New reply
+              </Button>
             }
           />
-        )}
-      </QueryList>
+        }
+        messages={{ error: "Saved replies could not be loaded." }}
+      />
       {editing === undefined ? null : (
         <SavedReplyDialog
           reply={editing}
