@@ -69,6 +69,13 @@ inside its own pages as well as link to them.
   search. Each has a title, a description, a canonical address, Open Graph tags and, where it
   applies, `Article` and `BreadcrumbList` data. `/help/sitemap.xml` lists every page and
   `robots.txt` points to it.
+- **Laid out as documentation is, following Featurebase's help center:** a bar across the top
+  that stays in place, the whole list of articles down the left with each collection folding
+  open, the page in the middle, and an article's contents on the right, marking the heading
+  being read. On a narrow screen the list slides in over the page from a button in the bar.
+  A banner-and-cards page was built first and read as generic.
+- **In the chat, Help lists the collections**, each opening to its articles, with a search
+  across all of them, as the established messengers do.
 - **Read as a visitor with no session, whoever is asking**, so a signed-in team member sees what
   the public sees.
 - **Drawn per request, and nothing is kept between requests.** A build has no database to

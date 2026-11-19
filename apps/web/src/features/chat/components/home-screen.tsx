@@ -66,7 +66,6 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
               show({ name: "ticket" });
             }}
           >
-            <Icon name="ticket" className="text-muted-foreground" />
             <span className="flex-1 text-left">Submit a ticket</span>
             <Icon name="caret-right" className="text-muted-foreground" />
           </button>

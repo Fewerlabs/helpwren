@@ -34,9 +34,8 @@ export function TabBar({ current, unread }: TabBarProps) {
               aria-label={hasUnread ? `${tab.label}, ${unread} unread` : undefined}
               className={cn(
                 "focus-visible:outline-ring flex flex-col items-center gap-1 rounded-lg py-1.5 text-xs transition-colors focus-visible:outline-2",
-                active
-                  ? "text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground",
+                // The tab that is open wears the brand's colour, and the others take it on hover.
+                active ? "text-primary font-medium" : "text-muted-foreground hover:text-primary",
               )}
               onClick={() => {
                 show({ name: tab.name });
