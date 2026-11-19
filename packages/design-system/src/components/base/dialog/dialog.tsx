@@ -24,6 +24,8 @@ export interface DialogContentProps extends Omit<
   closeLabel?: string;
   /** Hides the close button. The dialog must then offer another way to close. */
   hideClose?: boolean;
+  /** Fills the screen, for something that needs all the room there is, such as a preview. */
+  fullScreen?: boolean;
 }
 
 /** A modal window that interrupts the page for a decision or a short task. */
@@ -36,6 +38,7 @@ export const DialogDescription = UiDialogDescription;
 export function DialogContent({
   closeLabel = "Close",
   hideClose = false,
+  fullScreen = false,
   className,
   children,
   ...props
@@ -43,7 +46,12 @@ export function DialogContent({
   return (
     <UiDialogContent
       showCloseButton={false}
-      className={cn("border-rule rounded-2xl border p-6 ring-0 sm:max-w-md", className)}
+      className={cn(
+        "border-rule rounded-2xl border p-6 ring-0 sm:max-w-md",
+        fullScreen &&
+          "inset-0 flex h-dvh max-w-none translate-x-0 translate-y-0 flex-col rounded-none border-0 p-4 sm:max-w-none",
+        className,
+      )}
       {...props}
     >
       {children}

@@ -59,6 +59,20 @@ describe("Dialog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("can fill the screen", async () => {
+    render(
+      <Dialog defaultOpen>
+        <DialogContent fullScreen>
+          <DialogTitle>Preview</DialogTitle>
+          <DialogDescription>As a visitor sees it.</DialogDescription>
+        </DialogContent>
+      </Dialog>,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Preview" });
+    expect(dialog).toHaveClass("inset-0", "h-dvh", "max-w-none");
+    expect(dialog).not.toHaveClass("top-1/2");
+  });
+
   it("can hide the close button", async () => {
     render(<Example hideClose />);
     await userEvent.click(screen.getByRole("button", { name: "Delete conversation" }));

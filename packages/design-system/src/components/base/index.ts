@@ -1,6 +1,7 @@
 // The base layer's public API. Feature code reaches these through the package entry point.
 export { Avatar, type AvatarProps } from "./avatar/avatar";
 export { Badge, type BadgeProps } from "./badge/badge";
+export { ActionButton, type ActionButtonProps } from "./button/action-button";
 export { Button, type ButtonProps } from "./button/button";
 export { compactControls } from "./styles";
 export {
