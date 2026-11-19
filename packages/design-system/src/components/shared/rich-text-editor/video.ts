@@ -1,13 +1,17 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 
 import { youtubeEmbedUrl, youtubeId } from "../rich-text/video";
+import { VideoView } from "./video-view";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     video: {
       /** Adds the YouTube video an address points to, if it is one. */
       setVideo: (address: string) => ReturnType;
+      /** Adds an empty video that asks for its YouTube link. */
+      insertVideoField: () => ReturnType;
     };
   }
 }
@@ -64,7 +68,15 @@ export const Video = Node.create({
           const id = youtubeId(address);
           return id ? commands.insertContent({ type: this.name, attrs: { id } }) : false;
         },
+      insertVideoField:
+        () =>
+        ({ commands }) =>
+          commands.insertContent({ type: this.name, attrs: { id: null } }),
     };
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(VideoView);
   },
 
   addProseMirrorPlugins() {

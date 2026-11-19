@@ -87,6 +87,28 @@ describe("RichTextEditor", () => {
     expect(latest()?.content?.[0]).toMatchObject({ type: "callout", attrs: { tone: "warning" } });
   });
 
+  it("adds a YouTube video from the block menu, asking for its link", async () => {
+    const { latest, add } = await setup();
+    await add("Video");
+    const link = await screen.findByRole("textbox", { name: "YouTube video" });
+    await waitFor(() => {
+      expect(link).toHaveFocus();
+    });
+
+    await userEvent.type(link, "https://example.com/not-a-video{Enter}");
+    expect(screen.getByText(/That is not a YouTube link/)).toBeVisible();
+
+    await userEvent.clear(link);
+    await userEvent.type(link, "https://youtu.be/aqz-KE-bpKQ{Enter}");
+    await waitFor(() => {
+      expect(latest()?.content).toContainEqual({ type: "video", attrs: { id: "aqz-KE-bpKQ" } });
+    });
+    expect(screen.getByTitle("YouTube video")).toHaveAttribute(
+      "src",
+      "https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ?rel=0",
+    );
+  });
+
   it("uploads a chosen picture and puts it in the document", async () => {
     const uploadImage = vi.fn(() => Promise.resolve("https://example.com/chart.png"));
     const { latest } = await setup({ uploadImage });
