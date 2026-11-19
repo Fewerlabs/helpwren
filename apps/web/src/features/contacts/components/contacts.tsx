@@ -8,40 +8,37 @@ import {
 } from "@helpwren/core";
 import {
   Avatar,
-  Button,
   cn,
-  DataTable,
   type DataTableColumn,
   EmptyState,
   FilterBar,
   type FilterDefinition,
   type FilterValue,
-  Pagination,
-  QueryList,
+  QueryTable,
+  RowLink,
   SearchField,
 } from "@helpwren/design-system";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { DashboardPage, Panel, PanelHeader } from "@/features/dashboard";
 import { countryFlag, countryName } from "@/features/visitors";
 import { formatTimeAgo } from "@/lib/format-time";
 import { useHelpwren } from "@/lib/helpwren-context";
-import { useDebounced } from "@/lib/use-debounced";
+import { useListParams, type ListParamsOptions } from "@/lib/use-list-params";
 
 import { contactLabel } from "../contact-label";
 import {
   CONTACTS_QUERY_KEY,
   contactSegments,
   segmentHref,
-  useContactSegment,
+  type ContactSegment,
+  SEGMENT,
   useSegmentCounts,
   useSelectedContact,
 } from "../hooks/use-contacts";
 import { ContactDetails } from "./contact-details";
 import { KindBadge } from "./kind-badge";
-
-const PAGE_SIZE = 25;
 
 const deviceOptions = [
   { value: "desktop", label: "Desktop" },
@@ -55,6 +52,15 @@ const seenOptions = [
   { value: "month", label: "Last 30 days" },
   { value: "never", label: "Never" },
 ];
+
+// Outside the component, so the address is read against the same options every render.
+const listOptions: ListParamsOptions<{ [SEGMENT]: ContactSegment["id"] }> = {
+  filters: ["country", "device", "seen", "conversations", "verified"],
+  pageSizeKey: "contacts",
+  params: {
+    [SEGMENT]: { values: contactSegments.map((segment) => segment.id), default: "everyone" },
+  },
+};
 
 /** Turns what the filter bar holds into what the database is asked for. No values means any. */
 function toOptions(value: FilterValue): Partial<ListContactsOptions> {
@@ -80,18 +86,17 @@ function toOptions(value: FilterValue): Partial<ListContactsOptions> {
 
 /**
  * Everyone who has written to the team: guests and the host product's users. A table to search
- * and page through, and one person's details and conversations beside it.
+ * and page through, and one person's details and conversations beside it. The segment, search,
+ * filters, page and rows per page live in the address, so a link opens the same view.
  */
 export function Contacts() {
   const getClient = useHelpwren();
-  const segment = useContactSegment();
+  const list = useListParams(listOptions);
+  const segment =
+    contactSegments.find((item) => item.id === list.params[SEGMENT]) ?? contactSegments[0];
   const counts = useSegmentCounts();
   const [selectedId, select] = useSelectedContact();
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<FilterValue>({});
-  const searchText = useDebounced(search).trim();
-  const filterOptions = useMemo(() => toOptions(filters), [filters]);
-  const narrowed = searchText !== "" || Object.values(filters).some((values) => values.length > 0);
+  const filterOptions = toOptions(list.filters);
 
   // The countries people have been seen in, so the filter offers only ones that match someone.
   const countries = useQuery({
@@ -142,17 +147,15 @@ export function Contacts() {
         cell: (contact) => {
           const label = contactLabel(contact);
           return (
-            <button
-              type="button"
+            <RowLink
+              leading={<Avatar name={label} size="sm" className="text-2xs size-6" />}
               aria-current={contact.id === selectedId ? "true" : undefined}
-              className="focus-visible:outline-ring flex max-w-full items-center gap-2.5 rounded-md text-left font-medium focus-visible:outline-2 focus-visible:outline-offset-2"
               onClick={() => {
                 select(contact.id);
               }}
             >
-              <Avatar name={label} size="sm" className="text-2xs size-6" />
-              <span className="truncate">{label}</span>
-            </button>
+              {label}
+            </RowLink>
           );
         },
       },
@@ -224,97 +227,72 @@ export function Contacts() {
         selectedId && "lg:grid-cols-[minmax(0,1fr)_18rem]",
       )}
     >
-      <QueryList
-        // A new search, filter or segment changes the key, which starts the list on page 1.
-        queryKey={[...CONTACTS_QUERY_KEY, "list", segment.id, searchText, filterOptions]}
-        queryFn={({ page: number, pageSize }) =>
-          getClient().contacts.list({
-            ...filterOptions,
-            kind: segment.kind,
-            search: searchText,
-            page: number,
-            pageSize,
-          })
-        }
-        pagination="pages"
-        pageSize={PAGE_SIZE}
-      >
-        {(list) => (
-          <Panel aria-label={segment.label} className={cn(selectedId && "max-lg:hidden")}>
-            <PanelHeader className="justify-between">
-              <h2 className="flex items-baseline gap-1.5 font-semibold">
-                {segment.label}
-                {list.total === undefined ? null : (
-                  <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                    {list.total}
-                  </span>
-                )}
-              </h2>
-              <SearchField
-                aria-label="Search contacts"
-                placeholder="Search by name, email or phone"
-                // Quiet, like the inbox search: a tint with no edge.
-                className="bg-muted dark:bg-muted min-h-8 w-72 border-transparent max-sm:w-44"
-                value={search}
-                onValueChange={setSearch}
-                loading={list.isFetching && searchText !== ""}
-              />
-            </PanelHeader>
-            <div className="border-rule border-b px-3 py-2">
-              <FilterBar filters={definitions} value={filters} onValueChange={setFilters} />
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {list.status === "error" ? (
-                <EmptyState
-                  scene={false}
-                  size="sm"
-                  className="pt-10"
-                  title="Contacts could not be loaded."
-                  action={
-                    <Button variant="secondary" size="sm" onClick={list.retry}>
-                      Try again
-                    </Button>
-                  }
+      <Panel aria-label={segment.label} className={cn(selectedId && "max-lg:hidden")}>
+        <QueryTable
+          // A new search, filter or segment changes the key, which starts the list on page 1.
+          queryKey={[...CONTACTS_QUERY_KEY, "list", segment.id, list.query, filterOptions]}
+          queryFn={({ page, pageSize }) =>
+            getClient().contacts.list({
+              ...filterOptions,
+              kind: segment.kind,
+              search: list.query,
+              page,
+              pageSize,
+            })
+          }
+          page={list.page}
+          onPageChange={list.setPage}
+          pageSize={list.pageSize}
+          onPageSizeChange={list.setPageSize}
+          noun={{ one: "contact", other: "contacts" }}
+          caption="Contacts"
+          density="compact"
+          columns={columns}
+          getRowKey={(contact) => contact.id}
+          rowProps={(contact) => (contact.id === selectedId ? { className: "bg-muted" } : {})}
+          filtered={list.narrowed}
+          empty={
+            <EmptyState
+              scene="visitors"
+              size="sm"
+              className="py-10"
+              title="No contacts yet"
+              description="People appear here once they have written to you."
+            />
+          }
+          messages={{ error: "Contacts could not be loaded.", pagination: "Contacts pages" }}
+          toolbar={({ total, isFetching }) => (
+            <>
+              <PanelHeader className="justify-between">
+                <h2 className="flex items-baseline gap-1.5 font-semibold">
+                  {segment.label}
+                  {total === undefined ? null : (
+                    <span className="text-muted-foreground text-xs font-normal tabular-nums">
+                      {total}
+                    </span>
+                  )}
+                </h2>
+                <SearchField
+                  aria-label="Search contacts"
+                  placeholder="Search by name, email or phone"
+                  // Quiet, like the inbox search: a tint with no edge.
+                  className="bg-muted dark:bg-muted min-h-8 w-72 border-transparent max-sm:w-44"
+                  value={list.search}
+                  onValueChange={list.setSearch}
+                  loading={isFetching && list.query !== ""}
                 />
-              ) : (
-                <DataTable
-                  caption="Contacts"
-                  density="compact"
-                  columns={columns}
-                  rows={list.items}
-                  getRowKey={(contact) => contact.id}
-                  rowProps={(contact) =>
-                    contact.id === selectedId ? { className: "bg-muted" } : {}
-                  }
-                  loading={list.isFetching}
-                  empty={
-                    <EmptyState
-                      scene={narrowed ? "no-results" : "visitors"}
-                      size="sm"
-                      className="py-10"
-                      title={narrowed ? "No contacts found" : "No contacts yet"}
-                      description={
-                        narrowed
-                          ? "Try a different search, or fewer filters."
-                          : "People appear here once they have written to you."
-                      }
-                    />
-                  }
+              </PanelHeader>
+              <div className="border-rule border-b px-3 py-2">
+                <FilterBar
+                  filters={definitions}
+                  value={list.filters}
+                  onValueChange={list.setFilters}
                 />
-              )}
-            </div>
-
-            {list.pagination ? (
-              <Pagination
-                pagination={list.pagination}
-                noun={{ one: "contact", other: "contacts" }}
-                messages={{ label: "Contacts pages" }}
-              />
-            ) : null}
-          </Panel>
-        )}
-      </QueryList>
+              </div>
+            </>
+          )}
+        />
+      </Panel>
 
       {selectedId ? (
         <ContactDetails

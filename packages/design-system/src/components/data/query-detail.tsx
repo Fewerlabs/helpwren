@@ -5,10 +5,11 @@ import type { ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 
+import { EmptyState } from "../shared/empty-state/empty-state";
 import {
-  DefaultLoading,
-  DefaultEmpty,
   DefaultError,
+  DefaultLoading,
+  DetailSkeleton,
   StickyProgress,
   type QueryBehaviour,
   type QueryErrorContext,
@@ -16,15 +17,16 @@ import {
 
 export interface QueryDetailMessages {
   loading: string;
-  empty: ReactNode;
-  emptyDescription?: ReactNode;
+  /** The title when the record does not exist. */
+  notFound: ReactNode;
+  notFoundDescription?: ReactNode;
   error: ReactNode;
   retry: string;
 }
 
 const defaultMessages: QueryDetailMessages = {
   loading: "Loading",
-  empty: "Not found.",
+  notFound: "Not found.",
   error: "This could not be loaded.",
   retry: "Try again",
 };
@@ -44,6 +46,14 @@ export interface QueryDetailProps<Data> extends QueryBehaviour {
   children: (data: Data, state: QueryDetailState) => ReactNode;
   /** Decides whether a loaded value counts as "nothing". Default: `null` or `undefined`. */
   isEmpty?: (data: Data) => boolean;
+  /**
+   * What the first load shows. `loader` (default) is the app's loader, the same as every list;
+   * `skeleton` is a record panel's shape, a name beside an avatar then sections of facts, for a
+   * panel whose layout should hold still while it loads. `renderLoading` replaces both.
+   */
+  placeholder?: "skeleton" | "loader";
+  /** A way out of the not-found state, such as Back or Close. */
+  notFoundAction?: ReactNode;
   renderLoading?: () => ReactNode;
   renderEmpty?: () => ReactNode;
   renderError?: (context: QueryErrorContext) => ReactNode;
@@ -55,15 +65,18 @@ export interface QueryDetailProps<Data> extends QueryBehaviour {
 }
 
 /**
- * Fetches a single item and draws every state of it: loading, not found, error
- * with retry, and the item itself. Results are cached by `queryKey` with TanStack
- * Query, so it needs a `QueryClientProvider` above it.
+ * Fetches a single item and draws every state of it: a placeholder on the first load, a
+ * progress bar on a refresh, not found with a way out, an error with Try again, and the item
+ * itself. Results are cached by `queryKey` with TanStack Query, so it needs a
+ * `QueryClientProvider` above it.
  */
 export function QueryDetail<Data>({
   queryKey,
   queryFn,
   children,
   isEmpty,
+  placeholder = "loader",
+  notFoundAction,
   renderLoading,
   renderEmpty,
   renderError,
@@ -100,7 +113,14 @@ export function QueryDetail<Data>({
       return children(data, { isFetching, refetch: retry });
     }
     if (query.isPending) {
-      return renderLoading?.() ?? <DefaultLoading label={messages.loading} />;
+      return (
+        renderLoading?.() ??
+        (placeholder === "skeleton" ? (
+          <DetailSkeleton label={messages.loading} />
+        ) : (
+          <DefaultLoading label={messages.loading} />
+        ))
+      );
     }
     if (query.isError) {
       return (
@@ -116,11 +136,16 @@ export function QueryDetail<Data>({
     }
     return (
       renderEmpty?.() ?? (
-        <DefaultEmpty
-          title={messages.empty}
-          {...(messages.emptyDescription === undefined
+        <EmptyState
+          role="status"
+          scene="not-found"
+          size="sm"
+          className="py-10"
+          title={messages.notFound}
+          {...(messages.notFoundDescription === undefined
             ? {}
-            : { description: messages.emptyDescription })}
+            : { description: messages.notFoundDescription })}
+          {...(notFoundAction === undefined ? {} : { action: notFoundAction })}
         />
       )
     );
