@@ -86,11 +86,13 @@ inside its own pages as well as link to them.
   across all of them, as the established messengers do.
 - **Read as a visitor with no session, whoever is asking**, so a signed-in team member sees what
   the public sees.
-- **Drawn per request, and nothing is kept between requests.** A build has no database to
-  ask, so pages are not built ahead. Keeping answers under a tag and clearing it on save was
-  tried first; Next serves the old answer once more after a tag is cleared, so a newly
-  published article was missing on the first visit and an unpublished one still readable.
-  Three small queries a request is the price of a change showing at once.
+- **Drawn per request, and what they read is kept for a minute.** A build has no database to
+  ask, so pages are not built ahead. Asking the database on every visit would spend Supabase's
+  free 5 GB of monthly egress at about 80,000 page views, so each answer is kept for 60 seconds
+  under one tag. Saving an article, the branding or a profile clears the tag, and the change
+  shows within a request or two. Next serves the kept copy once more while it reads again, so
+  "at once" means "on the next visit but one" at worst, and a change made outside the app shows
+  within about a minute. Search is never kept.
 - **The address can be someone else's.** When the help center is served through a rewrite on
   the customer's own site, the `help_center.url` setting is the canonical address of every page.
 - **It follows the device's light or dark setting**, with a button to switch.

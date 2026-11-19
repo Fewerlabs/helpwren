@@ -91,10 +91,18 @@ test("a team member writes an article, publishes it and takes it down again", as
   await expect(page.getByText("Article published")).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Slug" })).toBeDisabled();
 
-  // Published: anyone can read it, with the heading the editor made.
-  const published = await page.request.get("/help/shipping-e2e/track-a-parcel-e2e");
-  expect(published.status()).toBe(200);
-  expect(await published.text()).toContain("Where to find it");
+  // Published: anyone can read it, with the heading the editor made. The help center keeps what
+  // it reads for up to a minute; publishing clears that, and the change shows within a request
+  // or two.
+  await expect
+    .poll(
+      async () => {
+        const published = await page.request.get("/help/shipping-e2e/track-a-parcel-e2e");
+        return published.status() === 200 && (await published.text()).includes("Where to find it");
+      },
+      { timeout: 75_000, intervals: [500, 1_000, 2_000, 5_000] },
+    )
+    .toBe(true);
 
   // Unpublishing asks first.
   await page.getByRole("button", { name: "Unpublish" }).click();

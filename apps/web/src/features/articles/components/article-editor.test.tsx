@@ -9,7 +9,8 @@ import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { ArticleEditor } from "./article-editor";
 
-// The router belongs to Next, which a unit test does not have.
+// The action runs on the server and the router belongs to Next; neither exists in a unit test.
+vi.mock("../actions", () => ({ refreshHelpCenter: vi.fn(() => Promise.resolve()) }));
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),

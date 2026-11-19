@@ -187,8 +187,13 @@ test("an admin brands the help center, and visitors see it at once", async ({ pa
 
   // On a phone, as a visitor.
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/help");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Acme answers");
+  // Saving clears what the help center keeps, so the new brand shows within a visit or two.
+  await expect(async () => {
+    await page.goto("/help");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Acme answers", {
+      timeout: 1_000,
+    });
+  }).toPass({ timeout: 75_000, intervals: [500, 1_000, 2_000, 5_000] });
   await expect(page.getByRole("searchbox", { name: "Search Acme help" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Powered by Helpwren" })).toBeVisible();
 
