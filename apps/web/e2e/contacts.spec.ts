@@ -60,6 +60,6 @@ test("a team member searches the inbox by what was said and by who said it", asy
 
   // Clearing the search returns to the view.
   await search.fill("");
-  await expect(page.getByRole("heading", { name: /Open/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /^All/ })).toBeVisible();
   await expect(list.getByText("Do you offer a discount for charities?")).toBeVisible();
 });

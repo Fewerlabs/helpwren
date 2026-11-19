@@ -55,7 +55,10 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const earlier = conversations.data ?? [];
   const unread = earlier.reduce((total, item) => total + item.unreadForContact, 0);
   const bridge = useEmbedBridge(unread);
-  const onClose = bridge.embedded ? bridge.close : undefined;
+  const onClose = bridge.embedded && bridge.closable ? bridge.close : undefined;
+  // Someone who has written before, or whom the host product vouches for, is not asked who
+  // they are.
+  const known = earlier.length > 0 || session.data?.isGuest === false;
   const back = () => {
     show({ name: tab });
   };
@@ -106,6 +109,23 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     return <ArticleScreen slug={screen.slug} onBack={back} onClose={onClose} />;
   }
 
+  if (screen.name === "ticket" && settings.tickets.fromChat) {
+    return (
+      <>
+        <ScreenHeader onBack={back} onClose={onClose} title="New ticket" />
+        <StartForm
+          ticket
+          guestDetails={settings.guestDetails}
+          source={source}
+          teamName={teamName}
+          welcome={undefined}
+          quickReplies={[]}
+          returning={known}
+        />
+      </>
+    );
+  }
+
   if (screen.name === "start") {
     return (
       <>
@@ -116,7 +136,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           teamName={teamName}
           welcome={settings.widget.welcome}
           quickReplies={settings.widget.quickReplies}
-          returning={earlier.length > 0}
+          returning={known}
         />
       </>
     );
@@ -132,6 +152,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
         <HomeScreen
           greeting={settings.widget.greeting}
           intro={settings.widget.intro}
+          tickets={settings.tickets.fromChat}
           recent={earlier[0]}
           onClose={onClose}
         />

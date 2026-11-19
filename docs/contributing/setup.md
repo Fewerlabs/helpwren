@@ -90,6 +90,49 @@ pnpm agent:invite you@example.com --name "Your Name" --admin
 database, and of Mailpit, which catches every email the local stack sends. Local settings live in
 `supabase/config.toml`.
 
+## Email
+
+Email is off until a provider is set. Add one of these to `apps/web/.env.local`, restart the
+app, then set a from address under Settings → Email and press "Send a test email".
+
+```bash
+# Any SMTP server
+EMAIL_PROVIDER=smtp
+SMTP_URL=smtps://user:password@smtp.example.com:465
+
+# Or Resend
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=re_...
+```
+
+### Sending what is due
+
+Replies a contact has not read, and changes to a ticket's status, are emailed by a job that has
+to be called every minute. Set a secret, then have any scheduler call the job with it:
+
+```bash
+# apps/web/.env.local
+CRON_SECRET=<output of: openssl rand -hex 32>
+```
+
+```bash
+curl -X POST https://support.example.com/api/jobs/email -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Your host's cron, a GitHub Actions schedule or an uptime pinger all work. To have the database
+do it, run this once in the Supabase SQL editor with your own address and secret:
+
+```sql
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
+select cron.schedule('helpwren-email', '* * * * *', $$
+  select net.http_post(
+    url := 'https://support.example.com/api/jobs/email',
+    headers := '{"Authorization": "Bearer YOUR_CRON_SECRET"}'::jsonb
+  );
+$$);
+```
+
 ## Check your work
 
 ```bash

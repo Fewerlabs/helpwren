@@ -1,7 +1,7 @@
 "use client";
 
 import { LOGIN_CODE_LENGTH, loginCodeSchema, loginEmailSchema } from "@helpwren/core";
-import { Button, FieldList, Icon, type FieldItem } from "@helpwren/design-system";
+import { Button, FieldList, Icon, OtpInput, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useForm, type Control, type FieldValues } from "react-hook-form";
@@ -44,15 +44,26 @@ const codeFields: FieldItem<CodeForm>[] = [
   {
     name: "code",
     label: "Sign-in code",
-    type: "input",
+    type: "custom",
     required: true,
-    props: {
-      inputMode: "numeric",
-      autoComplete: "one-time-code",
-      maxLength: LOGIN_CODE_LENGTH,
-      spellCheck: false,
-      inputClassName: "font-mono tracking-widest",
-    },
+    render: ({ field }) => (
+      <OtpInput
+        ref={field.ref}
+        name={field.name}
+        value={field.value}
+        length={LOGIN_CODE_LENGTH}
+        onValueChange={field.onChange}
+        onBlur={field.onBlur}
+        // The last digit sends the form: there is nothing else on it to fill in.
+        onComplete={() => {
+          // After this change has reached the form, so the whole code is what is submitted.
+          queueMicrotask(() => {
+            const box = document.activeElement;
+            if (box instanceof HTMLInputElement) box.form?.requestSubmit();
+          });
+        }}
+      />
+    ),
   },
 ];
 

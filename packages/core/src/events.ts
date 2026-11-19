@@ -16,7 +16,12 @@ const eventRowSchema = z.discriminatedUnion("kind", [
   z.object({
     ...base,
     kind: z.literal("ticket_created"),
-    data: z.object({ number: z.number().int(), subject: z.string().nullable() }),
+    data: z.object({
+      number: z.number().int(),
+      subject: z.string().nullable(),
+      /** True when the contact opened it as a ticket; absent when the team converted a chat. */
+      opened: z.boolean().optional(),
+    }),
   }),
   z.object({
     ...base,

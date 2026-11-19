@@ -143,16 +143,33 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await visitorContext.close();
 });
 
-test("the inbox can show every conversation, not only open ones", async ({ page }) => {
+test("the inbox shows what is open first, and other statuses from the switch on the list", async ({
+  page,
+}) => {
   await signInToInbox(page, AGENT);
   const list = page.getByRole("list", { name: "Conversations" });
   await expect(list.getByText("Do you offer a discount for charities?")).toBeVisible();
   await expect(list.getByText("All sorted. Thanks for the quick reply!")).toHaveCount(0);
 
+  // The navigation says whose conversations; everyone's, to begin with.
   const views = page.getByRole("navigation", { name: "Inbox views" });
-  await expect(views.getByRole("link", { name: /Open/ })).toHaveAttribute("aria-current", "page");
-  await views.getByRole("link", { name: /All/ }).click();
-  await expect(page).toHaveURL(/view=all/);
+  await expect(views.getByRole("link", { name: /^All/ })).toHaveAttribute("aria-current", "page");
+
+  // The switch says which of them. It is kept in the address.
+  const conversations = page.getByRole("region", { name: "Conversations" });
+  await conversations.getByRole("button", { name: "Show: Open" }).click();
+  await page.getByRole("option", { name: "Resolved" }).click();
+  await expect(page).toHaveURL(/status=resolved/);
   await expect(list.getByText("All sorted. Thanks for the quick reply!")).toBeVisible();
+  await expect(list.getByText("Do you offer a discount for charities?")).toHaveCount(0);
+
+  await conversations.getByRole("button", { name: "Show: Resolved" }).click();
+  await page.getByRole("option", { name: "All" }).click();
+  await expect(list.getByText("Do you offer a discount for charities?")).toBeVisible();
   await expect(list.getByText("Resolved")).toBeVisible();
+
+  // Another view starts on what is open again.
+  await views.getByRole("link", { name: /Unassigned/ }).click();
+  await expect(page).toHaveURL(/view=unassigned$/);
+  await expect(conversations.getByRole("button", { name: "Show: Open" })).toBeVisible();
 });

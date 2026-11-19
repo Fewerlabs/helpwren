@@ -134,11 +134,32 @@ const helpCenterSchema = z.object({
 
 export type HelpCenterSettings = z.infer<typeof helpCenterSchema>;
 
+/** How tickets come in. */
+const ticketsSchema = z.object({
+  /** Whether a visitor can open a ticket themselves from the chat. */
+  fromChat: z.boolean().default(true),
+});
+
+/** Who emails come from. The name falls back to the brand's. */
+const emailSchema = z.object({
+  fromName: z.string().min(1).optional(),
+  fromAddress: z.email().optional(),
+  /** Email a contact an agent's reply they have not read after a few minutes. */
+  replies: z.boolean().default(true),
+  /** Email a contact when the team changes their ticket's status. */
+  status: z.boolean().default(true),
+});
+
+export type EmailSettings = z.infer<typeof emailSchema>;
+
 const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
   widget: widgetSchema.default(() => widgetSchema.parse({})),
   /** The chat on a page of its own, at `/chat`, for a link in an email or a profile. */
   chat_page: pageTextSchema.default({}),
+  tickets: ticketsSchema.default({ fromChat: true }),
+  /** Who the install's emails are from. Without an address it sends none. */
+  email: emailSchema.default(() => emailSchema.parse({})),
   help_center: helpCenterSchema.default(() => helpCenterSchema.parse({})),
   guest_details: guestDetailsSchema.default("email"),
   /**
@@ -154,6 +175,8 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   brand: stored.brand,
   widget: stored.widget,
   chatPage: stored.chat_page,
+  tickets: stored.tickets,
+  email: stored.email,
   helpCenter: stored.help_center,
   guestDetails: stored.guest_details,
   allowedDomains: stored.allowed_domains,
@@ -165,7 +188,7 @@ export type Settings = z.infer<typeof settingsSchema>;
 /** The settings anyone may read, including a visitor with no session. */
 export type PublicSettings = Pick<
   Settings,
-  "brand" | "widget" | "chatPage" | "helpCenter" | "guestDetails"
+  "brand" | "widget" | "chatPage" | "helpCenter" | "tickets" | "guestDetails"
 >;
 
 /** For checking settings that arrive from somewhere other than the database, such as a preview. */
@@ -174,6 +197,7 @@ export const publicSettingsSchema = z.object({
   widget: widgetSchema,
   chatPage: pageTextSchema,
   helpCenter: helpCenterSchema,
+  tickets: ticketsSchema,
   guestDetails: guestDetailsSchema,
 });
 
@@ -196,8 +220,8 @@ export function parseSettings(rows: readonly SettingRow[]): Settings {
 }
 
 export function parsePublicSettings(rows: readonly SettingRow[]): PublicSettings {
-  const { brand, widget, chatPage, helpCenter, guestDetails } = parseSettings(rows);
-  return { brand, widget, chatPage, helpCenter, guestDetails };
+  const { brand, widget, chatPage, helpCenter, tickets, guestDetails } = parseSettings(rows);
+  return { brand, widget, chatPage, helpCenter, tickets, guestDetails };
 }
 
 const pageTextPatchSchema = z.object({
@@ -229,6 +253,13 @@ export const settingsPatchSchema = z
         .max(QUICK_REPLIES_MAX),
     }),
     chatPage: pageTextPatchSchema,
+    tickets: z.object({ fromChat: z.boolean() }),
+    email: z.object({
+      fromName: z.string().trim().min(1).max(60).optional(),
+      fromAddress: z.string().trim().toLowerCase().pipe(z.email()).optional(),
+      replies: z.boolean(),
+      status: z.boolean(),
+    }),
     helpCenter: pageTextPatchSchema.extend({
       headerStyle: helpHeaderStyleSchema,
       headerImage: z.url().max(2000).optional(),
@@ -272,6 +303,10 @@ const storage = {
   brand: { key: "brand", isPublic: true },
   widget: { key: "widget", isPublic: true },
   chatPage: { key: "chat_page", isPublic: true },
+  // Public, because the chat decides from it whether to offer the form.
+  tickets: { key: "tickets", isPublic: true },
+  // Not public: a visitor has no use for the address, and it is nobody's to harvest.
+  email: { key: "email", isPublic: false },
   helpCenter: { key: "help_center", isPublic: true },
   guestDetails: { key: "guest_details", isPublic: true },
   allowedDomains: { key: "allowed_domains", isPublic: false },

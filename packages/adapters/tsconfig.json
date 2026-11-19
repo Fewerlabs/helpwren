@@ -1,4 +1,7 @@
 {
   "extends": "@helpwren/config/typescript/base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
   "include": ["src", "*.mjs"]
 }

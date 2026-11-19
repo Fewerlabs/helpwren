@@ -1,3 +1,4 @@
+import { type PageContext } from "@helpwren/core";
 import { create } from "zustand";
 
 /** Which screen of the chat is showing. Home, Messages and Help are the tabs. */
@@ -8,12 +9,30 @@ export type Screen =
   | { name: "start" }
   /** A help article, read without leaving the chat. */
   | { name: "article"; slug: string }
+  /** The form for opening a ticket, in place of a chat. */
+  | { name: "ticket" }
   | { name: "conversation"; id: string };
 
 /** The page the chat is embedded in, as its widget script reported it. */
 export interface HostPage {
   url: string;
   title: string;
+}
+
+/**
+ * What the page around the chat asked a new conversation to begin with: a quick reply the
+ * visitor tapped beside the launcher, or words for the message box.
+ */
+export interface PendingStart {
+  reply?: string | undefined;
+  draft?: string | undefined;
+}
+
+/** Who the page says the visitor is, without proof. Labels for the team, and nothing more. */
+export interface ClaimedIdentity {
+  id?: string | undefined;
+  name?: string | undefined;
+  email?: string | undefined;
 }
 
 interface ChatState {
@@ -23,9 +42,14 @@ interface ChatState {
   setPreview: (preview: boolean) => void;
   page: HostPage | null;
   setPage: (page: HostPage) => void;
-  /** A quick reply tapped beside the launcher, waiting for the start screen to use it. */
-  pendingReply: string | null;
-  setPendingReply: (reply: string | null) => void;
+  claimed: ClaimedIdentity | null;
+  setClaimed: (claimed: ClaimedIdentity | null) => void;
+  /** What the page wants the team to know about where the visitor is. */
+  context: PageContext | null;
+  setContext: (context: PageContext | null) => void;
+  /** Waiting for the start screen to use it, once. */
+  pendingStart: PendingStart | null;
+  setPendingStart: (start: PendingStart | null) => void;
   /** The tab a sub-screen was opened from, which is where its back arrow returns to. */
   tab: "home" | "messages" | "help";
   show: (screen: Screen) => void;
@@ -36,7 +60,9 @@ const initial = {
   tab: "home",
   page: null,
   preview: false,
-  pendingReply: null,
+  pendingStart: null,
+  claimed: null,
+  context: null,
 } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
@@ -44,8 +70,14 @@ const useChatStore = create<ChatState>()((set) => ({
   setPage: (page) => {
     set({ page });
   },
-  setPendingReply: (pendingReply) => {
-    set({ pendingReply });
+  setClaimed: (claimed) => {
+    set({ claimed });
+  },
+  setContext: (context) => {
+    set({ context });
+  },
+  setPendingStart: (pendingStart) => {
+    set({ pendingStart });
   },
   setPreview: (preview) => {
     set({ preview });
@@ -64,8 +96,12 @@ export const useTab = () => useChatStore((state) => state.tab);
 export const useShowScreen = () => useChatStore((state) => state.show);
 export const useSetPreview = () => useChatStore((state) => state.setPreview);
 export const usePreview = () => useChatStore((state) => state.preview);
-export const usePendingReply = () => useChatStore((state) => state.pendingReply);
-export const useSetPendingReply = () => useChatStore((state) => state.setPendingReply);
+export const usePendingStart = () => useChatStore((state) => state.pendingStart);
+export const useSetPendingStart = () => useChatStore((state) => state.setPendingStart);
+export const useClaimed = () => useChatStore((state) => state.claimed);
+export const useSetClaimed = () => useChatStore((state) => state.setClaimed);
+export const usePageContext = () => useChatStore((state) => state.context);
+export const useSetPageContext = () => useChatStore((state) => state.setContext);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);
 

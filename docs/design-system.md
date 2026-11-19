@@ -210,6 +210,10 @@ the CSS that paints it. Use it for a brand or theme colour, not a bare text inpu
 **MessageBubble** takes `attachments`: the files sent with a message, drawn under its words. A
 message that is only files has no bubble.
 
+**OtpInput** takes a one-time code with a box for each digit. It is one real text field drawn as
+boxes, so pasting a whole code and a phone's code suggestion work. Only digits are kept, and
+`onComplete` fires when the last one is in.
+
 **ChoiceCards** chooses one of two to four options that are easier to recognise by sight than by
 name: each is a card with a small `visual` above its label. Underneath it is a radio group, so
 the arrow keys work. A card can be `disabled` with a `description` saying why.
@@ -536,7 +540,7 @@ Notion does: the page is only the writing, with no toolbar above it.
   `disabled` shows the writing and allows no changes.
 
 It is built on [Tiptap](https://tiptap.dev) (see
-[ADR 0013](decisions/0013-knowledge-base.md)); nothing outside this component imports it. Use a
+[ADR 0016](decisions/0016-knowledge-base.md)); nothing outside this component imports it. Use a
 `Textarea` for a few plain lines, such as a message or a description.
 
 **Highlight** marks a word or short phrase with the yellow highlighter, or with a wavy red-pen

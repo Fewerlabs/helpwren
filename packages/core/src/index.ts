@@ -136,6 +136,17 @@ export { type Database } from "./database.types";
 export { HelpwrenError } from "./errors";
 export { conversationEventSchema, type ConversationEvent } from "./events";
 export {
+  CONTEXT_MAX_KEYS,
+  identifyInputSchema,
+  identifyResponseSchema,
+  pageContextSchema,
+  type IdentifyFailure,
+  type IdentifyInput,
+  type IdentifyResponse,
+  type IdentifyResult,
+  type PageContext,
+} from "./identity";
+export {
   accentColorSchema,
   allowedDomainSchema,
   guestDetailsSchema,
@@ -152,6 +163,7 @@ export {
   settingsPatchSchema,
   settingsSchema,
   type Brand,
+  type EmailSettings,
   type GuestDetails,
   type HelpCenterSettings,
   type HelpHeaderStyle,

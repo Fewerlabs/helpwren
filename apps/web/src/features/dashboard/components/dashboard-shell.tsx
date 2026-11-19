@@ -36,7 +36,8 @@ export function DashboardShell({ agent, signOut, children }: DashboardShellProps
           <Notifier agentId={agent.id} />
           <Sidebar agent={agent} signOut={signOut} />
           <main className="min-h-0 min-w-0 flex-1">{children}</main>
-          <Toaster />
+          {/* At the top: the bottom corners hold the reply box's Send button and the sidebar. */}
+          <Toaster position="top-center" />
         </div>
       </ConfirmProvider>
     </HelpwrenProvider>

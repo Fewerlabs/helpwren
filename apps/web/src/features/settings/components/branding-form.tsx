@@ -165,13 +165,18 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
     chatPage,
     helpCenter,
     guestDetails: settings.guestDetails,
+    tickets: settings.tickets,
   }));
   const draft = useMemo(() => {
     const parsed = brandingSchema.safeParse(values);
     return parsed.success
-      ? { ...brandingToSettings(parsed.data), guestDetails: settings.guestDetails }
+      ? {
+          ...brandingToSettings(parsed.data),
+          guestDetails: settings.guestDetails,
+          tickets: settings.tickets,
+        }
       : null;
-  }, [settings.guestDetails, values]);
+  }, [settings.guestDetails, settings.tickets, values]);
   if (draft && JSON.stringify(draft) !== JSON.stringify(shown)) setShown(draft);
 
   const identity: Fields = [

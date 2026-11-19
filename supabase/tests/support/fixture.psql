@@ -17,7 +17,10 @@ create extension if not exists pgtap with schema extensions;
 truncate public.article_feedback, public.articles, public.collections, public.settings,
   public.team_members, public.teams, public.conversation_ratings, public.conversation_events, public.notes,
   public.messages,
-  public.conversations, public.agents, public.contacts;
+  public.conversations, public.agents, public.contacts
+  -- Anything else that points at these is emptied with them, so a table added later cannot
+  -- stop the fixture. It all happens inside the test's transaction, which is rolled back.
+  cascade;
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;

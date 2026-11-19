@@ -1,0 +1,98 @@
+import { IdentityError, type VerifiedIdentity } from "@helpwren/adapters";
+import { identifyInputSchema, type IdentifyResponse } from "@helpwren/core";
+import { z } from "zod";
+
+import { getCaller } from "@/lib/api/caller";
+import { apiError } from "@/lib/api/respond";
+import { verifyIdentity } from "@/lib/identity";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sessionForUser } from "@/lib/supabase/user-session";
+
+/** Whether this signed-in person is the contact the host product knows by this id. */
+async function isContact(id: string, externalId: string): Promise<boolean> {
+  const { data, error } = await supabaseAdmin
+    .from("contacts")
+    .select("external_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.external_id === externalId;
+}
+
+/** Gives a guest's conversations to the user they turned out to be. Returns how many moved. */
+async function mergeGuest(guestId: string, userId: string): Promise<number> {
+  const { data, error } = await supabaseAdmin.rpc("merge_guest_into_user", {
+    guest_id: guestId,
+    user_id: userId,
+  });
+  if (error) throw error;
+
+  // The guest has nothing left, so their sign-in goes too. If this fails they stay behind as
+  // an empty guest, which costs nothing and is no reason to fail a sign-in that has worked.
+  await supabaseAdmin.auth.admin.deleteUser(guestId);
+  return data;
+}
+
+/**
+ * Signs the chat in as one of the host product's users. The page hands over a token; the
+ * install's identity adapter confirms who it belongs to; and the answer is a session for that
+ * person, the same one on every device. Nothing the browser says about who it is is trusted
+ * here, only what the adapter confirms.
+ *
+ * A visitor who was chatting as a guest sends that session along, and what they did as a guest
+ * becomes the user's. The session is the proof that those conversations are theirs to bring.
+ */
+export async function POST(request: Request): Promise<Response> {
+  const caller = await getCaller(request);
+  // A session that was sent but could not be verified is said so, not passed over: the chat
+  // can renew it and ask again, where carrying on would leave the guest's conversations behind.
+  if (!caller && request.headers.has("authorization")) {
+    return apiError("unauthorized", "The session sent with this request is not valid.");
+  }
+
+  const input = identifyInputSchema.safeParse(await request.json().catch(() => null));
+  if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
+
+  let identity: VerifiedIdentity | null;
+  try {
+    identity = await verifyIdentity(input.data.token);
+  } catch (error) {
+    if (!(error instanceof IdentityError)) throw error;
+    const codes = {
+      expired: "token_expired",
+      rejected: "token_rejected",
+      unavailable: "identity_unavailable",
+    } as const;
+    return apiError(codes[error.reason], error.message);
+  }
+  if (!identity) return apiError("forbidden", "This install does not identify its users.");
+
+  // A chat that is already signed in as this user keeps its session: a page load should not
+  // cost a new one. Their details are still brought up to date.
+  const already =
+    caller && !caller.isGuest ? await isContact(caller.id, identity.externalId) : false;
+  const session = already ? null : await sessionForUser(identity.externalId);
+  const userId = session?.userId ?? caller?.id;
+  if (!userId) throw new Error("No user to identify.");
+
+  const { error } = await supabaseAdmin.rpc("identify_contact", {
+    contact_id: userId,
+    external_id: identity.externalId,
+    attributes: identity.attributes,
+    ...(identity.name === undefined ? {} : { name: identity.name }),
+    ...(identity.email === undefined ? {} : { email: identity.email }),
+    ...(identity.audience === undefined ? {} : { audience: identity.audience }),
+    ...(identity.org === undefined ? {} : { org_id: identity.org.id }),
+    ...(identity.org?.name === undefined ? {} : { org_name: identity.org.name }),
+  });
+  if (error) throw error;
+
+  const mergedConversations = caller?.isGuest ? await mergeGuest(caller.id, userId) : 0;
+
+  const body: IdentifyResponse = {
+    userId,
+    session: session && { accessToken: session.accessToken, refreshToken: session.refreshToken },
+    mergedConversations,
+  };
+  return Response.json(body, { headers: { "cache-control": "no-store" } });
+}

@@ -11,7 +11,9 @@ const defaults = {
   brand: { name: "Helpwren" },
   widget,
   chatPage: {},
+  email: { replies: true, status: true },
   helpCenter,
+  tickets: { fromChat: true },
   guestDetails: "email",
   allowedDomains: [],
   sources: ["web"],
@@ -29,7 +31,9 @@ describe("parseSettings", () => {
       brand: { name: "Acme" },
       widget,
       chatPage: {},
+      email: { replies: true, status: true },
       helpCenter,
+      tickets: { fromChat: true },
       guestDetails: "phone",
       allowedDomains: [],
       sources: ["web", "ios"],
@@ -89,6 +93,7 @@ describe("parsePublicSettings", () => {
       widget,
       chatPage: {},
       helpCenter,
+      tickets: { fromChat: true },
       guestDetails: "email",
     });
   });

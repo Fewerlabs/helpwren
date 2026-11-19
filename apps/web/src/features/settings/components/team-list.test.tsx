@@ -87,18 +87,27 @@ describe("TeamList", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("changes a role without asking, and shows a failure as a toast", async () => {
+  it("changes a role once confirmed, and reactivates without asking", async () => {
     const user = userEvent.setup();
     renderList();
 
     await user.click(screen.getByRole("button", { name: "Make Sam Rivera an admin" }));
+    expect(changeMember).not.toHaveBeenCalled();
+    await user.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Make admin" }),
+    );
     expect(changeMember).toHaveBeenCalledWith(sam.id, { role: "admin" });
     expect(await screen.findByText("Sam Rivera is now an admin")).toBeInTheDocument();
+  });
 
-    vi.mocked(changeMember).mockRejectedValue(new Error("offline"));
+  it("leaves the role alone when the change is cancelled", async () => {
+    const user = userEvent.setup();
+    renderList();
+
     await user.click(screen.getByRole("button", { name: "Make Sam Rivera an admin" }));
-    expect(
-      await screen.findByText("The change could not be saved. Try again."),
-    ).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }),
+    );
+    expect(changeMember).not.toHaveBeenCalled();
   });
 });

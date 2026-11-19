@@ -8,6 +8,9 @@ export const styles = `
   --hw-accent-ink: #ffffff;
   --hw-x: 20px;
   --hw-y: 20px;
+  --hw-w: 400px;
+  --hw-h: 680px;
+  --hw-z: 2147483000;
   --hw-surface: #ffffff;
   --hw-edge: #e3ddd0;
   --hw-ink: #26231e;
@@ -19,7 +22,7 @@ export const styles = `
   position: fixed;
   right: var(--hw-x);
   bottom: var(--hw-y);
-  z-index: 2147483000;
+  z-index: var(--hw-z);
   display: grid;
   place-items: center;
   width: 52px;
@@ -61,10 +64,10 @@ export const styles = `
   position: fixed;
   right: var(--hw-x);
   bottom: calc(var(--hw-y) + 64px);
-  z-index: 2147483000;
-  width: 400px;
+  z-index: var(--hw-z);
+  width: var(--hw-w);
   max-width: calc(100vw - var(--hw-x) * 2);
-  height: 680px;
+  height: var(--hw-h);
   max-height: calc(100vh - var(--hw-y) - 84px);
   max-height: calc(100dvh - var(--hw-y) - 84px);
   overflow: hidden;
@@ -88,7 +91,7 @@ export const styles = `
   position: fixed;
   right: var(--hw-x);
   bottom: calc(var(--hw-y) + 66px);
-  z-index: 2147483000;
+  z-index: var(--hw-z);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -201,6 +204,27 @@ export const styles = `
 :host([data-contained]) .teaser,
 :host([data-contained]) .panel { position: absolute; z-index: 1; }
 :host([data-contained]) .teaser { max-width: calc(100% - var(--hw-x) * 2); }
+
+/* Inline: the chat is the content of its container, as large as it down to a usable size. */
+:host([data-mode="inline"]) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 280px;
+  min-height: 420px;
+}
+/* Named with both attributes so it outranks the rules for floating inside a container. */
+:host([data-mode="inline"][data-contained]) .panel {
+  position: static;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: inherit;
+  box-shadow: none;
+  transition: none;
+}
 :host([data-contained]) .panel {
   max-width: calc(100% - var(--hw-x) * 2);
   max-height: calc(100% - var(--hw-y) - 84px);

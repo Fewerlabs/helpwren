@@ -18,6 +18,7 @@ import {
   type FieldItem,
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -33,6 +34,16 @@ const failures = {
   failed: "The team could not be saved. Try again.",
 } as const;
 
+/** Reloads the teams here, and wherever else they are held, such as the inbox's navigation. */
+function useRefreshTeams() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  return () => {
+    router.refresh();
+    void queryClient.invalidateQueries({ queryKey: ["teams"] });
+  };
+}
+
 /** How many faces a team shows before the rest become a number. */
 const FACES = 5;
 
@@ -45,7 +56,7 @@ interface TeamDialogProps {
 
 /** The form for a team's name and who is in it, for a new team or an existing one. */
 function TeamDialog({ team, members, onClose }: TeamDialogProps) {
-  const router = useRouter();
+  const refresh = useRefreshTeams();
   const getClient = useHelpwren();
   const form = useForm<TeamGroupValues>({
     resolver: zodResolver(teamGroupSchema),
@@ -100,7 +111,7 @@ function TeamDialog({ team, members, onClose }: TeamDialogProps) {
       form.setError("root", { message: failures[refused] });
     } else {
       toast.success(team ? "Team saved" : "Team added");
-      router.refresh();
+      refresh();
       onClose();
     }
   }
@@ -158,7 +169,7 @@ export interface TeamGroupsProps {
 
 /** The install's teams: each with who is in it, and for admins the ways to change them. */
 export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
-  const router = useRouter();
+  const refresh = useRefreshTeams();
   const getClient = useHelpwren();
   const confirm = useConfirm();
   // `null` makes a new team; a team edits that one; `undefined` is closed.
@@ -176,7 +187,7 @@ export function TeamGroups({ teams, members, canEdit }: TeamGroupsProps) {
         const result = await getClient().teams.remove(team.id);
         if (!result.ok) throw new Error(failures[result.reason]);
         toast.success("Team removed");
-        router.refresh();
+        refresh();
       },
     });
   }

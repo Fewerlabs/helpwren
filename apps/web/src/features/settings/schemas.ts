@@ -12,7 +12,11 @@ import { z } from "zod";
 
 const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
-export const generalSchema = z.object({ guestDetails: guestDetailsSchema });
+export const generalSchema = z.object({
+  guestDetails: guestDetailsSchema,
+  /** Whether a visitor can open a ticket themselves from the chat. */
+  ticketsFromChat: z.boolean(),
+});
 export type GeneralValues = z.infer<typeof generalSchema>;
 
 export const installationSchema = z.object({
@@ -170,3 +174,18 @@ export const teamGroupSchema = z.object({
   memberIds: z.array(z.uuid()),
 });
 export type TeamGroupValues = z.infer<typeof teamGroupSchema>;
+
+export const emailSchema = z.object({
+  /** Email a contact a reply they have not read after a few minutes. */
+  replies: z.boolean(),
+  /** Email a contact when the team changes their ticket's status. */
+  status: z.boolean(),
+  /** Empty for the brand's own name. */
+  fromName: z.string().trim().max(60, "Keep the name under 60 characters."),
+  /** Empty while no address has been chosen; nothing is sent until one is. */
+  fromAddress: z.union([
+    z.literal(""),
+    z.string().trim().toLowerCase().pipe(z.email("Enter an email address.")),
+  ]),
+});
+export type EmailValues = z.infer<typeof emailSchema>;

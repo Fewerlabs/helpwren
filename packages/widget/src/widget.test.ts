@@ -99,9 +99,132 @@ describe("init", () => {
     receive({ channel: "helpwren", type: "ready" });
 
     expect(post).toHaveBeenCalledWith(
-      { channel: "helpwren", type: "hello", page: { url: window.location.href, title: "" } },
+      {
+        channel: "helpwren",
+        type: "hello",
+        page: { url: window.location.href, title: "" },
+        closable: true,
+        identified: false,
+      },
       APP,
     );
+  });
+});
+
+describe("who the visitor is", () => {
+  function ready() {
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+    return post;
+  }
+  const sent = (post: ReturnType<typeof ready>, type: string) =>
+    post.mock.calls
+      .map(([message]) => message as Record<string, unknown>)
+      .filter((message) => message.type === type);
+
+  it("says in its greeting that a user is coming, then hands over their token", async () => {
+    widget.identify({ token: "signed-token" });
+    widget.init();
+    const post = ready();
+    await vi.waitFor(() => {
+      expect(sent(post, "identify")).toHaveLength(1);
+    });
+
+    expect(sent(post, "hello")[0]).toMatchObject({ identified: true });
+    expect(post).toHaveBeenCalledWith(
+      { channel: "helpwren", type: "identify", token: "signed-token" },
+      APP,
+    );
+  });
+
+  it("never puts the token in the frame's address", () => {
+    widget.identify({ token: "signed-token" });
+    widget.init();
+    expect(parts().frame.src).not.toContain("signed-token");
+  });
+
+  it("fetches the token from a function, and once more when the chat says it expired", async () => {
+    const token = vi.fn().mockResolvedValueOnce("old-token").mockResolvedValueOnce("new-token");
+    const heard = vi.fn();
+    widget.on("identity", heard);
+    widget.init();
+    const post = ready();
+
+    widget.identify({ token });
+    await vi.waitFor(() => {
+      expect(sent(post, "identify")).toHaveLength(1);
+    });
+    receive({ channel: "helpwren", type: "identity", state: "failed", reason: "expired" });
+    await vi.waitFor(() => {
+      expect(sent(post, "identify")).toHaveLength(2);
+    });
+    expect(sent(post, "identify")[1]).toMatchObject({ token: "new-token" });
+    expect(heard).not.toHaveBeenCalled();
+
+    // A second expiry in a row is the page's to deal with, not something to retry for ever.
+    receive({ channel: "helpwren", type: "identity", state: "failed", reason: "expired" });
+    expect(heard).toHaveBeenCalledWith({ state: "failed", reason: "expired" });
+    expect(token).toHaveBeenCalledTimes(2);
+  });
+
+  it("passes on labels given without a token, and does not claim a user is coming", () => {
+    widget.init();
+    const post = ready();
+
+    widget.identify({ id: "42", name: "Ada Obi", email: "ada@example.com" });
+
+    expect(sent(post, "hello")[0]).toMatchObject({ identified: false });
+    expect(sent(post, "identify")[0]).toEqual({
+      channel: "helpwren",
+      type: "identify",
+      details: { id: "42", name: "Ada Obi", email: "ada@example.com" },
+    });
+  });
+
+  it("tells the page when the chat has signed in, and when it could not", () => {
+    const heard = vi.fn();
+    widget.on("identity", heard);
+    widget.init();
+    ready();
+
+    receive({ channel: "helpwren", type: "identity", state: "user" });
+    receive({ channel: "helpwren", type: "identity", state: "failed", reason: "rejected" });
+    receive({ channel: "helpwren", type: "identity", state: "failed", reason: "made-up" });
+
+    expect(heard.mock.calls).toEqual([
+      [{ state: "user" }],
+      [{ state: "failed", reason: "rejected" }],
+    ]);
+  });
+
+  it("forgets the visitor on reset, and says so again the next time the frame loads", async () => {
+    widget.identify({ token: "signed-token" });
+    widget.init();
+    const post = ready();
+    await vi.waitFor(() => {
+      expect(sent(post, "identify")).toHaveLength(1);
+    });
+
+    widget.reset();
+    expect(post).toHaveBeenCalledWith({ channel: "helpwren", type: "reset" }, APP);
+
+    receive({ channel: "helpwren", type: "ready" });
+    expect(sent(post, "hello").at(-1)).toMatchObject({ identified: false });
+    expect(sent(post, "identify")).toHaveLength(1);
+  });
+
+  it("sends the page's context when it is set, and again each time the frame loads", () => {
+    widget.setContext({ plan: "pro" });
+    widget.init();
+    const post = ready();
+    widget.setContext({ plan: "pro", orderId: 1234 });
+
+    expect(sent(post, "context").map((message) => message.context)).toEqual([
+      { plan: "pro" },
+      { plan: "pro", orderId: 1234 },
+    ]);
   });
 });
 
@@ -374,5 +497,99 @@ describe("welcome message", () => {
       expect(fetch).toHaveBeenCalledTimes(2);
     });
     expect(teaser().box.hidden).toBe(true);
+  });
+});
+
+describe("the host page's own controls", () => {
+  it("fills a container of the page's own, always open, with nothing to close", () => {
+    const container = document.createElement("div");
+    container.id = "support";
+    document.body.append(container);
+    widget.init({ container: "#support", mode: "inline" });
+
+    expect(container.contains(host())).toBe(true);
+    expect(host().dataset.mode).toBe("inline");
+    const { frame, panel, launcher } = parts();
+    expect(launcher).toBeNull();
+    expect(panel.dataset.open).toBe("true");
+    widget.hide();
+    expect(widget.isOpen()).toBe(true);
+
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hello", closable: false }),
+      APP,
+    );
+  });
+
+  it("opens and closes from the page's own buttons, and keeps them in step", () => {
+    const button = document.createElement("button");
+    button.className = "help";
+    document.body.append(button);
+    const opened = vi.fn();
+    const closed = vi.fn();
+    widget.on("open", opened);
+    widget.on("close", closed);
+    widget.init({ launcher: false, trigger: ".help" });
+
+    expect(parts().launcher).toBeNull();
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    button.click();
+    expect(widget.isOpen()).toBe(true);
+    expect(button.getAttribute("aria-expanded")).toBe("true");
+    expect(opened).toHaveBeenCalledOnce();
+
+    widget.toggle();
+    expect(widget.isOpen()).toBe(false);
+    expect(closed).toHaveBeenCalledOnce();
+
+    // Taken off the page, the button is the page's own again.
+    widget.destroy();
+    button.click();
+    expect(button.hasAttribute("aria-expanded")).toBe(false);
+  });
+
+  it("keeps the page's own look over the install's, within limits", async () => {
+    answer = { position: "left", accent: "#1d4ed8", offsetX: 40 };
+    widget.init({
+      appearance: { position: "right", accent: "#be123c" },
+      layout: { width: 5000, height: 500, zIndex: 50 },
+      welcome: false,
+    });
+    await vi.waitFor(() => {
+      expect(host().style.getPropertyValue("--hw-x")).toBe("40px");
+    });
+    // The install set the spacing; the page's own choices win where it made them.
+    expect(host().dataset.position).toBe("right");
+    expect(host().style.getPropertyValue("--hw-accent")).toBe("#be123c");
+    expect(host().style.getPropertyValue("--hw-w")).toBe("640px");
+    expect(host().style.getPropertyValue("--hw-h")).toBe("500px");
+    expect(host().style.getPropertyValue("--hw-z")).toBe("50");
+
+    widget.update({ appearance: { position: "left" }, layout: { width: 360 } });
+    expect(host().dataset.position).toBe("left");
+    expect(host().style.getPropertyValue("--hw-w")).toBe("360px");
+  });
+
+  it("starts a conversation with a draft, and says when the chat is ready", () => {
+    const ready = vi.fn();
+    widget.on("ready", ready);
+    widget.init();
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+
+    receive({ channel: "helpwren", type: "ready" });
+    receive({ channel: "helpwren", type: "ready" });
+    expect(ready).toHaveBeenCalledOnce();
+
+    widget.startConversation("I need help with order 1042");
+    expect(widget.isOpen()).toBe(true);
+    expect(post).toHaveBeenLastCalledWith(
+      { channel: "helpwren", type: "start", draft: "I need help with order 1042" },
+      APP,
+    );
   });
 });

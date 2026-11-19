@@ -3,6 +3,7 @@ import { z } from "zod";
 import { type Api } from "./api";
 import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
+import { pageContextSchema } from "./identity";
 import { listenForRows, type Unsubscribe } from "./realtime";
 import { type GuestDetails } from "./settings";
 import { type HelpwrenSupabaseClient } from "./supabase";
@@ -25,16 +26,26 @@ export const contactDetailsSchema = z.object({
 
 export type ContactDetails = z.infer<typeof contactDetailsSchema>;
 
+/** What a ticket is about, in a line. */
+export const ticketSubjectSchema = z.string().trim().min(1).max(200);
+
 /** What `POST /api/conversations` accepts. */
 export const startConversationInputSchema = z.object({
   message: messageBodySchema,
   source: z.string().trim().min(1).max(40).default("web"),
   /** Who is writing. Needed the first time, according to the install's guest details setting. */
   contact: contactDetailsSchema.default({}),
+  /** Given, the conversation starts as a ticket with this subject, when the install allows it. */
+  ticket: z.object({ subject: ticketSubjectSchema }).optional(),
   /** The page the chat was opened from, shown to agents as context. */
   page: z
     .object({ url: z.url().max(2000), title: z.string().trim().max(300).optional() })
     .optional(),
+  /**
+   * What the page said about where the visitor is, with `setContext`, and who an unverified
+   * `identify` said they are. Shown to agents as the page's word, never as fact.
+   */
+  context: pageContextSchema.optional(),
 });
 
 export type StartConversationInput = z.input<typeof startConversationInputSchema>;
@@ -62,8 +73,6 @@ export type ConversationPriority = z.infer<typeof conversationPrioritySchema>;
 /** A ticket is a conversation that is being tracked: it has a number, and usually a subject. */
 export const conversationTypeSchema = z.enum(["chat", "ticket"]);
 export type ConversationType = z.infer<typeof conversationTypeSchema>;
-
-export const ticketSubjectSchema = z.string().trim().min(1).max(200);
 
 /** A conversation as the database stores it. Also the shape of a live update. */
 const conversationRowSchema = z.object({

@@ -6,20 +6,49 @@ import {
   cn,
   EmptyState,
   Icon,
+  InlineSelect,
   QueryList,
   SearchField,
   StatusChip,
   Tooltip,
 } from "@helpwren/design-system";
 import { useIsFetching } from "@tanstack/react-query";
+import { type ReactNode } from "react";
 
 import { Panel, PanelHeader } from "@/features/dashboard";
 import { formatTimeAgo } from "@/lib/format-time";
 import { useHelpwren } from "@/lib/helpwren-context";
 
 import { contactName } from "../contact-name";
-import { INBOX_QUERY_KEY, type InboxView } from "../hooks/use-inbox";
+import {
+  INBOX_QUERY_KEY,
+  inboxStatuses,
+  type InboxStatus,
+  type InboxView,
+} from "../hooks/use-inbox";
 import { statuses, ticketLabel } from "../labels";
+
+/** Each status as the chip a conversation wears for it; "All" has none of its own. */
+const statusMarks: Record<InboxStatus["id"], ReactNode> = {
+  open: <StatusChip status="open" size="sm" />,
+  waiting: <StatusChip status="waiting" size="sm" />,
+  resolved: <StatusChip status="resolved" size="sm" />,
+  all: <span className="px-1">All</span>,
+};
+
+const statusChoices = inboxStatuses.map((item) => ({
+  value: item.id,
+  label: item.label,
+  content: statusMarks[item.id],
+}));
+
+/** How an empty list is worded for each status: "My inbox has nothing waiting." */
+const emptyWords = {
+  open: "open",
+  waiting: "waiting",
+  resolved: "resolved",
+  all: "in it",
+} as const satisfies Record<InboxStatus["id"], string>;
 
 /** How many conversations each request brings; scrolling to the end brings the next. */
 const PAGE_SIZE = 30;
@@ -118,8 +147,11 @@ export interface ListPanelProps {
   /** The signed-in team member, for the view of what is assigned to them. */
   agentId: string;
   team: readonly TeamMember[];
-  /** How many conversations the view holds, once that is known. */
+  /** How many of the view's conversations still need an answer, once that is known. */
   count: number | undefined;
+  /** Which statuses the list shows. */
+  status: InboxStatus;
+  onStatusChange: (status: InboxStatus["id"]) => void;
   /** What is typed in the search box. */
   search: string;
   onSearchChange: (search: string) => void;
@@ -136,6 +168,8 @@ export function ListPanel({
   agentId,
   team,
   count,
+  status,
+  onStatusChange,
   search,
   onSearchChange,
   searchText,
@@ -145,17 +179,34 @@ export function ListPanel({
 }: ListPanelProps) {
   const getClient = useHelpwren();
   const searching = searchText !== "";
+  // Nothing open is good news; nothing under another status is only an empty list.
+  const caughtUp = status.id === "open";
   const fetching = useIsFetching({ queryKey: [...INBOX_QUERY_KEY, "list"] }) > 0;
 
   return (
     <Panel aria-label="Conversations" className={className}>
       <PanelHeader>
-        <h2 className="flex items-baseline gap-1.5 font-semibold">
-          {searching ? "Results" : view.label}
+        <h2 className="flex min-w-0 items-baseline gap-1.5 font-semibold">
+          <span className="truncate">{searching ? "Results" : view.label}</span>
           {!searching && count !== undefined ? (
             <span className="text-muted-foreground text-xs font-normal tabular-nums">{count}</span>
           ) : null}
         </h2>
+        <span className="flex-1" />
+        {/* Which of the view's conversations to show. A search looks through them all. */}
+        {searching ? null : (
+          <InlineSelect
+            label="Show"
+            value={status.id}
+            options={statusChoices}
+            onValueChange={(value) => {
+              onStatusChange(value as InboxStatus["id"]);
+            }}
+            className="mx-0 text-xs"
+          >
+            {statusMarks[status.id]}
+          </InlineSelect>
+        )}
       </PanelHeader>
       <div className="px-2 pt-2">
         <SearchField
@@ -172,11 +223,16 @@ export function ListPanel({
       <QueryList<ConversationWithContact, string>
         aria-label="Conversations"
         // Under the inbox's key, so a change or a new message refreshes it with everything else.
-        queryKey={[...INBOX_QUERY_KEY, "list", view.id, agentId, searchText]}
+        queryKey={[...INBOX_QUERY_KEY, "list", view.id, status.id, agentId, searchText]}
         queryFn={async ({ cursor, pageSize }) =>
           searching
             ? { items: await getClient().conversations.search(searchText) }
-            : getClient().conversations.list({ ...view.filter(agentId), cursor, limit: pageSize })
+            : getClient().conversations.list({
+                ...view.filter(agentId),
+                status: status.statuses,
+                cursor,
+                limit: pageSize,
+              })
         }
         pageSize={PAGE_SIZE}
         getItemKey={(conversation) => conversation.id}
@@ -185,8 +241,8 @@ export function ListPanel({
             conversation={conversation}
             assignee={team.find((member) => member.id === conversation.assigneeId)}
             selected={conversation.id === selectedId}
-            // Only the view of everything mixes statuses; elsewhere it would be noise.
-            showStatus={searching || view.id === "all"}
+            // Only when statuses are mixed; elsewhere it would repeat what the switch says.
+            showStatus={searching || status.id === "all"}
             onSelect={() => {
               onSelect(conversation);
             }}
@@ -196,20 +252,16 @@ export function ListPanel({
           <EmptyState
             size="sm"
             className="pt-8"
-            scene={searching ? "no-results" : view.id === "open" ? "all-caught-up" : "nothing-here"}
+            scene={searching ? "no-results" : caughtUp ? "all-caught-up" : "nothing-here"}
             title={
-              searching
-                ? "No conversations found"
-                : view.id === "open"
-                  ? "All caught up"
-                  : "Nothing here"
+              searching ? "No conversations found" : caughtUp ? "All caught up" : "Nothing here"
             }
             description={
               searching
                 ? "Try a name, an email address, or words from a message."
-                : view.id === "open"
-                  ? "Nothing is waiting for the team."
-                  : `Nothing is in ${view.label} right now.`
+                : caughtUp
+                  ? "Nothing here is waiting for an answer."
+                  : `${view.label} has nothing ${emptyWords[status.id]}.`
             }
           />
         )}

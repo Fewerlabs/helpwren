@@ -59,6 +59,20 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
     });
   }
 
+  /** A role decides who can change settings and the team, so it is confirmed before it changes. */
+  function changeRole(member: TeamMember) {
+    const toAdmin = member.role !== "admin";
+    void confirm({
+      icon: "lock",
+      title: toAdmin ? `Make ${member.name} an admin?` : `Make ${member.name} an agent?`,
+      description: toAdmin
+        ? "Admins can change settings, branding and the team, including other admins."
+        : "They will still read and answer conversations, but no longer change settings or the team.",
+      confirmLabel: toAdmin ? "Make admin" : "Make agent",
+      onConfirm: () => save(member, { role: toAdmin ? "admin" : "agent" }),
+    });
+  }
+
   function deactivate(member: TeamMember) {
     // The dialog stays open while it saves, and shows what went wrong in place if it fails.
     void confirm({
@@ -100,7 +114,7 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
                     disabled={busy}
                     aria-label={`Make ${member.name} ${member.role === "admin" ? "an agent" : "an admin"}`}
                     onClick={() => {
-                      change(member, { role: member.role === "admin" ? "agent" : "admin" });
+                      changeRole(member);
                     }}
                   >
                     {member.role === "admin" ? "Make agent" : "Make admin"}
@@ -111,6 +125,8 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
                   size="sm"
                   disabled={busy}
                   aria-label={`${member.active ? "Deactivate" : "Reactivate"} ${member.name}`}
+                  // Taking away someone's access is the one action here that hurts if misclicked.
+                  className={member.active ? "text-destructive hover:text-destructive" : undefined}
                   onClick={() => {
                     if (member.active) deactivate(member);
                     else change(member, { active: true });

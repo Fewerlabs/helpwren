@@ -402,6 +402,71 @@ export type Database = {
           },
         ];
       };
+      email_queue: {
+        Row: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          done_at: string | null;
+          event_id: string | null;
+          id: string;
+          kind: string;
+          message_id: string | null;
+          outcome: string | null;
+          send_after: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          done_at?: string | null;
+          event_id?: string | null;
+          id?: string;
+          kind: string;
+          message_id?: string | null;
+          outcome?: string | null;
+          send_after?: string;
+        };
+        Update: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          done_at?: string | null;
+          event_id?: string | null;
+          id?: string;
+          kind?: string;
+          message_id?: string | null;
+          outcome?: string | null;
+          send_after?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_queue_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "email_queue_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "conversation_events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "email_queue_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       messages: {
         Row: {
           attachments: NonNullable<Json>;
@@ -483,6 +548,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      secrets: {
+        Row: {
+          key: string;
+          updated_at: string;
+          value: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          key: string;
+          updated_at?: string;
+          value: NonNullable<Json>;
+        };
+        Update: {
+          key?: string;
+          updated_at?: string;
+          value?: NonNullable<Json>;
+        };
+        Relationships: [];
       };
       settings: {
         Row: {
@@ -593,6 +677,61 @@ export type Database = {
       };
     };
     Functions: {
+      claim_email_queue: {
+        Args: { batch?: number };
+        Returns: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          done_at: string | null;
+          event_id: string | null;
+          id: string;
+          kind: string;
+          message_id: string | null;
+          outcome: string | null;
+          send_after: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "email_queue";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      identify_contact: {
+        Args: {
+          attributes?: Json;
+          audience?: string;
+          contact_id: string;
+          email?: string;
+          external_id: string;
+          name?: string;
+          org_id?: string;
+          org_name?: string;
+        };
+        Returns: {
+          attributes: NonNullable<Json>;
+          audience: string | null;
+          created_at: string;
+          email: string | null;
+          external_id: string | null;
+          id: string;
+          kind: string;
+          name: string | null;
+          org_id: string | null;
+          org_name: string | null;
+          phone: string | null;
+          verified: boolean;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "contacts";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
       reorder_articles: { Args: { ids: string[] }; Returns: undefined };
       reorder_collections: { Args: { ids: string[] }; Returns: undefined };
       search_articles: {
@@ -602,15 +741,20 @@ export type Database = {
           body: NonNullable<Json>;
           collection_id: string | null;
           created_at: string;
+          featured: boolean;
           id: string;
+          meta_description: string | null;
+          meta_title: string | null;
           position: number;
           published_at: string | null;
           search: unknown;
           slug: string;
           status: string;
           summary: string | null;
+          tags: string[];
           title: string;
           updated_at: string;
+          visibility: string;
         }[];
         SetofOptions: {
           from: "*";
@@ -658,6 +802,7 @@ export type Database = {
           contact_phone?: string;
           context?: Json;
           source: string;
+          ticket_subject?: string;
         };
         Returns: string;
       };
