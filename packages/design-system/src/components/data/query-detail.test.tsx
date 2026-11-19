@@ -141,7 +141,7 @@ describe("QueryDetail", () => {
     expect(queryFn).not.toHaveBeenCalled();
   });
 
-  it("opens with a skeleton in a record panel's shape, or the loader when asked", () => {
+  it("opens with the app's loader, or a skeleton in a record panel's shape when asked", () => {
     const pending = () => new Promise<Contact>(() => undefined);
     const { container, unmount } = render(
       <QueryProvider>
@@ -151,18 +151,23 @@ describe("QueryDetail", () => {
       </QueryProvider>,
     );
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
-    expect(container.querySelector("[data-slot=detail-skeleton]")).toBeInTheDocument();
+    expect(container.querySelector("[data-slot=app-loader]")).toBeInTheDocument();
+    expect(container.querySelector("[data-slot=detail-skeleton]")).not.toBeInTheDocument();
     unmount();
 
-    const loader = render(
+    const skeleton = render(
       <QueryProvider>
-        <QueryDetail<Contact> queryKey={["contact", "slow"]} queryFn={pending} placeholder="loader">
+        <QueryDetail<Contact>
+          queryKey={["contact", "slow"]}
+          queryFn={pending}
+          placeholder="skeleton"
+        >
           {(contact) => <h2>{contact.name}</h2>}
         </QueryDetail>
       </QueryProvider>,
     );
     expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
-    expect(loader.container.querySelector("[data-slot=detail-skeleton]")).not.toBeInTheDocument();
+    expect(skeleton.container.querySelector("[data-slot=detail-skeleton]")).toBeInTheDocument();
   });
 
   it("says what was not found, with the way out it is given", async () => {

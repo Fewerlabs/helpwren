@@ -47,9 +47,9 @@ export interface QueryDetailProps<Data> extends QueryBehaviour {
   /** Decides whether a loaded value counts as "nothing". Default: `null` or `undefined`. */
   isEmpty?: (data: Data) => boolean;
   /**
-   * What the first load shows. `skeleton` (default) is a record panel's shape: a name beside
-   * an avatar, then sections of facts. `loader` is the app's loader, for a view of another
-   * shape, such as an editor. `renderLoading` replaces both.
+   * What the first load shows. `loader` (default) is the app's loader, the same as every list;
+   * `skeleton` is a record panel's shape, a name beside an avatar then sections of facts, for a
+   * panel whose layout should hold still while it loads. `renderLoading` replaces both.
    */
   placeholder?: "skeleton" | "loader";
   /** A way out of the not-found state, such as Back or Close. */
@@ -75,7 +75,7 @@ export function QueryDetail<Data>({
   queryFn,
   children,
   isEmpty,
-  placeholder = "skeleton",
+  placeholder = "loader",
   notFoundAction,
   renderLoading,
   renderEmpty,

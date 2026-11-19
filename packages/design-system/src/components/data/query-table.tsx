@@ -22,7 +22,13 @@ import {
   type QueryListProps,
   type QueryListState,
 } from "./query-list";
-import { DefaultEmpty, DefaultError, InlineError, StickyProgress } from "./query-states";
+import {
+  DefaultEmpty,
+  DefaultError,
+  DefaultLoading,
+  InlineError,
+  StickyProgress,
+} from "./query-states";
 
 export interface QueryTableMessages extends Omit<
   QueryListMessages,
@@ -86,6 +92,12 @@ export interface QueryTableProps<Item>
   /** Lets people drag the rows into their own order. Leave it out while sorting or filtering. */
   reorder?: QueryTableReorder<Item> | undefined;
   /**
+   * What the first load shows. `loader` (default) is the app's loader, the same as every other
+   * list and detail; `skeleton` is rows in the table's shape, for a table whose layout should
+   * hold still while it loads.
+   */
+  placeholder?: "loader" | "skeleton";
+  /**
    * What goes above the table, such as a header with a title, count and search, and a filter
    * bar. It stays through every state. Pass a function to read the list, such as its `total`.
    */
@@ -129,6 +141,7 @@ function TableView<Item>({
   renderMobileRow,
   loadingRows,
   reorder,
+  placeholder = "loader",
   toolbar,
   empty,
   filtered = false,
@@ -173,7 +186,9 @@ function TableView<Item>({
       >
         {/* A refresh shows as a bar along the top, so the rows stay put while it runs. */}
         <StickyProgress active={state.isRefreshing} label={messages.loading} />
-        {status === "error" ? (
+        {status === "loading" && placeholder === "loader" ? (
+          <DefaultLoading label={messages.loading} />
+        ) : status === "error" ? (
           <DefaultError
             title={messages.error}
             retryLabel={messages.retry}

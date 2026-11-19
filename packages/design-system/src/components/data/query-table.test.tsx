@@ -63,8 +63,19 @@ afterEach(() => {
 });
 
 describe("QueryTable", () => {
-  it("shows placeholder rows on the first load, then the rows and the footer", async () => {
+  it("shows the app's loader on the first load, then the rows and the footer", async () => {
     render(<Table />);
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    expect(await screen.findByText("Ticket 1")).toBeInTheDocument();
+    const footer = screen.getByRole("navigation", { name: "Tickets pages" });
+    expect(footer).toHaveTextContent("1–25 of 60");
+    expect(within(footer).getByRole("button", { name: "Next page" })).toBeEnabled();
+  });
+
+  it("shows placeholder rows in the table's shape when asked for a skeleton", async () => {
+    render(<Table placeholder="skeleton" />);
     const table = screen.getByRole("table", { name: "Tickets" });
     expect(table).toHaveAttribute("aria-busy", "true");
     expect(within(table).queryByText("Ticket 1")).not.toBeInTheDocument();
