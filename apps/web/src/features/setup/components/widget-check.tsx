@@ -36,7 +36,7 @@ export function WidgetCheck() {
       className="rounded-lg border"
       contentClassName="p-4"
       renderEmpty={() => (
-        <p role="status" className="flex items-center gap-3 p-4 text-sm">
+        <p aria-live="polite" className="flex items-center gap-3 p-4 text-sm">
           <Spinner className="size-4" />
           <span>
             Waiting for the widget on your site. Paste the snippet below, then open a page that has
@@ -46,7 +46,7 @@ export function WidgetCheck() {
       )}
     >
       {(sighting) => (
-        <p role="status" className="flex items-center gap-3 text-sm">
+        <p aria-live="polite" className="flex items-center gap-3 text-sm">
           <Icon name="check-circle" className="text-status-resolved size-5" />
           <span>
             <span className="font-medium">
