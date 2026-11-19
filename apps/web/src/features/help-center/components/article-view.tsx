@@ -97,7 +97,7 @@ export function ArticleView({
       ) : null}
 
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-[2.125rem] sm:leading-tight">
+        <h1 className="text-[2rem] leading-tight font-bold tracking-tight text-balance sm:text-[2.5rem]">
           {article.title}
         </h1>
         {article.summary ? (

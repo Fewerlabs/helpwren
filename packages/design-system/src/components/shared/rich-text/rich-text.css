@@ -1,40 +1,42 @@
 /*
  * The typography of long-form writing: a help article as readers see it, and the same article
  * in the editor. Both wear `.hw-rich-text`, so what is written looks like what is published.
+ * The sizes follow Notion's: 16px text at 1.5, close blocks, and headings of 30, 24 and 20px.
  */
 .hw-rich-text {
   color: var(--foreground);
   font-size: 1rem;
-  line-height: 1.7;
+  line-height: 1.5;
   overflow-wrap: break-word;
 }
 
 .hw-rich-text > * + * {
-  margin-top: 1.1em;
+  margin-top: 0.5em;
 }
 
 .hw-rich-text :is(h2, h3, h4) {
   font-weight: 600;
   letter-spacing: -0.01em;
-  line-height: 1.3;
+  line-height: 1.25;
   text-wrap: balance;
   /* Clear of a header that stays at the top of the page when a heading is jumped to. */
   scroll-margin-top: 5.5rem;
 }
 
+/* More room above a heading than below it, so it belongs to the part it starts. */
 .hw-rich-text h2 {
-  margin-top: 2em;
-  font-size: 1.375em;
+  margin-top: 1.1em;
+  font-size: 1.875em;
 }
 
 .hw-rich-text h3 {
-  margin-top: 1.7em;
-  font-size: 1.125em;
+  margin-top: 1em;
+  font-size: 1.5em;
 }
 
 .hw-rich-text h4 {
-  margin-top: 1.5em;
-  font-size: 1em;
+  margin-top: 1em;
+  font-size: 1.25em;
 }
 
 .hw-rich-text > :first-child {
@@ -55,7 +57,7 @@
 
 .hw-rich-text li + li,
 .hw-rich-text li > :is(ul, ol) {
-  margin-top: 0.35em;
+  margin-top: 0.2em;
 }
 
 .hw-rich-text li::marker {
