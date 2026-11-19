@@ -26,6 +26,7 @@ const summary = (overrides: Partial<ArticleSummary>): ArticleSummary => ({
   status: "published",
   position: 1,
   authorId: null,
+  author: null,
   publishedAt: "2026-11-01T10:00:00Z",
   updatedAt: "2026-11-18T10:00:00Z",
   tags: [],

@@ -1,5 +1,5 @@
 import { richTextToPlainText, type Article, type ArticleSummary } from "@helpwren/core";
-import { Icon, RichText, richTextHeadings } from "@helpwren/design-system";
+import { Avatar, Icon, RichText, richTextHeadings } from "@helpwren/design-system";
 import Link from "next/link";
 
 import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
@@ -13,8 +13,6 @@ import { ChatLink } from "./help-chat";
 
 export interface ArticleViewProps {
   article: Article;
-  /** Who wrote it, when the help center should say. */
-  author?: string | undefined;
   /** The articles before and after this one in its collection, to read on without going back. */
   previous?: ArticleSummary | undefined;
   next?: ArticleSummary | undefined;
@@ -60,7 +58,6 @@ function Neighbour({
  */
 export function ArticleView({
   article,
-  author,
   previous,
   next,
   preview = false,
@@ -106,15 +103,27 @@ export function ArticleView({
         {article.summary ? (
           <p className="text-muted-foreground mt-2.5 text-lg text-pretty">{article.summary}</p>
         ) : null}
-        <p className="text-muted-foreground mt-4 flex flex-wrap gap-x-2 text-sm">
-          {author ? <span>Written by {author}</span> : null}
-          {author ? <span aria-hidden="true">·</span> : null}
-          <span>
-            Updated <time dateTime={article.updatedAt}>{formatDate(article.updatedAt)}</time>
-          </span>
-          <span aria-hidden="true">·</span>
-          <span>{minutes} min read</span>
-        </p>
+        {/* The byline, as Featurebase and Intercom show it: who wrote it, and how fresh it is. */}
+        <div className="mt-5 flex items-center gap-3 text-sm">
+          {article.author ? (
+            <Avatar name={article.author.name} src={article.author.photo ?? undefined} size="md" />
+          ) : null}
+          <div className="grid gap-0.5">
+            {article.author ? (
+              <p>
+                <span className="text-muted-foreground">Written by </span>
+                <span className="font-medium">{article.author.name}</span>
+              </p>
+            ) : null}
+            <p className="text-muted-foreground flex flex-wrap gap-x-2">
+              <span>
+                Updated <time dateTime={article.updatedAt}>{formatDate(article.updatedAt)}</time>
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>{minutes} min read</span>
+            </p>
+          </div>
+        </div>
       </header>
 
       {headings.length >= 2 ? (

@@ -1,7 +1,7 @@
 begin;
 \ir support/fixture.psql
 
-select plan(33);
+select plan(36);
 
 -- Two collections and three articles, made by the server so the tests start from known rows.
 insert into public.collections (id, name, slug) values
@@ -193,6 +193,28 @@ select is(
   'an article shown only in the chat can still be read by a visitor, who may be in the chat'
 );
 select tests.act_as('agent');
+
+-- The byline: the author's name and photo travel with the article, for readers who cannot
+-- read the team.
+select is(
+  (select author_name from public.articles where slug = 'install-the-widget'), 'Admin',
+  'an article carries its author''s name'
+);
+select tests.act_as_owner();
+update public.agents set name = 'Ada Admin', photo = 'https://example.test/ada.png'
+where user_id = tests.uid('admin');
+select tests.act_as_visitor();
+select is(
+  (select array[author_name, author_photo] from public.articles where slug = 'install-the-widget'),
+  array['Ada Admin', 'https://example.test/ada.png'],
+  'a visitor sees the author''s new name and photo once they change them'
+);
+select tests.act_as('agent');
+update public.articles set author_id = null where slug = 'install-the-widget';
+select is(
+  (select author_name from public.articles where slug = 'install-the-widget'), null,
+  'an article with no author names nobody'
+);
 
 select lives_ok(
   $$ delete from public.articles where slug = 'reset-a-password' $$, 'an agent removes an article'

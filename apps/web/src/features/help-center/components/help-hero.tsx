@@ -4,8 +4,9 @@ import { cn } from "@helpwren/design-system";
 import { type HelpEmbed } from "@/lib/help-embed";
 
 import { bannerStyle, heroKind } from "../hero";
-import { SearchBox } from "./help-header";
+import { searchPlaceholder } from "./help-header";
 import { PageHalftone } from "./page-halftone";
+import { SearchBox } from "./search-box";
 
 /**
  * The top of the home page: the greeting and a large search. Behind it, a soft wash of the
@@ -40,7 +41,7 @@ export function HelpHero({ settings }: { settings: PublicSettings; embed?: HelpE
       >
         {helpCenter.intro ?? "Answers to common questions, written by our team."}
       </p>
-      <SearchBox settings={settings} size="lg" className="mt-7" />
+      <SearchBox placeholder={searchPlaceholder(settings)} size="lg" className="mt-7" />
     </header>
   );
 }

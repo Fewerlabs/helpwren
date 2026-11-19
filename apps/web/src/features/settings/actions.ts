@@ -1,10 +1,11 @@
 "use server";
 
 import { endpointUrlSchema } from "@helpwren/adapters/settings";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
 import { sendEmail } from "@/lib/email";
+import { HELP_CENTER_TAG } from "@/lib/help-center-cache";
 import { getHelpwren } from "@/lib/helpwren";
 import {
   createSigningKey,
@@ -77,7 +78,11 @@ export async function saveBranding(values: BrandingValues): Promise<SaveResult> 
 
   const helpwren = await getHelpwren();
   const result = await helpwren.settings.update(brandingToSettings(parsed.data));
-  if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
+  if (result.ok) {
+    revalidatePath(SETTINGS_PATH, "layout");
+    // The help center keeps the brand for a minute, and should wear the new one at once.
+    revalidateTag(HELP_CENTER_TAG, { expire: 0 });
+  }
   return result;
 }
 
@@ -92,6 +97,8 @@ export async function saveProfile(values: ProfileValues): Promise<SaveResult> {
   if (!saved) return { ok: false, reason: "invalid" };
   // The name is in the sidebar, on every dashboard page.
   revalidatePath("/dashboard", "layout");
+  // A changed name or photo is also the byline on the articles this person wrote.
+  revalidateTag(HELP_CENTER_TAG, { expire: 0 });
   return { ok: true };
 }
 

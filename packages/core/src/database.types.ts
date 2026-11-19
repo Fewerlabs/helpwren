@@ -67,6 +67,8 @@ export type Database = {
       articles: {
         Row: {
           author_id: string | null;
+          author_name: string | null;
+          author_photo: string | null;
           body: NonNullable<Json>;
           collection_id: string | null;
           created_at: string;
@@ -88,6 +90,8 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           author_id?: string | null;
+          author_name?: string | null;
+          author_photo?: string | null;
           body?: NonNullable<Json>;
           collection_id?: string | null;
           created_at?: string;
@@ -108,6 +112,8 @@ export type Database = {
         };
         Update: {
           author_id?: string | null;
+          author_name?: string | null;
+          author_photo?: string | null;
           body?: NonNullable<Json>;
           collection_id?: string | null;
           created_at?: string;
