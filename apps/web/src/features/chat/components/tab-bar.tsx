@@ -36,15 +36,21 @@ export function TabBar({ current, unread, poweredBy }: TabBarProps) {
               aria-label={hasUnread ? `${tab.label}, ${unread} unread` : undefined}
               className={cn(
                 "focus-visible:outline-ring flex flex-col items-center gap-1 rounded-lg py-1.5 text-xs transition-colors focus-visible:outline-2",
-                // The tab that is open wears the brand's colour, and the others take it on hover.
-                active ? "text-brand font-medium" : "text-muted-foreground hover:text-foreground",
+                active
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground",
               )}
               onClick={() => {
                 show({ name: tab.name });
               }}
             >
               <span className="relative">
-                <Icon name={tab.icon} weight={active ? "duotone" : "regular"} className="size-5" />
+                {/* The open tab's icon alone wears the brand's colour; its label stays ink. */}
+                <Icon
+                  name={tab.icon}
+                  weight={active ? "duotone" : "regular"}
+                  className={cn("size-5", active && "text-brand")}
+                />
                 {hasUnread ? (
                   <span className="bg-primary ring-background absolute -top-0.5 -right-1 size-2 rounded-full ring-2" />
                 ) : null}
