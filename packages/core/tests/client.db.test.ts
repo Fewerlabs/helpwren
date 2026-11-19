@@ -20,6 +20,7 @@ describe("settings.getPublic", () => {
       helpCenter: { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true },
       tickets: { fromChat: true },
       guestDetails: "email_or_phone",
+      visitors: { tracking: true, liveList: true },
     });
   });
 });
