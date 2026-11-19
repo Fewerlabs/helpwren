@@ -1,0 +1,21 @@
+# The build context is the repository's root (apps/web/Dockerfile). Send only the source.
+.git
+**/node_modules
+**/.next
+**/.turbo
+**/coverage
+**/storybook-static
+**/playwright-report
+**/test-results
+.pnpm-store
+.helpwren
+.claude
+.shots
+deploy/docker/supabase
+deploy/docker/.supabase-checkout
+apps/web/public/widget.js
+
+# Never put an env file, with its keys, into an image.
+**/.env
+**/.env.*
+!.env.example
