@@ -402,6 +402,55 @@ export type Database = {
           },
         ];
       };
+      devices: {
+        Row: {
+          app: string;
+          contact_id: string | null;
+          created_at: string;
+          external_id: string | null;
+          id: string;
+          platform: string;
+          push_token: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          app: string;
+          contact_id?: string | null;
+          created_at?: string;
+          external_id?: string | null;
+          id?: string;
+          platform: string;
+          push_token: string;
+          updated_at?: string;
+        };
+        Update: {
+          app?: string;
+          contact_id?: string | null;
+          created_at?: string;
+          external_id?: string | null;
+          id?: string;
+          platform?: string;
+          push_token?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "devices_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contact_summaries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "devices_contact_id_fkey";
+            columns: ["contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       email_queue: {
         Row: {
           attempts: number;
@@ -545,6 +594,85 @@ export type Database = {
             columns: ["conversation_id"];
             isOneToOne: false;
             referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_queue: {
+        Row: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          done_at: string | null;
+          id: string;
+          message_id: string;
+          outcome: string | null;
+          send_after: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          done_at?: string | null;
+          id?: string;
+          message_id: string;
+          outcome?: string | null;
+          send_after?: string;
+        };
+        Update: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          done_at?: string | null;
+          id?: string;
+          message_id?: string;
+          outcome?: string | null;
+          send_after?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_queue_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "push_queue_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      push_tickets: {
+        Row: {
+          created_at: string;
+          device_id: string;
+          id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          device_id: string;
+          id: string;
+        };
+        Update: {
+          created_at?: string;
+          device_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "push_tickets_device_id_fkey";
+            columns: ["device_id"];
+            isOneToOne: false;
+            referencedRelation: "devices";
             referencedColumns: ["id"];
           },
         ];
@@ -695,6 +823,26 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "email_queue";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      claim_push_queue: {
+        Args: { batch?: number };
+        Returns: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          done_at: string | null;
+          id: string;
+          message_id: string;
+          outcome: string | null;
+          send_after: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "push_queue";
           isOneToOne: false;
           isSetofReturn: true;
         };

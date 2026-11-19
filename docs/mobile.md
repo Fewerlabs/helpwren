@@ -54,6 +54,46 @@ the front. It needs no Helpwren session: the install checks the token the same w
 **Links.** Only the install's own pages load in the web view. Any other link, such as one in a
 message, opens in the system browser.
 
+## Push notifications
+
+Turn push on in **Settings > Mobile** (Expo is the first provider). The scheduler that sends
+emails must also call `POST /api/jobs/push` every minute with `CRON_SECRET`. Then, in the app:
+
+```tsx
+import * as Notifications from "expo-notifications";
+import {
+  registerSupportDevice,
+  supportConversationId,
+  unregisterSupportDevice,
+} from "@helpwren/react-native";
+
+// When the app starts with someone logged in, and when the push token changes.
+await registerSupportDevice({
+  baseUrl: "https://support.example.com",
+  pushToken: (await Notifications.getExpoPushTokenAsync({ projectId })).data,
+  platform: Platform.OS === "ios" ? "ios" : "android",
+  source: "customer_app",
+  token: await auth.getAccessToken(),
+});
+
+// When a notification is tapped, open the support screen on its conversation.
+Notifications.addNotificationResponseReceivedListener((response) => {
+  const conversationId = supportConversationId(response.notification.request.content.data);
+  if (conversationId) navigation.navigate("Support", { conversationId });
+});
+
+// On logout.
+await unregisterSupportDevice({ baseUrl: "https://support.example.com", pushToken });
+```
+
+A push goes out a few seconds after a reply, unless the person read it in the chat by then.
+Several replies in one conversation show as one notification. The push carries the brand's name,
+a short preview, and `{ type: "support", conversationId }`. To keep the banner away while the
+support screen already shows that conversation, check `supportConversationId` in your
+`setNotificationHandler` (Expo SDK 58 shows foreground notifications unless told not to).
+
+Push needs a development build: Expo Go does not receive push notifications.
+
 ## Other platforms
 
 Flutter, native iOS and Android, or anything that shows a web page can do what the React Native

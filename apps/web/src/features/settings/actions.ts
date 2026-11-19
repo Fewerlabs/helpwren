@@ -12,6 +12,7 @@ import {
   testIdentityToken,
   type IdentityTestResult,
 } from "@/lib/identity";
+import { getPushSettings, savePushSettings } from "@/lib/push";
 
 import {
   brandingSchema,
@@ -21,6 +22,7 @@ import {
   generalSchema,
   identityFromValues,
   identitySchema,
+  mobileSchema,
   installationSchema,
   inviteSchema,
   memberChangeSchema,
@@ -28,6 +30,7 @@ import {
   type BrandingValues,
   type GeneralValues,
   type IdentityValues,
+  type MobileValues,
   type InstallationValues,
   type InviteValues,
   type MemberChange,
@@ -206,6 +209,26 @@ export async function createIdentityKey(): Promise<CreateKeyResult> {
 export async function removeIdentityKey(id: string): Promise<SaveResult> {
   if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
   await removeSigningKey(id);
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true };
+}
+
+/** Saves how the install reaches phones. A new access token replaces the saved one. */
+export async function saveMobile(values: MobileValues): Promise<SaveResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  const parsed = mobileSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+
+  const { provider, accessToken } = parsed.data;
+  await savePushSettings({ provider }, accessToken === "" ? undefined : accessToken);
+  revalidatePath(SETTINGS_PATH, "layout");
+  return { ok: true };
+}
+
+/** Forgets the saved Expo access token. */
+export async function removeExpoAccessToken(): Promise<SaveResult> {
+  if (!(await isAdmin())) return { ok: false, reason: "forbidden" };
+  await savePushSettings(await getPushSettings(), null);
   revalidatePath(SETTINGS_PATH, "layout");
   return { ok: true };
 }

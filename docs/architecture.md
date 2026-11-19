@@ -302,6 +302,9 @@ between screens does not refetch what was loaded a moment ago.
 | `POST /api/conversations/{id}/read` | Marks a conversation as read for the caller's side                                                                                                                          |
 | `POST /api/identify`                | Signs the chat in as one of the host product's users, from a token the install's identity adapter confirms                                                                  |
 | `POST /api/unread`                  | How many replies a person has not read, from an app's own token or a Helpwren session, for a badge                                                                          |
+| `POST /api/devices`                 | Registers a phone for pushes, from an app's own token or a Helpwren session                                                                                                 |
+| `DELETE /api/devices`               | Stops pushes to a phone                                                                                                                                                     |
+| `POST /api/jobs/push`               | Sends the pushes that are due. Called every minute by the scheduler, with `CRON_SECRET`                                                                                     |
 
 ## The design system
 

@@ -23,3 +23,4 @@ export const identitySettingsSchema = z.discriminatedUnion("mode", [
 
 export type IdentitySettings = z.infer<typeof identitySettingsSchema>;
 export type IdentityMode = IdentitySettings["mode"];
+export { pushSettingsSchema, type PushSettings } from "../push/settings";

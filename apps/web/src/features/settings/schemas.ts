@@ -332,3 +332,10 @@ export function identityFromValues(values: IdentityValues): IdentitySettings | n
   });
   return parsed.success ? parsed.data : null;
 }
+
+/** The Mobile page. An access token left empty keeps the one already saved. */
+export const mobileSchema = z.object({
+  provider: z.enum(["none", "expo"]),
+  accessToken: z.string().trim().max(200, "That is longer than an Expo access token."),
+});
+export type MobileValues = z.infer<typeof mobileSchema>;
