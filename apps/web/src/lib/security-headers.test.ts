@@ -23,6 +23,15 @@ describe("contentSecurityPolicy", () => {
     ]);
   });
 
+  it("lets a page frame the app by its address, for a help center served through a rewrite", () => {
+    expect(directive(contentSecurityPolicy(base), "frame-src")).toEqual([
+      "'self'",
+      "https://help.example.com",
+      "https://challenges.cloudflare.com",
+      "https://www.youtube-nocookie.com",
+    ]);
+  });
+
   it("allows no plugins, no other base address and no forms sent elsewhere", () => {
     const policy = contentSecurityPolicy(base);
     expect(directive(policy, "object-src")).toEqual(["'none'"]);
