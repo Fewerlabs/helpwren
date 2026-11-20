@@ -241,6 +241,7 @@ export function Perch({
       aria-hidden="true"
       data-wren-perch={name}
       data-facing={facing}
+      data-pose={pose}
       className="pointer-events-none absolute size-0"
       style={style}
     >

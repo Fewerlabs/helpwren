@@ -10,6 +10,7 @@ import { HomeRange } from "@/sections/home-range/home-range";
 import { Join } from "@/sections/join/join";
 import { Nest } from "@/sections/nest/nest";
 import { Wild } from "@/sections/wild/wild";
+import { WrenFlightLayer } from "@/wren/flight-layer";
 
 // Built once; nothing on the page depends on the request.
 export const dynamic = "force-static";
@@ -49,6 +50,7 @@ export default async function Home() {
         <Join />
       </main>
       <SiteFooter />
+      <WrenFlightLayer />
     </>
   );
 }

@@ -87,3 +87,34 @@ html[data-motion-pref="off"] :is([data-slot="wren"], [data-slot="sketch"]) * {
 html[data-motion-pref="off"] :is([data-slot="wren"], [data-slot="sketch"]) .hw-spark {
   opacity: 0 !important;
 }
+
+/* The flying wren: one bird, its poses stacked, only the current one shown. */
+.wren-flyer {
+  will-change: transform;
+}
+.wren-flyer [data-flyer-pose] {
+  display: none;
+}
+.wren-flyer[data-pose="perched"] [data-flyer-pose="perched"] {
+  display: block;
+}
+.wren-flyer[data-pose="wings-up"] [data-flyer-pose="wings-up"] {
+  display: block;
+}
+.wren-flyer[data-pose="wings-down"] [data-flyer-pose="wings-down"] {
+  display: block;
+}
+.wren-flyer[data-pose="gliding"] [data-flyer-pose="gliding"] {
+  display: block;
+}
+.wren-flyer[data-pose="landing"] [data-flyer-pose="landing"] {
+  display: block;
+}
+.wren-flyer[data-pose="asleep"] [data-flyer-pose="asleep"] {
+  display: block;
+}
+
+/* While the wren flies, the still wrens at each perch step aside for it. */
+html[data-wren="flying"] [data-still-wren] {
+  visibility: hidden;
+}
