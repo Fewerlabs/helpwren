@@ -47,6 +47,10 @@ const nextConfig: NextConfig = {
     HELPWREN_BUILD_VERSION: sha ? `${version}+${sha}` : version,
     ...(newestMigration ? { HELPWREN_BUILD_SCHEMA: newestMigration } : {}),
   },
+  // Next's own scripts, styles and fonts are served under /help, so a site that shows the help
+  // center at its own /help with one rewrite of `/help/:path*` passes them on too. Under the
+  // usual /_next they would be asked of that site, which does not have them.
+  assetPrefix: "/help/_assets",
   // Bottom right, clear of the dashboard's sidebar. Development only.
   devIndicators: { position: "bottom-right" },
   transpilePackages: [
@@ -60,6 +64,14 @@ const nextConfig: NextConfig = {
     { source: "/inbox", destination: "/dashboard/inbox", permanent: true },
     { source: "/inbox/login", destination: "/login", permanent: true },
   ],
+  // Collection icons on help center pages, under /help for the same reason as `assetPrefix`.
+  // Before the pages, so `_icons` is never read as a collection.
+  rewrites: () =>
+    Promise.resolve({
+      beforeFiles: [{ source: "/help/_icons/:path*", destination: "/api/icons/:path*" }],
+      afterFiles: [],
+      fallback: [],
+    }),
   // The same on every response. The Content-Security-Policy, which depends on the install's
   // settings, is set per page by the proxy (src/proxy.ts).
   headers: () => Promise.resolve([{ source: "/:path*", headers: [...BASE_HEADERS] }]),

@@ -232,6 +232,26 @@ Until you create that admin, anyone who can reach `/setup` could, so do it strai
 deploying. `pnpm agent:invite you@example.com --name "You" --admin` still works from the
 command line instead.
 
+## The help center on your own site
+
+The help center lives at `/help` on your install. To show it at `/help` on your main site
+instead, which is better for search, pass that path on to the install with one rewrite. In a
+Next.js site:
+
+```js
+// next.config.js
+async rewrites() {
+  return [{ source: "/help/:path*", destination: "https://support.example.com/help/:path*" }];
+}
+```
+
+Then set **Settings > Branding > Help center > Public address** to `https://example.com/help`.
+Links, canonical addresses and the sitemap (`/help/sitemap.xml`) then use your site's address.
+Everything a help page loads from the install is under `/help` too (its scripts and styles under
+`/help/_assets`, collection icons under `/help/_icons`), so the one rule is enough; the chat and
+"Chat with us" open on the install's own address. [`examples/nextjs`](../examples/nextjs) does
+this, and its tests check it.
+
 ## Upgrading
 
 ```bash
