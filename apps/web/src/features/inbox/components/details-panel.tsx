@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  conversationHelpSchema,
+  describeArticleFilter,
   pageContextSchema,
   RATING_MAX,
   type ConversationChanges,
@@ -140,6 +142,8 @@ export function DetailsPanel({
     typeof context.url === "string" && /^https?:\/\//i.test(context.url) ? context.url : undefined;
   const pageTitle = typeof context.title === "string" ? context.title : undefined;
   const fromPage = Object.entries(pageContextSchema.safeParse(context.custom).data ?? {});
+  // The help the chat listed for the page when the conversation started.
+  const help = conversationHelpSchema.safeParse(context.help).data;
   const isTicket = conversation.type === "ticket";
   const rating = useRating(conversation.id).data;
   const confirmStatus = useConfirmStatus();
@@ -267,6 +271,20 @@ export function DetailsPanel({
                 {String(value)}
               </Row>
             ))}
+          </Section>
+        ) : null}
+        {help ? (
+          <Section title="Help for this page" icon="lifebuoy">
+            {help.match?.kind === "rule" ? (
+              <Row label="Rule">{help.match.name ?? "A rule since removed"}</Row>
+            ) : null}
+            {help.match?.kind === "filter" ? (
+              <Row label="Filter">
+                <span className="text-muted-foreground block pb-0.5">Set by the page</span>
+                {describeArticleFilter(help.match.filter).join(" · ")}
+              </Row>
+            ) : null}
+            {help.fallback ? <Row label="Search">“{help.fallback}”</Row> : null}
           </Section>
         ) : null}
         <Section title="Contact" icon="user">

@@ -30,3 +30,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0023 | [Limits on abuse](0023-abuse-limits.md)                                                    |
 | 0024 | [The installer, the upgrader and the setup wizard](0024-installer-and-setup-wizard.md)     |
 | 0025 | [The website at helpwren.fewerlabs.dev](0025-landing-page.md)                              |
+| 0026 | [Contextual help](0026-contextual-help.md)                                                 |

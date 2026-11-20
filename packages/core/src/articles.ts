@@ -1,8 +1,21 @@
 import { z } from "zod";
 
 import { type Api } from "./api";
+import {
+  articleFilterSchema,
+  audienceSchema,
+  fieldKeySchema,
+  localeSchema,
+  type ArticleFilterInput,
+} from "./article-filter";
 import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
+import {
+  pageHelpInputSchema,
+  pageHelpSchema,
+  type PageHelp,
+  type PageHelpInput,
+} from "./help-rules";
 import { EMPTY_RICH_TEXT, richTextSchema } from "./rich-text";
 import { insertWithFreeSlug, slugify, slugSchema } from "./slug";
 import { type HelpwrenSupabaseClient } from "./supabase";
@@ -19,6 +32,15 @@ export const ARTICLE_TAGS_MAX = 20;
 
 /** A free label on an article, such as `refunds`: lower case, so `iOS` and `ios` are one tag. */
 export const articleTagSchema = z.string().trim().toLowerCase().min(1).max(40);
+
+/** The most audiences and custom fields one article carries. */
+export const ARTICLE_AUDIENCES_MAX = 10;
+export const ARTICLE_FIELDS_MAX = 20;
+
+/** An article's custom fields: a short text value for each name, such as `{ plan: "pro" }`. */
+export const articleFieldsSchema = z
+  .record(fieldKeySchema, z.string().trim().min(1).max(200))
+  .refine((fields) => Object.keys(fields).length <= ARTICLE_FIELDS_MAX);
 
 const summaryRowSchema = z.object({
   id: z.uuid(),
@@ -38,6 +60,9 @@ const summaryRowSchema = z.object({
   featured: z.boolean(),
   meta_title: z.string().nullable(),
   meta_description: z.string().nullable(),
+  audiences: z.array(z.string()),
+  locale: z.string().nullable(),
+  fields: z.record(z.string(), z.string()),
   collection: z.object({ id: z.uuid(), name: z.string(), slug: z.string() }).nullable(),
 });
 
@@ -72,6 +97,12 @@ function toSummary(row: SummaryRow) {
     metaTitle: row.meta_title,
     /** A description for search engines, when it should differ from the summary. */
     metaDescription: row.meta_description,
+    /** Who it is for, as the identity adapter names audiences. Empty: everyone. */
+    audiences: row.audiences,
+    /** Its language, such as `en`. `null`: not tied to one. */
+    locale: row.locale,
+    /** The team's own keys and values, such as `{ plan: "pro" }`, for contextual help. */
+    fields: row.fields,
   };
 }
 
@@ -110,6 +141,14 @@ export const articleInputSchema = z.object({
   metaDescription: z.string().trim().max(200).optional(),
   /** The team member credited with it. Whoever makes an article is its author to begin with. */
   authorId: z.uuid().optional(),
+  audiences: z
+    .array(audienceSchema)
+    .max(ARTICLE_AUDIENCES_MAX)
+    .transform((audiences) => [...new Set(audiences)])
+    .optional(),
+  /** `null` for an article not tied to a language. */
+  locale: localeSchema.nullable().optional(),
+  fields: articleFieldsSchema.optional(),
 });
 export type ArticleInput = z.input<typeof articleInputSchema>;
 
@@ -148,6 +187,14 @@ export interface SearchArticlesOptions {
   includeDrafts?: boolean | undefined;
   /** Only articles listed here: `public` for the help center. Default: both. */
   visibility?: ArticleVisibility | undefined;
+}
+
+export interface FindArticlesOptions {
+  /**
+   * An article needs only one of the words in `q`, not all of them. For searching a page's
+   * title, which is rarely all in one article. Default false.
+   */
+  anyWord?: boolean | undefined;
 }
 
 export interface GetArticleOptions {
@@ -193,7 +240,7 @@ export type UploadArticleImageResult =
   { ok: true; url: string } | { ok: false; reason: "forbidden" | "too_large" | "unsupported" };
 
 const SUMMARY_COLUMNS =
-  "id, collection_id, title, slug, summary, status, position, author_id, author_name, author_photo, published_at, updated_at, tags, visibility, featured, meta_title, meta_description, collection:collections(id, name, slug)";
+  "id, collection_id, title, slug, summary, status, position, author_id, author_name, author_photo, published_at, updated_at, tags, visibility, featured, meta_title, meta_description, audiences, locale, fields, collection:collections(id, name, slug)";
 const COLUMNS = `${SUMMARY_COLUMNS}, body`;
 
 /** Postgres's codes for what the database refuses. `HW409` is our own, for a locked slug. */
@@ -211,7 +258,14 @@ function refusal(code: string | undefined) {
 
 type Metadata = Pick<
   z.infer<typeof articleChangesSchema>,
-  "tags" | "visibility" | "featured" | "metaTitle" | "metaDescription"
+  | "tags"
+  | "visibility"
+  | "featured"
+  | "metaTitle"
+  | "metaDescription"
+  | "audiences"
+  | "locale"
+  | "fields"
 >;
 
 /** The parts of an article besides its words, as columns. Anything left out is left alone. */
@@ -224,6 +278,9 @@ function metadata(input: Metadata) {
   if (input.metaDescription !== undefined) {
     values.meta_description = input.metaDescription ? input.metaDescription : null;
   }
+  if (input.audiences !== undefined) values.audiences = input.audiences;
+  if (input.locale !== undefined) values.locale = input.locale;
+  if (input.fields !== undefined) values.fields = input.fields;
   return values;
 }
 
@@ -296,6 +353,39 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
       return z.array(articleSummarySchema).parse(data);
     },
 
+    /**
+     * The published articles a filter picks, best first, evaluated by the database. Anyone may
+     * ask, with or without a session; drafts are never included.
+     */
+    async find(
+      filter: ArticleFilterInput = {},
+      options: FindArticlesOptions = {},
+    ): Promise<ArticleSummary[]> {
+      const { data, error } = await supabase
+        .rpc("find_articles", {
+          filter: articleFilterSchema.parse(filter),
+          any_word: options.anyWord ?? false,
+        })
+        .select(SUMMARY_COLUMNS);
+      if (error) throw new HelpwrenError("Could not find the articles.", { cause: error });
+      return z.array(articleSummarySchema).parse(data);
+    },
+
+    /**
+     * The help for the page the chat is on, from the app's server: the page's own filter, or
+     * the first of the team's rules that matches, or a search on the page's title when neither
+     * finds anything and the install allows it.
+     */
+    async forPage(input: PageHelpInput): Promise<PageHelp> {
+      const result = await api.post(
+        "/api/articles/contextual",
+        pageHelpInputSchema.parse(input),
+        pageHelpSchema,
+      );
+      if (result.ok) return result.data;
+      throw new HelpwrenError(`Could not load the help for this page: ${result.message}`);
+    },
+
     /** One article with its body, or `null` if there is none the caller can read. */
     async get(id: string): Promise<Article | null> {
       if (!z.uuid().safeParse(id).success) return null;
@@ -341,6 +431,16 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
         .not("tags", "eq", "{}");
       if (error) throw new HelpwrenError("Could not load the tags.", { cause: error });
       return [...new Set(data.flatMap((row) => row.tags))].sort((a, b) => a.localeCompare(b));
+    },
+
+    /** Every audience articles are for, in alphabetical order, as suggestions. */
+    async audiences(): Promise<string[]> {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("audiences")
+        .not("audiences", "eq", "{}");
+      if (error) throw new HelpwrenError("Could not load the audiences.", { cause: error });
+      return [...new Set(data.flatMap((row) => row.audiences))].sort((a, b) => a.localeCompare(b));
     },
 
     /** Starts a draft, at the end of its collection. For the team. */

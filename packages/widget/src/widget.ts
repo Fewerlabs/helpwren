@@ -2,6 +2,8 @@ import { defaultAppearance, parseAppearance, type Appearance } from "./appearanc
 import {
   CHANNEL,
   isFrameMessage,
+  type ArticleFilter,
+  type HelpArticle,
   type IdentityState,
   type LatestUnread,
   type PageContext,
@@ -11,7 +13,22 @@ import {
 import { closeIcon, dismissIcon, openIcon, styles, wrenIcon } from "./styles";
 
 export type { Appearance } from "./appearance";
-export type { IdentityState, PageContext, VisitorDetails } from "./protocol";
+export type {
+  ArticleFilter,
+  HelpArticle,
+  IdentityState,
+  PageContext,
+  VisitorDetails,
+} from "./protocol";
+
+/**
+ * What `setContext` takes: plain values for the team, such as `{ plan: "pro" }`, and `filter`,
+ * which picks the help articles shown for this page.
+ */
+export type WidgetContext = { filter?: ArticleFilter } & Record<
+  string,
+  PageContext[string] | ArticleFilter | undefined
+>;
 
 /**
  * Who the visitor is. A `token` proves it: the install checks it and signs them in as that
@@ -118,8 +135,16 @@ export interface HelpwrenWidget {
   /**
    * Tells the team about where the visitor is, such as the plan they are on or the order they
    * are looking at. It is sent with the next conversation they start, and replaces what was set.
+   * `filter` picks the help articles the chat shows for this page, in place of the team's rules.
    */
-  setContext: (context: PageContext) => void;
+  setContext: (context: WidgetContext) => void;
+  /**
+   * The published help articles a filter picks, for a list of your own. Asks the install's
+   * `POST /api/articles/search`, which only the allowed domains' pages may read.
+   */
+  findArticles: (filter: ArticleFilter) => Promise<HelpArticle[]>;
+  /** Opens the chat on one help article, by its slug. */
+  openArticle: (slug: string) => void;
   /** Changes how the widget looks or is laid out after `init`. */
   update: (changes: { appearance?: Partial<Appearance>; layout?: WidgetLayout }) => void;
   /** Listens for an event. Returns a function that stops listening. */
@@ -139,6 +164,20 @@ interface Teaser {
   name: HTMLSpanElement;
   message: HTMLSpanElement;
   replies: HTMLDivElement;
+}
+
+/** Marks an element the widget fills with help articles. Its value is a filter, as JSON. */
+const HELP_ATTRIBUTE = "data-helpwren-help";
+
+function isHelpArticle(data: unknown): data is HelpArticle {
+  if (typeof data !== "object" || data === null) return false;
+  const article = data as Record<string, unknown>;
+  return (
+    typeof article.title === "string" &&
+    typeof article.slug === "string" &&
+    (article.summary === null || typeof article.summary === "string") &&
+    (article.url === null || (typeof article.url === "string" && /^https?:\/\//.test(article.url)))
+  );
 }
 
 /** Remembers, for this visit, that the welcome message has been seen or dismissed. */
@@ -171,6 +210,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   // Who the page says the visitor is, kept so it can be said again each time the frame loads.
   let identity: Identity | undefined;
   let context: PageContext | undefined;
+  let filter: ArticleFilter | undefined;
   // A fresh token is fetched once when one expires, not over and over.
   let retriedToken = false;
   // What the host page asked for, kept so it still applies after the install's settings load.
@@ -185,7 +225,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   let previewing = false;
   let teaserSeen = false;
   let frameReady = false;
-  let waitingStart: PageMessage | undefined;
+  // A screen the page asked for before the chat was ready to show it.
+  let waiting: PageMessage | undefined;
   // The newest unread reply, shown beside the launcher in place of the welcome message.
   let latest: LatestUnread | undefined;
   // The reply the visitor waved away. A newer one shows again.
@@ -216,11 +257,134 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
    * sent for them, or with a draft from the page, which is only put in the message box.
    */
   function startConversation(start: { reply?: string; draft?: string } = {}) {
+    showScreen({ channel: CHANNEL, type: "start", ...start });
+  }
+
+  /** Opens the chat on a screen: sent now if the chat is ready, or as soon as it is. */
+  function showScreen(message: PageMessage) {
     if (!mounted) return;
-    const message: PageMessage = { channel: CHANNEL, type: "start", ...start };
     if (frameReady) mounted.frame.contentWindow?.postMessage(message, appOrigin);
-    else waitingStart = message;
+    else waiting = message;
     setOpen(true);
+  }
+
+  async function findArticles(wanted: ArticleFilter): Promise<HelpArticle[]> {
+    const response = await fetch(new URL("/api/articles/search", appOrigin), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ filter: wanted }),
+    });
+    if (!response.ok) {
+      throw new Error(`Helpwren: the articles could not be loaded (${String(response.status)}).`);
+    }
+    const answer: unknown = await response.json();
+    return Array.isArray(answer) ? answer.filter(isHelpArticle) : [];
+  }
+
+  // Each inline list, and the filter it was last filled for.
+  const filled = new WeakMap<HTMLElement, string>();
+  let stopWatchingHelp: (() => void) | undefined;
+
+  /**
+   * Fills an element marked `data-helpwren-help='{"tags":{"any":["refunds"]}}'` with links to
+   * the articles its filter picks. Nothing is drawn while they load, and nothing when there
+   * are none, so the page moves only by the list itself. A link opens the article in the chat,
+   * or the help center's page when the chat is not on the page.
+   */
+  function fillHelp(element: HTMLElement) {
+    const raw = element.getAttribute(HELP_ATTRIBUTE) ?? "";
+    if (filled.get(element) === raw) return;
+    filled.set(element, raw);
+    let wanted: unknown;
+    try {
+      wanted = JSON.parse(raw || "{}");
+    } catch {
+      wanted = undefined;
+    }
+    if (typeof wanted !== "object" || wanted === null || Array.isArray(wanted)) {
+      element.dataset.helpwrenState = "error";
+      console.error("Helpwren: data-helpwren-help holds a filter written as JSON.", element);
+      return;
+    }
+    element.dataset.helpwrenState = "loading";
+    element.setAttribute("aria-busy", "true");
+    findArticles(wanted)
+      .then((articles) => {
+        // The filter changed while these were on their way.
+        if (filled.get(element) !== raw) return;
+        element.dataset.helpwrenState = articles.length > 0 ? "ready" : "empty";
+        element.querySelector(":scope > .helpwren-help-list")?.remove();
+        if (articles.length > 0) element.append(helpList(articles));
+      })
+      .catch(() => {
+        if (filled.get(element) === raw) element.dataset.helpwrenState = "error";
+      })
+      .finally(() => {
+        if (filled.get(element) === raw) element.removeAttribute("aria-busy");
+      });
+  }
+
+  function helpList(articles: HelpArticle[]): HTMLUListElement {
+    const list = document.createElement("ul");
+    list.className = "helpwren-help-list";
+    for (const article of articles) {
+      const item = document.createElement("li");
+      item.className = "helpwren-help-item";
+      const link = document.createElement("a");
+      link.className = "helpwren-help-link";
+      link.href = article.url ?? new URL("/help", appOrigin).href;
+      const title = document.createElement("span");
+      title.className = "helpwren-help-title";
+      title.textContent = article.title;
+      link.append(title);
+      if (article.summary) {
+        const summary = document.createElement("span");
+        summary.className = "helpwren-help-summary";
+        summary.textContent = article.summary;
+        link.append(summary);
+      }
+      link.addEventListener("click", (event) => {
+        // A new tab, or no chat on the page: the link goes where it says.
+        const plain = event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey;
+        if (!mounted || !plain) return;
+        event.preventDefault();
+        showScreen({ channel: CHANNEL, type: "article", slug: article.slug });
+      });
+      item.append(link);
+      list.append(item);
+    }
+    return list;
+  }
+
+  /** Fills every inline list on the page now, and each one added or changed later. */
+  function watchHelp(): () => void {
+    const fillWithin = (root: ParentNode) => {
+      for (const element of root.querySelectorAll<HTMLElement>(`[${HELP_ATTRIBUTE}]`)) {
+        fillHelp(element);
+      }
+    };
+    fillWithin(document);
+    const observer = new MutationObserver((changes) => {
+      for (const change of changes) {
+        if (change.type === "attributes" && change.target instanceof HTMLElement) {
+          fillHelp(change.target);
+        }
+        for (const node of change.addedNodes) {
+          if (!(node instanceof HTMLElement)) continue;
+          if (node.hasAttribute(HELP_ATTRIBUTE)) fillHelp(node);
+          fillWithin(node);
+        }
+      }
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [HELP_ATTRIBUTE],
+    });
+    return () => {
+      observer.disconnect();
+    };
   }
 
   /** The unread reply to show beside the launcher, unless the visitor waved it away. */
@@ -491,6 +655,15 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     for (const listener of listeners.identity) listener(state);
   }
 
+  function sendContext() {
+    post({
+      channel: CHANNEL,
+      type: "context",
+      context: context ?? {},
+      ...(filter ? { filter } : {}),
+    });
+  }
+
   function greet(frame: HTMLIFrameElement) {
     const hello: PageMessage = {
       channel: CHANNEL,
@@ -503,7 +676,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     };
     // Addressed to the app's origin only, so no other site loaded in the frame could read it.
     frame.contentWindow?.postMessage(hello, appOrigin);
-    if (context) post({ channel: CHANNEL, type: "context", context });
+    if (context || filter) sendContext();
     void sendIdentity();
   }
 
@@ -519,9 +692,9 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       greet(mounted.frame);
       if (first) for (const listener of listeners.ready) listener();
       sendPreview(mounted.frame);
-      if (waitingStart) {
-        mounted.frame.contentWindow?.postMessage(waitingStart, appOrigin);
-        waitingStart = undefined;
+      if (waiting) {
+        mounted.frame.contentWindow?.postMessage(waiting, appOrigin);
+        waiting = undefined;
       }
     } else if (event.data.type === "unread") setUnread(event.data.count, event.data.latest);
     else if (event.data.type === "identity") {
@@ -630,7 +803,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       setOpen(options.open === true);
       window.addEventListener("message", onMessage);
       // A preview is not a visit, so it reports no pages.
-      if (!previewing) stopWatchingPage = watchPage();
+      if (!previewing) {
+        stopWatchingPage = watchPage();
+        stopWatchingHelp = watchHelp();
+      }
       (container ?? document.body).append(host);
 
       if (options.preview) {
@@ -665,6 +841,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       window.removeEventListener("message", onMessage);
       stopWatchingPage?.();
       stopWatchingPage = undefined;
+      stopWatchingHelp?.();
+      stopWatchingHelp = undefined;
       latest = undefined;
       dismissedReply = undefined;
       for (const trigger of triggers) {
@@ -679,7 +857,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       appearance = defaultAppearance;
       previewSettings = undefined;
       frameReady = false;
-      waitingStart = undefined;
+      waiting = undefined;
     },
 
     show() {
@@ -706,8 +884,22 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     },
 
     setContext(next) {
-      context = next;
-      post({ channel: CHANNEL, type: "context", context: next });
+      const { filter: wanted, ...values } = next;
+      // Only plain values go to the team; the chat refuses anything else.
+      context = Object.fromEntries(
+        Object.entries(values).filter(
+          (entry): entry is [string, PageContext[string]] =>
+            entry[1] === null || ["string", "number", "boolean"].includes(typeof entry[1]),
+        ),
+      );
+      filter = wanted;
+      sendContext();
+    },
+
+    findArticles,
+
+    openArticle(slug) {
+      showScreen({ channel: CHANNEL, type: "article", slug });
     },
 
     startConversation(draft) {

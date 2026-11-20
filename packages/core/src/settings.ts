@@ -211,6 +211,17 @@ export type SpamSettings = z.infer<typeof spamSchema>;
 
 const spamDefault = { captcha: "off" } as const;
 
+/** The help the chat shows for the page it is on. */
+const contextualHelpSchema = z.object({
+  /**
+   * When neither the page's filter nor a rule finds an article, search for the page's title
+   * (or the filter's words) instead, so the chat rarely has nothing to offer.
+   */
+  fallback: z.boolean().default(true),
+});
+
+export type ContextualHelpSettings = z.infer<typeof contextualHelpSchema>;
+
 const storedSettingsSchema = z.object({
   brand: brandSchema.default({ name: "Helpwren" }),
   widget: widgetSchema.default(() => widgetSchema.parse({})),
@@ -230,6 +241,7 @@ const storedSettingsSchema = z.object({
   sources: z.array(z.string().min(1)).min(1).default(["web"]),
   visitors: visitorsSchema.default(visitorsDefault),
   spam: spamSchema.default(spamDefault),
+  contextual_help: contextualHelpSchema.default({ fallback: true }),
 });
 
 export const settingsSchema = storedSettingsSchema.transform((stored) => ({
@@ -244,6 +256,7 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   sources: stored.sources,
   visitors: stored.visitors,
   spam: stored.spam,
+  contextualHelp: stored.contextual_help,
 }));
 
 export type Settings = z.infer<typeof settingsSchema>;
@@ -372,6 +385,7 @@ export const settingsPatchSchema = z
         message: "Turnstile needs its site key.",
         path: ["siteKey"],
       }),
+    contextualHelp: z.object({ fallback: z.boolean() }),
   })
   .partial();
 
@@ -407,6 +421,8 @@ const storage = {
   visitors: { key: "visitors", isPublic: true },
   // Public, because the chat shows the captcha with the site key. The secret key is never here.
   spam: { key: "spam", isPublic: true },
+  // Read by the app's server when it works out the help for a page, never by a visitor.
+  contextualHelp: { key: "contextual_help", isPublic: false },
 } as const satisfies Record<keyof SettingsPatch, { key: string; isPublic: boolean }>;
 
 /** Postgres's error code for an action the access rules do not allow. */

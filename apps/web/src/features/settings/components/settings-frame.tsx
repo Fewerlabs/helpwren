@@ -23,6 +23,12 @@ const pages = [
   { href: "/dashboard/settings/mobile", label: "Mobile", icon: "device-mobile", group: WORKSPACE },
   { href: "/dashboard/settings/team", label: "Team", icon: "users", group: WORKSPACE },
   {
+    href: "/dashboard/settings/contextual-help",
+    label: "Contextual help",
+    icon: "lifebuoy",
+    group: WORKSPACE,
+  },
+  {
     href: "/dashboard/settings/saved-replies",
     label: "Saved replies",
     icon: "lightning",

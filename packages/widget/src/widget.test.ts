@@ -748,3 +748,142 @@ describe("a new reply beside the launcher", () => {
     expect(parts().badge?.hidden).toBe(true);
   });
 });
+
+describe("contextual help", () => {
+  function ready() {
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+    return post;
+  }
+  const sent = (post: ReturnType<typeof ready>, type: string) =>
+    post.mock.calls
+      .map(([message]) => message as Record<string, unknown>)
+      .filter((message) => message.type === type);
+
+  const articles = [
+    {
+      title: "How refunds work",
+      summary: "When the money comes back.",
+      slug: "how-refunds-work",
+      url: "https://help.example.com/help/billing/how-refunds-work",
+    },
+    { title: "Chat only", summary: null, slug: "chat-only", url: null },
+  ];
+
+  /** Answers the inline lists' requests with these articles, and the rest with `answer`. */
+  function answerArticles(list: unknown = articles) {
+    const fetch = vi.fn((input: URL | string) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify(String(input).endsWith("/api/articles/search") ? list : answer),
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetch);
+    return fetch;
+  }
+
+  it("sends a page's filter apart from the values for the team", () => {
+    widget.init();
+    const post = ready();
+    widget.setContext({ plan: "pro", filter: { tags: { any: ["refunds"] }, limit: 3 } });
+
+    expect(sent(post, "context").at(-1)).toEqual({
+      channel: "helpwren",
+      type: "context",
+      context: { plan: "pro" },
+      filter: { tags: { any: ["refunds"] }, limit: 3 },
+    });
+  });
+
+  it("sends the filter again each time the frame loads", () => {
+    widget.setContext({ filter: { collection: "bookings" } });
+    widget.init();
+    const post = ready();
+    expect(sent(post, "context")).toEqual([
+      { channel: "helpwren", type: "context", context: {}, filter: { collection: "bookings" } },
+    ]);
+  });
+
+  it("fills an inline list with links to the articles its filter picks", async () => {
+    const fetch = answerArticles();
+    const block = document.createElement("div");
+    block.dataset.helpwrenHelp = '{"tags":{"any":["refunds"]},"limit":3}';
+    document.body.append(block);
+    widget.init();
+
+    await vi.waitFor(() => {
+      expect(block.dataset.helpwrenState).toBe("ready");
+    });
+    const request = fetch.mock.calls.find(([input]) => String(input).endsWith("/search"));
+    expect(String(request?.[0])).toBe(`${APP}/api/articles/search`);
+    const links = [...block.querySelectorAll("a")];
+    expect(links.map((link) => link.textContent)).toEqual([
+      "How refunds workWhen the money comes back.",
+      "Chat only",
+    ]);
+    expect(links[0]?.href).toBe("https://help.example.com/help/billing/how-refunds-work");
+    expect(links[1]?.href).toBe(`${APP}/help`);
+    expect(block.hasAttribute("aria-busy")).toBe(false);
+  });
+
+  it("opens the article in the chat when a link is clicked", async () => {
+    answerArticles();
+    const block = document.createElement("div");
+    block.dataset.helpwrenHelp = "{}";
+    document.body.append(block);
+    widget.init();
+    const post = ready();
+    await vi.waitFor(() => {
+      expect(block.querySelector("a")).not.toBeNull();
+    });
+
+    block.querySelector("a")?.click();
+    expect(widget.isOpen()).toBe(true);
+    expect(sent(post, "article")).toEqual([
+      { channel: "helpwren", type: "article", slug: "how-refunds-work" },
+    ]);
+  });
+
+  it("fills a list added to the page later, and draws nothing when nothing matches", async () => {
+    answerArticles([]);
+    widget.init();
+    const block = document.createElement("div");
+    block.setAttribute("data-helpwren-help", '{"q":"nothing"}');
+    document.body.append(block);
+
+    await vi.waitFor(() => {
+      expect(block.dataset.helpwrenState).toBe("empty");
+    });
+    expect(block.children).toHaveLength(0);
+  });
+
+  it("marks a list whose filter is not JSON, and asks for nothing", () => {
+    const fetch = answerArticles();
+    const block = document.createElement("div");
+    block.dataset.helpwrenHelp = "tags: refunds";
+    document.body.append(block);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    widget.init();
+
+    expect(block.dataset.helpwrenState).toBe("error");
+    expect(fetch.mock.calls.some(([input]) => String(input).endsWith("/search"))).toBe(false);
+  });
+
+  it("opens an article by its slug once the chat is ready", () => {
+    widget.init();
+    widget.openArticle("how-refunds-work");
+    expect(widget.isOpen()).toBe(true);
+    const post = ready();
+    expect(sent(post, "article")).toEqual([
+      { channel: "helpwren", type: "article", slug: "how-refunds-work" },
+    ]);
+  });
+
+  it("finds articles for a list of the page's own, keeping only well-formed ones", async () => {
+    answerArticles([...articles, { title: "No slug" }, { ...articles[0], url: "javascript:x" }]);
+    await expect(widget.findArticles({ collection: "billing" })).resolves.toEqual(articles);
+  });
+});

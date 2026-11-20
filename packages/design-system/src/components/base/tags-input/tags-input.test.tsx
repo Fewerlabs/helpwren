@@ -7,7 +7,8 @@ import { TagsInput } from "./tags-input";
 function setup(props: Partial<Parameters<typeof TagsInput>[0]> = {}) {
   const onValueChange = vi.fn();
   render(<TagsInput aria-label="Tags" onValueChange={onValueChange} {...props} />);
-  return { input: screen.getByRole("textbox", { name: "Tags" }), onValueChange };
+  const role = props.suggestions ? "combobox" : "textbox";
+  return { input: screen.getByRole(role, { name: "Tags" }), onValueChange };
 }
 
 describe("TagsInput", () => {
@@ -50,6 +51,35 @@ describe("TagsInput", () => {
 
     await userEvent.type(input, "nodot{Enter}");
     expect(onValueChange).toHaveBeenCalledTimes(1);
+  });
+
+  it("offers suggestions that hold the text, best first, and adds one with the keyboard", async () => {
+    const { input, onValueChange } = setup({
+      defaultValue: ["refunds"],
+      suggestions: ["refunds", "billing", "payouts", "pay-later", "ios"],
+    });
+
+    await userEvent.type(input, "pay");
+    const options = screen.getAllByRole("option").map((option) => option.textContent);
+    // `refunds` is already added, and `payouts` and `pay-later` start with the text.
+    expect(options).toEqual(["payouts", "pay-later"]);
+    expect(input).toHaveAttribute("aria-expanded", "true");
+
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    expect(input).toHaveAttribute("aria-activedescendant", screen.getAllByRole("option")[1]?.id);
+    await userEvent.keyboard("{Enter}");
+    expect(onValueChange).toHaveBeenLastCalledWith(["refunds", "pay-later"]);
+    expect(input).toHaveValue("");
+  });
+
+  it("adds a suggestion when it is clicked, and still takes text it does not offer", async () => {
+    const { input, onValueChange } = setup({ suggestions: ["billing"] });
+    await userEvent.type(input, "bil");
+    await userEvent.click(screen.getByRole("option", { name: "billing" }));
+    expect(onValueChange).toHaveBeenLastCalledWith(["billing"]);
+
+    await userEvent.type(input, "brand-new{Enter}");
+    expect(onValueChange).toHaveBeenLastCalledWith(["billing", "brand-new"]);
   });
 
   it("adds every value from a pasted list", async () => {

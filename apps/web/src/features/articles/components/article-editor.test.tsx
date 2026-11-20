@@ -44,6 +44,9 @@ const draft: Article = {
   featured: false,
   metaTitle: null,
   metaDescription: null,
+  audiences: [],
+  locale: null,
+  fields: {},
   body: {
     type: "doc",
     content: [{ type: "paragraph", content: [{ type: "text", text: "Open Settings." }] }],
@@ -58,6 +61,8 @@ const articles = {
   unpublish: vi.fn(),
   remove: vi.fn(),
   feedbackTotals: vi.fn(),
+  tags: vi.fn(() => Promise.resolve(["passwords", "billing"])),
+  audiences: vi.fn(() => Promise.resolve(["business"])),
   uploadImage: vi.fn(),
 };
 const client = {
@@ -138,7 +143,7 @@ describe("ArticleEditor", () => {
     articles.update.mockResolvedValue({ ok: true, article: draft });
     await renderEditor();
 
-    await user.type(screen.getByRole("textbox", { name: "Tags" }), "Sign-In{Enter}");
+    await user.type(screen.getByRole("combobox", { name: "Tags" }), "Sign-In{Enter}");
     await user.type(screen.getByRole("textbox", { name: "SEO title" }), "Password help");
     await user.click(screen.getByRole("switch", { name: /Featured/ }));
     await user.click(screen.getByRole("button", { name: "Save draft" }));
@@ -148,6 +153,47 @@ describe("ArticleEditor", () => {
       featured: true,
       metaTitle: "Password help",
     });
+  });
+
+  it("saves who an article is for, its language and its custom fields", async () => {
+    const user = userEvent.setup();
+    articles.update.mockResolvedValue({ ok: true, article: draft });
+    await renderEditor();
+
+    const audience = screen.getByRole("combobox", { name: "Audience" });
+    await user.type(audience, "bus");
+    await user.click(await screen.findByRole("option", { name: "business" }));
+    await user.type(screen.getByRole("textbox", { name: "Language" }), "PT-BR");
+    await user.click(screen.getByRole("button", { name: "Add field" }));
+    await user.type(screen.getByRole("textbox", { name: "Field 1 name" }), "Plan");
+    await user.type(screen.getByRole("textbox", { name: "Field 1 value" }), "pro");
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+
+    expect(articles.update).toHaveBeenCalledWith(draft.id, {
+      audiences: ["business"],
+      locale: "pt-br",
+      fields: { plan: "pro" },
+    });
+  });
+
+  it("refuses a language that is not a code, and two fields with one name", async () => {
+    const user = userEvent.setup();
+    await renderEditor();
+
+    await user.type(screen.getByRole("textbox", { name: "Language" }), "Portuguese");
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(await screen.findByText(/Use a language code/)).toBeInTheDocument();
+
+    await user.clear(screen.getByRole("textbox", { name: "Language" }));
+    await user.click(screen.getByRole("button", { name: "Add field" }));
+    await user.type(screen.getByRole("textbox", { name: "Field 1 name" }), "plan");
+    await user.type(screen.getByRole("textbox", { name: "Field 1 value" }), "pro");
+    await user.click(screen.getByRole("button", { name: "Add field" }));
+    await user.type(screen.getByRole("textbox", { name: "Field 2 name" }), "plan");
+    await user.type(screen.getByRole("textbox", { name: "Field 2 value" }), "starter");
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(await screen.findByText(/a name of its own/)).toBeInTheDocument();
+    expect(articles.update).not.toHaveBeenCalled();
   });
 
   it("explains why an article with no collection cannot be published", async () => {

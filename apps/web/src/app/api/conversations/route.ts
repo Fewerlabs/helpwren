@@ -3,6 +3,7 @@ import {
   parseSettings,
   RATE_LIMITED_SQLSTATE,
   startConversationInputSchema,
+  type ConversationHelp,
 } from "@helpwren/core";
 import { z } from "zod";
 
@@ -17,6 +18,22 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 /** The database's codes for a message refused as spam, and for a blocked contact or network. */
 const REFUSED_SQLSTATE = "HW422";
 const BLOCKED_SQLSTATE = "HW403";
+
+/**
+ * The help the chat showed, with a rule named as the team named it, read here rather than
+ * taken from the browser. A rule that no longer exists is left out.
+ */
+async function nameRule(help: ConversationHelp): Promise<ConversationHelp | null> {
+  if (help.match?.kind !== "rule") return help;
+  const { data, error } = await supabaseAdmin
+    .from("help_rules")
+    .select("name")
+    .eq("id", help.match.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return help.fallback ? { match: null, fallback: help.fallback } : null;
+  return { ...help, match: { kind: "rule", id: help.match.id, name: data.name } };
+}
 
 /**
  * Starts a conversation with its first message. The server creates it, not the browser, so
@@ -36,7 +53,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const input = startConversationInputSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
-  const { message, source, contact, page, ticket, context, visitorId } = input.data;
+  const { message, source, contact, page, ticket, context, help, visitorId } = input.data;
 
   // Told apart from a person's mistakes only in the server's log: a bot learns nothing from
   // the answer that would help it next time.
@@ -82,6 +99,8 @@ export async function POST(request: Request): Promise<Response> {
     return apiError("details_required", "Contact details are needed before the first message.");
   }
 
+  const shownHelp = help ? await nameRule(help) : null;
+
   const { data: conversationId, error } = await supabaseAdmin.rpc("start_conversation", {
     contact_id: caller.id,
     body: message,
@@ -90,6 +109,8 @@ export async function POST(request: Request): Promise<Response> {
       ...page,
       // Kept apart from what the server knows, because the page could have said anything.
       ...(context && Object.keys(context).length > 0 ? { custom: context } : {}),
+      // The help the chat showed for the page, for the team to see what the visitor saw.
+      ...(shownHelp ? { help: shownHelp } : {}),
       ...(request.headers.has("user-agent")
         ? { userAgent: request.headers.get("user-agent") }
         : {}),

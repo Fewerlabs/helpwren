@@ -22,6 +22,8 @@ export default async function WebAppLayout({ children }: { children: ReactNode }
           {user ? (
             <>
               <Link href="/">Bookings</Link>
+              <Link href="/bookings/calendar">Calendar</Link>
+              <Link href="/staff">Staff</Link>
               <Link href="/billing">Billing</Link>
               <Link href="/support">Support articles</Link>
             </>

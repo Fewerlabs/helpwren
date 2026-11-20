@@ -1,4 +1,4 @@
-import { type PageContext } from "@helpwren/core";
+import { type ArticleFilter, type PageContext } from "@helpwren/core";
 import { create } from "zustand";
 
 /** Which screen of the chat is showing. Home, Messages and Help are the tabs. */
@@ -67,6 +67,9 @@ interface ChatState {
   /** What the page wants the team to know about where the visitor is. */
   context: PageContext | null;
   setContext: (context: PageContext | null) => void;
+  /** The filter the page set for its help articles, which wins over the team's rules. */
+  helpFilter: ArticleFilter | null;
+  setHelpFilter: (filter: ArticleFilter | null) => void;
   /** Waiting for the start screen to use it, once. */
   pendingStart: PendingStart | null;
   setPendingStart: (start: PendingStart | null) => void;
@@ -86,6 +89,7 @@ const initial = {
   pendingStart: null,
   claimed: null,
   context: null,
+  helpFilter: null,
 } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
@@ -107,6 +111,9 @@ const useChatStore = create<ChatState>()((set) => ({
   },
   setContext: (context) => {
     set({ context });
+  },
+  setHelpFilter: (helpFilter) => {
+    set({ helpFilter });
   },
   setPendingStart: (pendingStart) => {
     set({ pendingStart });
@@ -134,6 +141,8 @@ export const useClaimed = () => useChatStore((state) => state.claimed);
 export const useSetClaimed = () => useChatStore((state) => state.setClaimed);
 export const usePageContext = () => useChatStore((state) => state.context);
 export const useSetPageContext = () => useChatStore((state) => state.setContext);
+export const useHelpFilter = () => useChatStore((state) => state.helpFilter);
+export const useSetHelpFilter = () => useChatStore((state) => state.setHelpFilter);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);
 export const useReferrer = () => useChatStore((state) => state.referrer);

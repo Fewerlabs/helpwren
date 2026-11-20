@@ -57,8 +57,13 @@ export type PageMessage =
       page: { url: string; title: string };
       visible: boolean;
     }
-  /** What the page wants the team to know about where the visitor is. Replaces what was sent. */
-  | { channel: typeof CHANNEL; type: "context"; context: PageContext }
+  /**
+   * What the page wants the team to know about where the visitor is, and the filter that picks
+   * the help articles for it. Replaces what was sent.
+   */
+  | { channel: typeof CHANNEL; type: "context"; context: PageContext; filter?: ArticleFilter }
+  /** Shows a help article in the chat, as when the visitor clicks one listed on the page. */
+  | { channel: typeof CHANNEL; type: "article"; slug: string }
   /** Shows one of the visitor's conversations, as when they tap a notification about it. */
   | { channel: typeof CHANNEL; type: "open"; conversationId: string }
   /**
@@ -82,6 +87,39 @@ export interface VisitorDetails {
 
 /** A few plain values, by name, such as `{ plan: "pro", orderId: 1234 }`. */
 export type PageContext = Record<string, string | number | boolean | null>;
+
+/**
+ * Which help articles fit the page. Every part is optional and the parts combine with AND. The
+ * install checks it (`articleFilterSchema` in `@helpwren/core`); keep the two in step.
+ */
+export interface ArticleFilter {
+  /** A collection's slug, or several. */
+  collection?: string | string[];
+  /** Articles with any of these tags, all of them, or none of them. */
+  tags?: { any?: string[]; all?: string[]; none?: string[] };
+  /** Words to search for. */
+  q?: string;
+  /** Articles for everyone, or for this audience. */
+  audience?: string;
+  /** Articles in no particular language, or in this one, such as `en`. */
+  locale?: string;
+  /** Articles whose custom fields hold every one of these pairs, such as `{ plan: "pro" }`. */
+  fields?: Record<string, string | number | boolean>;
+  /** Slugs of articles to put first, in this order. With nothing else, only these. */
+  articles?: string[];
+  /** Their set order, best match, latest change, or most found helpful. */
+  sort?: "position" | "relevance" | "updated" | "popular";
+  /** How many at most, 1 to 50. Default 5. */
+  limit?: number;
+}
+
+/** A help article as the install lists it. `url` is its help center page, or `null`. */
+export interface HelpArticle {
+  title: string;
+  summary: string | null;
+  slug: string;
+  url: string | null;
+}
 
 /** Whether the chat is signed in as one of the page's users, and if not after trying, why. */
 export type IdentityState =

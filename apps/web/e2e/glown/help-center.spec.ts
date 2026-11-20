@@ -30,8 +30,12 @@ function failedRequests(page: Page): string[] {
 
 test("the help center works at the public site's /help, through the rewrite", async ({ page }) => {
   const failed = failedRequests(page);
-  await page.goto(`${SITE}/help`);
-  await expect(page).toHaveTitle("Glown Help Center");
+  // Saving the brand clears what the help center keeps, but the first visit after that can
+  // still be served the old copy while a fresh one is fetched; the next visit has the new one.
+  await expect(async () => {
+    await page.goto(`${SITE}/help`);
+    await expect(page).toHaveTitle("Glown Help Center", { timeout: 1000 });
+  }).toPass();
   await expect(page.getByRole("heading", { level: 1, name: "How can we help?" })).toBeVisible();
   // Its own scripts and styles came through the rewrite too: the page is styled, and its
   // search window opens, which needs the script running.

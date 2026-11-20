@@ -21,6 +21,7 @@ const defaults = {
   sources: ["web"],
   visitors: { tracking: true, liveList: true },
   spam: { captcha: "off" },
+  contextualHelp: { fallback: true },
 };
 
 describe("parseSettings", () => {
@@ -44,6 +45,7 @@ describe("parseSettings", () => {
       sources: ["web", "ios"],
       visitors: { tracking: true, liveList: false },
       spam: { captcha: "off" },
+      contextualHelp: { fallback: true },
     });
   });
 

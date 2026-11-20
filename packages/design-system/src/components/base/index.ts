@@ -79,6 +79,11 @@ export { iconNames, type IconName } from "./icon/registry";
 export { InlineSelect, type InlineSelectProps } from "./inline-select/inline-select";
 export { Input, type InputProps } from "./input/input";
 export {
+  KeyValueInput,
+  type KeyValueInputProps,
+  type KeyValuePair,
+} from "./key-value-input/key-value-input";
+export {
   createNumberFormatter,
   type InputFormatter,
   type NumberFormatOptions,

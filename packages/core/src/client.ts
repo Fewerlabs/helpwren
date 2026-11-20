@@ -7,6 +7,7 @@ import { createCollections } from "./collections";
 import { createContacts } from "./contacts";
 import { createConversations } from "./conversations";
 import { createEvents } from "./events";
+import { createHelpRules } from "./help-rules";
 import { createMessages } from "./messages";
 import { createNotes } from "./notes";
 import { createPresence } from "./presence";
@@ -44,6 +45,7 @@ export function createHelpwrenClient({ supabase, ...apiOptions }: HelpwrenClient
     contacts: createContacts(supabase),
     conversations: createConversations(supabase, api),
     events: createEvents(supabase),
+    helpRules: createHelpRules(supabase),
     messages: createMessages(supabase),
     notes: createNotes(supabase),
     presence: createPresence(supabase),
