@@ -2,7 +2,8 @@
   "extends": "@helpwren/config/typescript/nextjs.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "collections/*": ["./.source/*"]
     }
   },
   "include": ["next-env.d.ts", "src", "*.ts", "*.mjs", ".next/types/**/*.ts"],
