@@ -1,6 +1,6 @@
 "use client";
 
-import { type ArticleSummary } from "@helpwren/core";
+import { type ArticleSummary, type HelpArticle } from "@helpwren/core";
 import {
   AppLoader,
   Button,
@@ -12,12 +12,14 @@ import {
   RichText,
   SearchField,
 } from "@helpwren/design-system";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { ArticleFeedback } from "@/features/help-center";
 import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
+import { usePageHelp, usePageHelpQuery } from "../hooks/use-page-help";
 import { useShowScreen, type OpenCollection } from "../store/chat-store";
 import { ScreenHeader } from "./screen-header";
 
@@ -30,7 +32,12 @@ const SUGGESTED = 3;
 // A line of handwriting, not the wren: this screen wears the customer's brand.
 const loading = () => <AppLoader bird={false} size="sm" label="Loading articles" />;
 
-function ArticleRow({ article, from }: { article: ArticleSummary; from?: OpenCollection }) {
+interface ArticleRowProps {
+  article: Pick<ArticleSummary | HelpArticle, "slug" | "title" | "summary">;
+  from?: OpenCollection;
+}
+
+function ArticleRow({ article, from }: ArticleRowProps) {
   const show = useShowScreen();
   return (
     <button
@@ -54,12 +61,55 @@ function ArticleRow({ article, from }: { article: ArticleSummary; from?: OpenCol
 }
 
 /**
+ * "Help for this page", at the top of the chat's home screen: the articles the page's own
+ * filter picks, or the team's first rule that matches it, or a search on its title. Nothing is
+ * shown while they load or when there are none, so the screen does not jump.
+ */
+export function PageHelp() {
+  const query = usePageHelpQuery();
+  const queryClient = useQueryClient();
+  return (
+    <QueryList
+      // The same answer the start form reads, asked for once.
+      queryKey={[...query.queryKey, "list"]}
+      queryFn={async () => ({ items: (await queryClient.query(query)).articles })}
+      enabled={query.enabled}
+      staleTime={query.staleTime}
+      pagination="none"
+      renderLoading={() => null}
+      renderEmpty={() => null}
+      renderError={() => null}
+    >
+      {(list) =>
+        list.items.length === 0 ? null : (
+          <section aria-labelledby="page-help" className="px-1 pt-5">
+            <h2 id="page-help" className="text-muted-foreground px-4 pb-1 text-xs">
+              Help for this page
+            </h2>
+            <ul>
+              {list.items.map((article) => (
+                <li key={article.slug}>
+                  <ArticleRow article={article} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </QueryList>
+  );
+}
+
+/**
  * Articles offered on the chat's home screen, so an answer may be found before a message is
- * written: the ones the team put forward. Nothing is shown when there are none.
+ * written: the ones the team put forward, less any already listed for the page. Nothing is
+ * shown when there are none.
  */
 export function SuggestedArticles() {
   const getClient = useHelpwren();
   const show = useShowScreen();
+  const forPage = usePageHelp().data?.articles;
+  const shown = new Set(forPage?.map((article) => article.slug));
   return (
     <QueryList
       queryKey={[...HELP_QUERY_KEY, "suggested"]}
@@ -77,14 +127,15 @@ export function SuggestedArticles() {
       renderEmpty={() => null}
       renderError={() => null}
     >
-      {(list) =>
-        list.items.length === 0 ? null : (
+      {(list) => {
+        const items = list.items.filter((article) => !shown.has(article.slug));
+        return items.length === 0 ? null : (
           <section aria-labelledby="suggested-articles" className="px-1 pt-5">
             <h2 id="suggested-articles" className="text-muted-foreground px-4 pb-1 text-xs">
               Suggested articles
             </h2>
             <ul>
-              {list.items.map((article) => (
+              {items.map((article) => (
                 <li key={article.id}>
                   <ArticleRow article={article} />
                 </li>
@@ -100,8 +151,8 @@ export function SuggestedArticles() {
               Search all articles
             </button>
           </section>
-        )
-      }
+        );
+      }}
     </QueryList>
   );
 }

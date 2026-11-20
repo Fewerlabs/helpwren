@@ -30,4 +30,8 @@ export const LIMITS = {
   // One answer per article from one network a day. A second answer is not an error to the
   // reader: it is simply not counted.
   feedbackPerArticle: { name: "feedback:article", limit: 1, windowSeconds: 24 * HOUR },
+  // Contextual help: the chat asks once as it opens and when its page changes, and a page may
+  // hold a few inline lists. Reads, kept for a minute, so a network is counted loosely.
+  articlesPerNetwork: { name: "articles:network", limit: 300, windowSeconds: MINUTE },
+  pageHelpPerNetwork: { name: "page-help:network", limit: 120, windowSeconds: MINUTE },
 } as const satisfies Record<string, Limit>;

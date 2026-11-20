@@ -6,7 +6,7 @@ import { cn, Icon, Wren } from "@helpwren/design-system";
 import { BrandMark } from "../brand";
 import { useShowScreen } from "../store/chat-store";
 import { ConversationRow } from "./conversation-row";
-import { SuggestedArticles } from "./help-screen";
+import { PageHelp, SuggestedArticles } from "./help-screen";
 import { CloseButton } from "./screen-header";
 import { TeamStatus } from "./team-status";
 
@@ -74,6 +74,9 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
         ) : null}
       </div>
 
+      {/* The page's own help leads: it is about what the visitor is doing now. The team's
+          featured articles follow, less any already listed. */}
+      <PageHelp />
       <SuggestedArticles />
 
       {recent ? (
