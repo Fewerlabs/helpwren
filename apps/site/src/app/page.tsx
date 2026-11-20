@@ -1,3 +1,4 @@
+import { LiveWidget } from "@/components/live-widget";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { GITHUB_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/content/site";
 import { getStarCount } from "@/lib/github";
@@ -51,6 +52,7 @@ export default async function Home() {
       </main>
       <SiteFooter />
       <WrenFlightLayer />
+      <LiveWidget />
     </>
   );
 }

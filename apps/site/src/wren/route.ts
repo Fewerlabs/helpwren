@@ -14,6 +14,8 @@ export interface Stop {
   /** How the wren stands here once landed. */
   pose: "perched" | "asleep";
   facing: "left" | "right";
+  /** For a stop inside a pinned entry: the scroll position at which the wren must be there. */
+  arriveAt?: number;
 }
 
 /** How far above the straight line between two stops the wren arcs, as a share of the distance. */
@@ -73,7 +75,8 @@ export function smoothPath(points: readonly { x: number; y: number }[]): string 
 export function arrivals(stops: readonly Stop[], viewport: number, maxScroll: number): number[] {
   let last = 0;
   return stops.map((stop, index) => {
-    const at = index === 0 ? 0 : Math.min(maxScroll, Math.max(0, stop.y - viewport * ARRIVE_AT));
+    const natural = stop.y - viewport * ARRIVE_AT;
+    const at = index === 0 ? 0 : Math.min(maxScroll, Math.max(0, stop.arriveAt ?? natural));
     // Never earlier than the stop before, so the wren does not fly backwards.
     last = Math.max(last, at);
     return last;
@@ -114,7 +117,9 @@ export function flightAt(
     const end = times[leg + 1] ?? start;
     if (scroll < end || leg === lastLeg) {
       if (end <= start) return { leg, along: scroll >= end ? 1 : 0 };
-      const hold = stops[leg]?.land === false ? 0 : HOLD;
+      // No hold at a waypoint, or in a pinned entry, whose own spacing is the pause.
+      const from = stops[leg];
+      const hold = from?.land === false || from?.arriveAt !== undefined ? 0 : HOLD;
       const t = (scroll - start) / (end - start);
       const flying = Math.min(1, Math.max(0, (t - hold) / (1 - hold)));
       return { leg, along: easeLeg(flying) };

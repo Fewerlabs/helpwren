@@ -1,6 +1,6 @@
 import { Wren } from "@helpwren/design-system";
 
-import { Entry, Perch, SpecimenTag } from "@/components/journal";
+import { Entry, HandLabel, Perch, SpecimenTag } from "@/components/journal";
 
 import { HomeRangeMotion } from "./motion";
 
@@ -31,6 +31,7 @@ export function HomeRange() {
             decorative
             className="max-w-none"
           />
+          <HandLabel className="absolute top-[50%] -right-2">nest: your own database</HandLabel>
           <Perch name="home-range" x={50} y={36.5} size={20} />
         </div>
       }

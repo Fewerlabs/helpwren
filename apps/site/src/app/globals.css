@@ -151,3 +151,139 @@ html[data-wren="flying"] [data-still-wren] {
   border-color: var(--primary);
   transition: border-color 0.3s;
 }
+
+/*
+ * A pinned entry (Growth stages): while the wren flies, the entry is held on screen for the
+ * length of --pin-range, and the wren hops up one branch per step of the scroll.
+ */
+html[data-wren="flying"] [data-pin] {
+  --pin-range: 180vh;
+  min-height: calc(100vh + var(--pin-range));
+  padding-block: 0;
+}
+
+html[data-wren="flying"] [data-pin] > .pin-inner {
+  position: sticky;
+  top: 0;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/*
+ * Building the nest: while the wren flies, the snippet waits unwritten until the wren has
+ * carried the plug in, then types itself out line by line. Clipping only, so the text is
+ * always in the page for screen readers and search engines.
+ */
+html[data-wren="flying"] [data-entry="nest"] [data-slot="code-snippet"] code > span {
+  clip-path: inset(0 100% 0 0);
+}
+
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.45s steps(28, end);
+}
+
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(1) {
+  transition-delay: 0.35s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(2) {
+  transition-delay: 0.67s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(3) {
+  transition-delay: 0.99s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(4) {
+  transition-delay: 1.31s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(5) {
+  transition-delay: 1.63s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(6) {
+  transition-delay: 1.95s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(7) {
+  transition-delay: 2.27s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(8) {
+  transition-delay: 2.59s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(9) {
+  transition-delay: 2.91s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(10) {
+  transition-delay: 3.23s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(11) {
+  transition-delay: 3.55s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(12) {
+  transition-delay: 3.87s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(13) {
+  transition-delay: 4.19s;
+}
+html[data-wren="flying"]
+  [data-entry="nest"][data-wren-visited]
+  [data-slot="code-snippet"]
+  code
+  > span:nth-child(14) {
+  transition-delay: 4.51s;
+}

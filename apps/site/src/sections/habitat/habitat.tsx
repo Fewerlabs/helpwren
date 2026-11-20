@@ -1,6 +1,6 @@
 import { Sketch } from "@helpwren/design-system";
 
-import { Entry, Perch } from "@/components/journal";
+import { Entry, HandLabel, Perch } from "@/components/journal";
 
 import { HabitatMotion } from "./motion";
 
@@ -18,6 +18,7 @@ export function Habitat() {
       sketch={
         <div className="@container relative w-full max-w-sm">
           <PriceTag />
+          <HandLabel className="absolute top-[6%] left-0">price: by the head</HandLabel>
           <Perch name="habitat" x={64} y={39} size={20} facing="left" />
         </div>
       }

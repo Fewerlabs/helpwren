@@ -3,7 +3,9 @@
 import { WrenBird, wrenPoses, type WrenPose } from "@helpwren/design-system";
 import { useRef } from "react";
 
-import { gsap, MotionPathPlugin, useGSAP } from "@/motion/kit";
+import { useChatOpens } from "@/components/live-widget";
+import { gsap, MotionPathPlugin, ScrollTrigger, useGSAP } from "@/motion/kit";
+import { afterScroll } from "@/motion/scroll-sync";
 
 import { arrivals, flightAt, routePoints, routeSegments, smoothPath, type Stop } from "./route";
 
@@ -31,37 +33,65 @@ function measureStops(): Stop[] {
     const box = mark.getBoundingClientRect();
     const still = mark.querySelector("[data-still-wren]")?.getBoundingClientRect();
     if (still && still.width > 0) size = still.width;
+    let y = box.top + window.scrollY;
+    let arriveAt: number | undefined;
+
+    // In a pinned entry the content stays on screen while the page scrolls past it. Each perch
+    // there is placed where it will be when the wren reaches it, spread through the pin.
+    const pinned = mark.closest<HTMLElement>("[data-pin]");
+    if (pinned) {
+      const top = pinned.getBoundingClientRect().top + window.scrollY;
+      const range = Math.max(0, pinned.offsetHeight - window.innerHeight);
+      const stuck = Math.min(range, Math.max(0, window.scrollY - top));
+      const siblings = [...pinned.querySelectorAll("[data-wren-perch]")];
+      const share = siblings.length > 1 ? siblings.indexOf(mark) / (siblings.length - 1) : 0;
+      y = y - stuck + share * range;
+      arriveAt = top + share * range;
+    }
+
     stops.push({
       name: mark.dataset.wrenPerch ?? mark.dataset.wrenWaypoint ?? "",
       x: box.left + window.scrollX,
-      y: box.top + window.scrollY,
+      y,
       size,
       land: mark.dataset.wrenPerch !== undefined,
       pose: mark.dataset.pose === "asleep" ? "asleep" : "perched",
       facing: mark.dataset.facing === "left" ? "left" : "right",
+      ...(arriveAt === undefined ? {} : { arriveAt }),
     });
   }
   return stops;
 }
 
 /**
- * The one flying wren: a layer over the whole page holding the pencil trail and the bird, which
- * follows the scroll from perch to perch. It never moves the page; the page moves it.
+ * The one flying wren: a fixed layer over the screen holding the pencil trail and the bird,
+ * which follows the scroll from perch to perch. It never moves the page; the page moves it.
  */
 export function WrenFlight() {
   const layer = useRef<HTMLDivElement>(null);
+  const page = useRef<HTMLDivElement>(null);
   const trail = useRef<SVGPathElement>(null);
   const bird = useRef<HTMLDivElement>(null);
+  // The wren hops when the live chat opens.
+  const opens = useChatOpens();
 
   useGSAP(() => {
     const root = document.documentElement;
     let tween: gsap.core.Tween | null = null;
     let timer = 0;
+    // The layer is fixed to the screen; inside it, a page-sized sheet moves with the scroll so the
+    // route can be drawn in page coordinates.
+    const follow = () => {
+      if (page.current)
+        page.current.style.transform = `translate3d(0, ${String(-window.scrollY)}px, 0)`;
+    };
+    const stopFollowing = afterScroll(follow);
+    window.addEventListener("scroll", follow, { passive: true });
 
     const build = () => {
       tween?.kill();
       const stops = measureStops();
-      const svgLayer = layer.current;
+      const svgLayer = page.current;
       const path = trail.current;
       const wren = bird.current;
       if (stops.length < 2 || !svgLayer || !path || !wren) return;
@@ -113,11 +143,14 @@ export function WrenFlight() {
               .querySelector(`[data-wren-perch="${landedAt}"]`)
               ?.closest("[data-entry], footer")
               ?.removeAttribute("data-wren-here");
-          if (here)
-            document
+          if (here) {
+            const entry = document
               .querySelector(`[data-wren-perch="${here}"]`)
-              ?.closest("[data-entry], footer")
-              ?.setAttribute("data-wren-here", here);
+              ?.closest("[data-entry], footer");
+            entry?.setAttribute("data-wren-here", here);
+            // Stays once set: what the wren started there (the snippet typing) is not undone.
+            entry?.setAttribute("data-wren-visited", "");
+          }
           landedAt = here;
         }
 
@@ -167,11 +200,16 @@ export function WrenFlight() {
     };
 
     root.dataset.wren = "flying";
+    // Pinned entries grow once the wren flies; every trigger measures again before the route.
+    ScrollTrigger.refresh();
     build();
+    follow();
     void document.fonts.ready.then(build);
     window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", follow);
+      stopFollowing();
       window.clearTimeout(timer);
       tween?.kill();
       delete root.dataset.wren;
@@ -182,27 +220,35 @@ export function WrenFlight() {
     <div
       ref={layer}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 top-0 z-30 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-30 overflow-hidden"
     >
-      <svg className="absolute inset-0 size-full overflow-visible" fill="none">
-        <path
-          ref={trail}
-          stroke="var(--muted-foreground)"
-          strokeWidth={1}
-          strokeLinecap="round"
-          strokeDasharray="0"
-          opacity={0.45}
-        />
-      </svg>
-      <div
-        ref={bird}
-        data-pose="perched"
-        className="wren-flyer absolute top-0 left-0 transition-opacity duration-500"
-        style={{ transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%` }}
-      >
-        {wrenPoses.map((pose) => (
-          <WrenBird key={pose} pose={pose} data-flyer-pose={pose} className="absolute inset-0" />
-        ))}
+      <div ref={page} className="absolute inset-x-0 top-0 will-change-transform">
+        <svg className="absolute inset-0 size-full overflow-visible" fill="none">
+          <path
+            ref={trail}
+            stroke="var(--muted-foreground)"
+            strokeWidth={1}
+            strokeLinecap="round"
+            strokeDasharray="0"
+            opacity={0.45}
+          />
+        </svg>
+        <div
+          ref={bird}
+          data-pose="perched"
+          className="wren-flyer absolute top-0 left-0 transition-opacity duration-500"
+          style={{ transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%` }}
+        >
+          {wrenPoses.map((pose) => (
+            <WrenBird
+              key={pose}
+              pose={pose}
+              react={pose === "perched" && opens > 0 ? opens : undefined}
+              data-flyer-pose={pose}
+              className="absolute inset-0"
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

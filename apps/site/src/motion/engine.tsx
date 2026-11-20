@@ -4,6 +4,7 @@ import Lenis from "lenis";
 import { useEffect } from "react";
 
 import { gsap, ScrollTrigger } from "./kit";
+import { runAfterScroll } from "./scroll-sync";
 
 /** How far each frame Lenis closes the gap to the target scroll position. Lower is smoother. */
 const SMOOTHING = 0.12;
@@ -21,6 +22,7 @@ export function MotionEngine() {
     const lenis = new Lenis({ lerp: SMOOTHING, autoRaf: false });
     const raf = (time: number) => {
       lenis.raf(time * MS);
+      runAfterScroll();
     };
     lenis.on("scroll", () => {
       ScrollTrigger.update();

@@ -36,6 +36,10 @@ export interface EntryProps {
   backdrop?: ReactNode;
   /** The entry's motion component, which loads its animation once motion is allowed. */
   motion?: ReactNode;
+  /** Holds the entry on screen while the wren works through it (only while the wren flies). */
+  pin?: boolean;
+  /** Below the spread, across the page: more figures. */
+  after?: ReactNode;
 }
 
 /**
@@ -55,6 +59,8 @@ export function Entry({
   sheetClassName,
   backdrop,
   motion,
+  pin = false,
+  after,
 }: EntryProps) {
   const headingId = `${id}-title`;
   return (
@@ -62,11 +68,12 @@ export function Entry({
       id={id}
       aria-labelledby={headingId}
       data-entry={id}
+      data-pin={pin ? "" : undefined}
       className={cn("relative isolate px-4 py-14 sm:py-24", className)}
     >
       {backdrop}
       {motion}
-      <div className={cn("relative mx-auto max-w-6xl", sheetClassName)}>
+      <div className={cn("pin-inner relative mx-auto max-w-6xl", sheetClassName)}>
         <EntryRule number={number} subject={subject} note={note} />
         <div
           className={cn(
@@ -100,6 +107,7 @@ export function Entry({
             </figure>
           ) : null}
         </div>
+        {after}
       </div>
     </section>
   );
@@ -282,7 +290,7 @@ export function Perch({
   /** How the still wren stands here. */
   pose?: WrenPose;
   /** Change it to make the still wren hop, as a reaction. */
-  react?: number;
+  react?: number | undefined;
   /** How the still wren draws itself: with its drawing as it scrolls into view, by default. */
   animate?: IllustrationMotion;
 }) {

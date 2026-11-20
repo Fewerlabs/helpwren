@@ -40,7 +40,7 @@ export function Growth() {
       subject="Growth stages"
       note="Levels 0 to 3"
       title="Start with a snippet. Grow when you want to."
-      sheetClassName="lg:min-h-[36rem]"
+      pin
       sketch={
         <div className="@container relative w-full max-w-md">
           <Branches />
