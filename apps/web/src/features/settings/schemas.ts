@@ -267,6 +267,22 @@ export const emailSchema = z.object({
 });
 export type EmailValues = z.infer<typeof emailSchema>;
 
+/** One email's words in the editor. Empty uses Helpwren's wording. */
+const emailTemplateFieldsSchema = z.object({
+  subject: z.string().trim().max(150, "Keep the subject under 150 characters."),
+  heading: z.string().trim().max(150, "Keep the heading under 150 characters."),
+  body: z.string().trim().max(2000, "Keep the message under 2,000 characters."),
+  button: z.string().trim().max(40, "Keep the button under 40 characters."),
+});
+export type EmailTemplateFields = z.infer<typeof emailTemplateFieldsSchema>;
+
+export const emailTemplatesSchema = z.object({
+  chatReply: emailTemplateFieldsSchema,
+  ticketReply: emailTemplateFieldsSchema,
+  ticketStatus: emailTemplateFieldsSchema,
+});
+export type EmailTemplatesValues = z.infer<typeof emailTemplatesSchema>;
+
 /**
  * The Identity page. The profile endpoint's mapping is typed as text, the way an admin reads it
  * off the product's answer: paths joined by dots, a name made of several fields separated by

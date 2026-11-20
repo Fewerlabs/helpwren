@@ -6,6 +6,7 @@ import {
   Button,
   CodeSnippet,
   FieldList,
+  Link,
   toast,
   type FieldItem,
 } from "@helpwren/design-system";
@@ -308,6 +309,10 @@ export function EmailForm({
         description="When a contact who gave an email address hears from you by email as well as in the chat."
       >
         <FieldList control={form.control} fields={contactFields} disabled={disabled} />
+        <p className="text-muted-foreground text-xs">
+          Change what they say in{" "}
+          <Link href="/dashboard/settings/email-templates">Email templates</Link>.
+        </p>
       </SettingsSection>
       <SettingsSection
         title="Replies by email"

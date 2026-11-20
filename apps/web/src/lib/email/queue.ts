@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { replyAddressFor, threadHeaders } from "./inbound";
 import { sendEmail, type EmailMessage, type SendEmailResult } from "./index";
-import { renderEmail } from "./template";
+import { buildEmail } from "./templates";
 
 /** How many emails one run takes on, and how often one is tried before it is given up on. */
 const BATCH = 50;
@@ -80,9 +80,6 @@ async function unreadReplies(conversation: Conversation) {
   }));
 }
 
-/** Said in every email that can be answered by replying to it. */
-const REPLY_HINT = "Reply to this email, or continue in the chat.";
-
 /**
  * Who a contact's answer goes to and how mail apps thread it: the signed reply address while
  * replying by email is on, and Message-IDs that put every email about a conversation together.
@@ -97,27 +94,37 @@ async function addressing(settings: Settings, conversation: Conversation) {
   return { replyTo, ...(domain ? threadHeaders(conversation.id, domain) : {}) };
 }
 
+/** The placeholders' values for one conversation. */
+function variablesFor(settings: Settings, conversation: Conversation) {
+  const first = conversation.contact.name?.trim().split(/\s+/)[0] ?? "";
+  return {
+    brand: settings.brand.name,
+    name: first === "" ? "there" : first,
+    ticket: conversation.type === "ticket" ? ticketName(conversation) : "",
+    replies: "",
+    status: "",
+  };
+}
+
 function replyEmail(
   settings: Settings,
   conversation: Conversation,
   quotes: readonly { from: string; text: string }[],
   answerable: boolean,
 ): Omit<EmailMessage, "to"> {
-  const brand = settings.brand.name;
-  const ticket = conversation.type === "ticket" ? ticketName(conversation) : "";
-  const count = quotes.length === 1 ? "a new reply" : `${quotes.length} new replies`;
-  const { html, text } = renderEmail(settings.brand, {
-    preview: quotes.at(-1)?.text ?? "",
-    heading: `You have ${count} from ${brand}`,
-    body: [
-      ticket ? `About your ticket ${ticket}.` : "Here is what was said while you were away.",
-      ...(answerable ? [REPLY_HINT] : []),
-    ],
+  const kind = conversation.type === "ticket" ? "ticketReply" : "chatReply";
+  return buildEmail({
+    brand: settings.brand,
+    kind,
+    template: settings.email.templates[kind],
+    variables: {
+      ...variablesFor(settings, conversation),
+      replies: quotes.length === 1 ? "a new reply" : `${quotes.length} new replies`,
+    },
     quotes,
-    action: { label: "Continue the conversation", url: returnAddress(conversation) },
-    footer: `You are getting this because you wrote to ${brand} and have not read the reply yet.`,
+    url: returnAddress(conversation),
+    answerable,
   });
-  return { subject: ticket ? `Re: ${ticket}` : `New reply from ${brand}`, html, text };
 }
 
 function statusEmail(
@@ -126,23 +133,18 @@ function statusEmail(
   to: keyof typeof statusNames,
   answerable: boolean,
 ): Omit<EmailMessage, "to"> {
-  const brand = settings.brand.name;
-  const ticket = ticketName(conversation);
-  const done = to === "resolved" || to === "closed";
-  const { html, text } = renderEmail(settings.brand, {
-    preview: `Your ticket is now ${statusNames[to].toLowerCase()}.`,
-    heading: `Your ticket is now ${statusNames[to].toLowerCase()}`,
-    body: [
-      `${brand} changed the status of your ticket ${ticket}.`,
-      done
-        ? "If it is not sorted, write back in the conversation and it will open again."
-        : "You can add to it in the conversation at any time.",
-      ...(answerable ? [REPLY_HINT] : []),
-    ],
-    action: { label: "Open the conversation", url: returnAddress(conversation) },
-    footer: `You are getting this because you opened a ticket with ${brand}.`,
+  return buildEmail({
+    brand: settings.brand,
+    kind: "ticketStatus",
+    template: settings.email.templates.ticketStatus,
+    variables: {
+      ...variablesFor(settings, conversation),
+      ticket: ticketName(conversation),
+      status: statusNames[to],
+    },
+    url: returnAddress(conversation),
+    answerable,
   });
-  return { subject: `${ticket}: ${statusNames[to]}`, html, text };
 }
 
 /** What sending came to, as what to do with the queue entries behind it. */

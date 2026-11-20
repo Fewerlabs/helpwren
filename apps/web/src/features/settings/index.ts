@@ -2,6 +2,7 @@
 export { BrandBasicsForm } from "./components/brand-basics-form";
 export { BrandingForm } from "./components/branding-form";
 export { EmailForm, type EmailFormProps } from "./components/email-form";
+export { EmailTemplatesForm } from "./components/email-templates-form";
 export { GeneralForm } from "./components/general-form";
 export { IdentityForm } from "./components/identity-form";
 export { MobileForm } from "./components/mobile-form";

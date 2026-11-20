@@ -168,6 +168,28 @@ const inboundSchema = z.object({
 
 export type InboundEmailSettings = z.infer<typeof inboundSchema>;
 
+/** The emails an install sends contacts, each of which its admins can reword. */
+export const emailTemplateKinds = ["chatReply", "ticketReply", "ticketStatus"] as const;
+export type EmailTemplateKind = (typeof emailTemplateKinds)[number];
+
+/**
+ * One email's own words, with `{{placeholders}}` for what changes from email to email. Anything
+ * left out uses Helpwren's wording; the layout, the quoted replies and the small print stay.
+ */
+const emailTemplateSchema = z.object({
+  subject: z.string().min(1).optional(),
+  heading: z.string().min(1).optional(),
+  /** Paragraphs, with a blank line between each. */
+  body: z.string().min(1).optional(),
+  /** The button's label. */
+  button: z.string().min(1).optional(),
+});
+
+export type EmailTemplate = z.infer<typeof emailTemplateSchema>;
+
+const emailTemplatesSchema = z.partialRecord(z.enum(emailTemplateKinds), emailTemplateSchema);
+export type EmailTemplates = z.infer<typeof emailTemplatesSchema>;
+
 /** Who emails come from. The name falls back to the brand's. */
 const emailSchema = z.object({
   fromName: z.string().min(1).optional(),
@@ -177,6 +199,7 @@ const emailSchema = z.object({
   /** Email a contact when the team changes their ticket's status. */
   status: z.boolean().default(true),
   inbound: inboundSchema.default(() => inboundSchema.parse({})),
+  templates: emailTemplatesSchema.default({}),
 });
 
 export type EmailSettings = z.infer<typeof emailSchema>;
@@ -355,6 +378,15 @@ export const settingsPatchSchema = z
           .optional(),
         provider: inboundProviderSchema,
       }),
+      templates: z.partialRecord(
+        z.enum(emailTemplateKinds),
+        z.object({
+          subject: z.string().trim().min(1).max(150).optional(),
+          heading: z.string().trim().min(1).max(150).optional(),
+          body: z.string().trim().min(1).max(2000).optional(),
+          button: z.string().trim().min(1).max(40).optional(),
+        }),
+      ),
     }),
     helpCenter: pageTextPatchSchema.extend({
       headerStyle: helpHeaderStyleSchema,

@@ -144,7 +144,7 @@ describe("processEmailQueue", () => {
     const [email] = post.to(address);
     expect(post.to(address)).toHaveLength(1);
     expect(email?.subject).toMatch(/^#\d+ Late delivery: Resolved$/);
-    expect(email?.text).toContain("Your ticket is now resolved");
+    expect(email?.text).toContain("Your ticket is now Resolved");
     expect(await queued(conversationId)).toEqual([
       expect.objectContaining({ kind: "status", outcome: "skipped" }),
       expect.objectContaining({ kind: "status", outcome: "sent" }),

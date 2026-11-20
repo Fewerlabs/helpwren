@@ -1,11 +1,13 @@
 "use server";
 
 import { endpointUrlSchema } from "@helpwren/adapters/settings";
+import { emailTemplateKinds, type EmailTemplateKind, type EmailTemplates } from "@helpwren/core";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
 import { sendEmail } from "@/lib/email";
 import { createInboundSecret, saveResendInbound } from "@/lib/email/inbound";
+import { buildEmail, sampleEmail } from "@/lib/email/templates";
 import { HELP_CENTER_TAG } from "@/lib/help-center-cache";
 import { getHelpwren } from "@/lib/helpwren";
 import {
@@ -28,6 +30,8 @@ import {
   brandBasicsToBrand,
   brandingSchema,
   emailSchema,
+  emailTemplatesSchema,
+  type EmailTemplatesValues,
   type EmailValues,
   brandingToSettings,
   generalSchema,
@@ -179,8 +183,11 @@ export async function saveEmail(values: EmailValues): Promise<SaveResult> {
   if (secretsGiven && !(await isAdmin())) return { ok: false, reason: "forbidden" };
 
   const helpwren = await getHelpwren();
+  // Saved on their own page; kept as they are.
+  const { templates } = (await helpwren.settings.getAll()).email;
   const result = await helpwren.settings.update({
     email: {
+      templates,
       replies,
       status,
       ...(fromName ? { fromName } : {}),
@@ -222,6 +229,58 @@ export async function sendTestEmail(): Promise<TestEmailResult> {
     to: caller.email,
     subject: "A test email from Helpwren",
     text: "If you are reading this, your Helpwren install can send email.",
+  });
+  return result.ok ? { ok: true } : { ok: false, detail: result.detail };
+}
+
+/** The admin's words, without the fields left empty for Helpwren's own. */
+function templatesFromValues(values: EmailTemplatesValues): EmailTemplates {
+  const templates: EmailTemplates = {};
+  for (const kind of emailTemplateKinds) {
+    const words = Object.fromEntries(
+      Object.entries(values[kind]).filter(([, value]) => value !== ""),
+    );
+    if (Object.keys(words).length > 0) templates[kind] = words;
+  }
+  return templates;
+}
+
+/** Saves the wording of the emails contacts get, keeping the rest of the email settings. */
+export async function saveEmailTemplates(values: EmailTemplatesValues): Promise<SaveResult> {
+  const parsed = emailTemplatesSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  const helpwren = await getHelpwren();
+  const { email } = await helpwren.settings.getAll();
+  const result = await helpwren.settings.update({
+    email: { ...email, templates: templatesFromValues(parsed.data) },
+  });
+  if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
+  return result;
+}
+
+/**
+ * Sends one email as the editor shows it, with made-up details, to the signed-in admin only.
+ * What is sent is the unsaved wording, so it can be tried before it is saved.
+ */
+export async function sendTemplateTest(
+  kind: EmailTemplateKind,
+  values: EmailTemplatesValues,
+): Promise<TestEmailResult> {
+  const caller = await getCurrentAgent();
+  if (caller?.role !== "admin") return { ok: false, detail: "Only admins can send a test email." };
+  const parsed = emailTemplatesSchema.safeParse(values);
+  if (!parsed.success || !emailTemplateKinds.includes(kind)) {
+    return { ok: false, detail: "Fix the fields marked first." };
+  }
+  const helpwren = await getHelpwren();
+  const { brand } = await helpwren.settings.getAll();
+  const email = buildEmail(
+    sampleEmail({ brand, kind, template: templatesFromValues(parsed.data)[kind] }),
+  );
+  const result = await sendEmail({
+    to: caller.email,
+    ...email,
+    subject: `[Test] ${email.subject}`,
   });
   return result.ok ? { ok: true } : { ok: false, detail: result.detail };
 }

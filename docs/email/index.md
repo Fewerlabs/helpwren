@@ -42,6 +42,35 @@ sign-in codes are sent by Supabase Auth, set up separately (see
 Contacts are emailed only when they have an email address: one they typed, or one your product
 passed when [signing them in](../users/index.md).
 
+## Change what the emails say
+
+Every email is in your brand: your logo, your button colour and your name, from **Settings →
+Branding**. Its words are yours to change in **Settings → Email templates**, one tab per email:
+
+| Template      | Sent when                                                |
+| ------------- | -------------------------------------------------------- |
+| Chat reply    | A contact has not read your team's reply in the chat     |
+| Ticket reply  | A contact has not read your team's reply on their ticket |
+| Ticket status | Your team changes the status of a contact's ticket       |
+
+Each has a subject, a heading, a message and a button. A field left empty uses Helpwren's wording,
+which is shown in it, and **Reset to default** empties all four. A blank line in the message starts
+a new paragraph. The preview beside the form shows the email with made-up details, and **Send me a
+test** sends it to you as it reads, before you save.
+
+These placeholders are filled in for the contact each email goes to:
+
+| Placeholder   | Becomes                                     |
+| ------------- | ------------------------------------------- |
+| `{{brand}}`   | Your brand name                             |
+| `{{name}}`    | The contact's first name, or "there"        |
+| `{{ticket}}`  | The ticket's number and subject             |
+| `{{replies}}` | "a new reply" or "3 new replies"            |
+| `{{status}}`  | The ticket's new status, such as "Resolved" |
+
+The replies themselves, the line saying the contact can answer by email, and the small print saying
+why they got the email are always added, so every email still makes sense whatever it says.
+
 ## Let contacts reply
 
 Each email can carry a reply address, so a contact answers from their mail app and the answer
