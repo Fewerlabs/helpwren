@@ -33,7 +33,7 @@ test("a team member blocks a contact, who can then no longer write, and unblocks
   await page.getByRole("button", { name: "Send us a message" }).click();
   await page.getByLabel("Your name").fill(SPAMMER.name);
   await page.getByRole("textbox", { name: "Email" }).fill(SPAMMER.email);
-  await page.getByLabel("Your message").fill("Is anyone reading this?");
+  await page.getByLabel("Your message").pressSequentially("Is anyone reading this?", { delay: 10 });
   await page.getByRole("button", { name: "Send message" }).click();
   const messages = page.getByRole("log", { name: "Messages" });
   await expect(messages.getByText("Is anyone reading this?")).toBeVisible();
@@ -61,14 +61,14 @@ test("a team member blocks a contact, who can then no longer write, and unblocks
   await expect(details.getByText(/Blocked since/)).toBeVisible();
 
   // Their next message is refused, and they are told why.
-  await page.getByLabel("Your message").fill("Let me back in");
+  await page.getByLabel("Your message").pressSequentially("Let me back in", { delay: 10 });
   await page.getByLabel("Your message").press("Enter");
   await expect(page.getByText("You can no longer send messages here.")).toBeVisible();
 
   // Unblocked, they write again, and both are in the audit log.
   await details.getByRole("button", { name: "Unblock" }).click();
   await expect(details.getByRole("button", { name: "Block", exact: true })).toBeVisible();
-  await page.getByLabel("Your message").fill("Sorry about that");
+  await page.getByLabel("Your message").pressSequentially("Sorry about that", { delay: 10 });
   await page.getByLabel("Your message").press("Enter");
   await expect(messages.getByText("Sorry about that")).toBeVisible();
 

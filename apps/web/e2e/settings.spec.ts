@@ -40,7 +40,7 @@ test("an admin changes what the chat asks guests", async ({ page, browser }) => 
   await page.getByRole("combobox", { name: "Ask guests for" }).click();
   await page.getByRole("option", { name: "Nothing" }).click();
   await save.click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
 
   // A visitor opening the chat is now asked for nothing.
   const visitor = await browser.newContext();
@@ -101,7 +101,7 @@ test("an admin brands the widget, and sees the real one change as they do", asyn
   await page.getByRole("tab", { name: "Chat page" }).click();
   await page.getByLabel("Title").fill("Talk to Acme");
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
 
   // A visitor on the chat page sees the brand, the welcome message and the quick reply.
   const visitor = await browser.newContext();
@@ -154,7 +154,7 @@ test("a team member changes their own name, and how they are notified", async ({
   });
   await expect(page.getByRole("img", { name: "Current photo" })).toBeVisible();
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel("Your name")).toHaveValue("Samira Rivera");
   // The photo is theirs from then on: in the form, and on the button to their account.
@@ -198,7 +198,7 @@ test("an admin sets which sites may show the chat, and copies the snippet", asyn
   await expect(page.getByText("any site can show your chat")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByRole("status")).toHaveText("Saved.");
+  await expect(page.getByRole("status").filter({ hasText: "Saved." })).toBeVisible();
 
   const { data } = await database
     .from("settings")

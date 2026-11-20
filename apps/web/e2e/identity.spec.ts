@@ -81,7 +81,7 @@ test("a guest keeps their conversation when they log in, and finds it on another
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await chat.getByLabel("Your name").fill(GUEST.name);
   await chat.getByRole("textbox", { name: "Email" }).fill(GUEST.email);
-  await chat.getByLabel("Your message").fill("Can I move my booking?");
+  await chat.getByLabel("Your message").pressSequentially("Can I move my booking?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText("Can I move my booking?");
 
@@ -167,7 +167,9 @@ test("a logged-in user writes without saying who they are, and the team sees the
   const chat = chatOf(site);
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await expect(chat.getByLabel("Your name")).toHaveCount(0);
-  await chat.getByLabel("Your message").fill("My invoice shows the wrong plan.");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("My invoice shows the wrong plan.", { delay: 10 });
   // By keyboard: with so short a form, the dev server's own badge sits over the button.
   await chat.getByRole("button", { name: "Send message" }).press("Enter");
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText(
@@ -226,7 +228,7 @@ test("details given without a token label the conversation and unlock nothing", 
   // Who they are is filled in for them.
   await expect(chat.getByLabel("Your name")).toHaveValue(GUEST.name);
   await expect(chat.getByRole("textbox", { name: "Email" })).toHaveValue(GUEST.email);
-  await chat.getByLabel("Your message").fill("Which plan am I on?");
+  await chat.getByLabel("Your message").pressSequentially("Which plan am I on?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText("Which plan am I on?");
 

@@ -83,7 +83,9 @@ test("a contact's answer by email lands in the inbox and in their chat", async (
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await chat.getByLabel("Your name").fill(VISITOR.name);
   await chat.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
-  await chat.getByLabel("Your message").fill("Do you deliver on Sundays?");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("Do you deliver on Sundays?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText("Do you deliver");
 

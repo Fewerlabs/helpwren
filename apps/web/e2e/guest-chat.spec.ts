@@ -49,7 +49,7 @@ test("a visitor starts a conversation, gets a live reply, and finds it again lat
 
   await page.getByLabel("Your name").fill(VISITOR.name);
   await page.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
-  await page.getByLabel("Your message").fill("Do you ship to Canada?");
+  await page.getByLabel("Your message").pressSequentially("Do you ship to Canada?", { delay: 10 });
   await page.getByRole("button", { name: "Send message" }).click();
 
   const messages = page.getByRole("log", { name: "Messages" });
@@ -106,7 +106,7 @@ test("a visitor can give a phone number in place of an email", async ({ page }) 
   // The field starts on +234; a pasted number switches it.
   await expect(page.getByRole("combobox", { name: /country/i })).toContainText("+234");
   await page.getByLabel("Phone number").fill("+44 7700 900123");
-  await page.getByLabel("Your message").fill("Please call me back.");
+  await page.getByLabel("Your message").pressSequentially("Please call me back.", { delay: 10 });
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("log", { name: "Messages" })).toContainText("Please call me back.");
 

@@ -38,7 +38,9 @@ test("a visitor chats through the widget on another site", async ({ page }) => {
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await chat.getByLabel("Your name").fill(VISITOR.name);
   await chat.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
-  await chat.getByLabel("Your message").fill("Is there a student discount?");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("Is there a student discount?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText(
     "Is there a student discount?",

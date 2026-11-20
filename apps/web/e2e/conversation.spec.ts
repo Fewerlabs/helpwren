@@ -34,7 +34,9 @@ test("a visitor and a team member hold a conversation, live on both sides", asyn
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await chat.getByLabel("Your name").fill(VISITOR.name);
   await chat.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
-  await chat.getByLabel("Your message").fill("Can I change my delivery address?");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("Can I change my delivery address?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
 
   const row = list.getByRole("button", { name: new RegExp(VISITOR.name) });
