@@ -1,7 +1,7 @@
 "use client";
 
-import { QueryDetail } from "@helpwren/design-system";
-import { type ReactNode } from "react";
+import { Expandable, Icon, QueryDetail } from "@helpwren/design-system";
+import { useId, useState, type ReactNode } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
@@ -37,14 +37,48 @@ export function ContactVisitor({ contactId, factsClassName, frame }: ContactVisi
           <div className="grid gap-3">
             <VisitorFacts visitor={visitor} className={factsClassName} />
             {visitor.recentPages.length > 1 ? (
-              <div className="grid gap-1.5">
-                <p className="text-muted-foreground text-xs">Recent pages</p>
-                <RecentPages pages={visitor.recentPages} />
-              </div>
+              <RecentPagesToggle pages={visitor.recentPages} />
             ) : null}
           </div>,
         )
       }
     </QueryDetail>
+  );
+}
+
+/**
+ * The pages a visitor looked at, folded away until asked for, and scrolling once there are more
+ * than fit, so a long visit does not push the rest of the panel down.
+ */
+function RecentPagesToggle({ pages }: { pages: Parameters<typeof RecentPages>[0]["pages"] }) {
+  const [open, setOpen] = useState(false);
+  const contentId = useId();
+  return (
+    <div className="grid">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentId}
+        className="text-muted-foreground hover:text-foreground focus-visible:outline-ring -mx-1 flex items-center gap-1.5 rounded-sm px-1 py-0.5 text-left text-xs transition-colors focus-visible:outline-2"
+        onClick={() => {
+          setOpen((current) => !current);
+        }}
+      >
+        <span className="flex-1">
+          Recent pages <span className="tabular-nums">({pages.length})</span>
+        </span>
+        <Icon
+          name="caret-down"
+          className={
+            open ? "size-3 rotate-180 transition-transform" : "size-3 transition-transform"
+          }
+        />
+      </button>
+      <Expandable open={open} id={contentId}>
+        <div className="mt-1.5 max-h-48 overflow-y-auto pr-1">
+          <RecentPages pages={pages} />
+        </div>
+      </Expandable>
+    </div>
   );
 }
