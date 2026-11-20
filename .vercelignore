@@ -1,0 +1,26 @@
+# What `vercel deploy` from this folder leaves out. Vercel installs and builds on its own, so
+# local builds, caches, test output and anything kept only on this machine stay here.
+**/node_modules
+**/.next
+**/.turbo
+**/test-results
+**/playwright-report
+**/storybook-static
+**/coverage
+**/*.tsbuildinfo
+supabase/.temp
+supabase/.branches
+
+# Local only, never in the repository.
+.env
+.env.*
+!.env.example
+.wolf
+.claude
+.codex
+.cursor
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+examples/nextjs
+apps/web/e2e/glown
