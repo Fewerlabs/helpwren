@@ -10,6 +10,7 @@
   `unregisterSupportDevice` and `supportConversationId` for push notifications through Expo or
   Firebase.
 - `@helpwren/react-native/bridge`: the message helpers on their own, for a custom screen.
+- `SupportScreen` takes a `filter`, for the help articles that fit the screen the user is on.
 
 ### Patch Changes
 

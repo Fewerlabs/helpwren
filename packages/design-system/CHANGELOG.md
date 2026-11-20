@@ -4,6 +4,36 @@
 
 ### Minor Changes
 
+- Contextual help: the help articles that fit the page a visitor is on.
+
+  - `@helpwren/core`: `articleFilterSchema` and `articles.find(filter)`, evaluated in the database
+    over published articles; `articles.forPage`; `helpRules` to list, add, change, reorder and
+    remove the rules that map pages to filters, with `matchHelpRule` and `urlMatches`; articles
+    carry `audiences`, `locale` and custom `fields`; the `contextualHelp.fallback` setting.
+  - `helpwren`: `setContext({ filter })` picks the articles the chat lists under "Help for this
+    page"; `data-helpwren-help` blocks are filled with article links that open in the chat;
+    `findArticles(filter)` and `openArticle(slug)`.
+  - `@helpwren/design-system`: `TagsInput` takes `suggestions`; a new `KeyValueInput` for names
+    and values.
+  - `@helpwren/react-native`: `SupportScreen` takes a `filter`.
+- Add `IconGlyph`, `Icon` given the icon itself instead of its name, for components sent to the
+  browser that need only a few icons. `ThemeMenu` and `CodeSnippet` use it, so a page that shows
+  them downloads their few icons, not the whole set.
+- Scenes gained small actions of their own, played once after they are drawn: the bell rings, the
+  telescope sweeps, the bookmark drops into the book, and `hw-pop` pops a badge in a sketch. The plug in the "plugs-in"
+  scene is its own group (`hw-plug`), so a page can move it into the socket.
+- Illustrations can draw themselves as they scroll into view: `animate="in-view"` on `Wren`, and on
+  the new `Sketch` (a page's own line drawing in the wren's hand) and `WrenBird` (the wren alone, in
+  six poses: perched, wings up, wings down, gliding, landing and asleep). A drawing already on screen
+  when the page opens is not redrawn, only lives; small movements pause while it is off screen; a
+  wren can hop once with `react`. Reduced motion shows every drawing finished and still.
+- Move the theme control into the design system, so the app and the website share it: `ThemeMenu`,
+  `ThemeSwitch`, `themeChoices`, the `useTheme` and `useThemePreference` hooks, `setThemePreference`,
+  and `themeScript`, which sets the theme before the page paints and can be limited to some paths.
+- Add `WrenFlyer` and `wrenFrame`: the logo's wren drawn frame by frame for hand-drawn animation, at
+  four view angles (side, three-quarter front, front, three-quarter back), each with an eight-frame
+  wing beat, a glide and a landing flare, plus perched idles (look, blink, head tilt, hop, preen,
+  asleep) and a carrying pose.
 - e28e80a: Add `AppLoader`, a loading state drawn by hand: the wren draws itself for as long as the wait
   lasts. It is now the default first-load state of `QueryList` and `QueryDetail`, in place of
   skeleton rows, and `QueryList` no longer takes `loadingRows`. Pass `renderLoading` for anything

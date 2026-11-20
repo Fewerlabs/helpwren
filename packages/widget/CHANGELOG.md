@@ -12,4 +12,7 @@
   `identity` events.
 - A launcher with the wren, a welcome teaser and an unread badge, in a shadow root so the site's
   styles and the widget's stay apart. The chat can also sit inside a page with no launcher.
+- Contextual help: `setContext({ filter })` picks the articles the chat lists under "Help for
+  this page"; `data-helpwren-help` blocks on the page fill with article links that open in the
+  chat; `findArticles(filter)` and `openArticle(slug)`.
 - `helpwren/protocol`: the messages the page and the chat exchange.

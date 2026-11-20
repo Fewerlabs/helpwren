@@ -25,7 +25,11 @@ The first release: live chat, tickets and a help center you run yourself, on you
   conversation.
 - **Abuse protection**: rate limits, spam checks, blocking contacts and networks, and an optional
   captcha.
-- **Your brand** on the chat, the chat page and the help center, in light and dark.
+- **Contextual help**: the chat shows the articles for the page a visitor is on, picked by the
+  page itself or by rules you set in Settings, with no code.
+- **Email templates**: the words of each email contacts get, editable with placeholders and a live
+  preview.
+- **Your brand** on the chat, the chat page, the help center and every email, in light and dark.
 
 ### Installing
 
