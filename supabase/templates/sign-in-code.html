@@ -1,9 +1,132 @@
-<h2>Your sign-in code</h2>
-<p>Enter this code to sign in to the inbox:</p>
-<p style="font-family: monospace; font-size: 28px; letter-spacing: 4px">
-  <strong>{{ .Token }}</strong>
-</p>
-<p>
-  It works once and runs out after ten minutes. If you did not ask for it, you can ignore this
-  email.
-</p>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Your sign-in code</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f6f3ec;
+      font-family:
+        -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif;
+    "
+  >
+    <!-- The line mail apps show beside the subject, before the email is opened. -->
+    <div style="display: none; max-height: 0; overflow: hidden">
+      Your code is {{ .Token }}. It works once, for ten minutes.
+    </div>
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background: #f6f3ec"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px">
+          <table
+            role="presentation"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            style="max-width: 480px"
+          >
+            <tr>
+              <td
+                style="
+                  padding: 0 4px 16px;
+                  font-size: 17px;
+                  font-weight: 700;
+                  letter-spacing: -0.2px;
+                  color: #3d6b57;
+                "
+              >
+                <span
+                  style="
+                    display: inline-block;
+                    width: 10px;
+                    height: 10px;
+                    margin-right: 8px;
+                    border-radius: 50%;
+                    background: #3d6b57;
+                  "
+                ></span
+                >Helpwren
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  background: #ffffff;
+                  border: 1px solid #e3ebe7;
+                  border-top: 3px solid #3d6b57;
+                  border-radius: 14px;
+                  padding: 28px;
+                "
+              >
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td
+                      style="
+                        font-size: 19px;
+                        font-weight: 600;
+                        line-height: 1.3;
+                        color: #101a15;
+                        padding: 0 0 8px;
+                      "
+                    >
+                      Your sign-in code
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style="font-size: 15px; line-height: 1.55; color: #4a463e; padding: 0 0 20px"
+                    >
+                      Enter this code on the sign-in page to open the inbox.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 0 0 20px">
+                      <div
+                        style="
+                          background: #eef4f1;
+                          border: 1px solid #cfe0d8;
+                          border-radius: 12px;
+                          padding: 18px 12px;
+                          font-family:
+                            ui-monospace, &quot;SF Mono&quot;, Menlo, Consolas, monospace;
+                          font-size: 32px;
+                          font-weight: 600;
+                          letter-spacing: 10px;
+                          color: #101a15;
+                        "
+                      >
+                        {{ .Token }}
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="font-size: 14px; line-height: 1.55; color: #4a463e">
+                      It works once and runs out after ten minutes. Never share it: no one from your
+                      team will ask you for it.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size: 12px; line-height: 1.5; color: #8c8779; padding: 16px 4px 0">
+                Sent to {{ .Email }} because someone asked to sign in with this address. If it was
+                not you, you can ignore this email; no one can sign in without the code.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
