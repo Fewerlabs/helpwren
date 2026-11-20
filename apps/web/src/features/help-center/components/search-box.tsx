@@ -86,7 +86,7 @@ export function SearchBox({ placeholder, query, size, embed, className }: Search
         }
         onKeyDown={instant ? openWith : undefined}
         className={cn(
-          "border-rule bg-card text-foreground placeholder:text-muted-foreground focus:border-ring focus-visible:outline-ring w-full border outline-offset-2 transition-colors focus-visible:outline-2 [&::-webkit-search-cancel-button]:hidden",
+          "border-rule bg-card text-foreground placeholder:text-muted-foreground focus:border-ring w-full border transition-colors outline-none [&::-webkit-search-cancel-button]:hidden",
           instant && "cursor-pointer",
           large ? "h-12 rounded-xl pr-16 pl-12 text-base" : "h-9 rounded-lg pr-12 pl-9 text-sm",
         )}
