@@ -33,7 +33,7 @@ The chat as a screen.
 
 ## getUnreadCount
 
-```ts
+```ts title="Signature"
 getUnreadCount({ baseUrl, token }): Promise<UnreadCountResult>
 ```
 
@@ -43,7 +43,7 @@ How many replies the user has not read, for a badge outside the screen. Returns
 
 ## registerSupportDevice
 
-```ts
+```ts title="Signature"
 registerSupportDevice({ baseUrl, pushToken, provider, platform, source, token }): Promise<SupportDeviceResult>
 ```
 
@@ -60,7 +60,7 @@ Registers the phone for [push notifications](../mobile/push.md).
 
 ## unregisterSupportDevice
 
-```ts
+```ts title="Signature"
 unregisterSupportDevice({ baseUrl, pushToken }): Promise<SupportDeviceResult>
 ```
 
@@ -71,7 +71,7 @@ Both device functions return `{ ok: true }`, or `{ ok: false, reason }` with `re
 
 ## supportConversationId
 
-```ts
+```ts title="Signature"
 supportConversationId(data: unknown): string | null
 ```
 

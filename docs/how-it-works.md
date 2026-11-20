@@ -4,7 +4,7 @@ A Helpwren install is one Next.js app and one Supabase project.
 
 Your site and your apps talk to the app; the app and the visitor's chat talk to Supabase.
 
-```text
+```text title="Request flow"
 your site ── <script src=".../widget.js"> ──▶  Helpwren (Next.js)  ──▶  your Supabase
 your app  ── SupportScreen (React Native) ──▶   /embed  chat           Postgres, Realtime,
                                                  /help   help center    Storage, Auth

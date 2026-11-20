@@ -23,7 +23,7 @@
   --color-fd-muted-foreground: var(--muted-foreground);
   --color-fd-popover: var(--popover);
   --color-fd-popover-foreground: var(--popover-foreground);
-  --color-fd-card: var(--background);
+  --color-fd-card: var(--card);
   --color-fd-card-foreground: var(--card-foreground);
   --color-fd-border: var(--rule);
   --color-fd-primary: var(--moss);

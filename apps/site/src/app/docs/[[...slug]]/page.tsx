@@ -32,7 +32,10 @@ export default async function DocsRoute({ params }: DocsRouteProps) {
   return (
     <DocsPage
       toc={page.data.toc}
-      tableOfContent={{ style: "clerk" }}
+      tableOfContent={{
+        style: "clerk",
+        container: { role: "complementary", "aria-label": "On this page" },
+      }}
       editOnGithub={{
         owner: "Fewerlabs",
         repo: "helpwren",
@@ -59,8 +62,10 @@ export async function generateMetadata({ params }: DocsRouteProps): Promise<Meta
   const image = { url: ogImageUrl(page), width: 1200, height: 630, alt: title };
 
   return {
-    // The docs home is "Helpwren docs"; every other page keeps the site's "· Helpwren".
-    title: page.slugs.length === 0 ? { absolute: `${SITE_NAME} docs` } : title,
+    // "Signed token · Helpwren docs", and "Helpwren docs" for the docs home.
+    title: {
+      absolute: page.slugs.length === 0 ? `${SITE_NAME} docs` : `${title} · ${SITE_NAME} docs`,
+    },
     description,
     alternates: { canonical: page.url },
     openGraph: {

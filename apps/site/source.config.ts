@@ -39,7 +39,7 @@ export default defineConfig({
     // shown as they are, so the build never fetches them to measure them.
     remarkImageOptions: false,
     rehypeCodeOptions: {
-      themes: { light: "github-light", dark: "github-dark" },
+      themes: { light: "github-light-default", dark: "github-dark-default" },
     },
   },
 });

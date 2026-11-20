@@ -25,7 +25,7 @@ chat.on("unread", (count) => setBadge(count));
 
 ## createWidget
 
-```ts
+```ts title="Signature"
 createWidget(appOrigin: string): HelpwrenWidget
 ```
 

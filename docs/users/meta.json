@@ -1,7 +1,6 @@
 {
   "title": "Know your users",
   "pages": [
-    "index",
     "guests",
     "unverified-details",
     "signed-token",

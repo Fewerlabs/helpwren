@@ -1,4 +1,4 @@
 {
   "title": "Mobile and push",
-  "pages": ["index", "push", "firebase", "webhook", "other-platforms"]
+  "pages": ["push", "firebase", "webhook", "other-platforms"]
 }

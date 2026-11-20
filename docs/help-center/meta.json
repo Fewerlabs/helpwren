@@ -1,4 +1,4 @@
 {
   "title": "Help center",
-  "pages": ["index", "search", "seo", "embedding", "own-site", "../contextual-help"]
+  "pages": ["search", "seo", "embedding", "own-site", "../contextual-help"]
 }

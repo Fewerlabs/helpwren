@@ -15,12 +15,22 @@ const RULE = "#e8e8e8";
 /** The last segment of every image's address, so it reads as a file. */
 const FILE = "image.png";
 
+/** The sidebar name of the section a page is in, such as "Know your users", or none at the top. */
+function sectionOf(slugs: string[]): string {
+  if (slugs.length < 2) return "";
+  const url = `/docs/${slugs[0] ?? ""}`;
+  const folder = docsSource
+    .getPageTree()
+    .children.find((node) => node.type === "folder" && node.index?.url === url);
+  return folder && typeof folder.name === "string" ? folder.name : "";
+}
+
 /** A docs page's sharing image: the section, the page's title and its description. */
 export async function GET(_request: Request, { params }: RouteContext<"/og/docs/[...slug]">) {
   const { slug } = await params;
   const page = docsSource.getPage(slug.slice(0, -1));
   if (!page || slug.at(-1) !== FILE) notFound();
-  const section = page.slugs.length > 1 ? (page.slugs[0] ?? "").replace(/-/g, " ") : "";
+  const section = sectionOf(page.slugs);
 
   return new ImageResponse(
     <div
