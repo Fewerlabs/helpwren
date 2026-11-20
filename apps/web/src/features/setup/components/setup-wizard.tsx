@@ -18,7 +18,7 @@ import { finishSetup } from "../actions";
 import { setupSteps, type SetupStep } from "../schemas";
 import { WidgetCheck } from "./widget-check";
 
-const DOCS_URL = "https://github.com/Fewerlabs/helpwren/blob/main/docs/install.md";
+const DOCS_URL = "https://helpwren.fewerlabs.dev/docs";
 
 const labels: Record<SetupStep | "admin" | "done", string> = {
   admin: "Admin",
@@ -188,7 +188,7 @@ export function SetupWizard({
             description={
               emailProvider
                 ? `This install sends mail through ${emailProvider}. Say who it comes from, then send yourself a test.`
-                : "No email provider is set up yet, so Helpwren sends no mail of its own: no reply notifications, no ticket updates. Set EMAIL_PROVIDER in the server's environment to turn it on (see docs/install.md). Sign-in codes are separate: Supabase Auth sends those."
+                : "No email provider is set up yet, so Helpwren sends no mail of its own: no reply notifications, no ticket updates. Set EMAIL_PROVIDER in the server's environment to turn it on (see https://helpwren.fewerlabs.dev/docs/email). Sign-in codes are separate: Supabase Auth sends those."
             }
             footer={
               <>

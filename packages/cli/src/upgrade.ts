@@ -209,5 +209,7 @@ export async function upgrade(ctx: Context, options: UpgradeOptions): Promise<vo
 
   writeState(ctx.paths, { ...state, upgradedAt: ctx.now().toISOString() });
   if (backup)
-    ctx.out.info(`To roll back, see "Rolling back" in docs/install.md. Backup: ${backup}`);
+    ctx.out.info(
+      `To roll back: https://helpwren.fewerlabs.dev/docs/operations/backups. Backup: ${backup}`,
+    );
 }
