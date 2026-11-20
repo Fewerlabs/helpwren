@@ -52,7 +52,7 @@ own frame.
 | `destroy()`                       | Takes the widget off the page                                              |
 
 The full guide, with logged-in users, the chat inside your own page, and what each option does,
-is [docs/widget.md](https://github.com/Fewerlabs/helpwren/blob/main/docs/widget.md).
+is [Add the chat](https://helpwren.fewerlabs.dev/docs/chat).
 
 ## How it works
 

@@ -1,5 +1,7 @@
 # Conventions
 
+The rules code in this repository follows, most of them enforced by lint.
+
 ## TypeScript
 
 - Strict mode, plus `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.

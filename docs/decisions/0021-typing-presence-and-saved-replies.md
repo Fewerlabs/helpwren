@@ -50,7 +50,7 @@ from the database through `realtime.broadcast_changes`, and browsers could only 
   channel it already has open, so sending never opens one. Agents join `presence:team` while any
   dashboard page is open. The chat watches it only while it is open and its page is showing: the
   widget now tells the frame `open` in `hello` and sends a `panel` message when the visitor opens
-  or closes the chat (see [docs/widget.md](../widget.md)).
+  or closes the chat (see [Visitors and online status](../chat/visitors.md)).
 - **Agents see each other on a strip under the header.** "Sam is viewing", or "Sam is typing…"
   when a colleague is writing a reply, with their faces. Not in the header: it has no room on a
   phone, and it should never cost the contact's name.

@@ -37,4 +37,5 @@ What has been checked for abuse and misuse, what was fixed and what is left:
 | `main` between releases | Yes            |
 
 While Helpwren is at 0.x, fixes land in the next release rather than being backported. Upgrade
-with `pnpm helpwren upgrade`; see [docs/install.md](docs/install.md).
+with `pnpm helpwren upgrade`; see [Upgrading](https://helpwren.fewerlabs.dev/docs/operations/upgrading)
+([source](docs/operations/upgrading.md)).

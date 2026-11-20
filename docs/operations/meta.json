@@ -1,0 +1,11 @@
+{
+  "title": "Operations",
+  "pages": [
+    "upgrading",
+    "backups",
+    "scheduled-jobs",
+    "environment-variables",
+    "health-check",
+    "troubleshooting"
+  ]
+}

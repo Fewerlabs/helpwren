@@ -15,7 +15,8 @@ pnpm install
 pnpm exec playwright install chromium
 ```
 
-More detail: [docs/contributing/setup.md](docs/contributing/setup.md).
+More detail: [Development setup](https://helpwren.fewerlabs.dev/docs/contributing/setup)
+([source](docs/contributing/setup.md)).
 
 ## Everyday commands
 

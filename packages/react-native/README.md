@@ -2,7 +2,7 @@
 
 Helpwren's chat as a screen of a React Native or Expo app. It shows the install's own chat page
 in a web view, tells it who the user is and what they are looking at, and passes back the
-unread count. See [docs/mobile.md](https://github.com/Fewerlabs/helpwren/blob/main/docs/mobile.md)
+unread count. See [React Native and Expo](https://helpwren.fewerlabs.dev/docs/mobile)
 for setup.
 
 ```bash

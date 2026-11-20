@@ -35,7 +35,7 @@ your app  ── SupportScreen (React Native) ──▶   /embed  chat          
 
 ## Install
 
-Supabase Cloud and Vercel (recommended), about ten minutes:
+Supabase Cloud and Vercel (recommended):
 
 ```bash
 git clone https://github.com/Fewerlabs/helpwren.git && cd helpwren
@@ -45,11 +45,12 @@ pnpm helpwren install        # asks for your Supabase project, writes the env fi
 
 Then deploy `apps/web`, or use the button, and open `/setup` to create the first admin.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFewerlabs%2Fhelpwren&root-directory=apps%2Fweb&project-name=helpwren&repository-name=helpwren&env=NEXT_PUBLIC_APP_URL%2CCRON_SECRET&envDescription=Your%20install%20address%2C%20and%20a%20long%20random%20secret%20for%20the%20scheduled%20jobs%20%28openssl%20rand%20-hex%2032%29.&envLink=https%3A%2F%2Fgithub.com%2FFewerlabs%2Fhelpwren%2Fblob%2Fmain%2Fdocs%2Finstall.md%23deploy-to-vercel&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22supabase%22%2C%22productSlug%22%3A%22supabase%22%2C%22protocol%22%3A%22storage%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFewerlabs%2Fhelpwren&root-directory=apps%2Fweb&project-name=helpwren&repository-name=helpwren&env=NEXT_PUBLIC_APP_URL%2CCRON_SECRET&envDescription=Your%20install%20address%2C%20and%20a%20long%20random%20secret%20for%20the%20scheduled%20jobs%20%28openssl%20rand%20-hex%2032%29.&envLink=https%3A%2F%2Fhelpwren.fewerlabs.dev%2Fdocs%2Fget-started%2Fsupabase-cloud%23deploy-to-vercel&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22supabase%22%2C%22productSlug%22%3A%22supabase%22%2C%22protocol%22%3A%22storage%22%7D%5D)
 
 Or everything on your own server with Docker Compose, beside Supabase's own self-hosting stack:
-`pnpm helpwren install --mode docker`. [docs/install.md](docs/install.md) covers both, step by
-step, with upgrades, rolling back and troubleshooting.
+`pnpm helpwren install --mode docker`. [Get started](https://helpwren.fewerlabs.dev/docs/get-started) covers both, step by
+step, and [Operations](https://helpwren.fewerlabs.dev/docs/operations/upgrading) covers upgrades, rolling back and
+troubleshooting.
 
 Once it runs, Settings → Installation shows the snippet with your address filled in. Paste it into
 your site:
@@ -75,12 +76,21 @@ A site with a script tag needs neither: each install serves the widget itself.
 
 ## Documentation
 
-- [Installing Helpwren](docs/install.md): Supabase Cloud and Vercel, or Docker; upgrades
-- [The widget on your site](docs/widget.md): options, methods, events and logged-in users
-- [Helpwren in a mobile app](docs/mobile.md): React Native, Expo and push
-- [Setup](docs/contributing/setup.md): local development, email and replies by email
-- [Architecture](docs/architecture.md) and [decision records](docs/decisions/)
-- [Design system](docs/design-system.md)
+The documentation is at **[helpwren.fewerlabs.dev/docs](https://helpwren.fewerlabs.dev/docs)**. Its pages are the Markdown in
+[`docs/`](docs/), so they read the same here:
+
+- [Get started](docs/get-started/index.md): Supabase Cloud and Vercel, or Docker, and the setup
+  wizard
+- [Add the chat](docs/chat/index.md): the script tag, options, methods and events
+- [Know your users](docs/users/index.md): guests, signed tokens and the profile endpoint
+- [Help center](docs/help-center/index.md): articles, search engines, embedding and your own `/help`
+- [Mobile and push](docs/mobile/index.md): React Native, Expo, Firebase and webhooks
+- [Email](docs/email/index.md), [security](docs/security/index.md) and
+  [operations](docs/operations/upgrading.md): upgrades, backups and scheduled jobs
+- [Contributing](docs/contributing/index.md): local development and conventions
+
+For contributors, also: [architecture](docs/architecture.md),
+[decision records](docs/decisions/) and the [design system](docs/design-system.md).
 
 ## Develop locally
 

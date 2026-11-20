@@ -9,7 +9,8 @@ pnpm helpwren upgrade            # pull, back up, migrate, rebuild
 pnpm helpwren --help             # every option
 ```
 
-[docs/install.md](../../docs/install.md) is the guide, and
+[Get started](https://helpwren.fewerlabs.dev/docs/get-started) ([source](../../docs/get-started/index.md)) is the guide,
+and
 [ADR 0024](../../docs/decisions/0024-installer-and-setup-wizard.md) says why it works this way.
 
 ## Layout
