@@ -309,3 +309,35 @@ html:not([data-wren="flying"])
     scale: 1;
   }
 }
+
+/* The sticky header is 4rem tall: anchors land below it, not under it. */
+html {
+  scroll-padding-top: 5rem;
+}
+
+/*
+ * Room for the wren beside the words. From 640px the wren flies the whole page, through the
+ * margins: they are kept at least as wide as the wren and its clear space (64px wren below
+ * 1024px, 88px above), so it never has to cross a line of text. Set by width alone, so nothing
+ * moves when the flight starts.
+ */
+@media (min-width: 640px) {
+  .page-gutters {
+    padding-inline: 6rem;
+  }
+  /* The header and footer have no inner padding of their own, unlike the entries: add it, so
+     their edges line up with the entries'. */
+  header.page-gutters,
+  footer.page-gutters {
+    padding-inline: 7rem;
+  }
+}
+@media (min-width: 1024px) {
+  .page-gutters {
+    padding-inline: 7rem;
+  }
+  header.page-gutters,
+  footer.page-gutters {
+    padding-inline: 8rem;
+  }
+}

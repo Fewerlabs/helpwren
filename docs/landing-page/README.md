@@ -36,25 +36,31 @@ a still wren standing at every perch. Each layer below only adds to that.
      the line where the wren lands (45% down the screen), or at once if the page opens below it.
      Entry actions (the price struck out, the plug pushed into the socket, the snippet typed)
      key off that, never off the wren, so jumping past an entry still shows it complete.
-3. **The wren** (`src/wren`). From 1024px wide (the two-column layout), `flight-layer.tsx`
-   loads `flight.tsx`. It reads every `[data-wren-perch]` and `[data-wren-waypoint]`, builds one
-   smooth path through them (`route.ts`), and maps the whole page, top to bottom, onto it with a
-   scrubbed ScrollTrigger, so a reload part way down or a resize puts the wren where the scroll
-   says. It is placed by arc length (continuous: no jumps) and held inside the screen's edges. It
-   holds at each perch for about a third of the next leg, hops up the pinned growth entry one
-   branch per step and sits on the top branch until the entry lets go, and flies through the
-   anatomy gap. The flight writes each frame to `state.ts`; on capable devices `wren-3d.tsx` draws
-   it in 3D (ink outlines on paper: body, head, tail, wings with shoulder, elbow and wrist), with
-   a procedural rig: wing beats with follow-through, bob, tail fanning, head looking ahead and at
-   the reader, blinks, hops, preening; banking, climbing, gliding and a landing flare, all through
-   springs. Elsewhere the SVG `WrenBird` poses fly instead. The pinned entry's height is reserved
-   in CSS before paint (`html[data-motion-pref="on"]`), so nothing shifts.
-4. **One canvas** (`src/scenes/scene-canvas.tsx`). The page has a single WebGL canvas, fixed
-   over the screen. The hero's branch, the anatomy stack and the wren are drei Views: DOM
-   elements whose 3D content that canvas draws, scissored to them. Scenes load near the viewport
-   on capable devices (WebGL2, 768px+, 4 cores, 4 GB, no data saver), over the still SVG of the
-   same drawing, which fades only after the first frame. Frames are drawn on demand: on scroll,
-   while the wren moves, and for its idle life.
+3. **The wren** (`src/wren`). From 640px wide, `flight-layer.tsx` loads `flight.tsx`: one
+   wren, 88px from 1024px and 64px below, drawn frame by frame from the design system's
+   `wrenFrame` (the logo's wren at four angles: side, three-quarter front, front, three-quarter
+   back; an eight-frame wing beat, a glide and a landing flare; perched idles). It reads every
+   `[data-wren-perch]` and `[data-wren-waypoint]` and every heading, paragraph, caption, list
+   item and code block, then finds each leg's way round the words (`corridor.ts`: a grid search
+   through the page margins and the gaps between blocks, pulled straight and rounded). The page
+   margins are kept wide enough for the wren from 640px (`.page-gutters`). The whole page,
+   top to bottom, maps onto the route with a scrubbed ScrollTrigger (`route.ts` says when the
+   wren is where), so a reload part way down or a resize puts it where the scroll says; the route
+   is measured again on resize, font load, every ScrollTrigger refresh and any change in the
+   page's height. The wren stays below the sticky header and inside the screen by moving along
+   its way, never off it. The frames run on their own clock at 12 a second, so the wings keep
+   beating when the scroll stops; the angle follows the direction of flight and changes only
+   between wingbeats; it tilts at most 15°. It crouches before take-off, springs off, flares to
+   land and settles with a squash, and while perched blinks, looks round, tilts its head, preens
+   and hops at uneven intervals. On the growth entry (from 1280px, where the entry is pinned) it
+   hops up one branch per step; it carries the plug on the leg into the nest, goes into the
+   birdhouse at home range and sleeps on the footer branch. There is no trail: the route is
+   data only. Below 640px the still wren at each perch flies a short way in and lands as its
+   entry reaches the middle of the screen (CSS).
+4. **The overlap check** (`scripts/overlap-check.mjs`, `pnpm --filter @helpwren/site check:wren`
+   against a running build) scrolls the page in 20px steps at the widths given and fails if the
+   wren's box touches any heading, paragraph, caption, list item or code block, or leaves the
+   screen while flying.
 5. **The real widget** (`components/live-widget.tsx`). With `NEXT_PUBLIC_HELPWREN_DEMO_URL` set,
    the widget script loads from that install once the page is idle, and entry 05 can open it.
    The wren hops each time the chat opens.
@@ -117,9 +123,11 @@ out below ten stars or on any failure.
 
 ## Measured
 
-On the production build, Lighthouse 13.5 (mobile, simulated slow 4G and 4x CPU): Performance 93,
-Accessibility 100, Best Practices 100, SEO 100; CLS 0, TBT 70ms; LCP 3.1s simulated (observed
-under 0.1s locally; the simulation counts the framework's JavaScript). Desktop: 98/100/100/100.
-Scrolling the page with the CPU slowed 4x and no WebGL: 57 fps. The stress test (reloads at five
-depths, resizes, anchor jumps, flicks, at 375, 768, 1280 and 1440) keeps the wren on screen and the
-page in place throughout; see [spec-check.md](spec-check.md).
+On the production build, Lighthouse 13.5 (mobile, simulated slow 4G and 4x CPU): Performance 94,
+Accessibility 100, Best Practices 100, SEO 100; CLS 0.001, TBT 60ms; LCP 2.9s simulated. Desktop:
+100/100/100/100, LCP 0.6s. JavaScript before the load event: 158 KB compressed, of which React DOM
+and the Next.js runtime are about 125 KB; the icon set is no longer part of it (the theme menu and
+the snippet import their few icons one by one, and load on use). The overlap check passes at 640,
+800, 900, 1024, 1280, 1366 and 1440, light and dark ([overlap-check.txt](overlap-check.txt)), and
+the stress test (reloads at five depths, resizes, anchor jumps, flicks, at 800, 1024, 1280 and 1440) keeps the wren on screen, off the words and the page in place; see
+[spec-check.md](spec-check.md).

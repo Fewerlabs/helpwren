@@ -6,6 +6,7 @@
  * fails if the wren is cut off by the screen's edge. Exits 1 on any overlap.
  *
  *   node scripts/overlap-check.mjs [--widths=1280,1440] [--height=800] [--step=20] [--scheme=dark]
+ *     [--path=/lab/wren --text="[data-lab-text]"]   (another page, and what counts as words)
  */
 import { chromium } from "playwright";
 
@@ -15,13 +16,13 @@ const args = Object.fromEntries(
     return [key, value ?? "true"];
   }),
 );
-const SITE = process.env.SITE_URL ?? "http://localhost:3210";
+const SITE = (process.env.SITE_URL ?? "http://localhost:3210") + (args.path ?? "");
 const WIDTHS = (args.widths ?? "1280,1440").split(",").map(Number);
 const HEIGHT = Number(args.height ?? 800);
 const STEP = Number(args.step ?? 20);
 const SCHEME = args.scheme ?? "light";
 // Must match TEXT_SELECTOR in src/wren/flight.tsx.
-const TEXT = "h1, h2, h3, h4, h5, h6, p, figcaption, li, blockquote, pre, dt, dd";
+const TEXT = args.text ?? "h1, h2, h3, h4, h5, h6, p, figcaption, li, blockquote, pre, dt, dd";
 
 const browser = await chromium.launch();
 let failures = 0;
@@ -62,8 +63,12 @@ for (const width of WIDTHS) {
       if (!flyer || getComputedStyle(flyer).opacity === "0") return { mode: "inside", hits: [] };
       const wren = flyer.querySelector("svg").getBoundingClientRect();
       const out = [];
-      if (wren.top < 0 || wren.bottom > innerHeight || wren.left < 0 || wren.right > innerWidth)
-        out.push("cut off by the screen's edge");
+      const air = flyer.getAttribute("data-mode") === "air";
+      if (
+        air &&
+        (wren.top < 0 || wren.bottom > innerHeight || wren.left < 0 || wren.right > innerWidth)
+      )
+        out.push("cut off by the screen's edge in flight");
       for (const element of document.querySelectorAll(selector)) {
         if (element.closest("[data-wren-layer]") || element.querySelector(selector)) continue;
         const box = element.getBoundingClientRect();
@@ -74,7 +79,10 @@ for (const width of WIDTHS) {
           Math.min(box.bottom, wren.bottom) - Math.max(box.top, wren.top) > 0;
         if (overlap) {
           const text = (element.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 48);
-          out.push(`over <${element.tagName.toLowerCase()}> "${text}"`);
+          const at = (r) => [r.left, r.top, r.right, r.bottom].map(Math.round).join(",");
+          out.push(
+            `over <${element.tagName.toLowerCase()}> "${text}" (wren ${at(wren)}, words ${at(box)})`,
+          );
         }
       }
       return { mode: flyer.getAttribute("data-mode"), hits: out };

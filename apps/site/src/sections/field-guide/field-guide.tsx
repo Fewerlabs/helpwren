@@ -6,6 +6,7 @@ import { SpecimenCard, type Specimen } from "./specimen-card";
 const specimens: readonly Specimen[] = [
   {
     id: "chat",
+    href: "/docs/chat",
     name: "Live chat",
     text: "Visitors and logged-in users, with attachments, typing and online status.",
     label: "fig. 1: in conversation",
@@ -13,6 +14,7 @@ const specimens: readonly Specimen[] = [
   },
   {
     id: "tickets",
+    href: "/docs/inbox/tickets",
     name: "Tickets",
     text: "Numbers, status, priority and an assignee, with internal notes only the team sees.",
     label: "fig. 2: carrying a ticket",
@@ -20,6 +22,7 @@ const specimens: readonly Specimen[] = [
   },
   {
     id: "help-center",
+    href: "/docs/help-center",
     name: "Help center",
     text: "Collections, articles and search, built to rank and embeddable in your site.",
     label: "fig. 3: well read",
@@ -27,12 +30,14 @@ const specimens: readonly Specimen[] = [
   },
   {
     id: "mobile",
+    href: "/docs/mobile",
     name: "Mobile screen",
     text: "A support screen for React Native and Expo apps, with an unread badge.",
     label: "fig. 4: in the pocket",
   },
   {
     id: "notifications",
+    href: "/docs/mobile/push",
     name: "Notifications",
     text: "Push through Expo, Firebase or a webhook. Email, and replies by email back into the chat.",
     label: "fig. 5: calling back",
@@ -40,6 +45,7 @@ const specimens: readonly Specimen[] = [
   },
   {
     id: "context",
+    href: "/docs/users",
     name: "Knows who's asking",
     text: "Identify users or verify them with a token. The team sees the page and live visitors.",
     label: "fig. 6: keeping watch",

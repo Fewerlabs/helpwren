@@ -58,6 +58,13 @@ published package that the product's MIT licence cannot carry.
 - React Three Fiber 9.8 declares `react >=19 <19.4`. Raise the React catalog past 19.3 only with a
   Fiber release that allows it.
 
+### Update: no three.js
+
+The owner found the 3D wren and the faint 3D scenes not worth their weight. three.js, React Three
+Fiber and drei are removed. The hero branch and the anatomy stack are the still SVG drawings, and
+the wren is drawn frame by frame (the design system's `WrenFlyer` frames), like hand-drawn
+animation. The route keeps to the margins and gaps, never over the words, and draws no trail.
+
 ## Consequences
 
 - The site builds and deploys on its own. Vercel needs the root directory `apps/site`; the
@@ -76,4 +83,3 @@ published package that the product's MIT licence cannot carry.
   [docs for language models](https://gsap.com/llms.txt)
 - [Lenis](https://github.com/darkroomengineering/lenis)
 - [Next.js static exports](https://nextjs.org/docs/app/guides/static-exports)
-- [drei Line](https://drei.docs.pmnd.rs/shapes/line)

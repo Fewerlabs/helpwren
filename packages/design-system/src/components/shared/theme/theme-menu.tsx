@@ -5,9 +5,13 @@ import { useRef, useState } from "react";
 import { cn } from "#lib/cn";
 import { setThemePreference, useTheme, useThemePreference, type ThemePreference } from "#lib/theme";
 
-import { Icon } from "../../base/icon/icon";
+import { CheckIcon, DesktopIcon, MoonIcon, SunIcon } from "../../base/icon/glyphs";
+import { IconGlyph } from "../../base/icon/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "../../base/popover/popover";
 import { themeChoices as choices } from "./choices";
+
+// The menu's own icons, imported one by one so the menu does not bring the whole set with it.
+const glyphs = { sun: SunIcon, moon: MoonIcon, desktop: DesktopIcon } as const;
 
 export interface ThemeMenuProps {
   /** Classes for the button, which shows the choice that is in force. */
@@ -52,7 +56,7 @@ export function ThemeMenu({ className, side = "bottom", align = "end" }: ThemeMe
             className,
           )}
         >
-          <Icon name={onScreen === "dark" ? "moon" : "sun"} className="size-[1.125rem]" />
+          <IconGlyph glyph={onScreen === "dark" ? MoonIcon : SunIcon} className="size-[1.125rem]" />
         </button>
       </PopoverTrigger>
       <PopoverContent side={side} align={align} className="w-40 p-1" aria-label="Theme">
@@ -70,9 +74,12 @@ export function ThemeMenu({ className, side = "bottom", align = "end" }: ThemeMe
                   choose(choice.value);
                 }}
               >
-                <Icon name={choice.icon} className="text-muted-foreground size-4" />
+                <IconGlyph
+                  glyph={glyphs[choice.icon as keyof typeof glyphs]}
+                  className="text-muted-foreground size-4"
+                />
                 <span className="flex-1 text-left">{choice.label}</span>
-                {active ? <Icon name="check" className="size-4" /> : null}
+                {active ? <IconGlyph glyph={CheckIcon} className="size-4" /> : null}
               </button>
             );
           })}

@@ -17,8 +17,6 @@ export interface SketchProps extends Omit<ComponentProps<"svg">, "children" | "r
   label?: string;
   /** Adds the hand-drawn wobble. Default true. */
   rough?: boolean;
-  /** Draws it again, with its small action, each time this number goes up. */
-  replay?: number;
 }
 
 /**
@@ -33,12 +31,11 @@ export function Sketch({
   animate = "in-view",
   label,
   rough = true,
-  replay = 0,
   className,
   ...props
 }: SketchProps) {
   const filterId = useFilterId();
-  const { setElement, attributes, contentKey } = useIllustrationMotion(animate, replay);
+  const { setElement, attributes } = useIllustrationMotion(animate);
   const accessibility = label
     ? ({ role: "img", "aria-label": label } as const)
     : ({ "aria-hidden": true } as const);
@@ -63,12 +60,10 @@ export function Sketch({
           <defs>
             <RoughFilter id={filterId} />
           </defs>
-          <g key={contentKey} filter={`url(#${filterId})`}>
-            {children}
-          </g>
+          <g filter={`url(#${filterId})`}>{children}</g>
         </>
       ) : (
-        <g key={contentKey}>{children}</g>
+        <g>{children}</g>
       )}
     </svg>
   );

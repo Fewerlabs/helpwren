@@ -1,8 +1,11 @@
 import { Icon, Logo, Sketch } from "@helpwren/design-system";
 
 import { DeferredMotionToggle, DeferredThemeMenu } from "@/components/deferred";
+import { HeaderScroll } from "@/components/header-scroll";
 import { Perch } from "@/components/journal";
-import { links } from "@/content/site";
+import { GITHUB_URL, links } from "@/content/site";
+
+const blob = (path: string) => `${GITHUB_URL}/blob/main/${path}`;
 
 const navLink =
   "text-muted-foreground hover:text-foreground focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md px-3 text-sm transition-colors focus-visible:outline-2";
@@ -23,10 +26,17 @@ function ThemeStandIn({ className }: { className: string }) {
   );
 }
 
-/** The top of every page: the name, two links and the theme. */
+/**
+ * The top of every page: the name, two links and the theme. It stays at the top while the page
+ * scrolls, on the paper, above the flying wren; a hairline shows under it once the page moves.
+ */
 export function SiteHeader() {
   return (
-    <header className="relative z-10 px-4">
+    <header
+      data-site-header
+      className="page-gutters bg-card/90 data-[scrolled]:border-rule sticky top-0 z-40 border-b border-transparent px-4 backdrop-blur-md motion-safe:transition-colors"
+    >
+      <HeaderScroll />
       <a
         href="#main"
         className="bg-card border-border border-line sr-only rounded-lg px-3 py-2 text-sm focus:not-sr-only focus:absolute focus:top-3 focus:left-4"
@@ -58,11 +68,18 @@ export function SiteHeader() {
   );
 }
 
-/** The foot of every page, where the wren ends its day on a branch. */
+const footLink =
+  "text-muted-foreground hover:text-foreground focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md text-sm transition-colors focus-visible:outline-2";
+
+/**
+ * The foot of every page: one quiet row under the branch where the wren ends its day asleep.
+ * The name and the licence on the left; four links and the animations switch on the right.
+ */
 export function SiteFooter() {
   return (
-    <footer className="px-4 pb-10">
+    <footer className="page-gutters px-4 pb-8">
       <div className="mx-auto max-w-5xl">
+        {/* The last entry: a branch, and the wren asleep on it. */}
         <div className="@container relative mx-auto w-full max-w-xs">
           <Sketch viewBox="0 0 200 60" data-sketch="footer">
             <path pathLength={1} d="M4 40C50 34 96 42 140 36 164 33 182 34 196 28" />
@@ -74,21 +91,41 @@ export function SiteFooter() {
           </Sketch>
           <Perch name="footer" x={46} y={62} size={22} pose="asleep" />
         </div>
-        <div className="border-rule text-muted-foreground mt-6 flex flex-col gap-4 border-t pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Helpwren is published by Fewer Labs under the{" "}
-            <a href={links.licence} className="hover:text-foreground underline underline-offset-4">
-              MIT licence
+        <div className="border-rule text-muted-foreground mt-6 flex flex-col gap-3 border-t pt-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <a
+              href="/"
+              aria-label="Helpwren, home"
+              className="focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md focus-visible:outline-2"
+            >
+              <Logo variant="lockup" size={22} label="" />
             </a>
-            .
-          </p>
-          <div className="flex items-center gap-6">
-            <DeferredMotionToggle fallback={<span className="block h-11 w-32" />} />
-            <DeferredThemeMenu
-              side="top"
-              className={themeButton}
-              fallback={<ThemeStandIn className={themeButton} />}
-            />
+            <p>
+              © 2026 Fewer Labs ·{" "}
+              <a
+                href={links.licence}
+                className="hover:text-foreground underline underline-offset-4"
+              >
+                MIT licence
+              </a>
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-5">
+            <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-5">
+              <a href={links.docs} className={footLink}>
+                Docs
+              </a>
+              <a href={links.github} className={footLink}>
+                GitHub
+              </a>
+              <a href={blob("CHANGELOG.md")} className={footLink}>
+                Changelog
+              </a>
+              <a href={blob("SECURITY.md")} className={footLink}>
+                Security
+              </a>
+            </nav>
+            <DeferredMotionToggle fallback={<span className="block h-11 w-28" />} />
           </div>
         </div>
       </div>

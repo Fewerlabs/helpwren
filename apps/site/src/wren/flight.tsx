@@ -20,6 +20,7 @@ import {
   measureWay,
   pointOnWay,
   roundClear,
+  shareInBand,
   type Box,
   type Point,
   type Way,
@@ -27,8 +28,8 @@ import {
 import { arrivals, flightAt, type Stop } from "./route";
 
 /** The wren's size in flight and on its perches, in pixels: on a desktop, and on smaller screens. */
-export const WREN_SIZE = 76;
-export const WREN_SIZE_SMALL = 60;
+export const WREN_SIZE = 88;
+export const WREN_SIZE_SMALL = 64;
 /** From this width the wren is drawn at its desktop size. */
 const DESKTOP = 1024;
 /** The wren's size for the screen it is on now. */
@@ -37,7 +38,9 @@ let wrenSize = WREN_SIZE;
 const FOOT_X = 0.51;
 const FOOT_Y = 0.88;
 /** Clear space kept between the wren and any words; covers its box growing as it tilts. */
-const CLEARANCE = 14;
+const CLEARANCE = 18;
+/** How high the wren rises off its branch before it sets off, in pixels. */
+const RISE = 54;
 /** The wren never tilts further than this, so it banks, never tumbles. */
 const MAX_TILT_DEG = 15;
 /** How long the flight takes to catch up with the scrollbar, in seconds. */
@@ -326,7 +329,8 @@ export function WrenFlight() {
           return;
         }
         // Small birds flap in bursts: going down, two beats then a short glide; level or up, flap.
-        const descending = doing.heading.y > 0.25 && !doing.carrying;
+        // A glide at the top of each arc: level or just past level, after a burst of beats.
+        const level = doing.heading.y > -0.2 && doing.heading.y < 0.45 && !doing.carrying;
         if (glide > 0) {
           glide -= 1;
           show(view, { kind: "glide" }, mirrored);
@@ -336,8 +340,8 @@ export function WrenFlight() {
         beat = (beat + 1) % 8;
         if (beat === 0) {
           beatsSinceGlide += 1;
-          if (descending && beatsSinceGlide >= 2) {
-            glide = 4 + Math.round(Math.random() * 3);
+          if (level && beatsSinceGlide >= 2) {
+            glide = 5 + Math.round(Math.random() * 3);
             beatsSinceGlide = 0;
           }
         }
@@ -428,8 +432,9 @@ export function WrenFlight() {
       const foot = { size: WREN, footX: FOOT_X, footY: FOOT_Y };
       const words = measureWords();
       const bounds: Box = {
-        left: FOOT_X * WREN + 4,
-        right: width - (1 - FOOT_X) * WREN - 4,
+        // Room at the screen's sides for the box as it tilts, which makes it wider.
+        left: FOOT_X * WREN + 10,
+        right: width - (1 - FOOT_X) * WREN - 10,
         top: (1 - FOOT_Y) * WREN + 4,
         bottom: height,
       };
@@ -446,12 +451,28 @@ export function WrenFlight() {
           ),
         );
         if (from.pin && to.pin) return measureWay([from, to]);
-        const corners = findWay(from, to, blocked, bounds);
+        // Up off the branch first, when there is room above it, then on its way.
+        const rise = { x: from.x, y: from.y - RISE };
+        const clear = (point: Point) =>
+          !blocked.some(
+            (box) =>
+              point.x > box.left &&
+              point.x < box.right &&
+              point.y > box.top &&
+              point.y < box.bottom,
+          );
+        const corners =
+          from.land && clear(rise)
+            ? [from, ...findWay(rise, to, blocked, bounds)]
+            : findWay(from, to, blocked, bounds);
         return measureWay(roundClear(corners, blocked), ACROSS);
       });
       const maxScroll = height - window.innerHeight;
       const times = arrivals(stops, window.innerHeight, maxScroll);
       const holdLimit = window.innerHeight * (0.45 - LEAVE_BY);
+      // The sticky header covers the top of the screen; the wren keeps below it.
+      const headerHeight =
+        document.querySelector("[data-site-header]")?.getBoundingClientRect().height ?? 0;
       let landedAt = "";
       let lastScroll = window.scrollY;
       let lastScreenY = 0;
@@ -464,7 +485,14 @@ export function WrenFlight() {
         if (!from || !to || !way) return;
         const sitting = along <= 0 || along >= 1;
         const stop = along >= 1 ? to : from;
-        const { point, heading } = pointOnWay(way, along);
+        // Kept on screen, below the header, by moving along the way, never off it.
+        const band = {
+          low: window.scrollY + headerHeight + EDGE.top + FOOT_Y * WREN,
+          high: window.scrollY + window.innerHeight - EDGE.bottom - (1 - FOOT_Y) * WREN,
+        };
+        const placed =
+          sitting || (from.pin && to.pin) ? along : shareInBand(way, along, band.low, band.high);
+        const { point, heading } = pointOnWay(way, placed);
 
         // Inside a pinned entry the branches stay on screen while the page scrolls, so the wren
         // goes with them: placed by the entry, not by the route, and hopping between branches.
@@ -554,7 +582,7 @@ export function WrenFlight() {
           const size = WREN;
           y = softClamp(
             y,
-            window.scrollY + EDGE.top + FOOT_Y * size + GIVE,
+            window.scrollY + headerHeight + EDGE.top + FOOT_Y * size + GIVE,
             window.scrollY + window.innerHeight - EDGE.bottom - (1 - FOOT_Y) * size - GIVE,
             GIVE,
           );
@@ -614,9 +642,21 @@ export function WrenFlight() {
     follow();
     void document.fonts.ready.then(build);
     window.addEventListener("resize", onResize);
+    // Anything that changes the page's height (a component loading in, an image) moves the words
+    // and the perches: measure the route again.
+    let pageHeight = document.documentElement.scrollHeight;
+    const growth = new ResizeObserver(() => {
+      const next = document.documentElement.scrollHeight;
+      if (Math.abs(next - pageHeight) < 2) return;
+      pageHeight = next;
+      onResize();
+    });
+    const main = document.querySelector("main");
+    if (main) growth.observe(main);
     ScrollTrigger.addEventListener("refresh", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
+      growth.disconnect();
       ScrollTrigger.removeEventListener("refresh", onResize);
       window.removeEventListener("scroll", follow);
       stopFollowing();

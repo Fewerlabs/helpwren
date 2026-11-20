@@ -301,3 +301,22 @@ export function pointOnWay(way: Way, share: number): { point: Point; heading: Po
     heading: { x: dx / length, y: dy / length },
   };
 }
+
+/**
+ * The nearest share of the way, from `share`, whose point lies between `low` and `high` down the
+ * page (the part of the page on screen). Moving along the way, rather than pushing the wren off
+ * it, keeps it clear of the words: every point on the way is. Unchanged if none is.
+ */
+export function shareInBand(way: Way, share: number, low: number, high: number): number {
+  const { point } = pointOnWay(way, share);
+  if (point.y >= low && point.y <= high) return share;
+  const target = Math.min(1, Math.max(0, share)) * way.total;
+  let index = way.measure.findIndex((m) => m >= target);
+  if (index < 0) index = way.points.length - 1;
+  const step = point.y < low ? 1 : -1;
+  for (let i = index; i >= 0 && i < way.points.length; i += step) {
+    const y = way.points[i]?.y ?? 0;
+    if (y >= low && y <= high) return way.total > 0 ? (way.measure[i] ?? 0) / way.total : share;
+  }
+  return share;
+}

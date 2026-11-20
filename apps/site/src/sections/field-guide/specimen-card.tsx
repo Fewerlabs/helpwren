@@ -1,7 +1,4 @@
-"use client";
-
 import { Sketch, Wren, type WrenScene } from "@helpwren/design-system";
-import { useState } from "react";
 
 import { HandLabel, SpecimenTag } from "@/components/journal";
 
@@ -10,43 +7,30 @@ export interface Specimen {
   name: string;
   text: string;
   label: string;
+  /** The docs page about it. */
+  href: string;
   scene?: WrenScene;
 }
 
 /**
- * One figure on the field-guide plate. Hovering it, or reaching it with the keyboard, draws the
- * figure again and plays its small action: the bubbles type, the ticket gets its tick, the
- * bookmark drops, the badge pops, the bell rings, the telescope sweeps. Reduced motion, or the
- * footer switch, keeps it still (the design system's stylesheet sees to that).
+ * One figure on the field-guide plate. The figure draws itself in once as it scrolls into view
+ * and then rests. The whole card links to the docs page about it.
  */
 export function SpecimenCard({ specimen }: { specimen: Specimen }) {
-  const [replays, setReplays] = useState(0);
-  const again = () => {
-    setReplays((count) => count + 1);
-  };
   const titleId = `specimen-${specimen.id}`;
   return (
-    // Hover replays the drawing. There is nothing to activate, so the card is not a tab stop;
-    // the figure is decorative and its words are in the tag.
-
-    <li
-      data-specimen
-      aria-labelledby={titleId}
-      onPointerEnter={again}
-      className="group flex cursor-default flex-col"
-    >
+    <li data-specimen aria-labelledby={titleId} className="group relative flex flex-col">
       <figure className="relative">
         {specimen.scene ? (
           <Wren
             scene={specimen.scene}
             bird={false}
             animate="in-view"
-            replay={replays}
             decorative
             className="mx-auto max-w-56"
           />
         ) : (
-          <PhoneSketch replay={replays} />
+          <PhoneSketch />
         )}
         <figcaption className="mt-1 text-center">
           <HandLabel>{specimen.label}</HandLabel>
@@ -59,14 +43,21 @@ export function SpecimenCard({ specimen }: { specimen: Specimen }) {
       >
         {specimen.text}
       </SpecimenTag>
+      {/* The link covers the card, so the figure and the tag both lead to the docs. */}
+      <a
+        href={specimen.href}
+        className="focus-visible:outline-ring absolute inset-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-4"
+      >
+        <span className="sr-only">{specimen.name}: read the docs</span>
+      </a>
     </li>
   );
 }
 
 /** A phone with a chat on its screen and an unread badge, in the wren scenes' line. */
-function PhoneSketch({ replay }: { replay: number }) {
+function PhoneSketch() {
   return (
-    <Sketch viewBox="0 0 220 170" replay={replay} className="mx-auto max-w-56">
+    <Sketch viewBox="0 0 220 170" className="mx-auto max-w-56">
       <rect pathLength={1} x="78" y="14" width="64" height="130" rx="12" />
       <path pathLength={1} d="M100 24H120" />
       <path

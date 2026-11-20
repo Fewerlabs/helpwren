@@ -85,7 +85,7 @@ function NearView({ fallback, children }: { fallback: ReactNode; children: React
   useEffect(() => {
     // The wrapper has no box of its own (display: contents), so watch the stand-in inside it.
     const element = box.current?.firstElementChild;
-    if (!element || near) return;
+    if (!element || near || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) setNear(true);

@@ -212,7 +212,7 @@
 }
 
 /*
- * Each scene's small action, played once after it is drawn (and again on a replay): the bell
+ * Each scene's small action, played once after it is drawn: the bell
  * rings, the telescope sweeps the sky, the bookmark drops into the book, a badge pops.
  */
 :is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-ring {

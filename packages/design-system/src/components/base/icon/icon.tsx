@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 
 import { cn } from "#lib/cn";
 
-import { registry, type IconName } from "./registry";
+import { registry, type IconGlyphComponent, type IconName } from "./registry";
 
 export type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
 
@@ -24,15 +24,27 @@ export interface IconProps extends Omit<ComponentProps<"svg">, "children" | "col
  * The one way to render an icon. It follows the surrounding text: `1em` square and
  * `currentColor`, unless a class such as `size-4` or `text-pencil` overrides it.
  */
-export function Icon({
-  name,
+export function Icon({ name, ...props }: IconProps) {
+  return <IconGlyph glyph={registry[name]} {...props} />;
+}
+
+export interface IconGlyphProps extends Omit<IconProps, "name"> {
+  /** One icon, imported by name from the registry (for example `CopyIcon`). */
+  glyph: IconGlyphComponent;
+}
+
+/**
+ * `Icon` for components that need only a few icons and are sent to the browser: given the
+ * icon itself rather than its name, so the page downloads those icons, not the whole set.
+ */
+export function IconGlyph({
+  glyph: Glyph,
   weight = "regular",
   mirrored = false,
   label,
   className,
   ...props
-}: IconProps) {
-  const Glyph = registry[name];
+}: IconGlyphProps) {
   const accessibility = label
     ? ({ role: "img", "aria-label": label } as const)
     : ({ "aria-hidden": true, focusable: false } as const);

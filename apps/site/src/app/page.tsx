@@ -40,7 +40,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <SiteHeader />
-      <main id="main" className="journal">
+      <main id="main" className="journal page-gutters">
         <Hero stars={stars} />
         <Habitat />
         <Nest />

@@ -1,29 +1,24 @@
 "use client";
 
-import { Label, Switch } from "@helpwren/design-system";
-import { useId } from "react";
-
 import { setMotionPreference, useMotionPreference } from "./preference";
 
 /**
- * The footer's "Animations" switch. It is remembered in this browser. Off, the page is shown
- * finished and still, as it is for people whose device asks for reduced motion.
+ * The footer's animations switch, as a small text button that says what it does. It is
+ * remembered in this browser. Off, the page is shown finished and still, as it is for people
+ * whose device asks for reduced motion.
  */
 export function MotionToggle() {
   const on = useMotionPreference();
-  const id = useId();
   return (
-    <div className="flex items-center gap-2">
-      <Switch
-        id={id}
-        checked={on}
-        onCheckedChange={(checked) => {
-          setMotionPreference(checked);
-        }}
-      />
-      <Label htmlFor={id} className="text-muted-foreground text-sm font-normal">
-        Animations
-      </Label>
-    </div>
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => {
+        setMotionPreference(!on);
+      }}
+      className="text-muted-foreground hover:text-foreground focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md text-sm transition-colors focus-visible:outline-2"
+    >
+      Animations: {on ? "on" : "off"}
+    </button>
   );
 }

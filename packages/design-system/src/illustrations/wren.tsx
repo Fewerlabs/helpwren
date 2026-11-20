@@ -19,7 +19,7 @@ export type IllustrationMotion = boolean | "in-view";
  * The `data-animate` and `data-paused` attributes the illustration stylesheet reads, and the
  * callback to give the drawing's element as its `ref`.
  */
-export function useIllustrationMotion(animate: IllustrationMotion, replay = 0) {
+export function useIllustrationMotion(animate: IllustrationMotion) {
   const [element, setElement] = useState<Element | null>(null);
   const inView = useInViewStage(element, animate === "in-view");
   let state: string | undefined;
@@ -27,11 +27,7 @@ export function useIllustrationMotion(animate: IllustrationMotion, replay = 0) {
   else if (animate === "in-view" && inView.stage !== "still") {
     state = inView.stage === "drawing" ? "" : inView.stage;
   }
-  // A replay draws it again from the start, with its small action, wherever it was.
-  if (replay > 0 && animate !== false) state = "";
   return {
-    /** Changes with each replay, as a key for the drawing, so its animations start over. */
-    contentKey: replay,
     setElement,
     attributes: {
       "data-animate": state,
@@ -77,11 +73,6 @@ export interface WrenProps extends Omit<ComponentProps<"svg">, "children" | "ref
   bird?: boolean;
   /** Drawn on top of the scene, such as marks of the page's own. */
   children?: ReactNode;
-  /**
-   * Draws the scene again and replays its small action each time this number goes up, such as
-   * on hover or focus of the card it is in. Ignored when `animate` is false.
-   */
-  replay?: number;
 }
 
 /**
@@ -96,11 +87,10 @@ export function Wren({
   bird = true,
   className,
   children,
-  replay = 0,
   ...props
 }: WrenProps) {
   const filterId = useFilterId();
-  const { setElement, attributes, contentKey } = useIllustrationMotion(animate, replay);
+  const { setElement, attributes } = useIllustrationMotion(animate);
   const accessibility = decorative
     ? ({ "aria-hidden": true } as const)
     : ({ role: "img", "aria-label": label ?? scenes[scene].label } as const);
@@ -125,9 +115,7 @@ export function Wren({
       <defs>
         <RoughFilter id={filterId} />
       </defs>
-      <g key={contentKey} filter={`url(#${filterId})`}>
-        {scenes[scene].content}
-      </g>
+      <g filter={`url(#${filterId})`}>{scenes[scene].content}</g>
       {children}
     </svg>
   );

@@ -4,7 +4,7 @@ import storybook from "eslint-plugin-storybook";
 const uiMessage =
   "Only base components may import from ui. Use a base component, or add one that wraps the ui component.";
 const phosphorMessage =
-  "Import icons through the Icon base component. Only base/icon/registry.ts may import Phosphor.";
+  "Import icons through the Icon base component. Only base/icon/registry.ts and glyphs.ts may import Phosphor.";
 
 const cnPackage = {
   name: "cn",
@@ -77,7 +77,7 @@ export default [
     },
   },
   {
-    files: ["src/components/base/icon/registry.ts"],
+    files: ["src/components/base/icon/registry.ts", "src/components/base/icon/glyphs.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
