@@ -1,4 +1,9 @@
-import { MESSAGE_MAX_LENGTH, pageContextSchema } from "@helpwren/core";
+import {
+  articleFilterSchema,
+  MESSAGE_MAX_LENGTH,
+  pageContextSchema,
+  slugSchema,
+} from "@helpwren/core";
 import {
   CHANNEL,
   type FrameMessage,
@@ -11,6 +16,7 @@ import { z } from "zod";
 import {
   usePreview,
   useSetClaimed,
+  useSetHelpFilter,
   useSetHostVisible,
   useSetPage,
   useSetPageContext,
@@ -73,7 +79,14 @@ const laterSchema = z.discriminatedUnion("type", [
     page: pageSchema,
     visible: z.boolean(),
   }),
-  z.object({ channel: z.literal(CHANNEL), type: z.literal("context"), context: pageContextSchema }),
+  z.object({
+    channel: z.literal(CHANNEL),
+    type: z.literal("context"),
+    context: pageContextSchema,
+    // A filter the install cannot read is dropped, and the team's rules apply instead.
+    filter: articleFilterSchema.optional().catch(undefined),
+  }),
+  z.object({ channel: z.literal(CHANNEL), type: z.literal("article"), slug: slugSchema }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("open"), conversationId: z.uuid() }),
 ]);
 
@@ -154,6 +167,7 @@ export function useEmbedBridge(unread: UnreadState) {
   const show = useShowScreen();
   const setClaimed = useSetClaimed();
   const setPageContext = useSetPageContext();
+  const setHelpFilter = useSetHelpFilter();
   const identity = useIdentity();
   const preview = usePreview();
   const [embedded, setEmbedded] = useState(false);
@@ -209,6 +223,9 @@ export function useEmbedBridge(unread: UnreadState) {
           setShowing(message.open);
         } else if (message.type === "context") {
           setPageContext(message.context);
+          setHelpFilter(message.filter ?? null);
+        } else if (message.type === "article") {
+          show({ name: "article", slug: message.slug });
         } else if (message.type === "reset") {
           setClaimed(null);
           tell(identity.reset());
@@ -247,6 +264,7 @@ export function useEmbedBridge(unread: UnreadState) {
     preview,
     send,
     setClaimed,
+    setHelpFilter,
     setHostVisible,
     setPage,
     setPageContext,

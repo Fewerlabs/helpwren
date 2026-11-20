@@ -20,4 +20,6 @@ no launcher. Every option a site has is listed in [docs/widget.md](../docs/widge
 
 A Next.js app standing in for Glown, Helpwren's first install: a public site with the script
 tag and the help center at its own `/help`, and a web app that signs its users in to the chat
-with their own JWT through a profile endpoint. See [nextjs/README.md](nextjs/README.md).
+with their own JWT through a profile endpoint, and contextual help from page filters, rules and
+an inline block ([docs/contextual-help.md](../docs/contextual-help.md)). See
+[nextjs/README.md](nextjs/README.md).

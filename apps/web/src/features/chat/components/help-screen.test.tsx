@@ -1,14 +1,20 @@
 import { type Article, type ArticleSummary, type HelpwrenClient } from "@helpwren/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
-import { resetChatStore, useScreen } from "../store/chat-store";
-import { ArticleScreen, CollectionScreen, HelpScreen, SuggestedArticles } from "./help-screen";
+import { resetChatStore, useScreen, useSetPage } from "../store/chat-store";
+import {
+  ArticleScreen,
+  CollectionScreen,
+  HelpScreen,
+  PageHelp,
+  SuggestedArticles,
+} from "./help-screen";
 
 // Feedback has a client of its own, which a unit test has no database for.
 vi.mock("@/features/help-center", () => ({
@@ -33,6 +39,9 @@ const summary = (overrides: Partial<ArticleSummary>): ArticleSummary => ({
   featured: false,
   metaTitle: null,
   metaDescription: null,
+  audiences: [],
+  locale: null,
+  fields: {},
   ...overrides,
 });
 const invoice = summary({});
@@ -43,10 +52,21 @@ const install = summary({
   featured: true,
 });
 
-const articles = { list: vi.fn(), search: vi.fn(), getBySlug: vi.fn() };
+const articles = { list: vi.fn(), search: vi.fn(), getBySlug: vi.fn(), forPage: vi.fn() };
 const collections = { list: vi.fn() };
-const client = { articles, collections } as unknown as HelpwrenClient;
+// A visitor who has not written yet has no session.
+const sessions = { current: () => Promise.resolve(null) };
+const client = { articles, collections, sessions } as unknown as HelpwrenClient;
 const billing = { id: "33333333-3333-4333-8333-333333333333", name: "Billing" };
+
+/** Says which page the chat is on, as the widget script does. */
+function OnPage({ url, title }: { url: string; title: string }) {
+  const setPage = useSetPage();
+  useEffect(() => {
+    setPage({ url, title });
+  }, [setPage, url, title]);
+  return null;
+}
 
 /** Shows which screen the chat is on, so a test can see where a tap led. */
 function Where() {
@@ -130,6 +150,43 @@ describe("the chat's Help", () => {
       featured: true,
       pageSize: 3,
     });
+  });
+
+  it("leads with the page's help, and leaves those articles out of the suggestions", async () => {
+    const user = userEvent.setup();
+    articles.list.mockResolvedValue({ items: [invoice, install], total: 2 });
+    articles.forPage.mockResolvedValue({
+      match: { kind: "rule", id: "44444444-4444-4444-8444-444444444444", name: "Billing pages" },
+      fallback: null,
+      articles: [{ title: invoice.title, summary: null, slug: invoice.slug, url: null }],
+    });
+    renderChat(
+      <>
+        <OnPage url="https://example.com/billing" title="Billing" />
+        <PageHelp />
+        <SuggestedArticles />
+      </>,
+    );
+
+    const forPage = await screen.findByRole("region", { name: "Help for this page" });
+    expect(articles.forPage).toHaveBeenCalledWith({
+      page: { url: "https://example.com/billing", title: "Billing" },
+    });
+    const suggested = await screen.findByRole("region", { name: "Suggested articles" });
+    expect(suggested).not.toHaveTextContent("Read your invoice");
+    expect(suggested).toHaveTextContent("Add the chat to your website");
+
+    await user.click(within(forPage).getByRole("button", { name: /Read your invoice/ }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      '{"name":"article","slug":"read-your-invoice"}',
+    );
+  });
+
+  it("asks for no page help without a page or a filter, and shows nothing", async () => {
+    renderChat(<PageHelp />);
+    await screen.findByRole("status");
+    expect(articles.forPage).not.toHaveBeenCalled();
+    expect(screen.queryByRole("region", { name: "Help for this page" })).not.toBeInTheDocument();
   });
 
   it("shows an article with its body, and a way to write to the team", async () => {

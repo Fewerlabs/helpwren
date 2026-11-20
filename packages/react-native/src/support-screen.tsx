@@ -1,4 +1,10 @@
-import { CHANNEL, type IdentityState, type PageContext, type PageMessage } from "helpwren/protocol";
+import {
+  CHANNEL,
+  type ArticleFilter,
+  type IdentityState,
+  type PageContext,
+  type PageMessage,
+} from "helpwren/protocol";
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { Linking, type StyleProp, type ViewStyle } from "react-native";
 import { WebView } from "react-native-webview";
@@ -7,7 +13,14 @@ import type {
   WebViewMessageEvent,
 } from "react-native-webview/lib/WebViewTypes";
 
-import { deliveryScript, embedUrl, greeting, isOnInstall, readFrameMessage } from "./bridge";
+import {
+  contextMessage,
+  deliveryScript,
+  embedUrl,
+  greeting,
+  isOnInstall,
+  readFrameMessage,
+} from "./bridge";
 
 // The library's class defaults its extra props to `undefined`, which leaves it no props at all
 // in strict TypeScript. Naming them as none fixes that.
@@ -29,6 +42,11 @@ export interface SupportScreenProps {
   token?: TokenSource;
   /** What your team should know about where the person is: app version, screen, order. */
   context?: PageContext;
+  /**
+   * Which help articles fit the screen, such as `{ tags: { any: ["refunds"] } }`. The chat's
+   * home leads with them under "Help for this page", in place of the team's rules.
+   */
+  filter?: ArticleFilter;
   /** Opens this conversation, as when the person taps a notification about it. */
   conversationId?: string;
   /** The number of replies the person has not read, whenever it changes. */
@@ -50,6 +68,7 @@ export function SupportScreen({
   source,
   token,
   context,
+  filter,
   conversationId,
   onUnread,
   onIdentity,
@@ -60,9 +79,9 @@ export function SupportScreen({
   const ready = useRef(false);
   const retried = useRef(false);
   // The latest props, for the message handler, which is not remade on every render.
-  const latest = useRef({ token, context, conversationId, onUnread, onIdentity, onClose });
+  const latest = useRef({ token, context, filter, conversationId, onUnread, onIdentity, onClose });
   useLayoutEffect(() => {
-    latest.current = { token, context, conversationId, onUnread, onIdentity, onClose };
+    latest.current = { token, context, filter, conversationId, onUnread, onIdentity, onClose };
   });
 
   const deliver = useCallback((message: PageMessage) => {
@@ -97,6 +116,7 @@ export function SupportScreen({
           closable: props.onClose !== undefined,
           identified: props.token !== undefined,
           context: props.context,
+          filter: props.filter,
           conversationId: props.conversationId,
         })) {
           deliver(each);
@@ -138,10 +158,12 @@ export function SupportScreen({
   }, [deliver, login, sendIdentity]);
 
   // Compared by what it says, so an object made inline is not sent again on every render.
-  const contextJson = context === undefined ? null : JSON.stringify(context);
+  const contextJson =
+    context === undefined && filter === undefined ? null : JSON.stringify({ context, filter });
   useEffect(() => {
     if (!ready.current || contextJson === null) return;
-    deliver({ channel: CHANNEL, type: "context", context: JSON.parse(contextJson) as PageContext });
+    const sent = JSON.parse(contextJson) as { context?: PageContext; filter?: ArticleFilter };
+    deliver(contextMessage(sent.context, sent.filter));
   }, [contextJson, deliver]);
 
   useEffect(() => {

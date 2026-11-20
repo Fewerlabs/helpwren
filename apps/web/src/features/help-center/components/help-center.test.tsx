@@ -54,6 +54,9 @@ const article: Article = {
   featured: false,
   metaTitle: null,
   metaDescription: null,
+  audiences: [],
+  locale: null,
+  fields: {},
   body: {
     type: "doc",
     content: [

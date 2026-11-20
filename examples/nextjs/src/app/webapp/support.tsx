@@ -1,6 +1,6 @@
 "use client";
 
-import { createWidget, type IdentityState } from "helpwren";
+import { createWidget, type ArticleFilter, type HelpArticle, type IdentityState } from "helpwren";
 import { useEffect, useState } from "react";
 
 import { HELPWREN_URL } from "@/lib/config";
@@ -41,14 +41,72 @@ interface SupportContextProps {
   plan: string;
   /** Which screen of the app this is. */
   page: string;
+  /**
+   * The help articles for this screen. The chat lists them under "Help for this page", in
+   * place of whatever the install's rules say. Leave it out to let the rules decide.
+   */
+  filter?: ArticleFilter;
 }
 
-/** What the team sees under "From the page" for a conversation started on this screen. */
-export function SupportContext({ businessId, plan, page }: SupportContextProps) {
+/**
+ * What the team sees under "From the page" for a conversation started on this screen, and the
+ * filter that picks this screen's help articles, if it has one.
+ */
+export function SupportContext({ businessId, plan, page, filter }: SupportContextProps) {
+  // Compared by what it says, so a filter written inline is not sent again on every render.
+  const filterJson = filter === undefined ? undefined : JSON.stringify(filter);
   useEffect(() => {
-    support.setContext({ businessId, plan, page });
-  }, [businessId, plan, page]);
+    support.setContext({
+      businessId,
+      plan,
+      page,
+      ...(filterJson === undefined ? {} : { filter: JSON.parse(filterJson) as ArticleFilter }),
+    });
+  }, [businessId, plan, page, filterJson]);
   return null;
+}
+
+/**
+ * Help articles in the app's own design, from `findArticles`: the install's public endpoint,
+ * which answers only the allowed domains. A click opens the article in the chat.
+ */
+export function HelpLinks({ filter, label }: { filter: ArticleFilter; label: string }) {
+  const [articles, setArticles] = useState<HelpArticle[] | null>(null);
+  const filterJson = JSON.stringify(filter);
+  useEffect(() => {
+    let current = true;
+    support
+      .findArticles(JSON.parse(filterJson) as ArticleFilter)
+      .then((found) => {
+        if (current) setArticles(found);
+      })
+      .catch(() => {
+        if (current) setArticles([]);
+      });
+    return () => {
+      current = false;
+    };
+  }, [filterJson]);
+  if (!articles || articles.length === 0) return null;
+  return (
+    <nav aria-label={label} className="help-links">
+      <h2>{label}</h2>
+      <ul>
+        {articles.map((article) => (
+          <li key={article.slug}>
+            <button
+              type="button"
+              onClick={() => {
+                support.openArticle(article.slug);
+              }}
+            >
+              {article.title}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
 
 /** The header's Help button, with the number of unread replies beside it. */

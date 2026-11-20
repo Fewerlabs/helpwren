@@ -1,8 +1,13 @@
 "use client";
 
 import {
+  ARTICLE_AUDIENCES_MAX,
+  ARTICLE_FIELDS_MAX,
   ARTICLE_IMAGE_MAX_BYTES,
   ARTICLE_TAGS_MAX,
+  articleFieldsSchema,
+  fieldKeySchema,
+  localeSchema,
   richTextSchema,
   slugSchema,
   EMPTY_RICH_TEXT,
@@ -20,6 +25,7 @@ import {
   Field,
   Icon,
   Input,
+  KeyValueInput,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -36,6 +42,7 @@ import {
   toast,
   Tooltip,
   useConfirm,
+  type KeyValuePair,
   type RichTextNode,
 } from "@helpwren/design-system";
 import { useQuery } from "@tanstack/react-query";
@@ -77,6 +84,23 @@ const uploadFailures = {
   too_large: `That picture is over ${formatBytes(ARTICLE_IMAGE_MAX_BYTES)}. Choose a smaller one.`,
   unsupported: "Choose a PNG, JPG, WebP or GIF picture.",
 } as const;
+
+/** An article's custom fields as rows to edit, in the order they were added. */
+function fieldRows(fields: Record<string, string>): KeyValuePair[] {
+  return Object.entries(fields).map(([key, value]) => ({ key, value }));
+}
+
+/** The rows as the article stores them. Rows left wholly empty do not count. */
+function rowsToFields(rows: readonly KeyValuePair[]): Record<string, string> {
+  return Object.fromEntries(
+    rows
+      .map((row) => [row.key.trim(), row.value.trim()] as const)
+      .filter(([key, value]) => key !== "" || value !== ""),
+  );
+}
+
+const sameFields = (rows: readonly KeyValuePair[], fields: Record<string, string>) =>
+  JSON.stringify(rowsToFields(rows)) === JSON.stringify(fields);
 
 /** Waits this long after the last keystroke before a new article is first saved. */
 const CREATE_DELAY = 800;
@@ -127,6 +151,9 @@ function blankArticle(collection: Collection | undefined): Article {
     featured: false,
     metaTitle: null,
     metaDescription: null,
+    audiences: [],
+    locale: null,
+    fields: {},
     body: EMPTY_RICH_TEXT,
   };
 }
@@ -252,6 +279,11 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
   const [metaTitle, setMetaTitle] = useState(article.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(article.metaDescription ?? "");
   const [authorId, setAuthorId] = useState(article.authorId);
+  const [audiences, setAudiences] = useState<readonly string[]>(article.audiences);
+  const [locale, setLocale] = useState(article.locale ?? "");
+  const [localeError, setLocaleError] = useState<string>();
+  const [fields, setFields] = useState<KeyValuePair[]>(() => fieldRows(article.fields));
+  const [fieldsError, setFieldsError] = useState<string>();
   const [body, setBody] = useState<RichTextNode | null>(null);
   const [busy, setBusy] = useState<"save" | "publish" | null>(null);
   const featuredId = useId();
@@ -273,11 +305,23 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
     featured !== saved.featured ||
     metaTitle !== (saved.metaTitle ?? "") ||
     metaDescription !== (saved.metaDescription ?? "") ||
-    authorId !== saved.authorId;
+    authorId !== saved.authorId ||
+    audiences.join() !== saved.audiences.join() ||
+    locale.trim() !== (saved.locale ?? "") ||
+    !sameFields(fields, saved.fields);
 
   // The team, to choose the author from. A hook, because the list is shared with other screens.
   const team =
     useQuery({ queryKey: ["team"], queryFn: () => getClient().agents.list() }).data ?? [];
+  // What other articles carry, offered while typing so one label is not spelt two ways.
+  const tagSuggestions = useQuery({
+    queryKey: [...ARTICLES_QUERY_KEY, "tags"],
+    queryFn: () => getClient().articles.tags(),
+  }).data;
+  const audienceSuggestions = useQuery({
+    queryKey: [...ARTICLES_QUERY_KEY, "audiences"],
+    queryFn: () => getClient().articles.audiences(),
+  }).data;
   const feedback = useQuery({
     queryKey: [...ARTICLES_QUERY_KEY, "feedback"],
     queryFn: () => getClient().articles.feedbackTotals(),
@@ -288,6 +332,8 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
   const save = useCallback(async (): Promise<Article | null> => {
     if (!exists && creating.current) return null;
     setSlugError(undefined);
+    setLocaleError(undefined);
+    setFieldsError(undefined);
     const changes: ArticleChanges = {};
     if (title.trim() !== saved.title || !exists) {
       if (!title.trim()) {
@@ -314,6 +360,31 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
       changes.metaDescription = metaDescription;
     }
     if (authorId && authorId !== saved.authorId) changes.authorId = authorId;
+    if (audiences.join() !== saved.audiences.join()) changes.audiences = [...audiences];
+    if (locale.trim() !== (saved.locale ?? "")) {
+      const parsed = localeSchema.safeParse(locale);
+      if (locale.trim() && !parsed.success) {
+        setLocaleError("Use a language code, such as en or pt-br.");
+        return null;
+      }
+      changes.locale = parsed.success ? parsed.data : null;
+    }
+    if (!sameFields(fields, saved.fields)) {
+      const wanted = rowsToFields(fields);
+      const keys = fields.map((row) => row.key.trim()).filter(Boolean);
+      const parsed = articleFieldsSchema.safeParse(wanted);
+      if (new Set(keys).size !== keys.length) {
+        setFieldsError("Each field needs a name of its own.");
+        return null;
+      }
+      if (!parsed.success) {
+        setFieldsError(
+          "Give each field a name of lower case letters, digits and underscores, and a value.",
+        );
+        return null;
+      }
+      changes.fields = parsed.data;
+    }
     if (body) {
       const parsed = richTextSchema.safeParse(body);
       if (!parsed.success) {
@@ -348,6 +419,8 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
       setTags(settle(tags, next.tags));
       setMetaTitle(settle(metaTitle, next.metaTitle ?? ""));
       setMetaDescription(settle(metaDescription, next.metaDescription ?? ""));
+      setAudiences(settle(audiences, next.audiences));
+      setLocale(settle(locale, next.locale ?? ""));
       setBody(settle<RichTextNode | null>(body, null));
       // A new article is credited to whoever made it.
       setAuthorId(settle(authorId, next.authorId));
@@ -361,13 +434,16 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
       creating.current = false;
     }
   }, [
+    audiences,
     authorId,
     body,
     changed,
     collectionId,
     exists,
     featured,
+    fields,
     getClient,
+    locale,
     metaDescription,
     metaTitle,
     onCreated,
@@ -700,6 +776,7 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
               max={ARTICLE_TAGS_MAX}
               placeholder={tags.length === 0 ? "refunds" : undefined}
               transform={(text) => text.trim().toLowerCase()}
+              suggestions={tagSuggestions ?? []}
               onValueChange={setTags}
             />
           </Field>
@@ -725,6 +802,62 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
                 ))}
             </SelectContent>
           </Select>
+
+          <Section title="Contextual help">
+            <p className="text-muted-foreground -mt-2 text-xs">
+              What a page or a rule can pick this article by, to show it as help for that page.
+            </p>
+            <Field
+              label="Audience"
+              hint="Who it is for, as Settings > Identity names them. Empty: everyone."
+            >
+              <TagsInput
+                value={audiences}
+                max={ARTICLE_AUDIENCES_MAX}
+                placeholder={audiences.length === 0 ? "Everyone" : undefined}
+                transform={(text) => text.trim().toLowerCase()}
+                suggestions={audienceSuggestions ?? []}
+                onValueChange={setAudiences}
+              />
+            </Field>
+            <Field
+              label="Language"
+              error={localeError}
+              hint="A code such as en or pt-br. Empty: any."
+            >
+              <Input
+                value={locale}
+                placeholder="Any language"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                onValueChange={setLocale}
+              />
+            </Field>
+            <Field
+              label="Custom fields"
+              error={fieldsError}
+              hint="Any name and value of your own, such as plan and pro."
+            >
+              <KeyValueInput
+                value={fields}
+                onValueChange={setFields}
+                keyPlaceholder="plan"
+                valuePlaceholder="pro"
+                transformKey={(key) => key.toLowerCase().replace(/[^a-z0-9_]/g, "_")}
+                max={ARTICLE_FIELDS_MAX}
+                invalidRows={
+                  fieldsError
+                    ? fields.flatMap((row, index) =>
+                        fieldKeySchema.safeParse(row.key).success && row.value.trim()
+                          ? []
+                          : [index],
+                      )
+                    : []
+                }
+              />
+            </Field>
+          </Section>
 
           <Section title="Publishing">
             <Field

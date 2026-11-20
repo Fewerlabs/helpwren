@@ -3,6 +3,7 @@ import { z } from "zod";
 import { type Api } from "./api";
 import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
+import { conversationHelpSchema } from "./help-rules";
 import { pageContextSchema, visitorIdSchema } from "./identity";
 import { listenForRows, type Unsubscribe } from "./realtime";
 import { type GuestDetails } from "./settings";
@@ -50,6 +51,8 @@ export const startConversationInputSchema = z.object({
    * `identify` said they are. Shown to agents as the page's word, never as fact.
    */
   context: pageContextSchema.optional(),
+  /** The help the chat showed for the page: the page's filter or the rule that matched. */
+  help: conversationHelpSchema.optional(),
   /** The browser the chat runs in, as it checks in, so the team sees it beside the contact. */
   visitorId: visitorIdSchema.optional(),
   /**

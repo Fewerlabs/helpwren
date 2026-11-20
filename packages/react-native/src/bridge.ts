@@ -1,6 +1,7 @@
 import {
   CHANNEL,
   isFrameMessage,
+  type ArticleFilter,
   type FrameMessage,
   type PageContext,
   type PageMessage,
@@ -48,11 +49,25 @@ export function readFrameMessage(text: string): FrameMessage | null {
   }
 }
 
+/** What the person is looking at: values for the team, and the filter for its help articles. */
+export function contextMessage(
+  context: PageContext | undefined,
+  filter: ArticleFilter | undefined,
+): PageMessage {
+  return {
+    channel: CHANNEL,
+    type: "context",
+    context: context ?? {},
+    ...(filter ? { filter } : {}),
+  };
+}
+
 /** What the app tells the chat once it is ready, in the order it should hear it. */
 export function greeting(options: {
   closable: boolean;
   identified: boolean;
   context: PageContext | undefined;
+  filter?: ArticleFilter | undefined;
   conversationId: string | undefined;
 }): PageMessage[] {
   const messages: PageMessage[] = [
@@ -63,8 +78,8 @@ export function greeting(options: {
       identified: options.identified,
     },
   ];
-  if (options.context) {
-    messages.push({ channel: CHANNEL, type: "context", context: options.context });
+  if (options.context || options.filter) {
+    messages.push(contextMessage(options.context, options.filter));
   }
   if (options.conversationId) {
     messages.push({ channel: CHANNEL, type: "open", conversationId: options.conversationId });

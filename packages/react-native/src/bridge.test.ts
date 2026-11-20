@@ -81,4 +81,19 @@ describe("the bridge between the app and the chat", () => {
       }),
     ).toEqual([{ channel: "helpwren", type: "hello", closable: false, identified: false }]);
   });
+
+  it("sends a screen's help filter with its context, or on its own", () => {
+    expect(
+      greeting({
+        closable: false,
+        identified: false,
+        context: undefined,
+        filter: { tags: { any: ["refunds"] } },
+        conversationId: undefined,
+      }),
+    ).toEqual([
+      { channel: "helpwren", type: "hello", closable: false, identified: false },
+      { channel: "helpwren", type: "context", context: {}, filter: { tags: { any: ["refunds"] } } },
+    ]);
+  });
 });

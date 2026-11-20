@@ -16,6 +16,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
         <nav aria-label="Site">
           <Link href="/pricing">Pricing</Link>
           <Link href="/business">For business</Link>
+          <Link href="/refunds">Refunds</Link>
           {/* Another app behind the rewrite, so a full page load, not a client-side one. */}
           <a href="/help">Help center</a>
         </nav>

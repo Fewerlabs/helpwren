@@ -13,7 +13,10 @@ import { StartForm } from "./start-form";
 const startGuest = vi.fn();
 const start = vi.fn();
 const getClient = () =>
-  ({ sessions: { startGuest }, conversations: { start } }) as unknown as HelpwrenClient;
+  ({
+    sessions: { startGuest, current: () => Promise.resolve(null) },
+    conversations: { start },
+  }) as unknown as HelpwrenClient;
 
 function Screen() {
   const current = useScreen();

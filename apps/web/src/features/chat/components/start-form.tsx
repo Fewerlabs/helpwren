@@ -34,6 +34,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { TeamAvatar } from "../brand";
 import { chatKeys } from "../hooks/use-chat";
+import { usePageHelp } from "../hooks/use-page-help";
 import { existingVisitorId } from "../hooks/use-visitor-tracking";
 import {
   type PendingStart,
@@ -259,6 +260,8 @@ export function StartForm({
   const show = useShowScreen();
   const page = usePage();
   const pageContext = usePageContext();
+  // The help shown for the page, if it has loaded, so the team sees what the visitor saw.
+  const pageHelp = usePageHelp().data;
   // Who the page says this is, without proof: it saves them typing, and labels the conversation.
   const claimed = useClaimed();
   // The server has the last word on whether details are needed; see `start` below.
@@ -321,6 +324,9 @@ export function StartForm({
         // The page the chat is on, when the widget script reported one.
         ...(page ? { page } : {}),
         ...(Object.keys(context).length > 0 ? { context } : {}),
+        ...(pageHelp && (pageHelp.match || pageHelp.fallback)
+          ? { help: { match: pageHelp.match, fallback: pageHelp.fallback } }
+          : {}),
         // The browser that has been checking in, so the team sees its details on the contact.
         ...(visitorId ? { visitorId } : {}),
         ...(honeypot.current?.value ? { honeypot: honeypot.current.value } : {}),
