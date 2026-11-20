@@ -76,3 +76,16 @@ export function accentStyle({ accent, accentTo, button }: Colours): CSSPropertie
       : {}),
   } as CSSProperties;
 }
+
+/**
+ * The same colours as a rule for the page's `body`, for what opens above the page in a portal,
+ * such as a sheet or a dialog, outside the element `accentStyle` is on. Empty when there are none.
+ */
+export function accentBodyCss(colours: Colours): string {
+  const style = accentStyle(colours);
+  if (!style) return "";
+  const declarations = Object.entries(style)
+    .map(([name, value]) => `${name}:${String(value)}`)
+    .join(";");
+  return `body{${declarations}}`;
+}
