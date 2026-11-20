@@ -1,12 +1,13 @@
 "use client";
 
-import { Line } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo } from "react";
+import { Line, PerspectiveCamera, View } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 
 import { HERO_VIEWBOX, heroStrokes } from "@/sections/hero/hero-strokes";
 
 import { sampleStroke, useBoil, useInk, useOnScreen, wobble } from "./lines";
+import { FirstFrame } from "./scene-canvas";
 
 /** The camera's vertical field of view, in degrees. */
 const FOV = 30;
@@ -24,10 +25,10 @@ function place(x: number, y: number, depth: number): [number, number, number] {
   return [(x - HERO_VIEWBOX.width / 2) * scale, (HERO_VIEWBOX.height / 2 - y) * scale, depth];
 }
 
-function Branch() {
-  const { invalidate, camera, gl } = useThree();
+function Branch({ host }: { host: HTMLElement }) {
+  const { invalidate, camera } = useThree();
   const { ink, moss } = useInk();
-  const onScreen = useOnScreen(gl.domElement);
+  const onScreen = useOnScreen(host);
   const strokes = useMemo(
     () =>
       heroStrokes.flatMap((stroke) =>
@@ -41,7 +42,7 @@ function Branch() {
 
   // The camera drifts as the hero scrolls away: near lines move more than far ones.
   useEffect(() => {
-    const hero = gl.domElement.closest("section");
+    const hero = host.closest("section");
     const update = () => {
       const height = hero?.offsetHeight ?? window.innerHeight;
       const progress = Math.min(1, Math.max(0, window.scrollY / height));
@@ -54,15 +55,7 @@ function Branch() {
     return () => {
       window.removeEventListener("scroll", update);
     };
-  }, [camera, gl, invalidate]);
-
-  // Give the context back as soon as the scene goes, rather than when the browser gets round to it.
-  useEffect(
-    () => () => {
-      gl.forceContextLoss();
-    },
-    [gl],
-  );
+  }, [camera, host, invalidate]);
 
   return (
     <>
@@ -81,24 +74,22 @@ function Branch() {
   );
 }
 
-/** The hero's branch in perspective: the same lines as the drawing, with depth. */
-export function HeroScene({ onReady }: { onReady: () => void }) {
-  const ready = useCallback(() => {
-    // One frame after creation, so the first frame has been drawn before the drawing hides.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(onReady);
-    });
-  }, [onReady]);
+/**
+ * The hero's branch in perspective: the same lines as the drawing, with depth. A View of the
+ * page's one canvas, the size of the drawing it replaces.
+ */
+export function HeroScene({ onReady, host }: { onReady: () => void; host: HTMLElement }) {
   return (
-    <Canvas
-      frameloop="demand"
-      dpr={[1, 1.5]}
-      gl={{ antialias: false, alpha: true, powerPreference: "low-power" }}
-      camera={{ fov: FOV, position: [0, 0, DISTANCE], near: 1, far: DISTANCE * 3 }}
-      onCreated={ready}
-      style={{ position: "absolute", inset: 0 }}
-    >
-      <Branch />
-    </Canvas>
+    <View className="absolute inset-0">
+      <PerspectiveCamera
+        makeDefault
+        fov={FOV}
+        position={[0, 0, DISTANCE]}
+        near={1}
+        far={DISTANCE * 3}
+      />
+      <Branch host={host} />
+      <FirstFrame onReady={onReady} />
+    </View>
   );
 }

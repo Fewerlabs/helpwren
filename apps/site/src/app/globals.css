@@ -71,6 +71,10 @@ html[data-motion-pref="off"] :is([data-slot="wren"], [data-slot="sketch"]) .hw-s
 .wren-flyer {
   will-change: transform;
 }
+/* Once the 3D wren has drawn, the SVG wren keeps flying, unseen, as its fallback. */
+.wren-flyer[data-3d] {
+  opacity: 0 !important;
+}
 .wren-flyer [data-flyer-pose] {
   display: none;
 }
@@ -99,11 +103,13 @@ html[data-wren="flying"] [data-still-wren] {
 }
 
 /*
- * What each entry does once the wren has landed in it (the flight sets data-wren-here). The red
- * pen strikes the price again; the level the wren stands on is marked.
+ * What each entry does when it reaches the middle of the screen, which is when the wren lands in
+ * it (EntryWatch sets data-in-view, once; an entry already scrolled past is shown settled). The
+ * red pen strikes the price; the wren pushes the plug into the socket, with sparks. The level the
+ * wren stands on is marked by the flight itself (data-wren-here).
  */
 @media (prefers-reduced-motion: no-preference) {
-  html:not([data-motion-pref="off"]) [data-entry="habitat"][data-wren-here] .hw-pen {
+  html:not([data-motion-pref="off"]) [data-entry="habitat"][data-in-view] .hw-pen {
     stroke-dasharray: 1;
     animation: site-strike 0.7s 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
@@ -130,19 +136,25 @@ html[data-wren="flying"] [data-still-wren] {
  * A pinned entry (Growth stages): while the wren flies, the entry is held on screen for the
  * length of --pin-range, and the wren hops up one branch per step of the scroll.
  */
-html[data-wren="flying"] [data-pin] {
-  --pin-range: 180vh;
-  min-height: calc(100vh + var(--pin-range));
-  padding-block: 0;
-}
+@media (min-width: 1024px) and (min-height: 720px) and (prefers-reduced-motion: no-preference) {
+  /*
+   * Reserved as soon as the page is drawn (the head script sets data-motion-pref before paint),
+   * so nothing shifts when the motion starts or after a reload part way down.
+   */
+  html[data-motion-pref="on"] [data-pin] {
+    --pin-range: 180vh;
+    min-height: calc(100vh + var(--pin-range));
+    padding-block: 0;
+  }
 
-html[data-wren="flying"] [data-pin] > .pin-inner {
-  position: sticky;
-  top: 0;
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
-  justify-content: center;
+  html[data-motion-pref="on"] [data-pin] > .pin-inner {
+    position: sticky;
+    top: 0;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    justify-content: center;
+  }
 }
 
 /*
@@ -150,114 +162,155 @@ html[data-wren="flying"] [data-pin] > .pin-inner {
  * carried the plug in, then types itself out line by line. Clipping only, so the text is
  * always in the page for screen readers and search engines.
  */
-html[data-wren="flying"] [data-entry="nest"] [data-slot="code-snippet"] code > span {
-  clip-path: inset(0 100% 0 0);
-}
-
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"]:not([data-in-view])
   [data-slot="code-snippet"]
   code
   > span {
+  clip-path: inset(0 100% 0 0);
+}
+
+html[data-wren="flying"] [data-entry="nest"][data-in-view] [data-slot="code-snippet"] code > span {
   clip-path: inset(0 0 0 0);
   transition: clip-path 0.45s steps(28, end);
 }
 
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(1) {
   transition-delay: 0.35s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(2) {
   transition-delay: 0.67s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(3) {
   transition-delay: 0.99s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(4) {
   transition-delay: 1.31s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(5) {
   transition-delay: 1.63s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(6) {
   transition-delay: 1.95s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(7) {
   transition-delay: 2.27s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(8) {
   transition-delay: 2.59s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(9) {
   transition-delay: 2.91s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(10) {
   transition-delay: 3.23s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(11) {
   transition-delay: 3.55s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(12) {
   transition-delay: 3.87s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(13) {
   transition-delay: 4.19s;
 }
 html[data-wren="flying"]
-  [data-entry="nest"][data-wren-visited]
+  [data-entry="nest"][data-in-view]
   [data-slot="code-snippet"]
   code
   > span:nth-child(14) {
   transition-delay: 4.51s;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion-pref="off"]) [data-entry="nest"][data-in-view] .hw-plug {
+    animation: site-plug-in 0.9s 0.5s var(--hw-spring, ease-out) both;
+  }
+}
+
+@keyframes site-plug-in {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(18px);
+  }
+}
+
+/* The 3D stack's names show once its scene has drawn (the still drawing has its own numbers). */
+[data-anatomy-stage]:has([data-scene-live]) [data-anatomy-label] {
+  display: block;
+}
+
+/*
+ * The journal's margin: a faint red rule down the left of the page, as in a notebook, with the
+ * entry numbers standing in it. Wide screens only.
+ */
+@media (min-width: 1280px) {
+  .journal {
+    position: relative;
+  }
+
+  .journal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - 38rem);
+    width: 1px;
+    background: color-mix(in srgb, var(--pen) 30%, transparent);
+    pointer-events: none;
+  }
 }

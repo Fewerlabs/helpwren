@@ -25,4 +25,10 @@ export default [
       ],
     },
   },
+  {
+    // React Three Fiber's elements take three.js properties (position, geometry, material),
+    // which this rule only knows for the DOM.
+    files: ["src/scenes/**/*.tsx", "src/wren/**/*.tsx"],
+    rules: { "react/no-unknown-property": "off" },
+  },
 ];

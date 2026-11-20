@@ -11,6 +11,7 @@
 // The script signs in as the demo admin from supabase/seed.sql and sends one demo message as a
 // guest, so it changes the demo database.
 import { mkdir } from "node:fs/promises";
+import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 
 import { chromium } from "playwright";
@@ -19,23 +20,37 @@ import sharp from "sharp";
 const APP = (process.env.HELPWREN_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const MAILBOX = (process.env.MAILPIT_URL ?? "http://127.0.0.1:54324").replace(/\/$/, "");
 const AGENT = process.env.CAPTURE_AGENT_EMAIL ?? "ada@example.com";
+/** The local site the widget is shown on, served by this script while it runs. */
+const HOST_PORT = 4199;
+const HOST = `http://127.0.0.1:${String(HOST_PORT)}`;
 const OUT = fileURLToPath(new URL("../public/captures/", import.meta.url));
 /** Device pixels per CSS pixel. */
 const SCALE = 2;
 /** The widths images are saved at, in CSS pixels: what the page shows them at, at most. */
 const WIDTHS = { widget: 400, conversation: 400, inbox: 1200, help: 1200 };
 const QUALITY = { avif: 55, webp: 78 };
+/** Milliseconds between keys when typing into the chat. */
+const TYPING_MS = 45;
 
-/** A plain host page with the widget on it, as a site would add it. */
-function hostPage(scheme) {
-  const background = scheme === "dark" ? "#0c0c0d" : "#f7f7f7";
+/**
+ * A host page with the widget on it, as a site would add it. Its background is transparent, so
+ * the capture is the widget alone, which sits on the website's paper in either theme. The widget
+ * has one look of its own (the install's branding), so it is captured once.
+ */
+function hostPage() {
   return `<!doctype html><html><head><meta charset="utf-8"><title>Pricing · Acme</title>
-<style>html,body{margin:0;height:100%;background:${background}}</style></head>
+<style>html,body{margin:0;height:100%;background:transparent}</style></head>
 <body><script src="${APP}/widget.js"></script>
 <script>Helpwren.init({ source: "web", welcome: false });</script></body></html>`;
 }
 
 async function save(name, scheme, png) {
+  // The widget looks the same in both themes: save it under both names.
+  if (scheme === "both") {
+    await save(name, "light", png);
+    await save(name, "dark", png);
+    return;
+  }
   const width = WIDTHS[name] * SCALE;
   const base = sharp(png).resize({ width, withoutEnlargement: true });
   await base.clone().avif({ quality: QUALITY.avif }).toFile(`${OUT}${name}-${scheme}.avif`);
@@ -70,31 +85,44 @@ async function widgetBox(page) {
   return { x, y, width: right - x, height: bottom - y };
 }
 
-async function captureWidget(browser, scheme) {
+async function captureWidget(browser) {
   const page = await browser.newPage({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: SCALE,
-    colorScheme: scheme,
   });
-  await page.setContent(hostPage(scheme), { waitUntil: "load" });
+  // Served from an address of its own, as a real site is: the chat records the page it was on.
+  await page.goto(`${HOST}/pricing`, { waitUntil: "load" });
   await page.getByRole("button", { name: /open chat/i }).click();
   const chat = page.frameLocator('iframe[title="Chat"]');
   await chat.getByRole("heading", { name: /how can we help/i }).waitFor();
   await page.waitForTimeout(1200);
-  await save("widget", scheme, await page.screenshot({ clip: await widgetBox(page) }));
+  await save(
+    "widget",
+    "both",
+    await page.screenshot({ clip: await widgetBox(page), omitBackground: true }),
+  );
 
   // A conversation, sent as a guest of the demo install.
   await chat.getByRole("button", { name: "Send us a message" }).click();
   const name = chat.getByLabel("Your name");
   if (await name.isVisible().catch(() => false)) {
-    await name.fill("Maya Okafor");
-    await chat.getByRole("textbox", { name: "Email" }).fill("maya.capture@example.org");
+    // Typed as a person types: the install's bot check turns away a form filled in an instant.
+    await name.pressSequentially("Maya Okafor", { delay: TYPING_MS });
+    await chat
+      .getByRole("textbox", { name: "Email" })
+      .pressSequentially("maya.capture@example.org", { delay: TYPING_MS });
   }
-  await chat.getByLabel("Your message").fill("Can I change the email my invoices go to?");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("Can I change the email my invoices go to?", { delay: TYPING_MS });
   await chat.getByRole("button", { name: "Send message" }).click();
   await chat.getByRole("log", { name: "Messages" }).getByText("invoices go to").waitFor();
   await page.waitForTimeout(1200);
-  await save("conversation", scheme, await page.screenshot({ clip: await widgetBox(page) }));
+  await save(
+    "conversation",
+    "both",
+    await page.screenshot({ clip: await widgetBox(page), omitBackground: true }),
+  );
   await page.close();
 }
 
@@ -119,10 +147,14 @@ async function captureApp(browser, scheme) {
   // Open the newest conversation, so the inbox shows a thread beside the list.
   await page
     .getByRole("region", { name: "Conversations" })
-    .getByRole("button", { name: /Maya Okafor/ })
+    .getByRole("button", { name: /Jonas Berg/ })
     .first()
     .click();
   await page.waitForURL(/\?c=/);
+  // The details panel shows an empty "Not found." block for a contact who is not on the site
+  // now; hide the panel so the capture is the inbox and the thread.
+  const details = page.getByRole("button", { name: "Details", exact: true });
+  if ((await details.getAttribute("aria-pressed")) !== "false") await details.click();
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(1200);
   await save("inbox", scheme, await page.screenshot());
@@ -130,12 +162,15 @@ async function captureApp(browser, scheme) {
 }
 
 await mkdir(OUT, { recursive: true });
+const host = createServer((_request, response) => {
+  response.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(hostPage());
+});
+await new Promise((resolve) => host.listen(HOST_PORT, "127.0.0.1", () => resolve(undefined)));
 const browser = await chromium.launch();
 try {
-  for (const scheme of ["light", "dark"]) {
-    await captureWidget(browser, scheme);
-    await captureApp(browser, scheme);
-  }
+  await captureWidget(browser);
+  for (const scheme of ["light", "dark"]) await captureApp(browser, scheme);
 } finally {
   await browser.close();
+  host.close();
 }

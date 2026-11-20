@@ -9,8 +9,11 @@ const Flight = dynamic(() => import("./flight").then((module) => module.WrenFlig
   ssr: false,
 });
 
-/** Below this width the wren does not fly; it simply stands at each perch. */
-const WIDE_QUERY = "(min-width: 768px)";
+/**
+ * Below this width the wren does not fly; it simply stands at each perch. The flight needs the
+ * two-column layout, where the drawings have a column of their own beside the writing.
+ */
+const WIDE_QUERY = "(min-width: 1024px)";
 
 function subscribe(onChange: () => void) {
   const list = window.matchMedia(WIDE_QUERY);

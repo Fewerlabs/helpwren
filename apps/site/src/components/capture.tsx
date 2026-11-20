@@ -17,7 +17,7 @@ export const captures = {
   inbox: {
     width: 1440,
     height: 900,
-    alt: "The team's inbox: views, a list of conversations, the open conversation and the contact's details.",
+    alt: "The team's inbox: views, a list of conversations and an open ticket with an internal note.",
   },
   help: {
     width: 1440,

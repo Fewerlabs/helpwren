@@ -18,7 +18,7 @@ export function Hero({ stars }: { stars: number | null }) {
     >
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
         <div>
-          <EntryHeader number="01" subject="First sighting" note="Open source · MIT" />
+          <EntryHeader number="01" subject="First sighting" note="Open source" />
           <h1
             id="hero-title"
             data-split
