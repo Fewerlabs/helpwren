@@ -1,5 +1,6 @@
 const HOST = /^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:\d{1,5})?$/;
-const LOCAL = /^(localhost|127\.0\.0\.1)(:\d+)?$/;
+// `localhost` and every name under it are this machine (RFC 6761), as are its addresses.
+const LOCAL = /^((\*\.)?([a-z0-9-]+\.)*localhost|127\.0\.0\.1)(:\d+)?$/;
 
 /**
  * The sites that may show the chat in a frame, as Content-Security-Policy sources, from the
