@@ -100,6 +100,8 @@ export const styles = `
   max-width: calc(100vw - var(--hw-x) * 2);
   font: 400 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--hw-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   animation: hw-rise 220ms ease both;
 }
 .teaser[hidden] { display: none; }
@@ -154,7 +156,16 @@ export const styles = `
 .teaser-words { display: grid; min-width: 0; }
 .teaser-name { color: #5f6c65; font-size: 12px; font-weight: 500; }
 .teaser-name:empty { display: none; }
-.teaser-message { overflow-wrap: anywhere; }
+/* A long reply is cut to three lines; the chat has the rest. */
+.teaser-message {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  font-weight: 300;
+}
 .teaser-close {
   position: absolute;
   top: 6px;
