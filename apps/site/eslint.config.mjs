@@ -2,6 +2,8 @@ import next from "@helpwren/config/eslint/next";
 
 /** UI comes from @helpwren/design-system, through its entry point only. */
 export default [
+  // Written by fumadocs-mdx from the docs.
+  { ignores: [".source/**"] },
   ...next,
   {
     files: ["src/**/*.{ts,tsx}"],

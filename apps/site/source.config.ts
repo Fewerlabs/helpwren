@@ -35,6 +35,9 @@ export const docs = defineDocs({
 export default defineConfig({
   mdxOptions: {
     remarkPlugins: [remarkDocsPage],
+    // The docs' only images are badges hosted elsewhere, such as Vercel's deploy button. They are
+    // shown as they are, so the build never fetches them to measure them.
+    remarkImageOptions: false,
     rehypeCodeOptions: {
       themes: { light: "github-light", dark: "github-dark" },
     },

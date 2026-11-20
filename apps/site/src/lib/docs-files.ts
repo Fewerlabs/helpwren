@@ -8,6 +8,8 @@ export const PUBLIC_DOCS = [
   "index.md",
   "how-it-works.md",
   "concepts.md",
+  // Contextual help, written with the feature, is listed in the Help center section.
+  "contextual-help.md",
   "get-started/**",
   "chat/**",
   "users/**",

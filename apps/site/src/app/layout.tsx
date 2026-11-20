@@ -2,6 +2,7 @@ import { themeScript } from "@helpwren/design-system";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { OutsideDocs } from "@/components/outside-docs";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/content/site";
 import { MotionLayer } from "@/motion/motion-layer";
 import { motionScript } from "@/motion/script";
@@ -46,7 +47,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <MotionLayer />
+        <OutsideDocs>
+          <MotionLayer />
+        </OutsideDocs>
       </body>
     </html>
   );

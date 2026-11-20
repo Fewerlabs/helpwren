@@ -11,12 +11,12 @@ export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 const blob = (path: string) => `${GITHUB_URL}/blob/main/${path}`;
 
 export const links = {
-  /** The install guide: the installer, Vercel or Docker, and the setup wizard. */
-  install: blob("docs/install.md"),
+  /** The docs on this site. Install is where to begin: Supabase Cloud or Docker, then /setup. */
+  install: "/docs/get-started",
   github: GITHUB_URL,
-  docs: `${GITHUB_URL}/tree/main/docs`,
-  widgetDocs: blob("docs/widget.md"),
-  mobileDocs: blob("docs/mobile.md"),
+  docs: "/docs",
+  widgetDocs: "/docs/chat",
+  mobileDocs: "/docs/mobile",
   contributing: blob("CONTRIBUTING.md"),
   licence: blob("LICENSE"),
 } as const;
