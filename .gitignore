@@ -47,3 +47,6 @@ docs/helpwren-landing-page-prompt.md
 
 # Written by fumadocs-mdx from docs/ when the site builds or is type-checked
 apps/site/.source/
+
+# Vercel CLI project links
+.vercel
