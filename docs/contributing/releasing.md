@@ -60,10 +60,12 @@ on npm yet (with provenance), and creates the GitHub release from that version's
 
 ## One-time setup
 
-- **npm:** create the `helpwren` organisation on npmjs.com, so `@helpwren/*` can be published.
-  For the first release, add an automation token as the repository secret `NPM_TOKEN`. Once
-  both packages exist, set up [trusted publishing](https://docs.npmjs.com/trusted-publishers)
-  for `release.yml` on each, then delete the token.
+- **npm:** two organisations. `fewerlabs` owns the unscoped `helpwren` package, and `helpwren`
+  owns the `@helpwren` scope, so `@helpwren/react-native` and later packages can be published.
+  Give the same maintainers access to both. For the first release, make an automation token
+  from an account in both and add it as the repository secret `NPM_TOKEN`. Once both packages
+  exist, set up [trusted publishing](https://docs.npmjs.com/trusted-publishers) for
+  `release.yml` on each, then delete the token.
 - **GitHub:** the workflow uses the built-in `GITHUB_TOKEN`; nothing to add.
 
 ## If something goes wrong
