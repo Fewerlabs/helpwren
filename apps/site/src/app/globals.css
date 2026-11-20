@@ -1,7 +1,13 @@
 @import "tailwindcss";
 @import "@helpwren/design-system/styles.css";
 
-/* The journal's paper: the page itself is the white sheet. */
+/* The journal's paper: the page itself is the white sheet. Tape and drawings may reach past a
+   narrow screen's edge; they are clipped there rather than making the page scroll sideways. */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background-color: var(--card);
 }

@@ -30,22 +30,31 @@ a still wren standing at every perch. Each layer below only adds to that.
    - `helpers.ts`: the shared motion: `revealHeading` (SplitText, lines rising through a mask),
      `riseIn` (tags), `tapeDown` (tape), `entryTimeline` (plays once on entry, or not at all if
      already seen).
-   - Each entry's `sections/<entry>/motion.tsx` loads its `timeline.tsx` through `MotionGate`;
-     the timeline's `useSectionTimeline` runs inside `useGSAP`, so everything it makes is
-     reverted when it unmounts.
-3. **The wren** (`src/wren`). On screens 768px and wider, `flight-layer.tsx` loads `flight.tsx`:
-   one wren in a fixed, `pointer-events: none` layer. It reads every `[data-wren-perch]` and
-   `[data-wren-waypoint]` in the page, builds one smooth path through them (`route.ts`),
-   rebuilt on resize and font load, and follows the scroll with a scrubbed ScrollTrigger.
-   Positions come from MotionPathPlugin; the trail is drawn with DrawSVGPlugin. It holds at each
-   perch, flaps while climbing, glides down, lands feet first, tilts no more than 18 degrees and
-   sleeps on the footer branch. When it lands it sets `data-wren-here` (and `data-wren-visited`)
-   on the entry, which the stylesheet uses for the entry's small action. Below 768px the still
-   wrens stay at their perches.
-4. **Three.js** (`src/scenes`). The hero and the anatomy entry wrap their drawing in
-   `SceneSlot`. On capable devices (WebGL2, 768px+, 4 cores, 4 GB, no data saver), near the
-   viewport, it loads the scene's own chunk: the same lines in 3D with fat lines and a boil in
-   the line shader. The drawing fades only after the first frame.
+   - `entry-motion.tsx`: one component every entry renders (through `Entry`); its timeline
+     runs `revealEntry` inside `useGSAP`, so everything it makes is reverted on unmount.
+   - `components/entry-watch.tsx`: marks each entry `data-in-view`, once, when its top reaches
+     the line where the wren lands (45% down the screen), or at once if the page opens below it.
+     Entry actions (the price struck out, the plug pushed into the socket, the snippet typed)
+     key off that, never off the wren, so jumping past an entry still shows it complete.
+3. **The wren** (`src/wren`). From 1024px wide (the two-column layout), `flight-layer.tsx`
+   loads `flight.tsx`. It reads every `[data-wren-perch]` and `[data-wren-waypoint]`, builds one
+   smooth path through them (`route.ts`), and maps the whole page, top to bottom, onto it with a
+   scrubbed ScrollTrigger, so a reload part way down or a resize puts the wren where the scroll
+   says. It is placed by arc length (continuous: no jumps) and held inside the screen's edges. It
+   holds at each perch for about a third of the next leg, hops up the pinned growth entry one
+   branch per step and sits on the top branch until the entry lets go, and flies through the
+   anatomy gap. The flight writes each frame to `state.ts`; on capable devices `wren-3d.tsx` draws
+   it in 3D (ink outlines on paper: body, head, tail, wings with shoulder, elbow and wrist), with
+   a procedural rig: wing beats with follow-through, bob, tail fanning, head looking ahead and at
+   the reader, blinks, hops, preening; banking, climbing, gliding and a landing flare, all through
+   springs. Elsewhere the SVG `WrenBird` poses fly instead. The pinned entry's height is reserved
+   in CSS before paint (`html[data-motion-pref="on"]`), so nothing shifts.
+4. **One canvas** (`src/scenes/scene-canvas.tsx`). The page has a single WebGL canvas, fixed
+   over the screen. The hero's branch, the anatomy stack and the wren are drei Views: DOM
+   elements whose 3D content that canvas draws, scissored to them. Scenes load near the viewport
+   on capable devices (WebGL2, 768px+, 4 cores, 4 GB, no data saver), over the still SVG of the
+   same drawing, which fades only after the first frame. Frames are drawn on demand: on scroll,
+   while the wren moves, and for its idle life.
 5. **The real widget** (`components/live-widget.tsx`). With `NEXT_PUBLIC_HELPWREN_DEMO_URL` set,
    the widget script loads from that install once the page is idle, and entry 05 can open it.
    The wren hops each time the chat opens.
@@ -64,8 +73,8 @@ finished and still.
 3. Mark where the wren lands with `<Perch name="<name>" x={…} y={…} />` inside the sketch's
    `@container` (percentages of the drawing; the feet land on the point). For a fly-through
    without landing, use an empty `<span data-wren-waypoint="<name>">`.
-4. Copy `motion.tsx` and `timeline.tsx` from another entry, and call `revealEntry(section)` plus
-   anything of your own from `helpers.ts`. Name every number as a constant.
+4. If the entry does something of its own, key it off `[data-entry="<name>"][data-in-view]` in
+   `globals.css` (or add to `revealEntry`). Name every number as a constant.
 5. Put it in `src/app/page.tsx` in order. The route picks up the perch by itself.
 6. Check the copy against what is built, and run `pnpm --filter @helpwren/site test`.
 
@@ -108,7 +117,9 @@ out below ten stars or on any failure.
 
 ## Measured
 
-On the production build, Lighthouse 13.5 (mobile, simulated slow 4G and 4x CPU): Performance 94,
-Accessibility 100, Best Practices 100, SEO 100; CLS 0, TBT 60ms; LCP 2.9s simulated (observed
-under 0.1s locally; the simulation counts the framework's JavaScript). Desktop: 99/100/100/100.
-Scrolling the whole page with the CPU slowed 4x: 57 fps, 2 frames over 50ms.
+On the production build, Lighthouse 13.5 (mobile, simulated slow 4G and 4x CPU): Performance 93,
+Accessibility 100, Best Practices 100, SEO 100; CLS 0, TBT 70ms; LCP 3.1s simulated (observed
+under 0.1s locally; the simulation counts the framework's JavaScript). Desktop: 98/100/100/100.
+Scrolling the page with the CPU slowed 4x and no WebGL: 57 fps. The stress test (reloads at five
+depths, resizes, anchor jumps, flicks, at 375, 768, 1280 and 1440) keeps the wren on screen and the
+page in place throughout; see [spec-check.md](spec-check.md).
