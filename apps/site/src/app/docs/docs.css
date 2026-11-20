@@ -1,0 +1,71 @@
+/*
+ * Fumadocs' docs layout, on the site's own tokens. Loaded on /docs only. The site's stylesheet
+ * (globals.css) already brings Tailwind's base and the design system, so this adds only the
+ * utilities the docs layout uses. Tailwind's theme is a reference here: the utilities read the
+ * variables the site's stylesheet defines, such as the Figtree font, instead of redefining them.
+ */
+@import "tailwindcss/theme.css" layer(theme) theme(reference);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+@import "fumadocs-ui/css/lib/default-colors.css";
+@import "fumadocs-ui/css/lib/base.css";
+@import "fumadocs-ui/css/lib/shiki.css";
+@plugin "../../../node_modules/fumadocs-ui/dist/tailwind/typography.js";
+@import "fumadocs-ui/css/generated/docs.css";
+@import "fumadocs-ui/css/generated/shared.css";
+
+/* The design system's colours, light and dark, under Fumadocs' names. Rules are quiet hairlines. */
+:root,
+.dark {
+  --color-fd-background: var(--card);
+  --color-fd-foreground: var(--foreground);
+  --color-fd-muted: var(--wash);
+  --color-fd-muted-foreground: var(--muted-foreground);
+  --color-fd-popover: var(--popover);
+  --color-fd-popover-foreground: var(--popover-foreground);
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--card-foreground);
+  --color-fd-border: var(--rule);
+  --color-fd-primary: var(--moss);
+  --color-fd-primary-foreground: var(--primary-foreground);
+  --color-fd-secondary: var(--wash);
+  --color-fd-secondary-foreground: var(--foreground);
+  --color-fd-accent: var(--wash);
+  --color-fd-accent-foreground: var(--foreground);
+  --color-fd-ring: var(--ring);
+  --color-fd-info: var(--biro);
+  --color-fd-warning: var(--ochre);
+  --color-fd-error: var(--pen);
+  --color-fd-success: var(--moss);
+}
+
+#nd-sidebar {
+  --color-fd-muted: var(--wash);
+  --color-fd-secondary: var(--wash);
+}
+
+/* Reading text: a comfortable size and line length, code in the site's mono. */
+#nd-page .prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+#nd-page .prose a:not([data-card]) {
+  text-decoration-color: color-mix(in srgb, var(--moss) 60%, transparent);
+  text-underline-offset: 3px;
+}
+
+#nd-page .prose a:not([data-card]):hover {
+  text-decoration-color: var(--moss);
+}
+
+#nd-page .prose :where(code):not(pre code) {
+  font-size: 0.875em;
+}
+
+#nd-page .prose table {
+  font-size: 0.9375rem;
+}

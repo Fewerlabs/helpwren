@@ -49,7 +49,7 @@ describe("the landing page", () => {
     if (!hero) return;
     expect(within(hero).getByRole("link", { name: /install helpwren/i })).toHaveAttribute(
       "href",
-      expect.stringContaining("github.com/Fewerlabs/helpwren"),
+      "/docs/get-started",
     );
     expect(within(hero).getByRole("link", { name: /view on github/i })).toBeInTheDocument();
   });

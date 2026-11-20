@@ -176,7 +176,7 @@ async function installCloud(ctx: Context, options: InstallOptions): Promise<stri
       "Set these once in the Supabase dashboard (or pass --access-token to have it done): " +
         "Authentication, then Sign In / Providers: allow anonymous sign-ins. " +
         "Authentication, then Emails, Magic link: paste supabase/templates/sign-in-code.html. " +
-        `URL Configuration: Site URL ${appUrl}. See docs/install.md.`,
+        `URL Configuration: Site URL ${appUrl}. See https://helpwren.fewerlabs.dev/docs/get-started/supabase-cloud#configure-auth`,
     );
   }
 
@@ -338,12 +338,14 @@ export async function install(ctx: Context, options: InstallOptions): Promise<vo
   if (mode === "cloud") {
     ctx.out.info("Run it here:   pnpm build && pnpm --filter @helpwren/web start");
     ctx.out.info(
-      "Or deploy apps/web to Vercel with the same four variables (see docs/install.md).",
+      "Or deploy apps/web to Vercel with the same four variables: https://helpwren.fewerlabs.dev/docs/get-started/supabase-cloud",
     );
   }
   ctx.out.info(`Open ${appUrl}/setup to create the first admin.`);
   ctx.out.info(
     "Have a scheduler call /api/jobs/email and /api/jobs/push every minute with CRON_SECRET" +
-      (mode === "docker" ? " (the scheduler container already does)." : " (docs/install.md)."),
+      (mode === "docker"
+        ? " (the scheduler container already does)."
+        : ": https://helpwren.fewerlabs.dev/docs/operations/scheduled-jobs"),
   );
 }

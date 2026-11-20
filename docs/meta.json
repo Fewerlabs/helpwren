@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "index",
+    "how-it-works",
+    "concepts",
+    "---Guides---",
+    "get-started",
+    "chat",
+    "users",
+    "help-center",
+    "inbox",
+    "mobile",
+    "email",
+    "security",
+    "---Reference---",
+    "operations",
+    "packages",
+    "contributing"
+  ]
+}

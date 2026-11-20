@@ -44,3 +44,6 @@ docs/helpwren-landing-page-prompt.md
 
 # Screenshots taken while working on the interface
 .shots/
+
+# Written by fumadocs-mdx from docs/ when the site builds or is type-checked
+apps/site/.source/

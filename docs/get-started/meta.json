@@ -1,0 +1,4 @@
+{
+  "title": "Get started",
+  "pages": ["supabase-cloud", "docker", "setup-wizard", "first-chat"]
+}

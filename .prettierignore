@@ -9,6 +9,7 @@ CHANGELOG.md
 CODE_OF_CONDUCT.md
 # shadcn/ui output keeps upstream formatting so updates diff cleanly
 packages/design-system/src/components/ui/
+apps/site/.source/
 
 # Local AI tool state (OpenWolf and others), not part of the project
 .codex/

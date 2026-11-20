@@ -7,7 +7,7 @@ import { database } from "./support/database";
 import { markMailbox, readSignInCode } from "./support/mailbox";
 
 // The wizard only opens on an install with nobody on its team, which the demo data is not.
-// Run this against a fresh database, as docs/install.md describes:
+// Run this against a fresh database, as docs/get-started/supabase-cloud.md describes:
 //   E2E_PORT=3170 MAILPIT_URL=http://127.0.0.1:55424 pnpm test:e2e setup.spec.ts
 const ADMIN = { name: "Rosa Diaz", email: "rosa.setup@example.com" };
 

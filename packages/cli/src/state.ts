@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
-/** The two supported ways to run Helpwren. See docs/install.md. */
+/** The two supported ways to run Helpwren. See https://helpwren.fewerlabs.dev/docs/get-started. */
 export const installModeSchema = z.enum(["cloud", "docker"]);
 export type InstallMode = z.infer<typeof installModeSchema>;
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// `pnpm helpwren <install|upgrade>`. See docs/install.md, or run with --help.
+// `pnpm helpwren <install|upgrade>`. See https://helpwren.fewerlabs.dev/docs/get-started, or run with --help.
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 

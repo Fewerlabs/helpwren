@@ -14,7 +14,7 @@ services:
       GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: http://helpwren:3000/email-templates/sign-in-code.html
 
   # The database and the uploaded files live in named volumes, not in folders inside ./supabase,
-  # so fetching a new Supabase release can never touch them. Back them up; see docs/install.md.
+  # so fetching a new Supabase release can never touch them. Back them up; see docs/operations/backups.md.
   db:
     volumes:
       - db-data:/var/lib/postgresql/data

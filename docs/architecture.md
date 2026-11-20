@@ -28,7 +28,7 @@ published. See [ADR 0001](decisions/0001-tooling.md).
 prints what to do next, for Supabase Cloud or for Docker. `deploy/docker` holds the Compose file
 that includes Supabase's own self-hosting stack, fetched at a pinned release, beside the app's
 image (`apps/web/Dockerfile`) and a scheduler. The first admin is made in the browser at
-`/setup`. See [Installing Helpwren](install.md) and
+`/setup`. See [Choose how to install](get-started/index.md) and
 [ADR 0024](decisions/0024-installer-and-setup-wizard.md).
 
 ## The database: `supabase/`
@@ -45,7 +45,7 @@ Helpwren runs on Supabase: Postgres, Auth, Realtime and Storage.
 The browser reaches the database with a public key, so Row Level Security decides who can read
 and write each row, and the tests are the proof. Anything the rules do not allow goes through the
 app's server. See [ADR 0006](decisions/0006-database-and-access-rules.md) for the rules and
-[Setup](contributing/setup.md#local-database) for the commands.
+[Development setup](contributing/setup.md#local-database) for the commands.
 
 To change the schema, add a migration with `pnpm exec supabase migration new <name>`, give any
 new table its grants, policies and a test file, then run `pnpm db:reset`, `pnpm db:test` and
@@ -243,7 +243,7 @@ sent to the chat frame as a `preview` message. The frame takes those only from i
 loads no session, and sends nothing.
 
 A site can also shape the widget from its own page: put the chat inline in an element, open it
-from its own buttons, and override position, colour and size. [docs/widget.md](widget.md) lists
+from its own buttons, and override position, colour and size. [Add the chat](chat/index.md) lists
 every option.
 
 `/chat` is the same chat on a page of its own, for a link where there is no site to put the

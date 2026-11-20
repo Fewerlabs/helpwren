@@ -10,7 +10,7 @@
 #
 #   docker compose up --detach --build
 #
-# See docs/install.md.
+# See docs/get-started/docker.md.
 
 name: helpwren
 
@@ -53,7 +53,7 @@ services:
     ports:
       - ${HELPWREN_PORT:-3000}:3000
 
-  # Calls the jobs that send due emails and pushes, once a minute, as docs/install.md asks of
+  # Calls the jobs that send due emails and pushes, once a minute, as docs/operations/scheduled-jobs.md asks of
   # every install. A loop, not cron: it needs nothing installed and its log shows each run.
   scheduler:
     image: alpine:3.22

@@ -31,7 +31,7 @@ The first release: live chat, tickets and a help center you run yourself, on you
 
 `pnpm helpwren install` sets up Supabase Cloud with Vercel, or everything on your own server with
 Docker Compose. A new install opens `/setup` to create the first admin and walk through brand,
-email and the widget. See [docs/install.md](docs/install.md).
+email and the widget. See [Get started](https://helpwren.fewerlabs.dev/docs/get-started).
 
 ### Packages
 
@@ -44,5 +44,5 @@ email and the widget. See [docs/install.md](docs/install.md).
 - Until the first admin exists, anyone who can reach `/setup` can become it. Finish setup right
   after deploying.
 - Vercel's scheduled jobs run once a day on the Hobby plan and only call with `GET`, so pending
-  emails need another scheduler there. [docs/install.md](docs/install.md) lists options.
+  emails need another scheduler there. [Scheduled jobs](https://helpwren.fewerlabs.dev/docs/operations/scheduled-jobs) lists options.
 - The React Native screen has not yet been tried on real devices.

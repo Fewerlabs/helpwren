@@ -1,3 +1,4 @@
+import { createMDX } from "fumadocs-mdx/next";
 import type { NextConfig } from "next";
 
 /** Headers for every page. Vercel adds HSTS on its own domains. */
@@ -15,4 +16,7 @@ const nextConfig: NextConfig = {
   headers: () => Promise.resolve([{ source: "/:path*", headers: securityHeaders }]),
 };
 
-export default nextConfig;
+/** Compiles the docs, read from the repository's `docs/` folder (see `source.config.ts`). */
+const withMDX = createMDX();
+
+export default withMDX(nextConfig);

@@ -1,0 +1,4 @@
+{
+  "title": "Add the chat",
+  "pages": ["options", "methods", "events", "inline", "own-button", "appearance", "visitors"]
+}
