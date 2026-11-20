@@ -8,6 +8,10 @@ describe("readableOn", () => {
     expect(readableOn("#1d4ed8")).toBe("#ffffff");
     expect(readableOn("#facc15")).toBe("#101a15");
     expect(readableOn("#ffffff")).toBe("#101a15");
+    // Bright mid-tones read better in white, though WCAG's ratio would pick dark.
+    expect(readableOn("#f1635e")).toBe("#ffffff");
+    expect(readableOn("#f97316")).toBe("#ffffff");
+    expect(readableOn("#ffcb05")).toBe("#101a15");
   });
 });
 

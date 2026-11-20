@@ -37,7 +37,7 @@ export function SidebarGroup({ name, icon, count, defaultOpen, children }: Sideb
           name={icon}
           weight="duotone"
           route={HELP_ICON_ROUTE}
-          className="text-foreground size-4"
+          className="text-primary size-4"
         />
         <span className="min-w-0 flex-1 text-pretty">{name}</span>
         <span className="text-muted-foreground text-xs font-normal tabular-nums">{count}</span>

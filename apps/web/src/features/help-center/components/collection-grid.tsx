@@ -32,7 +32,7 @@ export function CollectionGrid({ collections, embed = null }: CollectionGridProp
                 name={collection.icon}
                 weight="duotone"
                 route={HELP_ICON_ROUTE}
-                className="text-foreground size-5"
+                className="text-primary size-5"
               />
               <span className="text-pretty">{collection.name}</span>
             </span>

@@ -4,23 +4,36 @@ import { type CSSProperties } from "react";
 const DARK_TEXT = "#101a15";
 const LIGHT_TEXT = "#ffffff";
 
-/** How bright a colour is to the eye, from 0 (black) to 1 (white), as WCAG defines it. */
+/**
+ * How bright a colour is to the eye, from 0 (black) to 1 (white), the way APCA measures it,
+ * with very dark colours lifted a little as the eye sees them.
+ */
 function luminance(hex: string): number {
-  const [red = 0, green = 0, blue = 0] = [1, 3, 5].map((start) => {
-    const channel = Number.parseInt(hex.slice(start, start + 2), 16) / 255;
-    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  const [red = 0, green = 0, blue = 0] = [1, 3, 5].map(
+    (start) => (Number.parseInt(hex.slice(start, start + 2), 16) / 255) ** 2.4,
+  );
+  const y = 0.2126729 * red + 0.7151522 * green + 0.072175 * blue;
+  return y < 0.022 ? y + (0.022 - y) ** 1.414 : y;
 }
 
-function contrast(first: number, second: number): number {
-  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+/**
+ * How readable text is on a background, as APCA's lightness contrast (0 to about 106). Unlike
+ * WCAG's ratio it weighs white on a mid-tone such as coral or orange as the eye does, so a bright
+ * brand colour gets white text and only a light one, such as yellow, gets dark.
+ */
+function lightnessContrast(text: number, background: number): number {
+  const contrast =
+    background > text
+      ? (background ** 0.56 - text ** 0.57) * 1.14
+      : (background ** 0.65 - text ** 0.62) * 1.14;
+  return Math.abs(contrast) < 0.1 ? 0 : (Math.abs(contrast) - 0.027) * 100;
 }
 
 /** White or near-black, whichever is easier to read on the colour given. */
 export function readableOn(accent: string): string {
   const background = luminance(accent);
-  return contrast(background, 1) >= contrast(background, luminance(DARK_TEXT))
+  return lightnessContrast(luminance(LIGHT_TEXT), background) >=
+    lightnessContrast(luminance(DARK_TEXT), background)
     ? LIGHT_TEXT
     : DARK_TEXT;
 }
