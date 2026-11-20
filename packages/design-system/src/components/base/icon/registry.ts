@@ -1,4 +1,4 @@
-// The only file allowed to import the icon library. To add an icon: find its name on
+// With glyphs.ts, the only file allowed to import the icon library. To add an icon: find its name on
 // https://phosphoricons.com, add one import and one registry entry, both in alphabetical order.
 // Imported from the /ssr entry so icons render in React Server Components too.
 import {
@@ -143,6 +143,9 @@ const ChatWrenIcon: Glyph = forwardRef<SVGSVGElement, ComponentProps<Glyph>>(
     return createElement(SSRBase, { ...props, ref, weights: chatWrenWeights });
   },
 );
+
+/** One icon component from the set, for `IconGlyph`. */
+export type IconGlyphComponent = typeof CheckIcon;
 
 export const registry = {
   archive: ArchiveIcon,

@@ -1,0 +1,22 @@
+800x900 light: 464 samples, one every 20px of a 9255px scroll
+  pass: no overlaps, and the wren stayed on screen
+1024x900 light: 331 samples, one every 20px of a 6587px scroll
+  pass: no overlaps, and the wren stayed on screen
+1280x900 light: 388 samples, one every 20px of a 7726px scroll
+  pass: no overlaps, and the wren stayed on screen
+1440x900 light: 388 samples, one every 20px of a 7726px scroll
+  pass: no overlaps, and the wren stayed on screen
+800x800 dark: 468 samples, one every 20px of a 9336px scroll
+  pass: no overlaps, and the wren stayed on screen
+1024x800 dark: 335 samples, one every 20px of a 6670px scroll
+  pass: no overlaps, and the wren stayed on screen
+1280x800 dark: 378 samples, one every 20px of a 7527px scroll
+  pass: no overlaps, and the wren stayed on screen
+1440x800 dark: 378 samples, one every 20px of a 7527px scroll
+  pass: no overlaps, and the wren stayed on screen
+640x768 light: 525 samples, one every 20px of a 10472px scroll
+  pass: no overlaps, and the wren stayed on screen
+900x768 light: 465 samples, one every 20px of a 9262px scroll
+  pass: no overlaps, and the wren stayed on screen
+1366x768 light: 376 samples, one every 20px of a 7489px scroll
+  pass: no overlaps, and the wren stayed on screen

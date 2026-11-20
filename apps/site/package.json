@@ -1,0 +1,46 @@
+{
+  "name": "@helpwren/site",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Helpwren website at helpwren.fewerlabs.dev: a scroll-driven field journal.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3210",
+    "build": "next build",
+    "start": "next start --port 3210",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "capture": "node scripts/capture.mjs",
+    "check:wren": "node scripts/overlap-check.mjs"
+  },
+  "dependencies": {
+    "@gsap/react": "2.1.2",
+    "@helpwren/design-system": "workspace:*",
+    "gsap": "3.15.1",
+    "lenis": "1.3.27",
+    "next": "^16.4.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.3.5",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "^6.3.0",
+    "eslint": "catalog:",
+    "jsdom": "^31.0.1",
+    "playwright": "^1.65.1",
+    "sharp": "0.35.5",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -3,16 +3,16 @@
  * mostly still. It only runs when the illustration is rendered with `animate`.
  */
 
-[data-slot="wren"][data-bird="off"] .hw-bird {
+:is([data-slot="wren"], [data-slot="sketch"])[data-bird="off"] .hw-bird {
   display: none;
 }
 
-[data-slot="wren"] circle[fill] {
+:is([data-slot="wren"], [data-slot="sketch"]) circle[fill] {
   transform-box: fill-box;
   transform-origin: center;
 }
 
-[data-slot="wren"][data-animate]
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""]
   :is(path, rect, circle):not(.hw-nodraw, .hw-hl, [fill], [stroke-dasharray]) {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
@@ -20,19 +20,20 @@
 }
 
 /* The wren is drawn after the scene around it. */
-[data-slot="wren"][data-animate] g[transform] path {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] g[transform] path {
   animation-duration: 1.2s;
   animation-delay: 0.9s;
 }
 
-[data-slot="wren"][data-animate] circle[fill]:not(.hw-hl, .hw-typing) {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""]
+  circle[fill]:not(.hw-hl, .hw-typing) {
   opacity: 0;
   animation:
     hw-fade 0.25s 2.1s forwards,
     hw-blink 6s 3.2s infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-bob {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"]) .hw-bob {
   transform-box: fill-box;
   transform-origin: 50% 100%;
   animation: hw-bob 5s 2.6s infinite;
@@ -43,78 +44,281 @@
  * down fast and up a little slower, and the body rises with the beats and sinks
  * through the glide.
  */
-[data-slot="wren"][data-animate] .hw-flap {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"]) .hw-flap {
   transform-box: fill-box;
   transform-origin: 50% 100%;
   animation: hw-flap 2.6s 2.4s cubic-bezier(0.45, 0, 0.3, 1) infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-fly {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"]) .hw-fly {
   transform-box: fill-box;
   transform-origin: center;
   animation: hw-fly 2.6s 2.4s ease-in-out infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-leaf {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"]) .hw-leaf {
   transform-box: fill-box;
   transform-origin: 0% 100%;
   animation: hw-sway 4s 2.4s ease-in-out infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-leaf2 {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-leaf2 {
   animation-delay: 2.9s;
 }
 
-[data-slot="wren"][data-animate] .hw-typing {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-typing {
   opacity: 0;
   animation:
     hw-fade 0.2s 2.2s forwards,
     hw-type 1.2s 2.4s infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-typing2 {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-typing2 {
   animation-delay: 2.2s, 2.6s;
 }
 
-[data-slot="wren"][data-animate] .hw-typing3 {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-typing3 {
   animation-delay: 2.2s, 2.8s;
 }
 
-[data-slot="wren"][data-animate] .hw-lift {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"]) .hw-lift {
   transform-box: fill-box;
   transform-origin: 0% 100%;
   animation: hw-lift 5s 2.6s ease-in-out infinite;
 }
 
-[data-slot="wren"][data-animate] path.hw-point {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] path.hw-point {
   animation:
     hw-draw 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards,
     hw-redraw 5s 2.8s infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-grass {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-grass {
   transform-box: fill-box;
   transform-origin: 50% 100%;
   animation: hw-sway 3.5s 2.2s ease-in-out infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-socket {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-socket {
   animation: hw-socket 4.5s 2.4s ease-in-out infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-spark {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-spark {
   opacity: 0;
   animation: hw-spark 4.5s 2.4s infinite;
 }
 
-[data-slot="wren"][data-animate] .hw-hl {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-hl {
   opacity: 0;
   animation: hw-hl 0.5s 1.1s ease-out forwards;
 }
 
 /* The red pen mark comes last. */
-[data-slot="wren"][data-animate] :is(path, circle).hw-pen {
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] :is(path, circle).hw-pen {
   animation-delay: 1.6s;
+}
+
+/* A soft spring: overshoots a little and settles, never bounces twice. */
+:is([data-slot="wren"], [data-slot="sketch"]) {
+  --hw-spring: linear(
+    0,
+    0.22 7%,
+    0.6 16%,
+    0.92 26%,
+    1.06 34%,
+    1.08 40%,
+    1.03 52%,
+    0.99 66%,
+    1 100%
+  );
+}
+
+/* Paper, tags and tape settle once they are drawn, as if just pinned. */
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-settle {
+  transform-box: view-box;
+  animation: hw-settle 1.4s 0.5s var(--hw-spring) both;
+}
+
+/* An asleep wren breathes, slowly. */
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"])
+  .hw-breathe {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: hw-breathe 4.8s ease-in-out infinite;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate]:not([data-animate="waiting"]) .hw-z {
+  animation: hw-z 4.8s ease-in-out infinite;
+}
+
+/* A hop, once, when something happens beside the wren. Works without `animate`. */
+:is([data-slot="wren"], [data-slot="sketch"]) .hw-react {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: hw-hop 0.7s var(--hw-spring);
+}
+
+@keyframes hw-settle {
+  from {
+    transform: rotate(-5deg);
+  }
+  to {
+    transform: rotate(0);
+  }
+}
+
+@keyframes hw-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025, 0.985);
+  }
+}
+
+@keyframes hw-z {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes hw-hop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(0) scale(1.06, 0.92);
+  }
+  55% {
+    transform: translateY(-7px) scale(0.97, 1.04);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+ * Each scene's small action, played once after it is drawn: the bell
+ * rings, the telescope sweeps the sky, the bookmark drops into the book, a badge pops.
+ */
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-ring {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: hw-ring 0.9s 1.5s ease-in-out both;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-sweep {
+  transform-box: view-box;
+  transform-origin: 134px 80px;
+  animation: hw-sweep 1.6s 1.4s var(--hw-spring) both;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] path.hw-drop {
+  animation:
+    hw-draw 1.3s 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    hw-drop 0.7s 2.2s var(--hw-spring) both;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hw-pop 0.6s 1.5s var(--hw-spring) both;
+}
+
+@keyframes hw-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(12deg);
+  }
+  35% {
+    transform: rotate(-10deg);
+  }
+  55% {
+    transform: rotate(6deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+}
+
+@keyframes hw-sweep {
+  0% {
+    transform: rotate(0);
+  }
+  40% {
+    transform: rotate(-7deg);
+  }
+  70% {
+    transform: rotate(4deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes hw-drop {
+  from {
+    transform: translateY(-6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes hw-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
+ * Drawn when it scrolls into view (`animate="in-view"`). Until then it waits, undrawn; one that
+ * was already on screen when the page opened is not drawn again, it only lives ("idle").
+ */
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate="waiting"]
+  :is(path, rect, circle):not(.hw-nodraw, .hw-hl, [fill], [stroke-dasharray]) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate="waiting"]
+  :is(.hw-hl, circle[fill], .hw-spark) {
+  opacity: 0;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate="idle"]
+  circle[fill]:not(.hw-hl, .hw-typing) {
+  animation: hw-blink 6s 1.2s infinite;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate="idle"] path.hw-point {
+  stroke-dasharray: 1;
+  animation: hw-redraw 5s 2.8s infinite;
+}
+
+/* Small movements pause while the drawing is off screen. */
+:is([data-slot="wren"], [data-slot="sketch"])[data-paused] * {
+  animation-play-state: paused !important;
 }
 
 @keyframes hw-hl {
@@ -268,18 +472,25 @@
 
 /* With reduced motion every scene is simply shown, fully drawn and still. */
 @media (prefers-reduced-motion: reduce) {
-  [data-slot="wren"][data-animate] * {
+  :is([data-slot="wren"], [data-slot="sketch"])[data-animate] * {
     animation: none !important;
     stroke-dashoffset: 0 !important;
     opacity: 1 !important;
     transform: none;
   }
 
-  [data-slot="wren"][data-animate] :is(path, rect, circle):not([stroke-dasharray="4 4"]) {
+  :is([data-slot="wren"], [data-slot="sketch"])[data-animate]
+    :is(path, rect, circle):not([stroke-dasharray="4 4"]) {
     stroke-dasharray: none !important;
   }
 
-  [data-slot="wren"][data-animate] .hw-spark {
+  :is([data-slot="wren"], [data-slot="sketch"])[data-animate] .hw-spark {
     opacity: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is([data-slot="wren"], [data-slot="sketch"]) .hw-react {
+    animation: none;
   }
 }

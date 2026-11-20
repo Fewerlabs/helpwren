@@ -1,9 +1,8 @@
 import { type PublicSettings } from "@helpwren/core";
-import { cn } from "@helpwren/design-system";
+import { cn, ThemeMenu } from "@helpwren/design-system";
 import { type CSSProperties } from "react";
 
 import { bannerStyle, PageHalftone } from "@/features/help-center";
-import { ThemeMenu } from "@/features/theme";
 import { accentStyle } from "@/lib/accent";
 
 import { Chat } from "./chat";

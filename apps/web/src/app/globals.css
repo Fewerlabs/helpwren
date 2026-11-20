@@ -2,7 +2,7 @@
 @import "@helpwren/design-system/styles.css";
 
 /*
- * Switching theme: the new page is revealed by a growing circle (see lib/theme.ts), so the
+ * Switching theme: the new page is revealed by a growing circle (see setThemePreference in the design system), so the
  * browser's own cross-fade is turned off and the new page sits on top of the old one.
  */
 ::view-transition-old(root),

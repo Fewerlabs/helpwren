@@ -5,7 +5,8 @@ import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react
 import { cn } from "#lib/cn";
 
 import { Button } from "../../base/button/button";
-import { Icon } from "../../base/icon/icon";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "../../base/icon/glyphs";
+import { IconGlyph } from "../../base/icon/icon";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../base/tabs/tabs";
 import { toast } from "../../base/toast/toast";
 import { tokenize, type TokenKind } from "./tokenize";
@@ -196,7 +197,7 @@ export function CodeSnippet({
           <Button asChild variant="ghost" size="sm">
             <a href={openHref} target="_blank" rel="noreferrer noopener">
               {openLabel}
-              <Icon name="arrow-square-out" />
+              <IconGlyph glyph={ArrowSquareOutIcon} />
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
           </Button>
@@ -209,7 +210,7 @@ export function CodeSnippet({
             void copy();
           }}
         >
-          <Icon name={copied ? "check" : "copy"} />
+          <IconGlyph glyph={copied ? CheckIcon : CopyIcon} />
         </Button>
         {/* A changed label is not read out, so the change is said here. */}
         <span className="sr-only" aria-live="polite">
@@ -228,7 +229,7 @@ export function CodeSnippet({
         void copy();
       }}
     >
-      <Icon name={copied ? "check" : "copy"} />
+      <IconGlyph glyph={copied ? CheckIcon : CopyIcon} />
       <span aria-live="polite">{copied ? copiedLabel : copyLabel}</span>
     </Button>
   );
