@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "@helpwren/design-system/styles.css";
 
+/* The journal's paper: the page itself is the white sheet. */
+body {
+  background-color: var(--card);
+}
+
 /*
  * The field journal's marks. Every colour is a design token, so light and dark both follow.
  */
@@ -117,4 +122,32 @@ html[data-motion-pref="off"] :is([data-slot="wren"], [data-slot="sketch"]) .hw-s
 /* While the wren flies, the still wrens at each perch step aside for it. */
 html[data-wren="flying"] [data-still-wren] {
   visibility: hidden;
+}
+
+/*
+ * What each entry does once the wren has landed in it (the flight sets data-wren-here). The red
+ * pen strikes the price again; the level the wren stands on is marked.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion-pref="off"]) [data-entry="habitat"][data-wren-here] .hw-pen {
+    stroke-dasharray: 1;
+    animation: site-strike 0.7s 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes site-strike {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+[data-entry="growth"][data-wren-here="level-0"] [data-level="level-0"] [data-mark="tag"],
+[data-entry="growth"][data-wren-here="level-1"] [data-level="level-1"] [data-mark="tag"],
+[data-entry="growth"][data-wren-here="level-2"] [data-level="level-2"] [data-mark="tag"],
+[data-entry="growth"][data-wren-here="level-3"] [data-level="level-3"] [data-mark="tag"] {
+  border-color: var(--primary);
+  transition: border-color 0.3s;
 }

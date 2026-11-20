@@ -63,7 +63,7 @@ export function FieldGuide() {
       id="field-guide"
       aria-labelledby="field-guide-title"
       data-entry="field-guide"
-      className="relative isolate px-4 py-10 sm:py-14"
+      className="relative isolate px-4 py-14 sm:py-24"
     >
       <FieldGuideMotion />
       <div
@@ -71,45 +71,50 @@ export function FieldGuide() {
         className="halftone top-0 left-1/2 h-full w-full -translate-x-1/2"
         data-corner="center"
       />
-      <div className="bg-card border-rule border-line relative mx-auto max-w-6xl rounded-2xl p-6 sm:p-10">
-        <span
-          aria-hidden="true"
-          data-wren-waypoint="field-guide"
-          className="absolute top-[42%] left-1/2 size-0"
-        />
-        <EntryHeader number="06" subject="Field guide" note="Plate 1: behaviours" />
-        <h2
-          id="field-guide-title"
-          data-split
-          className="mt-3 text-[2rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.5rem]"
-        >
-          What it does
-        </h2>
-        <ul className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {specimens.map((specimen) => (
-            <li key={specimen.id} data-specimen className="flex flex-col">
-              <figure className="relative">
-                {specimen.scene ? (
-                  <Wren
-                    scene={specimen.scene}
-                    bird={false}
-                    animate="in-view"
-                    decorative
-                    className="mx-auto max-w-56"
-                  />
-                ) : (
-                  <PhoneSketch />
-                )}
-                <figcaption className="mt-1 text-center">
-                  <HandLabel>{specimen.label}</HandLabel>
-                </figcaption>
-              </figure>
-              <SpecimenTag name={specimen.name} className="mt-3">
-                {specimen.text}
-              </SpecimenTag>
-            </li>
-          ))}
-        </ul>
+      {/* A field-guide plate: a double ink frame, the plate's number above, figures inside. */}
+      <div className="border-foreground/70 bg-card relative mx-auto max-w-6xl border p-1.5">
+        <div className="border-foreground/30 relative border p-6 sm:p-10">
+          <span
+            aria-hidden="true"
+            data-wren-waypoint="field-guide"
+            className="absolute top-[42%] left-1/2 size-0"
+          />
+          <div className="text-center">
+            <EntryHeader number="06" subject="Field guide" note="Plate I: behaviours" />
+            <h2
+              id="field-guide-title"
+              data-split
+              className="mt-3 text-[2rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.75rem]"
+            >
+              What it does
+            </h2>
+          </div>
+          <ul className="mt-8 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {specimens.map((specimen) => (
+              <li key={specimen.id} data-specimen className="flex flex-col">
+                <figure className="relative">
+                  {specimen.scene ? (
+                    <Wren
+                      scene={specimen.scene}
+                      bird={false}
+                      animate="in-view"
+                      decorative
+                      className="mx-auto max-w-56"
+                    />
+                  ) : (
+                    <PhoneSketch />
+                  )}
+                  <figcaption className="mt-1 text-center">
+                    <HandLabel>{specimen.label}</HandLabel>
+                  </figcaption>
+                </figure>
+                <SpecimenTag name={specimen.name} className="mt-3">
+                  {specimen.text}
+                </SpecimenTag>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );

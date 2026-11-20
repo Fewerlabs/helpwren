@@ -19,7 +19,7 @@ export interface Stop {
 /** How far above the straight line between two stops the wren arcs, as a share of the distance. */
 export const ARC_LIFT = 0.18;
 /** The share of each leg's scroll spent sitting at the stop before taking off. */
-export const HOLD = 0.22;
+export const HOLD = 0.12;
 /** Where on the screen a stop is when the wren arrives at it: 45% down. */
 export const ARRIVE_AT = 0.45;
 
@@ -87,9 +87,16 @@ export interface FlightState {
   along: number;
 }
 
-/** Eases a leg: slow off the branch, quick in the air, slow onto the next. */
+/** How much of the leg's easing is a soft take-off and landing; the rest keeps pace with the scroll. */
+const EASE_SHARE = 0.35;
+
+/**
+ * Eases a leg: a little slower off the branch and onto the next, but mostly in step with the
+ * scroll, so the wren stays near the middle of the screen however long the leg.
+ */
 export function easeLeg(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  const smooth = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  return t * (1 - EASE_SHARE) + smooth * EASE_SHARE;
 }
 
 /**

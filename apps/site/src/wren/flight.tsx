@@ -3,7 +3,7 @@
 import { WrenBird, wrenPoses, type WrenPose } from "@helpwren/design-system";
 import { useRef } from "react";
 
-import { gsap, useGSAP } from "@/motion/kit";
+import { gsap, MotionPathPlugin, useGSAP } from "@/motion/kit";
 
 import { arrivals, flightAt, routePoints, routeSegments, smoothPath, type Stop } from "./route";
 
@@ -20,6 +20,8 @@ const RESIZE_DEBOUNCE_MS = 200;
 /** The width of the logo's box, in its own units: the poses are drawn in it. */
 const FOOT_X = 0.51;
 const FOOT_Y = 0.88;
+/** The wren is never drawn smaller than this, in pixels, so it reads at a glance in flight. */
+const MIN_SIZE = 72;
 
 function measureStops(): Stop[] {
   const marks = document.querySelectorAll<HTMLElement>("[data-wren-perch], [data-wren-waypoint]");
@@ -80,7 +82,11 @@ export function WrenFlight() {
       );
       const maxScroll = height - window.innerHeight;
       const times = arrivals(stops, window.innerHeight, maxScroll);
-      path.style.strokeDasharray = String(total);
+      // MotionPathPlugin measures the route once; positions along it are then cheap to read.
+      const raw = MotionPathPlugin.cacheRawPathMeasurements(
+        MotionPathPlugin.stringToRawPath(smoothPath(points)),
+      );
+      let landedAt = "";
 
       const render = (scroll: number) => {
         const { leg, along } = flightAt(scroll, stops, times);
@@ -90,12 +96,30 @@ export function WrenFlight() {
         const startLength = atStop[leg] ?? 0;
         const endLength = atStop[leg + 1] ?? startLength;
         const length = startLength + (endLength - startLength) * along;
-        const point = path.getPointAtLength(length);
-        const ahead = path.getPointAtLength(Math.min(total, length + 2));
-        const dx = ahead.x - point.x;
-        const dy = ahead.y - point.y;
+        const progress = total > 0 ? length / total : 0;
+        const point = MotionPathPlugin.getPositionOnPath(raw, progress, true);
+        const angle = "angle" in point && typeof point.angle === "number" ? point.angle : 0;
+        const radians = (angle * Math.PI) / 180;
+        const dx = Math.cos(radians);
+        const dy = Math.sin(radians);
         const sitting = along <= 0 || along >= 1;
         const stop = along >= 1 ? to : from;
+
+        // Tell the entry the wren has landed in it, so it can do its small thing.
+        const here = sitting && stop.land ? stop.name : "";
+        if (here !== landedAt) {
+          if (landedAt)
+            document
+              .querySelector(`[data-wren-perch="${landedAt}"]`)
+              ?.closest("[data-entry], footer")
+              ?.removeAttribute("data-wren-here");
+          if (here)
+            document
+              .querySelector(`[data-wren-perch="${here}"]`)
+              ?.closest("[data-entry], footer")
+              ?.setAttribute("data-wren-here", here);
+          landedAt = here;
+        }
 
         let pose: WrenPose;
         let direction: number;
@@ -115,12 +139,14 @@ export function WrenFlight() {
             pose = Math.floor(performance.now() / FLAP_MS) % 2 ? "wings-up" : "wings-down";
           else pose = "gliding";
         }
-        const size = from.size + (to.size - from.size) * along;
+        const size = Math.max(MIN_SIZE, from.size + (to.size - from.size) * along);
+        // At the birdhouse it hops in through the door, and comes out again for the next leg.
+        wren.style.opacity = here === "home-range" ? "0" : "1";
         wren.dataset.pose = pose;
         wren.style.width = `${String(size)}px`;
         wren.style.height = `${String(size)}px`;
         wren.style.transform = `translate(${String(point.x - size * FOOT_X)}px, ${String(point.y - size * FOOT_Y)}px) rotate(${String(direction * tilt)}deg) scaleX(${String(direction)})`;
-        path.style.strokeDashoffset = String(total - length);
+        gsap.set(path, { drawSVG: `0 ${String(progress * 100)}%` });
       };
 
       const proxy = { scroll: window.scrollY };
@@ -171,7 +197,7 @@ export function WrenFlight() {
       <div
         ref={bird}
         data-pose="perched"
-        className="wren-flyer absolute top-0 left-0"
+        className="wren-flyer absolute top-0 left-0 transition-opacity duration-500"
         style={{ transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%` }}
       >
         {wrenPoses.map((pose) => (

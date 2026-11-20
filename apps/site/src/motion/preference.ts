@@ -14,7 +14,7 @@ const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 /** The longest the motion layer waits for the browser to be idle before loading anyway. */
 const IDLE_TIMEOUT_MS = 2000;
 /** How long after the page has loaded before anything deferred starts loading. */
-const SETTLE_MS = 1200;
+const SETTLE_MS = 300;
 
 const listeners = new Set<() => void>();
 let idle = false;

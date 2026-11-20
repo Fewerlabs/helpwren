@@ -1,4 +1,10 @@
-import { cn, WrenBird, type IllustrationMotion, type WrenPose } from "@helpwren/design-system";
+import {
+  cn,
+  Sketch,
+  WrenBird,
+  type IllustrationMotion,
+  type WrenPose,
+} from "@helpwren/design-system";
 import type { CSSProperties, ReactNode } from "react";
 
 /*
@@ -32,7 +38,10 @@ export interface EntryProps {
   motion?: ReactNode;
 }
 
-/** One journal entry: a white sheet, a spread on a wide screen, with its header in the margin. */
+/**
+ * One journal entry, written straight on the page: its number and field note in the margin, a
+ * hand-drawn rule under them, then the writing and the drawing side by side as a spread.
+ */
 export function Entry({
   id,
   number,
@@ -53,45 +62,87 @@ export function Entry({
       id={id}
       aria-labelledby={headingId}
       data-entry={id}
-      className={cn("relative isolate px-4 py-10 sm:py-14", className)}
+      className={cn("relative isolate px-4 py-14 sm:py-24", className)}
     >
       {backdrop}
       {motion}
-      <div
-        className={cn(
-          "bg-card border-rule border-line relative mx-auto max-w-6xl rounded-2xl",
-          sketch ? "grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]" : "",
-          sheetClassName,
-        )}
-      >
-        <div className={cn("min-w-0 p-6 sm:p-10", flip && sketch ? "lg:order-3" : "")}>
-          <EntryHeader number={number} subject={subject} note={note} />
-          <h2
-            id={headingId}
-            data-split
-            className="mt-3 text-[2rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.5rem]"
-          >
-            {title}
-          </h2>
-          <div className="text-muted-foreground mt-4 space-y-4 text-base leading-normal">
-            {children}
+      <div className={cn("relative mx-auto max-w-6xl", sheetClassName)}>
+        <EntryRule number={number} subject={subject} note={note} />
+        <div
+          className={cn(
+            "mt-8 grid grid-cols-1 items-center gap-10 sm:mt-12",
+            sketch ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16" : "",
+          )}
+        >
+          <div className={cn("min-w-0", flip && sketch ? "lg:order-2" : "")}>
+            <h2
+              id={headingId}
+              data-split
+              className="text-[2rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.75rem]"
+            >
+              {title}
+            </h2>
+            <div className="text-muted-foreground mt-5 space-y-4 text-base leading-normal sm:text-lg">
+              {children}
+            </div>
           </div>
-        </div>
-        {sketch ? (
-          <>
-            <div aria-hidden="true" className="bg-rule hidden lg:order-2 lg:block" />
-            <div
+          {sketch ? (
+            <figure
               className={cn(
-                "border-rule relative flex items-center justify-center border-t p-6 sm:p-10 lg:border-t-0",
-                flip ? "lg:order-1" : "lg:order-3",
+                "relative flex min-w-0 flex-col items-center",
+                flip ? "lg:order-1" : "",
               )}
             >
               {sketch}
-            </div>
-          </>
-        ) : null}
+              <figcaption className="font-hand text-muted-foreground mt-3 text-lg">
+                fig. {number === "Last" ? "∞" : String(Number(number))}
+              </figcaption>
+            </figure>
+          ) : null}
+        </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * The top of an entry: a large entry number in the margin, the field note beside it, and a rule
+ * drawn by hand across the page under them.
+ */
+export function EntryRule({
+  number,
+  subject,
+  note,
+}: {
+  number: string;
+  subject: string;
+  note: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-end gap-4">
+        <span
+          aria-hidden="true"
+          className="text-muted-foreground/50 font-mono text-4xl leading-none sm:text-6xl"
+        >
+          {number === "Last" ? "—" : number}
+        </span>
+        <EntryHeader number={number} subject={subject} note={note} />
+      </div>
+      <Sketch
+        viewBox="0 0 1000 14"
+        preserveAspectRatio="none"
+        rough={false}
+        className="mt-3 h-3.5"
+        data-sketch="rule"
+      >
+        <path
+          pathLength={1}
+          vectorEffect="non-scaling-stroke"
+          d="M2 8C120 5 240 10 380 7 520 4 640 10 780 6 880 4 950 8 998 6"
+        />
+      </Sketch>
+    </div>
   );
 }
 

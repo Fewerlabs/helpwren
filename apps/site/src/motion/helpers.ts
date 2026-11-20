@@ -22,8 +22,8 @@ export const EASE = {
   pop: "back.out(2)",
 } as const;
 
-/** Where a part of the page counts as "in view" and starts playing: 75% down the screen. */
-export const ENTRY_START = "top 75%";
+/** Where a part of the page counts as "in view" and starts playing: 88% down the screen. */
+export const ENTRY_START = "top 88%";
 
 /** True when the element is already on screen, or above it, so animating it would flash. */
 export function alreadySeen(element: Element): boolean {
