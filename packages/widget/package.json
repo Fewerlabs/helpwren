@@ -1,7 +1,6 @@
 {
   "name": "helpwren",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "The embeddable Helpwren widget script loaded by host sites.",
   "license": "MIT",
   "type": "module",
@@ -10,7 +9,7 @@
     "./protocol": "./src/protocol.ts"
   },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --minify --format=iife --target=es2020 --outfile=dist/widget.js",
+    "build": "esbuild src/index.ts --bundle --minify --format=iife --target=es2020 --outfile=dist/widget.js && node ../config/scripts/build-library.mjs src/widget.ts src/protocol.ts",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -22,5 +21,39 @@
     "jsdom": "^31.0.1",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fewerlabs/helpwren.git",
+    "directory": "packages/widget"
+  },
+  "homepage": "https://helpwren.fewerlabs.dev",
+  "bugs": "https://github.com/Fewerlabs/helpwren/issues",
+  "keywords": [
+    "live chat",
+    "chat widget",
+    "help desk",
+    "customer support",
+    "helpwren"
+  ],
+  "author": "Fewer Labs",
+  "sideEffects": false,
+  "files": [
+    "dist/lib",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/lib/widget.d.ts",
+        "default": "./dist/lib/widget.js"
+      },
+      "./protocol": {
+        "types": "./dist/lib/protocol.d.ts",
+        "default": "./dist/lib/protocol.js"
+      },
+      "./package.json": "./package.json"
+    }
   }
 }
