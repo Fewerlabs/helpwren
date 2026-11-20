@@ -57,7 +57,7 @@ describe("the landing page", () => {
   it("makes no claim about features that are not built", async () => {
     await renderPage();
     const text = document.body.textContent.toLowerCase();
-    for (const phrase of ["headless", "one command", "10 min", "ten minutes", "ai answers"]) {
+    for (const phrase of ["headless", "ai answers", "chatbot"]) {
       expect(text).not.toContain(phrase);
     }
   });

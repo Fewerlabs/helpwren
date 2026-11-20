@@ -11,8 +11,8 @@ export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;
 const blob = (path: string) => `${GITHUB_URL}/blob/main/${path}`;
 
 export const links = {
-  /** The install steps. The README's until a separate guide exists. */
-  install: `${GITHUB_URL}#install`,
+  /** The install guide: the installer, Vercel or Docker, and the setup wizard. */
+  install: blob("docs/install.md"),
   github: GITHUB_URL,
   docs: `${GITHUB_URL}/tree/main/docs`,
   widgetDocs: blob("docs/widget.md"),

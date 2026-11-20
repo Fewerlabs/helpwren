@@ -14,7 +14,9 @@ const themeButton =
 function ThemeStandIn({ className }: { className: string }) {
   return (
     <span aria-hidden="true" className={className}>
-      <Icon name="desktop" className="size-[1.125rem]" />
+      {/* As the menu shows it: the theme on screen, a sun or a moon. */}
+      <Icon name="sun" className="size-[1.125rem] dark:hidden" />
+      <Icon name="moon" className="hidden size-[1.125rem] dark:block" />
     </span>
   );
 }

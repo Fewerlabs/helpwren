@@ -14,7 +14,7 @@ export function Nest() {
       id="nest"
       number="03"
       subject="Install"
-      note="One snippet"
+      note="Time to first chat: about 10 min"
       title="Building the nest"
       sketch={
         <div className="@container relative w-full max-w-sm">
@@ -26,8 +26,11 @@ export function Nest() {
       }
     >
       <p>
-        Deploy Helpwren to your own address, then paste one snippet into your site. Settings →
-        Installation writes it for you, with your address already in it. Guest chat works at once.
+        Run one command,{" "}
+        <code className="text-foreground font-mono text-[0.9em]">pnpm helpwren install</code>,
+        deploy, and open the setup wizard. Then paste one snippet into your site: Settings →
+        Installation writes it with your address in it, and shows a live check the moment the widget
+        is on your site. Guest chat works at once.
       </p>
       <Taped className="mt-6">
         <DeferredCodeSnippet

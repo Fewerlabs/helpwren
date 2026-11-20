@@ -8,7 +8,7 @@ export const levels = [
   {
     id: "level-0",
     name: "Level 0 · Snippet",
-    text: "Deploy and paste the snippet. Guest chat, a help center and the team's inbox.",
+    text: "Install with one command and paste the snippet. Guest chat, a help center and the team's inbox.",
   },
   {
     id: "level-1",
