@@ -1,3 +1,5 @@
+import { cn } from "@helpwren/design-system";
+
 /**
  * A capture of the running product (made by scripts/capture.mjs), in the theme on screen. Both
  * themes are in the page; the hidden one is never downloaded, because lazy images that are not
@@ -22,7 +24,7 @@ export const captures = {
   help: {
     width: 1440,
     height: 900,
-    alt: "The public help center: a search box and collections of articles.",
+    alt: "An article in the public help center, with its collection's other articles beside it.",
   },
 } as const;
 
@@ -33,8 +35,14 @@ export function Capture({
   sizes,
   className,
   priority = false,
+  mat = false,
 }: {
   name: CaptureName;
+  /**
+   * For a capture that has only a light version (the widget is always light): on the dark page
+   * it sits on a pale mount, like a print pasted in, so it reads as meant, not as a bright hole.
+   */
+  mat?: boolean;
   /** How wide the image is shown, as for `sizes` on an image. */
   sizes: string;
   className?: string;
@@ -57,7 +65,7 @@ export function Capture({
     </picture>
   );
   return (
-    <div className={className}>
+    <div className={cn(mat && "dark:rounded-2xl dark:bg-white/85 dark:p-3", className)}>
       {picture("light", "block dark:hidden")}
       {picture("dark", "hidden dark:block")}
     </div>

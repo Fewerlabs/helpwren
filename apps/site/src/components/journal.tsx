@@ -72,19 +72,19 @@ export function Entry({
     >
       {backdrop}
       <EntryMotion />
-      <div className={cn("pin-inner relative mx-auto max-w-6xl", sheetClassName)}>
-        <EntryRule number={number} subject={subject} note={note} />
+      <div className={cn("pin-inner relative mx-auto max-w-5xl", sheetClassName)}>
         <div
           className={cn(
-            "mt-8 grid grid-cols-1 items-center gap-10 sm:mt-12",
+            "grid grid-cols-1 items-center gap-10",
             sketch ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16" : "",
           )}
         >
           <div className={cn("min-w-0", flip && sketch ? "lg:order-2" : "")}>
+            <EntryRule number={number} subject={subject} note={note} />
             <h2
               id={headingId}
               data-split
-              className="text-[2rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.75rem]"
+              className="mt-8 text-[2rem] leading-tight font-semibold tracking-tight text-balance sm:text-[2.75rem]"
             >
               {title}
             </h2>

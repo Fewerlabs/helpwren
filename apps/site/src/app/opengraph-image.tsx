@@ -41,8 +41,8 @@ export default function OpenGraphImage() {
             flexWrap: "wrap",
           }}
         >
-          Live chat that plugs into any product and lives in&nbsp;
-          <span style={{ background: HIGHLIGHTER, padding: "0 8px" }}>your own database.</span>
+          Support chat that plugs into any product. Your servers,&nbsp;
+          <span style={{ background: HIGHLIGHTER, padding: "0 8px" }}>your database.</span>
         </div>
         <div style={{ fontSize: 28, color: PENCIL, marginTop: 28, display: "flex" }}>
           Open source and self-hosted. No per-seat pricing.

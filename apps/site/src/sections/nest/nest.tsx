@@ -11,7 +11,7 @@ export function Nest() {
       id="nest"
       number="03"
       subject="Install"
-      note="Target: first chat in about 10 min"
+      note="One snippet"
       title="Building the nest"
       sketch={
         <div className="@container relative w-full max-w-sm">

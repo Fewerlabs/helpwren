@@ -1,5 +1,6 @@
 /*
- * The wren's route down the page, as plain geometry: no DOM, no GSAP, so it can be tested.
+ * When the wren is where on its way down the page, as plain arithmetic: no DOM, no GSAP, so it
+ * can be tested.
  */
 
 export interface Stop {
@@ -23,10 +24,6 @@ export interface Stop {
   pin?: { top: number; range: number; baseY: number };
 }
 
-/** How far above the straight line between two stops the wren arcs, as a share of the distance. */
-export const ARC_LIFT = 0.18;
-/** The arc never rises more than this, in pixels, so on a long leg the wren stays on screen. */
-export const MAX_LIFT = 28;
 /** The share of each leg's scroll spent sitting at the stop before taking off. */
 export const HOLD = 0.32;
 /** In a pinned entry, the share of each step the wren sits on its branch before hopping. */
@@ -35,52 +32,6 @@ export const PIN_HOLD = 0.45;
 export const ARRIVE_AT = 0.45;
 /** The least scroll between two stops, as a share of the screen's height. */
 export const MIN_LEG = 0.3;
-
-/** A point through which the route passes: every stop, with a lifted midpoint between each pair. */
-export function routePoints(stops: readonly Stop[]): { x: number; y: number }[] {
-  const points: { x: number; y: number }[] = [];
-  stops.forEach((stop, index) => {
-    const previous = stops[index - 1];
-    if (previous) {
-      const distance = Math.hypot(stop.x - previous.x, stop.y - previous.y);
-      points.push({
-        x: (previous.x + stop.x) / 2,
-        y: Math.min(previous.y, stop.y) - Math.min(MAX_LIFT, distance * ARC_LIFT * 0.5),
-      });
-    }
-    points.push({ x: stop.x, y: stop.y });
-  });
-  return points;
-}
-
-/**
- * The route as cubic Bézier segments, one between each pair of points (Catmull-Rom turned into
- * Béziers), each written as its own path so its length can be measured.
- */
-export function routeSegments(points: readonly { x: number; y: number }[]): string[] {
-  const segments: string[] = [];
-  const f = (n: number) => n.toFixed(1);
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    if (!p0 || !p1 || !p2 || !p3) continue;
-    const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
-    const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
-    segments.push(
-      `M${f(p1.x)} ${f(p1.y)}C${f(c1.x)} ${f(c1.y)} ${f(c2.x)} ${f(c2.y)} ${f(p2.x)} ${f(p2.y)}`,
-    );
-  }
-  return segments;
-}
-
-/** The whole route as one SVG path. */
-export function smoothPath(points: readonly { x: number; y: number }[]): string {
-  return routeSegments(points)
-    .map((segment, index) => (index === 0 ? segment : segment.replace(/^M[^C]*/, "")))
-    .join("");
-}
 
 /** The scroll position at which the wren reaches each stop: when the stop is 45% down the screen. */
 export function arrivals(stops: readonly Stop[], viewport: number, maxScroll: number): number[] {
@@ -101,6 +52,8 @@ export interface FlightState {
   leg: number;
   /** How far along that leg the wren has flown, 0 to 1, eased. 0 while it sits at the stop. */
   along: number;
+  /** How far through its wait at the stop the wren is, 0 to 1: 1 once it has taken off. */
+  wait: number;
 }
 
 /** How much of the leg's easing is a soft take-off and landing; the rest keeps pace with the scroll. */
@@ -117,19 +70,21 @@ export function easeLeg(t: number): number {
 
 /**
  * Where the wren is for a scroll position. It sits at each stop for the first part of the leg
- * (`HOLD`, but not at a waypoint), then flies the rest.
+ * (`HOLD`, but not at a waypoint, and never more than `holdLimit` pixels of scroll, so it leaves
+ * before its perch scrolls away), then flies the rest.
  */
 export function flightAt(
   scroll: number,
   stops: readonly Stop[],
   times: readonly number[],
+  holdLimit = Infinity,
 ): FlightState {
   const lastLeg = Math.max(0, stops.length - 2);
   for (let leg = 0; leg <= lastLeg; leg++) {
     const start = times[leg] ?? 0;
     const end = times[leg + 1] ?? start;
     if (scroll < end || leg === lastLeg) {
-      if (end <= start) return { leg, along: scroll >= end ? 1 : 0 };
+      if (end <= start) return { leg, along: scroll >= end ? 1 : 0, wait: 1 };
       // No hold at a waypoint, nor on leaving a pinned entry (it scrolls away). Between perches of
       // a pinned entry the wren sits longer: one hop per step of the scroll.
       const from = stops[leg];
@@ -145,11 +100,12 @@ export function flightAt(
             ? Math.min(0.9, Math.max(0, (pinEnd - start) / (end - start)))
             : inPin
               ? PIN_HOLD
-              : HOLD;
+              : Math.min(HOLD, holdLimit / (end - start));
       const t = (scroll - start) / (end - start);
       const flying = Math.min(1, Math.max(0, (t - hold) / (1 - hold)));
-      return { leg, along: easeLeg(flying) };
+      const wait = hold > 0 ? Math.min(1, Math.max(0, t / hold)) : 1;
+      return { leg, along: easeLeg(flying), wait };
     }
   }
-  return { leg: 0, along: 0 };
+  return { leg: 0, along: 0, wait: 0 };
 }

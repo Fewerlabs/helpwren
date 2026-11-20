@@ -58,13 +58,8 @@ export function FieldGuide() {
     >
       <EntryMotion />
       {/* A field-guide plate: a double ink frame, the plate's number above, figures inside. */}
-      <div className="border-foreground/70 bg-card relative mx-auto max-w-6xl border p-1.5">
+      <div className="border-foreground/70 bg-card relative mx-auto max-w-5xl border p-1.5">
         <div className="border-foreground/30 relative border p-6 sm:p-10">
-          <span
-            aria-hidden="true"
-            data-wren-waypoint="field-guide"
-            className="absolute top-[52%] left-1/2 size-0"
-          />
           <div className="text-center">
             <EntryHeader number="06" subject="Field guide" note="Plate I: behaviours" />
             <h2

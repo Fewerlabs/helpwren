@@ -13,11 +13,13 @@ const themeButton =
 /** The theme button as it looks before its menu's code has loaded: same size, same place. */
 function ThemeStandIn({ className }: { className: string }) {
   return (
-    <span aria-hidden="true" className={className}>
+    // A real button, so the keyboard can reach it: focusing or pressing it loads the menu, and
+    // a press is passed on to the menu once it is there.
+    <button type="button" aria-label="Theme" className={className}>
       {/* As the menu shows it: the theme on screen, a sun or a moon. */}
       <Icon name="sun" className="size-[1.125rem] dark:hidden" />
       <Icon name="moon" className="hidden size-[1.125rem] dark:block" />
-    </span>
+    </button>
   );
 }
 
@@ -31,7 +33,7 @@ export function SiteHeader() {
       >
         Skip to content
       </a>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4">
         <a
           href="/"
           className="focus-visible:outline-ring inline-flex min-h-11 items-center rounded-md focus-visible:outline-2"
@@ -60,7 +62,7 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="px-4 pb-10">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-5xl">
         <div className="@container relative mx-auto w-full max-w-xs">
           <Sketch viewBox="0 0 200 60" data-sketch="footer">
             <path pathLength={1} d="M4 40C50 34 96 42 140 36 164 33 182 34 196 28" />

@@ -3,7 +3,6 @@ import { Button, Icon } from "@helpwren/design-system";
 import { EntryHeader, HighlighterMark, PenCircle, Perch } from "@/components/journal";
 import { links } from "@/content/site";
 import { formatCount, MIN_STARS_SHOWN } from "@/lib/github";
-import { SceneSlot } from "@/scenes/scene-slot";
 
 import { HeroSketch } from "./hero-sketch";
 
@@ -16,16 +15,16 @@ export function Hero({ stars }: { stars: number | null }) {
       data-entry="first-sighting"
       className="relative isolate overflow-hidden px-4 pt-8 pb-12 sm:pt-16 sm:pb-20"
     >
-      <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
+      <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-[1.6fr_1fr]">
         <div>
           <EntryHeader number="01" subject="First sighting" note="Open source" />
           <h1
             id="hero-title"
             data-split
-            className="mt-4 text-[2.5rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-[3.5rem] lg:text-[4rem]"
+            className="mt-4 text-[2.4rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-[3rem] lg:text-[3.1rem]"
           >
-            Live chat that <PenCircle>plugs into</PenCircle> any product and lives in{" "}
-            <HighlighterMark>your own database.</HighlighterMark>
+            Support chat that <PenCircle>plugs into</PenCircle> any product. Your servers,{" "}
+            <HighlighterMark>your database.</HighlighterMark>
           </h1>
           <p className="text-muted-foreground mt-5 max-w-xl text-lg leading-normal">
             Open source and self-hosted: live chat, tickets and a help center, with no per-seat
@@ -52,9 +51,7 @@ export function Hero({ stars }: { stars: number | null }) {
           </div>
         </div>
         <div className="@container relative mx-auto w-full max-w-md">
-          <SceneSlot scene="hero">
-            <HeroSketch />
-          </SceneSlot>
+          <HeroSketch />
           <Perch name="first-sighting" x={47} y={63} size={24} animate />
         </div>
       </div>

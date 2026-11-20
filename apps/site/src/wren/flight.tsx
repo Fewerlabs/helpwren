@@ -1,87 +1,134 @@
 "use client";
 
-import { WrenBird, wrenPoses, type WrenPose } from "@helpwren/design-system";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  WREN_FPS,
+  WrenFlyer,
+  wrenFrame,
+  type WrenFrameKind,
+  type WrenIdle,
+  type WrenView,
+} from "@helpwren/design-system";
+import { useEffect, useRef } from "react";
 
 import { useChatOpens } from "@/components/live-widget";
-import { gsap, MotionPathPlugin, ScrollTrigger, useGSAP } from "@/motion/kit";
+import { gsap, ScrollTrigger, useGSAP } from "@/motion/kit";
 import { afterScroll } from "@/motion/scroll-sync";
-import { capable } from "@/scenes/scene-slot";
 
-import { arrivals, flightAt, routePoints, routeSegments, smoothPath, type Stop } from "./route";
-import { publishWrenFrame, wrenFrame } from "./state";
+import {
+  blockedFeet,
+  findWay,
+  measureWay,
+  pointOnWay,
+  roundClear,
+  type Box,
+  type Point,
+  type Way,
+} from "./corridor";
+import { arrivals, flightAt, type Stop } from "./route";
 
-const Wren3D = lazy(() => import("./wren-3d").then((module) => ({ default: module.Wren3D })));
-
-/** The wren never tilts further than this, so it never looks like it is falling. */
-const MAX_TILT_DEG = 18;
-/** Wingbeats: how long each wing position is held while climbing. */
-const FLAP_MS = 110;
-/** How long the flight takes to catch up with the scrollbar, in seconds. */
-const SCRUB = 0.6;
-/** The last share of a leg flown in the landing pose. */
-const LANDING_SHARE = 0.12;
-/** How long to wait after the last resize before measuring the route again. */
-const RESIZE_DEBOUNCE_MS = 200;
-/** The width of the logo's box, in its own units: the poses are drawn in it. */
+/** The wren's size in flight and on its perches, in pixels: on a desktop, and on smaller screens. */
+export const WREN_SIZE = 76;
+export const WREN_SIZE_SMALL = 60;
+/** From this width the wren is drawn at its desktop size. */
+const DESKTOP = 1024;
+/** The wren's size for the screen it is on now. */
+let wrenSize = WREN_SIZE;
+/** Where the feet are in the logo's box, as shares of its width and height. */
 const FOOT_X = 0.51;
 const FOOT_Y = 0.88;
+/** Clear space kept between the wren and any words; covers its box growing as it tilts. */
+const CLEARANCE = 14;
+/** The wren never tilts further than this, so it banks, never tumbles. */
+const MAX_TILT_DEG = 15;
+/** How long the flight takes to catch up with the scrollbar, in seconds. */
+const SCRUB = 0.6;
+/** The last share of a leg flown in the landing flare. */
+const FLARE_SHARE = 0.14;
+/** The first share of a leg spent springing off the branch. */
+const TAKE_OFF_SHARE = 0.06;
+/** The last share of the wait at a perch spent crouching, about to go. */
+const CROUCH_SHARE = 0.15;
+/** How long to wait after the last resize before measuring the route again. */
+const RESIZE_DEBOUNCE_MS = 200;
 /** How high the wren hops between two branches of a pinned entry, in pixels. */
 const HOP_HEIGHT = 36;
-
 /** The share of a pinned entry's scroll the wren spends hopping; it sits on the top branch after. */
 const PIN_SPAN = 0.8;
-/** The wren is kept this far inside the screen's top and bottom edges, in pixels. */
-const EDGE = { top: 90, bottom: 110, side: 48 } as const;
+/** The wren leaves a perch before the perch has scrolled higher than this share of the screen. */
+const LEAVE_BY = 0.32;
+/** The wren is kept this far inside the screen's edges, in pixels, as a last resort. */
+const EDGE = { top: 8, bottom: 8 } as const;
+/**
+ * How much of a sideways stretch counts against the scroll: crossing a gap takes a little scroll,
+ * so the wren darts across while the page barely moves, and stays near the middle of the screen.
+ */
+const ACROSS = 0.2;
+/** The words the wren must never cross: headings, paragraphs, captions, list items, code. */
+export const TEXT_SELECTOR = "h1, h2, h3, h4, h5, h6, p, figcaption, li, blockquote, pre, dt, dd";
+
+const FRAME_MS = 1000 / WREN_FPS;
+/** The soft edge of the last-resort clamp, in pixels; the clamp never lets the box past it. */
+const GIVE = 30;
 
 /**
  * Keeps a value inside a range with a soft edge: inside, unchanged; past the edge, it slows and
  * stops, so the wren is pulled along the edge rather than lost off screen, and never jumps.
  */
-function softClamp(value: number, low: number, high: number, give = 60): number {
+function softClamp(value: number, low: number, high: number, give = 40): number {
   if (value < low) return low - give * (1 - Math.exp((value - low) / give));
   if (value > high) return high + give * (1 - Math.exp((high - value) / give));
   return value;
 }
 
-/** The wren is never drawn smaller than this, in pixels, so it reads at a glance in flight. */
-const MIN_SIZE = 72;
+/** How far a pinned entry has been carried down the page at this scroll, in pixels. */
+function stuckFor(pin: { top: number; range: number }, scroll: number): number {
+  return Math.min(pin.range, Math.max(0, scroll - pin.top));
+}
+
+/** How the pinned entry holding an element moves it: its pin, if it is held right now. */
+function pinOf(element: Element): { top: number; range: number } | undefined {
+  const pinned = element.closest<HTMLElement>("[data-pin]");
+  const inner = pinned?.querySelector(".pin-inner");
+  if (!pinned || !inner || getComputedStyle(inner).position !== "sticky") return undefined;
+  return {
+    top: pinned.getBoundingClientRect().top + window.scrollY,
+    range: Math.max(0, pinned.offsetHeight - window.innerHeight),
+  };
+}
 
 function measureStops(): Stop[] {
   const marks = document.querySelectorAll<HTMLElement>("[data-wren-perch], [data-wren-waypoint]");
   const stops: Stop[] = [];
-  let size = 64;
   for (const mark of marks) {
     const box = mark.getBoundingClientRect();
-    const still = mark.querySelector("[data-still-wren]")?.getBoundingClientRect();
-    if (still && still.width > 0) size = still.width;
     let y = box.top + window.scrollY;
     let arriveAt: number | undefined;
     let pin: Stop["pin"];
 
     // In a pinned entry the content stays on screen while the page scrolls past it. Each perch
     // there is placed where it will be when the wren reaches it, spread through the pin.
-    const pinned = mark.closest<HTMLElement>("[data-pin]");
-    const inner = pinned?.querySelector(".pin-inner");
-    const held = inner ? getComputedStyle(inner).position === "sticky" : false;
-    if (pinned && held) {
-      const top = pinned.getBoundingClientRect().top + window.scrollY;
-      const range = Math.max(0, pinned.offsetHeight - window.innerHeight);
-      const stuck = Math.min(range, Math.max(0, window.scrollY - top));
+    const held = pinOf(mark);
+    // Not pinned (a narrower screen): one perch per entry, its first, so the wren does not climb
+    // back up the page while the reader scrolls down.
+    const group = mark.closest("[data-pin]");
+    if (group && !held && group.querySelector("[data-wren-perch]") !== mark) continue;
+    const pinned = mark.closest("[data-pin]");
+    if (held && pinned) {
+      const stuck = stuckFor(held, window.scrollY);
       const siblings = [...pinned.querySelectorAll("[data-wren-perch]")];
       const share = siblings.length > 1 ? siblings.indexOf(mark) / (siblings.length - 1) : 0;
-      pin = { top, range, baseY: y - stuck };
+      pin = { top: held.top, range: held.range, baseY: y - stuck };
       // The top branch is where the wren leaves from, when the entry lets go: the route starts
       // there. Lower branches are only flown between while the entry is held.
-      y = y - stuck + (share === 1 ? range : share * range * PIN_SPAN);
-      arriveAt = top + share * range * PIN_SPAN;
+      y = y - stuck + (share === 1 ? held.range : share * held.range * PIN_SPAN);
+      arriveAt = held.top + share * held.range * PIN_SPAN;
     }
 
     stops.push({
       name: mark.dataset.wrenPerch ?? mark.dataset.wrenWaypoint ?? "",
       x: box.left + window.scrollX,
       y,
-      size,
+      size: wrenSize,
       land: mark.dataset.wrenPerch !== undefined,
       pose: mark.dataset.pose === "asleep" ? "asleep" : "perched",
       facing: mark.dataset.facing === "left" ? "left" : "right",
@@ -92,102 +139,341 @@ function measureStops(): Stop[] {
   return stops;
 }
 
+/** Every block of words on the page, in page pixels, with the pin that carries it, if any. */
+function measureWords(): { box: Box; pin?: { top: number; range: number } }[] {
+  const all = [...document.querySelectorAll<HTMLElement>(TEXT_SELECTOR)];
+  const words: { box: Box; pin?: { top: number; range: number } }[] = [];
+  for (const element of all) {
+    if (element.closest("[data-wren-layer]")) continue;
+    // A list item holding paragraphs or headings is measured by those, not as one block.
+    if (element.querySelector(TEXT_SELECTOR)) continue;
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) continue;
+    const pin = pinOf(element);
+    const stuck = pin ? stuckFor(pin, window.scrollY) : 0;
+    words.push({
+      box: {
+        left: rect.left + window.scrollX,
+        right: rect.right + window.scrollX,
+        top: rect.top + window.scrollY - stuck,
+        bottom: rect.bottom + window.scrollY - stuck,
+      },
+      ...(pin ? { pin } : {}),
+    });
+  }
+  return words;
+}
+
+/** What the wren is doing, set by the scroll; the frames follow it on their own clock. */
+interface Doing {
+  mode: "air" | "perched" | "asleep" | "inside";
+  heading: Point;
+  /** Down the screen, in pixels per frame: a dive shows the wren's face. */
+  dropping: number;
+  carrying: boolean;
+  flare: -1 | 0 | 1;
+  takeOff: boolean;
+  crouch: boolean;
+  facing: 1 | -1;
+}
+
+const IDLE_WEIGHTS: [WrenIdle | "hop" | "double-blink", number][] = [
+  ["blink", 30],
+  ["double-blink", 8],
+  ["look", 20],
+  ["tilt", 18],
+  ["preen", 12],
+  ["hop", 12],
+];
+
+function pickIdle(): WrenIdle | "hop" | "double-blink" {
+  const total = IDLE_WEIGHTS.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = Math.random() * total;
+  for (const [idle, weight] of IDLE_WEIGHTS) {
+    roll -= weight;
+    if (roll <= 0) return idle;
+  }
+  return "blink";
+}
+
 /**
- * The one flying wren: a fixed layer over the screen holding the pencil trail and the bird,
- * which follows the scroll from perch to perch. It never moves the page; the page moves it.
+ * The one flying wren: a fixed layer over the screen holding the bird, which follows the scroll
+ * from perch to perch through the margins and gaps, never over the words. It is drawn frame by
+ * frame, like hand-drawn animation, from the design system's frames. It never moves the page;
+ * the page moves it.
  */
 export function WrenFlight() {
-  const layer = useRef<HTMLDivElement>(null);
   const page = useRef<HTMLDivElement>(null);
-  const trail = useRef<SVGPathElement>(null);
   const bird = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   // The wren hops when the live chat opens.
   const opens = useChatOpens();
-  const opensRef = useRef(opens);
+  const hopRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    opensRef.current = opens;
+    if (opens > 0) hopRef.current?.();
   }, [opens]);
-  // The 3D wren, on devices that can draw it; the SVG wren until it has drawn its first frame.
-  // This component only ever renders in the browser, so the device can be asked at once.
-  const [threeD] = useState(capable);
-  const [drawn, setDrawn] = useState(false);
 
   useGSAP(() => {
     const root = document.documentElement;
     let tween: gsap.core.Tween | null = null;
     let timer = 0;
-    // The layer is fixed to the screen; inside it, a page-sized sheet moves with the scroll so the
-    // route can be drawn in page coordinates.
+    const doing: Doing = {
+      mode: "perched",
+      heading: { x: 1, y: 0 },
+      dropping: 0,
+      carrying: false,
+      flare: -1,
+      takeOff: false,
+      crouch: false,
+      facing: 1,
+    };
+
+    // The layer is fixed to the screen; inside it, a page-sized sheet moves with the scroll so
+    // the wren can be placed in page coordinates.
     const follow = () => {
       if (page.current)
         page.current.style.transform = `translate3d(0, ${String(-window.scrollY)}px, 0)`;
     };
     const stopFollowing = afterScroll(follow);
-    const beat = () => {
-      const wren = bird.current;
-      if (wren?.dataset.flapping === undefined) return;
-      wren.dataset.pose = Math.floor(performance.now() / FLAP_MS) % 2 ? "wings-up" : "wings-down";
-    };
-    gsap.ticker.add(beat);
     window.addEventListener("scroll", follow, { passive: true });
 
+    // ---- The frames: their own clock, twelve a second, whatever the scroll is doing. ----
+    const svg = () => bird.current?.querySelector("svg");
+    let shown = "";
+    let view: WrenView = "side";
+    let mirrored = false;
+    let beat = 0;
+    let glide = 0;
+    let beatsSinceGlide = 0;
+    let wasAir = false;
+    let idle: { frame: WrenIdle; until: number } | null = null;
+    let queue: { frame: WrenIdle; ms: number; lift?: boolean }[] = [];
+    let nextIdle = performance.now() + 1800;
+    let last = performance.now();
+    let carry = 0;
+
+    const show = (nextView: WrenView, frame: WrenFrameKind, mirror: boolean) => {
+      const key = `${nextView}:${JSON.stringify(frame)}:${String(mirror)}`;
+      const element = svg();
+      if (!element || key === shown) return;
+      shown = key;
+      element.innerHTML = wrenFrame(nextView, frame);
+      element.style.transform = mirror ? "scaleX(-1)" : "";
+    };
+
+    const squash = (x: number, y: number, duration = 0.5) => {
+      if (!body.current) return;
+      gsap.fromTo(
+        body.current,
+        { scaleX: x, scaleY: y },
+        { scaleX: 1, scaleY: 1, duration, ease: "elastic.out(1, 0.45)", overwrite: "auto" },
+      );
+    };
+
+    const hop = () => {
+      if (doing.mode !== "perched" || !body.current) return;
+      queue = [
+        { frame: "hop-crouch", ms: 140 },
+        { frame: "hop-up", ms: 240, lift: true },
+        { frame: "perched", ms: 10 },
+      ];
+      idle = null;
+    };
+    hopRef.current = hop;
+
+    const desiredView = (): WrenView => {
+      if (doing.carrying) return "side";
+      const { x, y } = doing.heading;
+      const angle = (Math.atan2(y, Math.abs(x) + 0.2) * 180) / Math.PI;
+      if (angle > 76 && doing.dropping > 1.2) return "front";
+      if (angle > 52) return "three-quarter-front";
+      if (angle < -52) return "three-quarter-back";
+      return "side";
+    };
+
+    const tick = () => {
+      const now = performance.now();
+      carry += now - last;
+      last = now;
+      if (carry < FRAME_MS) return;
+      carry %= FRAME_MS;
+      const element = bird.current;
+      if (!element) return;
+      element.style.opacity = doing.mode === "inside" ? "0" : "1";
+
+      if (doing.mode === "air") {
+        idle = null;
+        queue = [];
+        if (!wasAir) {
+          beat = 0;
+          wasAir = true;
+        }
+        // The view and the facing change only between wingbeats, never in the middle of one.
+        const facingLeft = doing.facing < 0;
+        if (beat === 0 && glide === 0) {
+          const wanted = desiredView();
+          // Turning round passes through three-quarter front for a beat.
+          if (facingLeft !== mirrored && view === "side") view = "three-quarter-front";
+          else view = wanted;
+          mirrored = facingLeft;
+        }
+        if (doing.takeOff) {
+          show("side", { kind: "idle", idle: "hop-up" }, mirrored);
+          return;
+        }
+        if (doing.flare >= 0) {
+          show(view, { kind: "flare", index: doing.flare }, mirrored);
+          return;
+        }
+        // Small birds flap in bursts: going down, two beats then a short glide; level or up, flap.
+        const descending = doing.heading.y > 0.25 && !doing.carrying;
+        if (glide > 0) {
+          glide -= 1;
+          show(view, { kind: "glide" }, mirrored);
+          return;
+        }
+        show(view, { kind: "beat", index: beat, carrying: doing.carrying }, mirrored);
+        beat = (beat + 1) % 8;
+        if (beat === 0) {
+          beatsSinceGlide += 1;
+          if (descending && beatsSinceGlide >= 2) {
+            glide = 4 + Math.round(Math.random() * 3);
+            beatsSinceGlide = 0;
+          }
+        }
+        return;
+      }
+
+      // Landed: a squash as the feet take the weight, then a small springy settle.
+      if (wasAir) {
+        wasAir = false;
+        glide = 0;
+        squash(1.14, 0.84, 0.6);
+        nextIdle = now + 900 + Math.random() * 1400;
+      }
+      mirrored = doing.facing < 0;
+      view = "side";
+      if (doing.mode === "asleep") {
+        show("side", { kind: "idle", idle: "asleep" }, mirrored);
+        return;
+      }
+      if (doing.crouch) {
+        show("side", { kind: "idle", idle: "hop-crouch" }, mirrored);
+        return;
+      }
+      // Idles, at uneven intervals, so it looks alive rather than on a loop.
+      if (!idle && queue.length === 0 && now >= nextIdle) {
+        const choice = pickIdle();
+        if (choice === "hop") hop();
+        else if (choice === "double-blink")
+          queue = [
+            { frame: "blink", ms: 110 },
+            { frame: "perched", ms: 140 },
+            { frame: "blink", ms: 110 },
+          ];
+        else
+          queue = [
+            {
+              frame: choice,
+              ms:
+                choice === "blink"
+                  ? 120
+                  : choice === "look"
+                    ? 1100 + Math.random() * 900
+                    : 700 + Math.random() * 600,
+            },
+          ];
+        nextIdle = now + 1500 + Math.random() * 3600;
+      }
+      if (!idle || now >= idle.until) {
+        const next = queue.shift();
+        if (next) {
+          idle = { frame: next.frame, until: now + next.ms };
+          if (next.frame === "hop-crouch") squash(1.08, 0.9, 0.25);
+          if (next.lift && body.current)
+            gsap.fromTo(
+              body.current,
+              { y: 0, scaleX: 0.94, scaleY: 1.08 },
+              {
+                keyframes: [
+                  { y: -12, duration: 0.12, ease: "power2.out" },
+                  { y: 0, duration: 0.12, ease: "power2.in" },
+                ],
+                onComplete: () => {
+                  squash(1.1, 0.88, 0.45);
+                },
+              },
+            );
+        } else idle = null;
+      }
+      show("side", { kind: "idle", idle: idle?.frame ?? "perched" }, mirrored);
+    };
+    gsap.ticker.add(tick);
+
+    // ---- The route: rebuilt whenever the page is measured again. ----
     const build = () => {
       tween?.kill();
+      wrenSize = window.innerWidth >= DESKTOP ? WREN_SIZE : WREN_SIZE_SMALL;
       const stops = measureStops();
-      const svgLayer = page.current;
-      const path = trail.current;
+      const sheet = page.current;
       const wren = bird.current;
-      if (stops.length < 2 || !svgLayer || !path || !wren) return;
+      if (stops.length < 2 || !sheet || !wren) return;
 
       const height = document.documentElement.scrollHeight;
-      svgLayer.style.height = `${String(height)}px`;
-      const points = routePoints(stops);
-      path.setAttribute("d", smoothPath(points));
-      const total = path.getTotalLength();
-      // The length along the route at each stop: stops are every other point.
-      const measure = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      const lengths = routeSegments(points).map((segment) => {
-        measure.setAttribute("d", segment);
-        return measure.getTotalLength();
+      sheet.style.height = `${String(height)}px`;
+      const width = document.documentElement.clientWidth;
+      const WREN = wrenSize;
+      wren.style.width = `${String(WREN)}px`;
+      wren.style.height = `${String(WREN)}px`;
+      const foot = { size: WREN, footX: FOOT_X, footY: FOOT_Y };
+      const words = measureWords();
+      const bounds: Box = {
+        left: FOOT_X * WREN + 4,
+        right: width - (1 - FOOT_X) * WREN - 4,
+        top: (1 - FOOT_Y) * WREN + 4,
+        bottom: height,
+      };
+      // One way per leg, round the words. Words in a pinned entry are where they will be while
+      // the wren flies that leg: before the pin for the leg in, after it for the leg out.
+      const ways: Way[] = stops.slice(1).map((to, index) => {
+        const from = stops[index] ?? to;
+        const shift = from.pin && !to.pin ? from.pin.range : 0;
+        const blocked = words.map(({ box, pin }) =>
+          blockedFeet(
+            pin ? { ...box, top: box.top + shift, bottom: box.bottom + shift } : box,
+            foot,
+            CLEARANCE,
+          ),
+        );
+        if (from.pin && to.pin) return measureWay([from, to]);
+        const corners = findWay(from, to, blocked, bounds);
+        return measureWay(roundClear(corners, blocked), ACROSS);
       });
-      const atStop = stops.map((_, index) =>
-        lengths.slice(0, index * 2).reduce((sum, length) => sum + length, 0),
-      );
       const maxScroll = height - window.innerHeight;
       const times = arrivals(stops, window.innerHeight, maxScroll);
-      // MotionPathPlugin measures the route once; positions along it are then cheap to read.
-      const raw = MotionPathPlugin.cacheRawPathMeasurements(
-        MotionPathPlugin.stringToRawPath(smoothPath(points)),
-      );
+      const holdLimit = window.innerHeight * (0.45 - LEAVE_BY);
       let landedAt = "";
+      let lastScroll = window.scrollY;
+      let lastScreenY = 0;
 
       const render = (scroll: number) => {
-        const { leg, along } = flightAt(scroll, stops, times);
+        const { leg, along, wait } = flightAt(scroll, stops, times, holdLimit);
         const from = stops[leg];
         const to = stops[leg + 1] ?? from;
-        if (!from || !to) return;
-        const startLength = atStop[leg] ?? 0;
-        const endLength = atStop[leg + 1] ?? startLength;
-        // By arc length, already eased: continuous, so the wren never jumps.
-        const length = startLength + (endLength - startLength) * along;
-        const progress = total > 0 ? length / total : 0;
-        const point = MotionPathPlugin.getPositionOnPath(raw, progress, true);
-        const angle = "angle" in point && typeof point.angle === "number" ? point.angle : 0;
-        const radians = (angle * Math.PI) / 180;
-        const dx = Math.cos(radians);
-        const dy = Math.sin(radians);
+        const way = ways[leg];
+        if (!from || !to || !way) return;
         const sitting = along <= 0 || along >= 1;
         const stop = along >= 1 ? to : from;
+        const { point, heading } = pointOnWay(way, along);
 
         // Inside a pinned entry the branches stay on screen while the page scrolls, so the wren
         // goes with them: placed by the entry, not by the route, and hopping between branches.
-        let x = point.x;
-        let y = point.y;
-        let hopDx = dx;
-        let hopDy = dy;
+        let { x, y } = point;
+        let dirX = heading.x;
+        let dirY = heading.y;
         const pinned = sitting ? stop.pin : from.pin && to.pin ? from.pin : undefined;
         if (pinned) {
-          const stuck = Math.min(pinned.range, Math.max(0, window.scrollY - pinned.top));
+          const stuck = stuckFor(pinned, window.scrollY);
           if (sitting && stop.pin) {
             x = stop.x;
             y = stop.pin.baseY + stuck;
@@ -198,9 +484,8 @@ export function WrenFlight() {
               (to.pin.baseY - from.pin.baseY) * along -
               Math.sin(Math.PI * along) * HOP_HEIGHT +
               stuck;
-            hopDx = to.x - from.x;
-            hopDy =
-              to.pin.baseY - from.pin.baseY - Math.cos(Math.PI * along) * HOP_HEIGHT * Math.PI;
+            dirX = to.x - from.x;
+            dirY = -Math.cos(Math.PI * along);
           }
         }
 
@@ -223,64 +508,68 @@ export function WrenFlight() {
           landedAt = here;
         }
 
-        let pose: WrenPose;
-        let direction: number;
+        // Flying back up the page when the reader scrolls back: it turns round.
+        const travel = scroll < lastScroll ? -1 : 1;
+        lastScroll = scroll;
         let tilt = 0;
         if (sitting) {
-          pose = stop.land ? stop.pose : "gliding";
-          direction = stop.facing === "left" ? -1 : 1;
+          doing.mode =
+            here === "home-range"
+              ? "inside"
+              : stop.land
+                ? stop.pose === "asleep"
+                  ? "asleep"
+                  : "perched"
+                : "air";
+          doing.facing = stop.facing === "left" ? -1 : 1;
+          doing.crouch = stop.land && along <= 0 && wait > 1 - CROUCH_SHARE && travel > 0;
+          doing.flare = -1;
+          doing.takeOff = false;
         } else {
-          direction = hopDx < 0 ? -1 : 1;
-          tilt = gsap.utils.clamp(
-            -MAX_TILT_DEG,
-            MAX_TILT_DEG,
-            (Math.atan2(hopDy, Math.abs(hopDx)) * 180) / Math.PI,
+          const hx = dirX * travel;
+          const hy = dirY * travel;
+          const length = Math.hypot(hx, hy) || 1;
+          doing.mode = "air";
+          doing.heading = { x: hx / length, y: hy / length };
+          if (Math.abs(doing.heading.x) > 0.15) doing.facing = doing.heading.x < 0 ? -1 : 1;
+          doing.carrying = to.name === "nest" && travel > 0;
+          const landing =
+            travel > 0 ? to.land && along > 1 - FLARE_SHARE : from.land && along < FLARE_SHARE;
+          const edge = travel > 0 ? 1 - along : along;
+          doing.flare = landing ? (edge < FLARE_SHARE / 2 ? 1 : 0) : -1;
+          doing.takeOff =
+            travel > 0
+              ? from.land && along < TAKE_OFF_SHARE
+              : to.land && along > 1 - TAKE_OFF_SHARE;
+          doing.crouch = false;
+          // Banking: nose down going down, up going up, never past the limit. Side on, by the
+          // slope; face on, a lean into the turn.
+          tilt =
+            Math.abs(doing.heading.x) > 0.5
+              ? (Math.atan2(doing.heading.y, Math.abs(doing.heading.x)) * 180) / Math.PI
+              : doing.heading.x * MAX_TILT_DEG;
+          tilt = gsap.utils.clamp(-MAX_TILT_DEG, MAX_TILT_DEG, tilt);
+          // A last resort on screen: the way is planned to stay in view, this only catches a
+          // leg squeezed by a very short screen.
+          const size = WREN;
+          y = softClamp(
+            y,
+            window.scrollY + EDGE.top + FOOT_Y * size + GIVE,
+            window.scrollY + window.innerHeight - EDGE.bottom - (1 - FOOT_Y) * size - GIVE,
+            GIVE,
           );
-          if (along > 1 - LANDING_SHARE && to.land) pose = "landing";
-          else if (hopDy < 0) pose = "wings-up";
-          else pose = "gliding";
         }
-        // Never lost off screen: a long or sideways leg pulls the wren along the screen's edge.
-        if (!sitting) {
-          const top = window.scrollY + EDGE.top;
-          const bottom = window.scrollY + window.innerHeight - EDGE.bottom;
-          y = softClamp(y, top, bottom);
-          x = softClamp(x, EDGE.side, window.innerWidth - EDGE.side);
-        }
-        const size = Math.max(MIN_SIZE, from.size + (to.size - from.size) * along);
-        // At the birdhouse it hops in through the door, and comes out again for the next leg.
-        wren.style.opacity = here === "home-range" ? "0" : "1";
-        wren.dataset.pose = pose;
-        // Climbing, the SVG wren keeps beating its wings on the ticker, even when the scroll stops.
-        if (pose === "wings-up") wren.dataset.flapping = "";
-        else delete wren.dataset.flapping;
+        const screenY = y - window.scrollY;
+        doing.dropping = doing.dropping * 0.7 + (screenY - lastScreenY) * 0.3;
+        lastScreenY = screenY;
+
+        const size = WREN;
+        const direction = doing.facing;
+        const lean = Math.abs(doing.heading.x) > 0.5 ? direction * tilt : tilt;
+        wren.dataset.mode = doing.mode;
         wren.style.width = `${String(size)}px`;
         wren.style.height = `${String(size)}px`;
-        wren.style.transform = `translate(${String(x - size * FOOT_X)}px, ${String(y - size * FOOT_Y)}px) rotate(${String(direction * tilt)}deg) scaleX(${String(direction)})`;
-        gsap.set(path, { drawSVG: `0 ${String(progress * 100)}%` });
-
-        // Tell the 3D wren, when there is one, where it is and what it is doing.
-        wrenFrame.x = x;
-        wrenFrame.y = y;
-        wrenFrame.size = size;
-        wrenFrame.direction = direction < 0 ? -1 : 1;
-        wrenFrame.here = here;
-        wrenFrame.reacts = opensRef.current;
-        wrenFrame.mode = sitting
-          ? here === "home-range"
-            ? "inside"
-            : stop.land
-              ? stop.pose === "asleep"
-                ? "asleep"
-                : "perched"
-              : "gliding"
-          : pose === "landing"
-            ? "landing"
-            : hopDy < 0
-              ? "climbing"
-              : "gliding";
-        wrenFrame.ready = true;
-        publishWrenFrame();
+        wren.style.transform = `translate(${String(x - size * FOOT_X)}px, ${String(y - size * FOOT_Y)}px) rotate(${String(lean)}deg)`;
       };
 
       // The tween runs from the top of the page to the bottom, whatever the scroll is when the
@@ -297,12 +586,19 @@ export function WrenFlight() {
           onUpdate: () => {
             render(proxy.scroll);
           },
-          scrollTrigger: { start: 0, end: maxScroll, scrub: SCRUB },
+          // The overlap check (scripts/overlap-check.mjs) sets data-wren-check to read each
+          // scroll position without waiting for the catch-up.
+          scrollTrigger: {
+            start: 0,
+            end: maxScroll,
+            scrub: root.dataset.wrenCheck === undefined ? SCRUB : true,
+          },
         },
       );
       // Start exactly where the page is, not catching up from the top.
       proxy.scroll = Math.min(maxScroll, window.scrollY);
       tween.scrollTrigger?.update();
+      lastScroll = proxy.scroll;
       render(proxy.scroll);
     };
 
@@ -324,65 +620,40 @@ export function WrenFlight() {
       ScrollTrigger.removeEventListener("refresh", onResize);
       window.removeEventListener("scroll", follow);
       stopFollowing();
-      gsap.ticker.remove(beat);
+      gsap.ticker.remove(tick);
       window.clearTimeout(timer);
       tween?.kill();
+      hopRef.current = null;
       delete root.dataset.wren;
     };
   });
 
   return (
     <div
-      ref={layer}
       aria-hidden="true"
+      data-wren-layer
       className="pointer-events-none fixed inset-0 z-30 overflow-hidden"
     >
       <div ref={page} className="absolute inset-x-0 top-0 will-change-transform">
-        <svg className="absolute inset-0 size-full overflow-visible" fill="none">
-          <defs>
-            {/* Pencil grain: the line wavers a little, as a soft lead does on paper. */}
-            <filter id="wren-trail-grain" x="-5%" y="-1%" width="110%" height="102%">
-              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" />
-              <feDisplacementMap in="SourceGraphic" scale="1.6" />
-            </filter>
-          </defs>
-          <path
-            ref={trail}
-            stroke="var(--pencil)"
-            strokeWidth={1.4}
-            strokeLinecap="round"
-            strokeDasharray="0"
-            opacity={0.7}
-            filter="url(#wren-trail-grain)"
-          />
-        </svg>
         <div
           ref={bird}
-          data-pose="perched"
-          data-3d={drawn ? "" : undefined}
-          className="wren-flyer absolute top-0 left-0 transition-opacity duration-500"
-          style={{ transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%` }}
+          data-wren-flyer
+          className="wren-flyer absolute top-0 left-0"
+          style={{
+            width: WREN_SIZE,
+            height: WREN_SIZE,
+            transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%`,
+          }}
         >
-          {wrenPoses.map((pose) => (
-            <WrenBird
-              key={pose}
-              pose={pose}
-              react={pose === "perched" && opens > 0 ? opens : undefined}
-              data-flyer-pose={pose}
-              className="absolute inset-0"
-            />
-          ))}
+          <div
+            ref={body}
+            className="size-full"
+            style={{ transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%` }}
+          >
+            <WrenFlyer frame={{ kind: "idle", idle: "perched" }} className="size-full" />
+          </div>
         </div>
       </div>
-      {threeD ? (
-        <Suspense fallback={null}>
-          <Wren3D
-            onReady={() => {
-              setDrawn(true);
-            }}
-          />
-        </Suspense>
-      ) : null}
     </div>
   );
 }

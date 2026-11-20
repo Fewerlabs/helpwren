@@ -8,13 +8,14 @@ const routes: readonly { href: string; label: string; text: string; icon: IconNa
   {
     href: links.github,
     label: "The repository",
-    text: "Read the code, open an issue, star it.",
+    text: "The code, issues, and the decision records behind it.",
     icon: "github-logo",
   },
   {
-    href: links.docs,
+    // The guides live on this site; the decision records stay on GitHub.
+    href: "/docs",
     label: "The docs",
-    text: "The widget, mobile apps, architecture and decisions.",
+    text: "Guides to installing, the widget and mobile apps.",
     icon: "book-open",
   },
   {
@@ -35,7 +36,7 @@ export function Join() {
       className="relative isolate overflow-hidden px-4 pt-10 pb-6 sm:pt-14"
     >
       <EntryMotion />
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-5xl">
         <EntryHeader number="Last" subject="Join the survey" note="Open to everyone" />
         <h2
           id="join-title"

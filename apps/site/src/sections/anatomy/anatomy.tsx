@@ -1,7 +1,6 @@
 import { MarginNote } from "@helpwren/design-system";
 
 import { Entry } from "@/components/journal";
-import { SceneSlot } from "@/scenes/scene-slot";
 
 import { AnatomySketch } from "./anatomy-sketch";
 import { anatomyLayers } from "./layers";
@@ -18,9 +17,7 @@ export function Anatomy() {
       sheetClassName="lg:min-h-[36rem]"
       sketch={
         <div className="@container relative w-full max-w-md" data-anatomy-stage>
-          <SceneSlot scene="anatomy">
-            <AnatomySketch />
-          </SceneSlot>
+          <AnatomySketch />
           {/* The wren flies through the gap between the chat page and the client library. */}
           <span
             aria-hidden="true"
@@ -32,17 +29,6 @@ export function Anatomy() {
             data-wren-waypoint="anatomy-out"
             className="absolute top-[50%] left-[78%] size-0"
           />
-          {/* Names for the 3D stack's leader lines; the 3D scene moves them with the planes. */}
-          {anatomyLayers.map((layer, index) => (
-            <span
-              key={layer.id}
-              aria-hidden="true"
-              data-anatomy-label
-              className="font-hand text-muted-foreground pointer-events-none absolute top-0 left-0 hidden text-lg leading-none whitespace-nowrap"
-            >
-              {String(index + 1)} · {layer.name.toLowerCase()}
-            </span>
-          ))}{" "}
         </div>
       }
     >

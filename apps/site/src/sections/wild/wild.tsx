@@ -1,4 +1,4 @@
-import { MarginNote } from "@helpwren/design-system";
+import { Icon, MarginNote } from "@helpwren/design-system";
 
 import { Capture } from "@/components/capture";
 import { LazyOpenChatButton } from "@/components/deferred";
@@ -24,7 +24,7 @@ export function Wild() {
         <div className="w-full max-w-sm">
           <Taped>
             <div className="@container relative">
-              <Capture name="widget" sizes="(min-width: 1024px) 384px, 90vw" />
+              <Capture name="widget" mat sizes="(min-width: 1024px) 384px, 90vw" />
               {/* The wren stands on the launcher in the capture. */}
               <WildPerch />
             </div>
@@ -73,7 +73,7 @@ export function Wild() {
       </p>
       {DEMO_URL ? (
         <div className="space-y-2 pt-2">
-          <LazyOpenChatButton />
+          <LazyOpenChatButton icon={<Icon name="chat-wren" className="size-4" />} />
           <p className="text-sm">
             This is a demo install of Helpwren. Messages go to it, and may not get an answer.
           </p>

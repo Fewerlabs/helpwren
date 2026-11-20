@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  arrivals,
-  flightAt,
-  HOLD,
-  routePoints,
-  routeSegments,
-  smoothPath,
-  type Stop,
-} from "./route";
+import { arrivals, flightAt, HOLD, type Stop } from "./route";
 
 const stop = (name: string, x: number, y: number, land = true): Stop => ({
   name,
@@ -28,25 +20,6 @@ const stops = [
 ];
 
 describe("the wren's route", () => {
-  it("passes through every stop, with a lifted point between each pair", () => {
-    const points = routePoints(stops);
-    expect(points).toHaveLength(stops.length * 2 - 1);
-    expect(points[0]).toEqual({ x: 100, y: 100 });
-    expect(points[2]).toEqual({ x: 600, y: 900 });
-    // The midpoint arcs above the higher of the two stops.
-    expect(points[1]?.y).toBeLessThan(100);
-  });
-
-  it("draws one segment between each pair of points and joins them into one path", () => {
-    const points = routePoints(stops);
-    const segments = routeSegments(points);
-    expect(segments).toHaveLength(points.length - 1);
-    const path = smoothPath(points);
-    expect(path.startsWith("M100.0 100.0C")).toBe(true);
-    expect(path.match(/C/g)).toHaveLength(segments.length);
-    expect(path.endsWith("500.0 2600.0")).toBe(true);
-  });
-
   it("arrives at each stop when it is 45% down the screen, never going back", () => {
     const times = arrivals(stops, 800, 2400);
     expect(times[0]).toBe(0);
@@ -59,7 +32,7 @@ describe("the wren's route", () => {
   it("sits at a perch before taking off, but flies straight through a waypoint", () => {
     const times = arrivals(stops, 800, 2400);
     const legOne = (times[1] ?? 0) - (times[0] ?? 0);
-    expect(flightAt(legOne * HOLD * 0.5, stops, times)).toEqual({ leg: 0, along: 0 });
+    expect(flightAt(legOne * HOLD * 0.5, stops, times)).toEqual({ leg: 0, along: 0, wait: 0.5 });
     expect(flightAt(legOne * 0.99, stops, times).along).toBeGreaterThan(0.9);
 
     const start = times[2] ?? 0;
@@ -69,6 +42,13 @@ describe("the wren's route", () => {
 
   it("stays at the last stop at the bottom of the page", () => {
     const times = arrivals(stops, 800, 2400);
-    expect(flightAt(10_000, stops, times)).toEqual({ leg: 2, along: 1 });
+    expect(flightAt(10_000, stops, times)).toMatchObject({ leg: 2, along: 1 });
+  });
+
+  it("leaves a perch before it scrolls away, however long the leg", () => {
+    const times = arrivals(stops, 800, 2400);
+    // With at most 100 pixels of waiting, the wren is already flying 150 pixels into the leg.
+    expect(flightAt(150, stops, times, 100).along).toBeGreaterThan(0);
+    expect(flightAt(150, stops, times).along).toBe(0);
   });
 });

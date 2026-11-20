@@ -10,10 +10,11 @@ const Flight = dynamic(() => import("./flight").then((module) => module.WrenFlig
 });
 
 /**
- * Below this width the wren does not fly; it simply stands at each perch. The flight needs the
- * two-column layout, where the drawings have a column of their own beside the writing.
+ * Below this width (phones) the wren does not fly the whole page; it hops onto each perch as its
+ * entry comes into view (CSS). From here up it flies, routed round the words: through the page
+ * margins on wide screens, through the gaps between blocks on narrower ones.
  */
-const WIDE_QUERY = "(min-width: 1024px)";
+const WIDE_QUERY = "(min-width: 1280px)";
 
 function subscribe(onChange: () => void) {
   const list = window.matchMedia(WIDE_QUERY);

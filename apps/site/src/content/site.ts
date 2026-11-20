@@ -3,7 +3,7 @@
 export const SITE_URL = "https://helpwren.fewerlabs.dev";
 export const SITE_NAME = "Helpwren";
 export const SITE_DESCRIPTION =
-  "Live chat that plugs into any product and lives in your own database. Open source and self-hosted: live chat, tickets and a help center, with no per-seat pricing.";
+  "Support chat that plugs into any product. Your servers, your database. Open source and self-hosted: live chat, tickets and a help center, with no per-seat pricing.";
 
 export const GITHUB_REPO = "Fewerlabs/helpwren";
 export const GITHUB_URL = `https://github.com/${GITHUB_REPO}`;

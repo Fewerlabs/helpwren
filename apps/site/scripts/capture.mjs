@@ -134,7 +134,14 @@ async function captureApp(browser, scheme) {
   });
   const page = await context.newPage();
 
+  // An article, not the help center's front page: the front page's hero carries a halftone
+  // pattern that the website does not use, and an article shows the help center at work.
   await page.goto(`${APP}/help`, { waitUntil: "networkidle" });
+  await page
+    .getByRole("link", { name: /Add the chat to your website/ })
+    .first()
+    .click();
+  await page.waitForLoadState("networkidle");
   await page.waitForTimeout(800);
   await save("help", scheme, await page.screenshot());
 

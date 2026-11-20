@@ -97,8 +97,38 @@ export function useIdle(): boolean {
   );
 }
 
-/** Turns animations on or off for this browser, and tells everything listening. */
+/** The words the reader is looking at: the first heading, paragraph or figure on screen. */
+function inView(): Element | null {
+  const marks = document.querySelectorAll("main h1, main h2, main h3, main p, main figure");
+  let fallback: Element | null = null;
+  for (const mark of marks) {
+    const box = mark.getBoundingClientRect();
+    if (box.bottom <= 0 || box.height === 0) continue;
+    if (box.top >= window.innerHeight) break;
+    // Words in the pinned entry move with the pin, so they make a poor anchor; use them only
+    // when nothing else is on screen.
+    if (mark.closest("[data-pin]")) {
+      fallback ??= mark.closest("[data-pin]");
+      continue;
+    }
+    return mark;
+  }
+  return fallback;
+}
+
+/**
+ * Turns animations on or off for this browser, and tells everything listening. The pinned entry
+ * takes more or less room with animations on, so the page is held on the words in view: they
+ * stay where they were on screen.
+ */
 export function setMotionPreference(on: boolean) {
+  const anchor = inView();
+  const before = anchor?.getBoundingClientRect().top ?? 0;
+  const hold = () => {
+    if (!anchor) return;
+    const moved = anchor.getBoundingClientRect().top - before;
+    if (Math.abs(moved) >= 1) window.scrollTo({ top: window.scrollY + moved, behavior: "instant" });
+  };
   try {
     if (on) window.localStorage.removeItem(MOTION_STORAGE_KEY);
     else window.localStorage.setItem(MOTION_STORAGE_KEY, "off");
@@ -106,7 +136,10 @@ export function setMotionPreference(on: boolean) {
     // Storage is blocked: the choice lasts until the page is left.
   }
   document.documentElement.dataset.motionPref = on ? "on" : "off";
+  hold();
   notify();
+  // Once the motion layer has started or stopped (smooth scrolling, the pin), hold it again.
+  for (const wait of [50, 300, 800]) window.setTimeout(hold, wait);
 }
 
 /** Whether the footer switch is on, whatever the device says. */

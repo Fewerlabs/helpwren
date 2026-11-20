@@ -26,16 +26,14 @@ export function SpecimenCard({ specimen }: { specimen: Specimen }) {
   };
   const titleId = `specimen-${specimen.id}`;
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- hover and focus only replay a drawing
+    // Hover replays the drawing. There is nothing to activate, so the card is not a tab stop;
+    // the figure is decorative and its words are in the tag.
+
     <li
       data-specimen
-      // Focusable so keyboard readers get the same replay as a pointer; it does nothing else.
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- see the line above
-      tabIndex={0}
       aria-labelledby={titleId}
       onPointerEnter={again}
-      onFocus={again}
-      className="group focus-visible:outline-ring flex cursor-default flex-col rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-4"
+      className="group flex cursor-default flex-col"
     >
       <figure className="relative">
         {specimen.scene ? (
