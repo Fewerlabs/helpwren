@@ -32,7 +32,7 @@ export interface EntryProps {
   className?: string;
   /** Classes for the sheet itself, such as a taller minimum height for a pinned entry. */
   sheetClassName?: string;
-  /** Behind the sheet, such as the halftone. */
+  /** Behind the entry's content. */
   backdrop?: ReactNode;
   /** The entry's motion component, which loads its animation once motion is allowed. */
   motion?: ReactNode;
@@ -233,10 +233,13 @@ export function Taped({ children, className }: { children: ReactNode; className?
 /** A museum specimen tag: a name and one line, on a string. */
 export function SpecimenTag({
   name,
+  nameId,
   children,
   className,
 }: {
   name: string;
+  /** An id for the name, for something labelled by it. */
+  nameId?: string;
   children: ReactNode;
   className?: string;
 }) {
@@ -259,7 +262,9 @@ export function SpecimenTag({
         <circle cx="9" cy="9" r="3" />
         <path d="M7 7C4 4 2 3 1 1" strokeLinecap="round" />
       </svg>
-      <p className="text-foreground font-mono text-xs tracking-[0.08em] uppercase">{name}</p>
+      <p id={nameId} className="text-foreground font-mono text-xs tracking-[0.08em] uppercase">
+        {name}
+      </p>
       <p className="text-muted-foreground mt-1 text-sm leading-snug">{children}</p>
     </div>
   );

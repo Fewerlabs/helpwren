@@ -36,11 +36,6 @@ export function Join() {
       className="relative isolate overflow-hidden px-4 pt-10 pb-6 sm:pt-14"
     >
       <JoinMotion />
-      <div
-        aria-hidden="true"
-        className="halftone top-0 left-0 h-[26rem] w-full sm:w-[70%]"
-        data-corner="left"
-      />
       <div className="mx-auto max-w-6xl">
         <EntryHeader number="Last" subject="Join the survey" note="Open to everyone" />
         <h2

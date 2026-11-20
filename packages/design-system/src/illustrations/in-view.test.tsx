@@ -72,6 +72,25 @@ describe("drawing in view", () => {
   });
 });
 
+describe("replay", () => {
+  it("draws the scene again from the start each time the number goes up", () => {
+    const { container, rerender } = render(<Wren scene="notifications" animate="in-view" />);
+    report(true, 1);
+    const svg = container.querySelector("svg");
+    expect(svg).toHaveAttribute("data-animate", "idle");
+    const before = container.querySelector(".hw-ring");
+    rerender(<Wren scene="notifications" animate="in-view" replay={1} />);
+    expect(svg).toHaveAttribute("data-animate", "");
+    // A new drawing, so its animations start over.
+    expect(container.querySelector(".hw-ring")).not.toBe(before);
+  });
+
+  it("does nothing for a still illustration", () => {
+    const { container } = render(<Wren scene="notifications" animate={false} replay={2} />);
+    expect(container.querySelector("svg")).not.toHaveAttribute("data-animate");
+  });
+});
+
 describe("WrenBird", () => {
   it.each(wrenPoses)("draws the %s pose in the logo's box", (pose) => {
     const { container } = render(<WrenBird pose={pose} />);

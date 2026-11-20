@@ -16,7 +16,6 @@ export function Hero({ stars }: { stars: number | null }) {
       data-entry="first-sighting"
       className="relative isolate overflow-hidden px-4 pt-8 pb-12 sm:pt-16 sm:pb-20"
     >
-      <div aria-hidden="true" className="halftone -top-12 right-0 h-[30rem] w-full sm:w-[70%]" />
       <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.3fr_1fr]">
         <div>
           <EntryHeader number="01" subject="First sighting" note="Open source · MIT" />
@@ -25,11 +24,12 @@ export function Hero({ stars }: { stars: number | null }) {
             data-split
             className="mt-4 text-[2.5rem] leading-[1.05] font-semibold tracking-[-0.035em] text-balance sm:text-[3.5rem] lg:text-[4rem]"
           >
-            Live chat, tickets and help articles that <PenCircle>plug into</PenCircle>{" "}
-            <HighlighterMark>any product.</HighlighterMark>
+            Live chat that <PenCircle>plugs into</PenCircle> any product and lives in{" "}
+            <HighlighterMark>your own database.</HighlighterMark>
           </h1>
           <p className="text-muted-foreground mt-5 max-w-xl text-lg leading-normal">
-            Open source and self-hosted. Your database, no per-seat pricing.
+            Open source and self-hosted: live chat, tickets and a help center, with no per-seat
+            pricing.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild>

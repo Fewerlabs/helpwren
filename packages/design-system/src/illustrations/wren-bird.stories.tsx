@@ -52,6 +52,33 @@ function Reacting() {
 /** `react` makes the wren hop once, for something that happens beside it. */
 export const Reaction: Story = { render: () => <Reacting /> };
 
+function ReplayCard() {
+  const [replays, setReplays] = useState(0);
+  const again = () => {
+    setReplays((count) => count + 1);
+  };
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- hover and focus only replay a drawing
+    <div
+      // A card that replays its drawing on hover and keyboard focus. It does nothing else, so it
+      // is a focusable group rather than a button.
+      role="group"
+      aria-label="A bell that rings"
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the replay is for focus too
+      tabIndex={0}
+      onPointerEnter={again}
+      onFocus={again}
+      className="border-line bg-card w-64 rounded-2xl p-4"
+    >
+      <Wren scene="notifications" animate="in-view" replay={replays} decorative bird={false} />
+      <p className="text-muted-foreground mt-2 text-center text-sm">Hover or focus to replay</p>
+    </div>
+  );
+}
+
+/** `replay` draws a scene again with its small action: here the bell rings. */
+export const Replay: Story = { render: () => <ReplayCard /> };
+
 /**
  * With `animate="in-view"`, scenes and sketches wait below the screen and draw themselves as
  * they scroll in, then pause their small movements while off screen. Scroll down.

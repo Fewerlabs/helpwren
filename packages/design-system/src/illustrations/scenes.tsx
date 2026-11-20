@@ -167,7 +167,7 @@ export const scenes: Record<WrenScene, { label: string; content: ReactNode }> = 
           />
           <path pathLength={1} d="M64 84 146 80 147 97 65 101Z" />
           <path
-            className="hw-pen"
+            className="hw-pen hw-drop"
             pathLength={1}
             d="M124 98 124 112 128 108 132 112 132 98"
             stroke="var(--pen)"
@@ -681,11 +681,13 @@ export const scenes: Record<WrenScene, { label: string; content: ReactNode }> = 
           fill="var(--highlighter)"
           stroke="none"
         />
-        <path
-          pathLength={1}
-          d="M88 122V100C88 86 97 76 110 76 123 76 132 86 132 100V122L141 133H79Z"
-        />
-        <path pathLength={1} d="M102 133C102 143 118 143 118 133" />
+        <g className="hw-ring">
+          <path
+            pathLength={1}
+            d="M88 122V100C88 86 97 76 110 76 123 76 132 86 132 100V122L141 133H79Z"
+          />
+          <path pathLength={1} d="M102 133C102 143 118 143 118 133" />
+        </g>
         <path
           className="hw-pen"
           pathLength={1}
@@ -748,19 +750,21 @@ export const scenes: Record<WrenScene, { label: string; content: ReactNode }> = 
         <circle className="hw-hl" cx="186" cy="52" r="13" fill="var(--highlighter)" stroke="none" />
         <rect pathLength={1} x="30" y="120" width="50" height="30" rx="2" />
         <path pathLength={1} d="M30 135H80" />
-        <path
-          pathLength={1}
-          d="M82.6 86.2 128.6 69.2 127.3 65.5 179.3 46.5 184.7 61.5 132.7 80.5 131.4 76.8 85.4 93.8Z"
-        />
-        <path pathLength={1} d="M128.6 69.2 131.4 76.8" />
+        <g className="hw-sweep">
+          <path
+            pathLength={1}
+            d="M82.6 86.2 128.6 69.2 127.3 65.5 179.3 46.5 184.7 61.5 132.7 80.5 131.4 76.8 85.4 93.8Z"
+          />
+          <path pathLength={1} d="M128.6 69.2 131.4 76.8" />
+          <path
+            className="hw-pen"
+            pathLength={1}
+            d="M179.3 46.5 184.7 61.5"
+            stroke="var(--pen)"
+            strokeWidth={2.4}
+          />
+        </g>
         <path pathLength={1} d="M134 80 116 150M136 79 140 150M138 78 162 150" />
-        <path
-          className="hw-pen"
-          pathLength={1}
-          d="M179.3 46.5 184.7 61.5"
-          stroke="var(--pen)"
-          strokeWidth={2.4}
-        />
         <path
           pathLength={1}
           stroke="var(--moss)"

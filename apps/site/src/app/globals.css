@@ -28,32 +28,6 @@ body {
   color: var(--highlighter-foreground);
 }
 
-/* The halftone of the public pages: brand dots, densest in one corner, fading on every side. */
-.halftone {
-  pointer-events: none;
-  position: absolute;
-  z-index: -1;
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--primary) 55%, transparent) 1px,
-    transparent 1.5px
-  );
-  background-size: 7px 7px;
-  mask-image:
-    radial-gradient(85% 100% at 100% 0%, #000 0%, rgb(0 0 0 / 0.5) 35%, transparent 75%),
-    linear-gradient(to right, transparent, #000 18%, #000 82%, transparent),
-    linear-gradient(to bottom, #000 55%, transparent);
-  mask-composite: intersect;
-}
-.halftone[data-corner="left"] {
-  mask-image:
-    radial-gradient(85% 100% at 0% 0%, #000 0%, rgb(0 0 0 / 0.5) 35%, transparent 75%),
-    linear-gradient(to right, transparent, #000 18%, #000 82%, transparent),
-    linear-gradient(to bottom, #000 55%, transparent);
-}
-.halftone[data-corner="center"] {
-  mask-image: radial-gradient(60% 60% at 50% 50%, #000 0%, rgb(0 0 0 / 0.4) 45%, transparent 80%);
-}
-
 /*
  * The hero's marks are written on as the page opens: the highlighter first, then the red pen.
  * CSS only, so they need no JavaScript and cost the main thread nothing.

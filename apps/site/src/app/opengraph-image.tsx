@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 
 export const dynamic = "force-static";
-export const alt = "Helpwren: live chat, tickets and help articles that plug into any product.";
+export const alt =
+  "Helpwren: live chat that plugs into any product and lives in your own database.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -40,11 +41,11 @@ export default function OpenGraphImage() {
             flexWrap: "wrap",
           }}
         >
-          Live chat, tickets and help articles that plug into&nbsp;
-          <span style={{ background: HIGHLIGHTER, padding: "0 8px" }}>any product.</span>
+          Live chat that plugs into any product and lives in&nbsp;
+          <span style={{ background: HIGHLIGHTER, padding: "0 8px" }}>your own database.</span>
         </div>
         <div style={{ fontSize: 28, color: PENCIL, marginTop: 28, display: "flex" }}>
-          Open source and self-hosted. Your database, no per-seat pricing.
+          Open source and self-hosted. No per-seat pricing.
         </div>
       </div>
       <svg width="300" height="300" viewBox="0 0 120 120" fill="none">

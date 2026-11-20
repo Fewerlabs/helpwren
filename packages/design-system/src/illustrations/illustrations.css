@@ -212,6 +212,86 @@
 }
 
 /*
+ * Each scene's small action, played once after it is drawn (and again on a replay): the bell
+ * rings, the telescope sweeps the sky, the bookmark drops into the book, a badge pops.
+ */
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-ring {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: hw-ring 0.9s 1.5s ease-in-out both;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-sweep {
+  transform-box: view-box;
+  transform-origin: 134px 80px;
+  animation: hw-sweep 1.6s 1.4s var(--hw-spring) both;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] path.hw-drop {
+  animation:
+    hw-draw 1.3s 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    hw-drop 0.7s 2.2s var(--hw-spring) both;
+}
+
+:is([data-slot="wren"], [data-slot="sketch"])[data-animate=""] .hw-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hw-pop 0.6s 1.5s var(--hw-spring) both;
+}
+
+@keyframes hw-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(12deg);
+  }
+  35% {
+    transform: rotate(-10deg);
+  }
+  55% {
+    transform: rotate(6deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+}
+
+@keyframes hw-sweep {
+  0% {
+    transform: rotate(0);
+  }
+  40% {
+    transform: rotate(-7deg);
+  }
+  70% {
+    transform: rotate(4deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes hw-drop {
+  from {
+    transform: translateY(-6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes hw-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
  * Drawn when it scrolls into view (`animate="in-view"`). Until then it waits, undrawn; one that
  * was already on screen when the page opened is not drawn again, it only lives ("idle").
  */
