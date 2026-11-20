@@ -124,3 +124,40 @@ iframe.help {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+
+/* The widget fills a data-helpwren-help block with plain markup, for the site to style. */
+.helpwren-help-list,
+.help-links ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.helpwren-help-link {
+  display: grid;
+  gap: 0.1rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.helpwren-help-title {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.helpwren-help-summary {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.help-links button {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}

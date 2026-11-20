@@ -20,6 +20,8 @@ which is what lets a guest's chat on the public site carry over when they log in
 - `/pricing`: "Ask about Pro" calls `startConversation(draft)`, which puts words in the message
   box and sends nothing.
 - `/business`: `init({ launcher: false })` and the page's own Help button, which calls `show()`.
+- `/refunds`: a `data-helpwren-help` block, which the widget fills with the articles tagged
+  `glown-refunds`; a link opens the article in the chat.
 - `/help`: the install's help center, through one rewrite in `next.config.ts`:
   `/help/:path*` to the install's `/help/:path*`.
 
@@ -39,6 +41,12 @@ which is what lets a guest's chat on the public site carry over when they log in
   `setContext({ businessId, plan, page })`; Log out calls `reset()`; and the header's Help
   button shows the count from `on("unread")`.
 - `/support` shows the help center inside the page (`/help?embed=1`).
+- Contextual help ([docs/contextual-help.md](../../docs/contextual-help.md)): `/billing` sets
+  `setContext({ filter })` with the tag `glown-billing`, and draws the same articles itself
+  with `findArticles`; `/bookings/calendar` sends no filter, for a rule such as "URL matches
+  `/bookings/*`" to pick its articles; `/bookings/refunds` is under the same path but sets its
+  own filter, which wins; `/staff` has neither, so the chat falls back to searching for its
+  title.
 
 ## Run it against a local install
 
@@ -96,7 +104,6 @@ pnpm --filter @helpwren/web exec playwright test e2e/glown
 `E2E_PORT` and `EXAMPLE_PORT` move the install and the example off ports 3000 and 4300. With
 `E2E_PORT`, the install's `NEXT_PUBLIC_APP_URL` in `apps/web/.env.local` must use the same port.
 
-Not covered here: contextual help ("Help for this page" from rules or a page filter), which the
-install does not have yet; Safari, whose storage partitioning may keep the guest's chat from
+Not covered here: Safari, whose storage partitioning may keep the guest's chat from
 carrying over between hostnames; the mobile apps (push, the WebView screen, `GET /api/unread`);
 and real domains over HTTPS.
