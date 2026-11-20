@@ -5,7 +5,7 @@ from this package only.
 
 ## Look
 
-Calm interface, hand-drawn character. Warm paper, ink lines, generous space. Outlines instead of
+Calm interface, hand-drawn character. Plain greys, ink lines, generous space. Outlines instead of
 shadows. Personality comes from the wren illustrations, never from decoration in the product UI.
 
 ## Tokens
@@ -27,19 +27,24 @@ Dark mode applies under any element with the `dark` class.
 
 | Utility name                   | Light     | Dark      | Use                                                      |
 | ------------------------------ | --------- | --------- | -------------------------------------------------------- |
-| `background` / `paper`         | `#F7F4ED` | `#1C1A16` | Page background                                          |
-| `card`, `popover`              | `#FDFBF7` | `#24211C` | Cards, panels, inputs                                    |
-| `foreground` / `ink`           | `#26231E` | `#EDE8DC` | Text, icons, outlines                                    |
-| `muted-foreground` / `pencil`  | `#6E675B` | `#A39B8B` | Secondary text                                           |
-| `border`, `input` / `edge`     | `#8F8778` | `#827B6E` | Borders of controls and cards                            |
-| `rule`                         | `#E3DDD0` | `#3A362F` | Dividers only, never control borders                     |
-| `muted`, `secondary`, `accent` | `#EDE9E0` | `#2E2A24` | Hover and secondary fills                                |
-| `primary` / `moss`             | `#3D6B57` | `#7FB59A` | Primary buttons, brand accent                            |
+| `background` / `paper`         | `#F7F7F7` | `#0C0C0D` | Page background                                          |
+| `canvas`                       | `#F3F3F3` | `#0C0C0D` | The dashboard's ground, behind its white panels          |
+| `card`, `popover`              | `#FFFFFF` | `#161616` | Cards, panels, inputs                                    |
+| `foreground` / `ink`           | `#1A1A1A` | `#E5E5E5` | Text, icons, outlines                                    |
+| `muted-foreground` / `pencil`  | `#666666` | `#969696` | Secondary text                                           |
+| `border`, `input` / `edge`     | `#8A8A8A` | `#6E6E6E` | Borders of controls and cards                            |
+| `rule`                         | `#E8E8E8` | `#262626` | Dividers only, never control borders                     |
+| `muted`, `secondary`, `accent` | `#F1F1F1` | `#1E1E1E` | Hover and secondary fills                                |
+| `primary` / `moss`             | `#3D6B57` | `#7FB59A` | Brand accent: links, icons, the focus ring               |
+| `primary-fill`                 | `#3D6B57` | `#3D6B57` | Filled buttons, with white words in both themes          |
 | `destructive` / `pen`          | `#B23520` | `#F07A5A` | Destructive actions, errors, urgent                      |
 | `highlighter`                  | `#F5D547` | `#E8C64A` | Behind single words, with `highlighter-foreground`       |
 | `biro`                         | `#2F5B85` | `#8DB3DB` | Links, open status, internal notes                       |
 | `ring`                         | accent    | accent    | Focus ring: the accent, or red pen on an invalid control |
 | `ochre`                        | `#7D5A12` | `#D9A441` | Waiting                                                  |
+
+The greys carry no tint: white panels on a light-grey ground, near-black ink. The brand colour is
+for accents only.
 
 Use the semantic name (`bg-background`, `text-muted-foreground`, `border-border`) in components.
 Use a brand name (`text-pen`, `bg-highlighter`) only when you mean that pen on the desk.

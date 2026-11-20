@@ -1,0 +1,79 @@
+name: Release
+
+# Runs when a version tag is pushed. See docs/contributing/releasing.md.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Publish packages and the GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # the GitHub release
+      id-token: write # npm provenance and trusted publishing
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
+      SUPABASE_SECRET_KEY: placeholder
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Check the tag matches the app's version
+        shell: bash
+        run: |
+          version=$(node -p 'require("./apps/web/package.json").version')
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match apps/web version ${version}."
+            exit 1
+          fi
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for story tests
+        run: pnpm --filter @helpwren/design-system exec playwright install --with-deps chromium
+
+      - run: pnpm format:check
+
+      - run: pnpm turbo run lint typecheck test build
+
+      # Versions already on npm are skipped, so a failed run can be re-run.
+      - name: Publish to npm
+        run: pnpm -r publish --access public --no-git-checks --report-summary
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+
+      - name: Create the GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # That version's section of CHANGELOG.md, without its heading.
+          awk -v v="$version" '
+            $0 ~ "^## " { if (found) exit; if ($2 == v) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for ${version}."
+            exit 1
+          fi
+          gh release create "${GITHUB_REF_NAME}" --title "Helpwren ${GITHUB_REF_NAME}" \
+            --notes-file notes.md --verify-tag
