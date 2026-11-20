@@ -75,5 +75,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 export const config = {
   // Every page. Not the API, which answers with data and sets its own headers, and not files
   // that are served as they are.
-  matcher: ["/((?!api/|_next/static|_next/image|widget\\.js|icon\\.svg|favicon\\.ico).*)"],
+  matcher: [
+    "/((?!api/|_next/static|_next/image|help/_assets/|help/_icons/|widget\\.js|icon\\.svg|favicon\\.ico).*)",
+  ],
 };

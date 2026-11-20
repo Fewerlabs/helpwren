@@ -23,4 +23,8 @@ describe("CollectionIcon", () => {
     expect(iconUrl("Rocket")).toBe("/api/icons/regular/book-open.svg");
     expect(iconUrl("rocket", "bold")).toBe("/api/icons/bold/rocket.svg");
   });
+
+  it("asks for the file under another route when given one", () => {
+    expect(iconUrl("rocket", "bold", "/help/_icons")).toBe("/help/_icons/bold/rocket.svg");
+  });
 });

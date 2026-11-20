@@ -22,6 +22,16 @@ describe("frameAncestorSources", () => {
     ]);
   });
 
+  it("treats names under localhost as local, as a product's own dev hostnames are", () => {
+    expect(
+      frameAncestorSources(["www.glown.localhost:4300", "*.glown.localhost", "localhost.example"]),
+    ).toEqual([
+      "http://www.glown.localhost:4300",
+      "http://*.glown.localhost",
+      "https://localhost.example",
+    ]);
+  });
+
   it("skips entries that are not hosts, without opening the chat to everyone", () => {
     expect(
       frameAncestorSources(["https://example.com/page", "*", "a b", "'none'; script-src *"]),

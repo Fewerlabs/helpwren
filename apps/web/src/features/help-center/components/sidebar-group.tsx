@@ -3,6 +3,8 @@
 import { CollectionIcon, Expandable, Icon } from "@helpwren/design-system";
 import { useId, useState, type ReactNode } from "react";
 
+import { HELP_ICON_ROUTE } from "../urls";
+
 export interface SidebarGroupProps {
   name: string;
   /** The Phosphor name of the collection's icon. */
@@ -31,7 +33,12 @@ export function SidebarGroup({ name, icon, count, defaultOpen, children }: Sideb
           setOpen(!open);
         }}
       >
-        <CollectionIcon name={icon} weight="duotone" className="text-foreground size-4" />
+        <CollectionIcon
+          name={icon}
+          weight="duotone"
+          route={HELP_ICON_ROUTE}
+          className="text-foreground size-4"
+        />
         <span className="min-w-0 flex-1 text-pretty">{name}</span>
         <span className="text-muted-foreground text-xs font-normal tabular-nums">{count}</span>
         <Icon

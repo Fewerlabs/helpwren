@@ -1,0 +1,126 @@
+/* Plain on purpose: the example is about where Helpwren goes, not how Glown looks. */
+:root {
+  --ink: #1f2328;
+  --muted: #59636e;
+  --line: #d8dee4;
+  --paper: #ffffff;
+  /* Glown's coral, from its logo. */
+  --accent: #f1635e;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f0f3f6;
+    --muted: #9198a1;
+    --line: #3d444d;
+    --paper: #0d1117;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+header nav {
+  display: flex;
+  flex: 1;
+  gap: 1rem;
+}
+
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 6rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.brand {
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.logo {
+  display: block;
+  height: 2rem;
+  width: auto;
+}
+
+.cover {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.badge {
+  display: inline-block;
+  min-width: 1.25rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 22rem;
+}
+
+label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.error {
+  color: #b42318;
+}
+
+iframe.help {
+  width: 100%;
+  min-height: 24rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
