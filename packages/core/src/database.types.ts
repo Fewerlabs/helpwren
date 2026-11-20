@@ -66,6 +66,7 @@ export type Database = {
       };
       articles: {
         Row: {
+          audiences: string[];
           author_id: string | null;
           author_name: string | null;
           author_photo: string | null;
@@ -73,7 +74,9 @@ export type Database = {
           collection_id: string | null;
           created_at: string;
           featured: boolean;
+          fields: NonNullable<Json>;
           id: string;
+          locale: string | null;
           meta_description: string | null;
           meta_title: string | null;
           position: number;
@@ -89,6 +92,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          audiences?: string[];
           author_id?: string | null;
           author_name?: string | null;
           author_photo?: string | null;
@@ -96,7 +100,9 @@ export type Database = {
           collection_id?: string | null;
           created_at?: string;
           featured?: boolean;
+          fields?: NonNullable<Json>;
           id?: string;
+          locale?: string | null;
           meta_description?: string | null;
           meta_title?: string | null;
           position?: number;
@@ -111,6 +117,7 @@ export type Database = {
           visibility?: string;
         };
         Update: {
+          audiences?: string[];
           author_id?: string | null;
           author_name?: string | null;
           author_photo?: string | null;
@@ -118,7 +125,9 @@ export type Database = {
           collection_id?: string | null;
           created_at?: string;
           featured?: boolean;
+          fields?: NonNullable<Json>;
           id?: string;
+          locale?: string | null;
           meta_description?: string | null;
           meta_title?: string | null;
           position?: number;
@@ -673,6 +682,46 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      help_rules: {
+        Row: {
+          audience: string | null;
+          created_at: string;
+          enabled: boolean;
+          filter: NonNullable<Json>;
+          id: string;
+          name: string;
+          position: number;
+          updated_at: string;
+          url_match: string;
+          url_value: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          audience?: string | null;
+          created_at?: string;
+          enabled?: boolean;
+          filter?: NonNullable<Json>;
+          id?: string;
+          name: string;
+          position?: number;
+          updated_at?: string;
+          url_match: string;
+          url_value: string;
+        };
+        Update: {
+          audience?: string | null;
+          created_at?: string;
+          enabled?: boolean;
+          filter?: NonNullable<Json>;
+          id?: string;
+          name?: string;
+          position?: number;
+          updated_at?: string;
+          url_match?: string;
+          url_value?: string;
+        };
+        Relationships: [];
       };
       inbound_emails: {
         Row: {
@@ -1277,6 +1326,40 @@ export type Database = {
         Args: { email: string; name: string; user_id: string };
         Returns: boolean;
       };
+      find_articles: {
+        Args: { any_word?: boolean; filter?: Json };
+        Returns: {
+          audiences: string[];
+          author_id: string | null;
+          author_name: string | null;
+          author_photo: string | null;
+          body: NonNullable<Json>;
+          collection_id: string | null;
+          created_at: string;
+          featured: boolean;
+          fields: NonNullable<Json>;
+          id: string;
+          locale: string | null;
+          meta_description: string | null;
+          meta_title: string | null;
+          position: number;
+          published_at: string | null;
+          search: unknown;
+          slug: string;
+          status: string;
+          summary: string | null;
+          tags: string[];
+          title: string;
+          updated_at: string;
+          visibility: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "articles";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       hit_rate_limit: {
         Args: { key: string; max_hits: number; window_seconds: number };
         Returns: boolean;
@@ -1363,10 +1446,12 @@ export type Database = {
       record_widget_seen: { Args: { origin: string }; Returns: undefined };
       reorder_articles: { Args: { ids: string[] }; Returns: undefined };
       reorder_collections: { Args: { ids: string[] }; Returns: undefined };
+      reorder_help_rules: { Args: { ids: string[] }; Returns: undefined };
       schema_version: { Args: Record<PropertyKey, never>; Returns: string };
       search_articles: {
         Args: { query: string };
         Returns: {
+          audiences: string[];
           author_id: string | null;
           author_name: string | null;
           author_photo: string | null;
@@ -1374,7 +1459,9 @@ export type Database = {
           collection_id: string | null;
           created_at: string;
           featured: boolean;
+          fields: NonNullable<Json>;
           id: string;
+          locale: string | null;
           meta_description: string | null;
           meta_title: string | null;
           position: number;
