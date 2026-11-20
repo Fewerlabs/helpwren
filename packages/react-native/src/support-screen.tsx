@@ -2,9 +2,9 @@ import { CHANNEL, type IdentityState, type PageContext, type PageMessage } from 
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { Linking, type StyleProp, type ViewStyle } from "react-native";
 import { WebView } from "react-native-webview";
-import {
-  type ShouldStartLoadRequest,
-  type WebViewMessageEvent,
+import type {
+  ShouldStartLoadRequest,
+  WebViewMessageEvent,
 } from "react-native-webview/lib/WebViewTypes";
 
 import { deliveryScript, embedUrl, greeting, isOnInstall, readFrameMessage } from "./bridge";

@@ -10,8 +10,8 @@ import {
 } from "./protocol";
 import { closeIcon, dismissIcon, openIcon, styles, wrenIcon } from "./styles";
 
-export { type Appearance } from "./appearance";
-export { type IdentityState, type PageContext, type VisitorDetails } from "./protocol";
+export type { Appearance } from "./appearance";
+export type { IdentityState, PageContext, VisitorDetails } from "./protocol";
 
 /**
  * Who the visitor is. A `token` proves it: the install checks it and signs them in as that

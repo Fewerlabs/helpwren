@@ -30,5 +30,11 @@ What has been checked for abuse and misuse, what was fixed and what is left:
 
 ## Supported versions
 
-Helpwren is pre-alpha. Only the latest commit on `main` receives security fixes. This section
-will list supported releases once there are any.
+| Version                 | Security fixes |
+| ----------------------- | -------------- |
+| Latest 0.x release      | Yes            |
+| Earlier 0.x releases    | No             |
+| `main` between releases | Yes            |
+
+While Helpwren is at 0.x, fixes land in the next release rather than being backported. Upgrade
+with `pnpm helpwren upgrade`; see [docs/install.md](docs/install.md).

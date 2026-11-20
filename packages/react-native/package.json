@@ -1,7 +1,6 @@
 {
   "name": "@helpwren/react-native",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "A support screen for React Native and Expo apps: Helpwren's chat in a web view.",
   "license": "MIT",
   "type": "module",
@@ -10,6 +9,7 @@
     "./bridge": "./src/bridge.ts"
   },
   "scripts": {
+    "build": "node ../config/scripts/build-library.mjs src/index.ts src/bridge.ts",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -31,5 +31,39 @@
     "react": ">=19",
     "react-native": ">=0.79",
     "react-native-webview": ">=13.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fewerlabs/helpwren.git",
+    "directory": "packages/react-native"
+  },
+  "homepage": "https://helpwren.fewerlabs.dev",
+  "bugs": "https://github.com/Fewerlabs/helpwren/issues",
+  "keywords": [
+    "react native",
+    "expo",
+    "live chat",
+    "customer support",
+    "helpwren"
+  ],
+  "author": "Fewer Labs",
+  "sideEffects": false,
+  "files": [
+    "dist/lib",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/lib/index.d.ts",
+        "default": "./dist/lib/index.js"
+      },
+      "./bridge": {
+        "types": "./dist/lib/bridge.d.ts",
+        "default": "./dist/lib/bridge.js"
+      },
+      "./package.json": "./package.json"
+    }
   }
 }

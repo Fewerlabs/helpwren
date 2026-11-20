@@ -64,6 +64,15 @@ your site:
 Guest chat works from here. Everything after this is optional: identity, the mobile screen, push
 and email.
 
+## Packages
+
+| Package                                                                          | For                                              |
+| -------------------------------------------------------------------------------- | ------------------------------------------------ |
+| [`helpwren`](https://www.npmjs.com/package/helpwren)                             | The widget, for an app that bundles its own code |
+| [`@helpwren/react-native`](https://www.npmjs.com/package/@helpwren/react-native) | The support screen for React Native and Expo     |
+
+A site with a script tag needs neither: each install serves the widget itself.
+
 ## Documentation
 
 - [Installing Helpwren](docs/install.md): Supabase Cloud and Vercel, or Docker; upgrades
