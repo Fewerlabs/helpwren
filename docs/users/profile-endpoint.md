@@ -73,5 +73,3 @@ team `Plan = data.business.plan`.
 - `401` means the token has expired, and `403` that it is refused. Any other error, an answer
   that is not JSON, or a missing user id means the endpoint is unavailable; the chat then keeps
   whoever was signed in.
-
-[`examples/nextjs`](../../examples/nextjs) has a working profile endpoint and the mapping for it.

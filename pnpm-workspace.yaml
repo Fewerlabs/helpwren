@@ -1,7 +1,6 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - "examples/nextjs"
 
 catalog:
   "@types/node": ^26.0.0

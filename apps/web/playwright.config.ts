@@ -1,7 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { EXAMPLE_PORT, GLOWN_JWT_SECRET } from "./e2e/glown/support/hosts";
-
 // Another port runs a second copy beside the usual one, such as against a throwaway database.
 const PORT = Number(process.env.E2E_PORT ?? 3000);
 const APP_URL = `http://localhost:${PORT}`;
@@ -40,20 +38,6 @@ export default defineConfig({
       command: "node ../../examples/plain-html/serve.mjs",
       url: "http://127.0.0.1:4100",
       reuseExistingServer: !process.env.CI,
-    },
-    {
-      // Glown's public site and web app (examples/nextjs), with the install as its Helpwren.
-      command: process.env.CI
-        ? "pnpm --filter @helpwren/example-nextjs build && pnpm --filter @helpwren/example-nextjs start"
-        : "pnpm --filter @helpwren/example-nextjs dev",
-      url: `http://127.0.0.1:${EXAMPLE_PORT}`,
-      env: {
-        PORT: String(EXAMPLE_PORT),
-        NEXT_PUBLIC_HELPWREN_URL: APP_URL,
-        GLOWN_JWT_SECRET,
-      },
-      reuseExistingServer: !process.env.CI,
-      timeout: 180_000,
     },
   ],
 });

@@ -37,6 +37,3 @@ and the chat still talk to the install's own address, which the pages allow.
 > [!NOTE]
 > Submit `https://example.com/help/sitemap.xml` to search engines, not the install's, once the
 > public address is set.
-
-[`examples/nextjs`](../../examples/nextjs) serves the help center this way, and its tests check
-it.

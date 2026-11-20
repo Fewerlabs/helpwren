@@ -209,11 +209,3 @@ const articles = await helpwren.articles.find({ collection: "bookings", limit: 5
 > [!NOTE]
 > Article opens are not counted by filter or rule yet, so there is no report of where help
 > content is thin.
-
-## See it in the example
-
-The Next.js example in `examples/nextjs` uses each of these: a page filter on the web app's
-Billing page (with the same list drawn by the page from `findArticles`), a page with no code
-for a `/bookings/*` rule, a page whose own filter beats that rule, a page that only the fallback
-finds help for, and an inline block on the public site's Refunds page. See its
-[README](../examples/nextjs/README.md).
