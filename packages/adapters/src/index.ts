@@ -70,3 +70,7 @@ export {
   type PushReceipt,
   type PushTicket,
 } from "./push/types";
+export { createTurnstile, type CaptchaAdapter, type TurnstileOptions } from "./captcha/turnstile";
+export { createDatabaseRateLimit, type HitRateLimit } from "./rate-limit/database";
+export { createMemoryRateLimit, type MemoryRateLimitOptions } from "./rate-limit/memory";
+export { type RateLimitRule, type RateLimitStore } from "./rate-limit/types";

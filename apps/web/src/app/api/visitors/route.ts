@@ -3,15 +3,12 @@ import { z } from "zod";
 
 import { getCaller } from "@/lib/api/caller";
 import { installSettings } from "@/lib/api/install-settings";
-import { createRateLimit } from "@/lib/api/rate-limit";
+import { LIMITS } from "@/lib/api/limits";
+import { checkLimits, requestNetwork } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/respond";
 import { locationFromHeaders } from "@/lib/geo";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { parseUserAgent } from "@/lib/user-agent";
-
-// A chat checks in once a minute and when its page changes. Twenty a minute leaves room for a
-// visitor clicking quickly through a site, and stops a browser stuck in a loop.
-const allow = createRateLimit({ limit: 20, windowMs: 60_000 });
 
 /** The referrer, unless it is another page of the same site, which says nothing new. */
 function outsideReferrer(referrer: string | undefined, page: string): string | undefined {
@@ -40,7 +37,13 @@ export async function POST(request: Request): Promise<Response> {
   if (!settings.visitors.tracking) {
     return apiError("disabled", "This install does not keep track of visitors.");
   }
-  if (!allow(visitorId)) return apiError("rate_limited", "Too many check-ins. Slow down.");
+  // The browser's id is made up by the browser, so the network is counted as well: a script
+  // inventing a new id for every request is still one network.
+  const limited = await checkLimits([
+    [LIMITS.checkInPerNetwork, requestNetwork(request).key],
+    [LIMITS.checkInPerVisitor, visitorId],
+  ]);
+  if (limited) return limited;
 
   // Only a token the chat sent: a cookie on this site would be a team member trying things out.
   const caller = request.headers.has("authorization") ? await getCaller(request) : null;

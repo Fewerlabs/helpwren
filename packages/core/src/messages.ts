@@ -44,7 +44,13 @@ export interface ListMessagesOptions {
 }
 
 export type SendMessageResult =
-  { ok: true; message: Message } | { ok: false; reason: "rate_limited" };
+  | { ok: true; message: Message }
+  // Too fast; refused as spam or as the same words again; or the sender has been blocked.
+  | { ok: false; reason: "rate_limited" | "refused" | "blocked" };
+
+/** The database's codes for a message it refuses as spam, and for a blocked sender. */
+const REFUSED_SQLSTATE = "HW422";
+const BLOCKED_SQLSTATE = "HW403";
 
 export function createMessages(supabase: HelpwrenSupabaseClient) {
   return {
@@ -102,6 +108,8 @@ export function createMessages(supabase: HelpwrenSupabaseClient) {
 
       if (error) {
         if (error.code === RATE_LIMITED_SQLSTATE) return { ok: false, reason: "rate_limited" };
+        if (error.code === REFUSED_SQLSTATE) return { ok: false, reason: "refused" };
+        if (error.code === BLOCKED_SQLSTATE) return { ok: false, reason: "blocked" };
         throw new HelpwrenError("Could not send the message.", { cause: error });
       }
       return { ok: true, message: messageSchema.parse(data) };

@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { database, removeContactByEmail } from "./support/database";
+import { RUN, database, removeContactByEmail } from "./support/database";
 
 // The widget on a site of its own: examples/plain-html, served from another origin than the
 // app. Runs against the local Supabase stack and its demo data.
 const SITE = "http://127.0.0.1:4100/";
-const VISITOR = { name: "Tomas Lind", email: "tomas.e2e@example.org" };
+const VISITOR = { name: `Tomas Lind ${RUN}`, email: `tomas.${RUN}@example.org` };
 const AGENT_ID = "a0000000-0000-4000-8000-000000000002";
 
 async function setAllowedDomains(domains: string[] | null) {
@@ -38,7 +38,9 @@ test("a visitor chats through the widget on another site", async ({ page }) => {
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await chat.getByLabel("Your name").fill(VISITOR.name);
   await chat.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
-  await chat.getByLabel("Your message").fill("Is there a student discount?");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("Is there a student discount?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText(
     "Is there a student discount?",

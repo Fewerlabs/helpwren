@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { requireAgent } from "@/features/agent-auth";
 import { GeneralForm, SettingsPage } from "@/features/settings";
+import { captchaSecretConfigured } from "@/lib/api/captcha";
 import { getHelpwren } from "@/lib/helpwren";
 
 export const metadata: Metadata = { title: "General settings" };
@@ -18,7 +19,11 @@ export default async function GeneralSettingsPage() {
       description="What the chat asks of the people who write to you."
       readOnly={!canEdit}
     >
-      <GeneralForm settings={settings} canEdit={canEdit} />
+      <GeneralForm
+        settings={settings}
+        canEdit={canEdit}
+        captchaSecretConfigured={captchaSecretConfigured()}
+      />
     </SettingsPage>
   );
 }

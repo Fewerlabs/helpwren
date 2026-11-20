@@ -2,6 +2,7 @@ import { createHelpwrenClient, type Database, type HelpwrenClient } from "@helpw
 import { createBrowserClient } from "@supabase/ssr";
 
 import { env } from "@/lib/env";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/cookie-options";
 
 let client: HelpwrenClient | undefined;
 
@@ -15,6 +16,7 @@ export function getDashboardClient(): HelpwrenClient {
     supabase: createBrowserClient<Database>(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      { cookieOptions: SESSION_COOKIE_OPTIONS },
     ),
   });
   return client;

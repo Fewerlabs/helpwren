@@ -1,23 +1,28 @@
 import { expect, test } from "@playwright/test";
 
-import { database } from "./support/database";
+import { database, newContact, removeContacts, RUN } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
-// Runs against the local Supabase stack and its demo data, where Ada is an admin.
-const TEAM = "Returns E2E";
+// Runs against the local Supabase stack and its demo data, where Ada is an admin. The team and
+// the conversation it is given are the test's own, named with this run's mark.
+const TEAM = `Returns ${RUN}`;
+const CONTACT = `Jonas Berg ${RUN}`;
+let contactId = "";
 
-/** Removes the team and what it left in the demo ticket's history, so the test can run again. */
-async function removeTeam() {
+test.beforeEach(async () => {
+  const contact = await newContact({
+    kind: "user",
+    name: CONTACT,
+    email: `jonas.${RUN}@northwind.example`,
+    messages: ["One of our invoices shows the wrong billing address."],
+  });
+  contactId = contact.id;
+});
+
+test.afterEach(async () => {
   await database.from("teams").delete().eq("name", TEAM);
-  await database
-    .from("conversation_events")
-    .delete()
-    .eq("kind", "team_changed")
-    .eq("data->>name", TEAM);
-}
-
-test.beforeEach(removeTeam);
-test.afterEach(removeTeam);
+  await removeContacts([contactId]);
+});
 
 test("an admin makes a team, gives it a conversation, and finds it under that team", async ({
   page,
@@ -45,7 +50,7 @@ test("an admin makes a team, gives it a conversation, and finds it under that te
 
   // Giving it a conversation puts that conversation in the view and in its history.
   const list = page.getByRole("list", { name: "Conversations" });
-  await list.getByRole("button", { name: /Jonas Berg/ }).click();
+  await list.getByRole("button", { name: new RegExp(CONTACT) }).click();
   const details = page.getByRole("region", { name: "Details" });
   await details.getByRole("button", { name: /^Team:/ }).click();
   await page.getByRole("option", { name: TEAM }).click();
@@ -55,7 +60,7 @@ test("an admin makes a team, gives it a conversation, and finds it under that te
 
   await views.getByRole("link", { name: new RegExp(TEAM) }).click();
   await expect(page).toHaveURL(/view=team(:|%3A)/);
-  await expect(list.getByRole("button", { name: /Jonas Berg/ })).toBeVisible();
+  await expect(list.getByRole("button", { name: new RegExp(CONTACT) })).toBeVisible();
   await expect(views.getByRole("link", { name: new RegExp(TEAM) })).toContainText("1");
 
   // Removing the team asks first, and leaves the conversation where it was.

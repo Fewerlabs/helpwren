@@ -3,6 +3,8 @@ import { parseSettings } from "@helpwren/core";
 import { z } from "zod";
 
 import { getCaller } from "@/lib/api/caller";
+import { LIMITS } from "@/lib/api/limits";
+import { checkLimits, requestNetwork } from "@/lib/api/rate-limit";
 import { apiError } from "@/lib/api/respond";
 import { verifyIdentity } from "@/lib/identity";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -46,6 +48,9 @@ const identityCodes = {
  * registers for now.
  */
 export async function POST(request: Request): Promise<Response> {
+  const limited = await checkLimits([[LIMITS.devicesPerNetwork, requestNetwork(request).key]]);
+  if (limited) return limited;
+
   const input = registerSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
   const { pushToken, provider, platform, app, token } = input.data;
@@ -98,6 +103,9 @@ export async function POST(request: Request): Promise<Response> {
  * only to the app on that phone, and removing it only stops notifications.
  */
 export async function DELETE(request: Request): Promise<Response> {
+  const limited = await checkLimits([[LIMITS.devicesPerNetwork, requestNetwork(request).key]]);
+  if (limited) return limited;
+
   const input = removeSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
 

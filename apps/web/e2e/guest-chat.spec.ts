@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-import { database, removeContactByEmail } from "./support/database";
+import { database, removeContactByEmail, removeContacts, RUN } from "./support/database";
 
 // Runs against the local Supabase stack and its demo data, which asks guests for a name and an
 // email or phone number. The team's side is played through the database until the inbox exists.
-const VISITOR = { name: "Lena Fischer", email: "lena.e2e@example.org" };
+const VISITOR = { name: `Lena Fischer ${RUN}`, email: `lena.${RUN}@example.org` };
 const AGENT_ID = "a0000000-0000-4000-8000-000000000002";
 
 test.use({ viewport: { width: 390, height: 780 } });
@@ -14,6 +14,9 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   await removeContactByEmail(VISITOR.email);
+  // The guest who gave a phone number has no email to be found by; their name carries the mark.
+  const { data } = await database.from("contacts").select("id").eq("name", VISITOR.name);
+  await removeContacts((data ?? []).map((contact) => contact.id));
 });
 
 async function conversationOf(email: string) {
@@ -46,7 +49,7 @@ test("a visitor starts a conversation, gets a live reply, and finds it again lat
 
   await page.getByLabel("Your name").fill(VISITOR.name);
   await page.getByRole("textbox", { name: "Email" }).fill(VISITOR.email);
-  await page.getByLabel("Your message").fill("Do you ship to Canada?");
+  await page.getByLabel("Your message").pressSequentially("Do you ship to Canada?", { delay: 10 });
   await page.getByRole("button", { name: "Send message" }).click();
 
   const messages = page.getByRole("log", { name: "Messages" });
@@ -103,7 +106,7 @@ test("a visitor can give a phone number in place of an email", async ({ page }) 
   // The field starts on +234; a pasted number switches it.
   await expect(page.getByRole("combobox", { name: /country/i })).toContainText("+234");
   await page.getByLabel("Phone number").fill("+44 7700 900123");
-  await page.getByLabel("Your message").fill("Please call me back.");
+  await page.getByLabel("Your message").pressSequentially("Please call me back.", { delay: 10 });
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("log", { name: "Messages" })).toContainText("Please call me back.");
 
@@ -111,10 +114,8 @@ test("a visitor can give a phone number in place of an email", async ({ page }) 
     .from("contacts")
     .select("id, name, email")
     .eq("phone", "+447700900123")
+    // Others trying the chat may use the same test number; the name carries this run's mark.
+    .eq("name", VISITOR.name)
     .single();
   expect(data).toMatchObject({ name: VISITOR.name, email: null });
-  if (data) {
-    await database.from("conversations").delete().eq("contact_id", data.id);
-    await database.auth.admin.deleteUser(data.id);
-  }
 });

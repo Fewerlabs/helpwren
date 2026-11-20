@@ -11,7 +11,6 @@ import {
 } from "@helpwren/adapters";
 import {
   ATTACHMENTS_MAX,
-  createHelpwrenClient,
   parseSettings,
   type Attachment,
   type InboundEmailSettings,
@@ -19,6 +18,7 @@ import {
 } from "@helpwren/core";
 import { z } from "zod";
 
+import { storeAttachment } from "@/lib/api/store-attachment";
 import { serverEnv } from "@/lib/server-env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -200,7 +200,6 @@ const conversationSchema = z.object({
 
 /** Stores what fits of an email's files in the conversation, and says what was left out. */
 async function storeAttachments(conversationId: string, email: InboundEmail) {
-  const attachments = createHelpwrenClient({ supabase: supabaseAdmin }).attachments;
   const stored: Attachment[] = [];
   const leftOut: string[] = [];
   for (const file of email.attachments.filter((item) => !item.inline)) {
@@ -210,18 +209,20 @@ async function storeAttachments(conversationId: string, email: InboundEmail) {
     }
     let result;
     try {
-      const bytes = await file.content();
-      result = await attachments.upload(
-        conversationId,
-        new Blob([Uint8Array.from(bytes)], { type: file.type }),
-        file.name,
-      );
+      // Checked by its bytes and stored by the server, as a file sent in the chat is.
+      result = await storeAttachment(conversationId, {
+        bytes: Uint8Array.from(await file.content()),
+        name: file.name,
+        type: file.type,
+      });
     } catch {
       leftOut.push(`${file.name} (it could not be saved)`);
       continue;
     }
     if (result.ok) stored.push(result.attachment);
     else if (result.reason === "too_large") leftOut.push(`${file.name} (larger than 10 MB)`);
+    else if (result.reason === "full")
+      leftOut.push(`${file.name} (the conversation holds no more files)`);
     else leftOut.push(`${file.name} (this kind of file cannot be sent)`);
   }
   return { stored, leftOut };
@@ -306,6 +307,8 @@ export async function receiveEmail(
       return ignored("the sender is not the conversation's contact");
     case "rate_limited":
       return ignored("too many emails from this sender into this conversation");
+    case "blocked":
+      return ignored("the team has blocked this contact");
     default:
       return ignored("the conversation is gone");
   }

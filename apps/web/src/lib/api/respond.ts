@@ -11,6 +11,9 @@ const statuses: Record<ApiErrorCode, number> = {
   token_rejected: 401,
   identity_unavailable: 503,
   disabled: 410,
+  refused: 422,
+  too_large: 413,
+  unsupported: 415,
 };
 
 /** A failed API response, in the one shape every route uses. */

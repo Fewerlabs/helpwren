@@ -10,7 +10,7 @@ import { SplitText } from "gsap/SplitText";
 /*
  * GSAP and its plugins, registered once. Only modules loaded with next/dynamic import this file,
  * so GSAP is never part of the page's first download. GSAP is under its own licence (see ADR
- * 0023): keep it inside apps/site.
+ * 0025): keep it inside apps/site.
  */
 gsap.registerPlugin(useGSAP, ScrollTrigger, DrawSVGPlugin, MotionPathPlugin, SplitText);
 

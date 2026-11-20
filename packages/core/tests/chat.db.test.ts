@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createHelpwrenClient, type Message } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { browserClient, serverClient } from "./support/local-supabase";
+import { signIn } from "./support/test-data";
 
 // These run against the local database and its demo data (supabase/seed.sql). Starting a
 // conversation through the API is tested in apps/web, where the API lives; here the server's
@@ -14,18 +15,14 @@ function newClient() {
 }
 
 async function newGuest() {
-  const client = newClient();
+  const supabase = browserClient();
+  const client = createHelpwrenClient({ supabase });
   const session = await client.sessions.startGuest();
   guestIds.push(session.id);
-  return { client, session };
+  return { client, session, supabase };
 }
 
-async function signedInAgent() {
-  const client = newClient();
-  const result = await client.auth.verifyLoginCode(AGENT, await issueLoginCode(AGENT));
-  if (!result.ok) throw new Error(`Could not sign in as ${AGENT}.`);
-  return { client, agent: result.agent };
-}
+const signedInAgent = () => signIn(AGENT);
 
 async function startConversation(contactId: string, body = "Hello") {
   const { data, error } = await serverClient().rpc("start_conversation", {
@@ -120,8 +117,17 @@ describe("conversations", () => {
 
     const first = await client.conversations.list({ limit: 2 });
     expect(first.items).toHaveLength(2);
-    expect(first.items[0]?.id).toBe(newest);
     expect(first.nextCursor).toBeDefined();
+    // Someone else may have written since, so the new one is near the top, not always first.
+    const times = first.items.map((item) => item.lastMessageAt ?? "");
+    expect(times).toEqual(times.toSorted().toReversed());
+    const recent = await client.conversations.list({ limit: 10 });
+    const at = recent.items.findIndex((item) => item.id === newest);
+    expect(at).toBeGreaterThanOrEqual(0);
+    const newestAt = recent.items[at]?.lastMessageAt ?? "";
+    expect(recent.items.slice(at).every((item) => (item.lastMessageAt ?? "") <= newestAt)).toBe(
+      true,
+    );
 
     const second = await client.conversations.list({ limit: 2, cursor: first.nextCursor });
     expect(second.items.length).toBeGreaterThan(0);
@@ -136,38 +142,60 @@ describe("conversations", () => {
     await startConversation(session.id);
     await startConversation(session.id);
 
-    const four = await client.conversations.list({ page: 1, limit: 4 });
-    const first = await client.conversations.list({ page: 1, limit: 2 });
-    const second = await client.conversations.list({ page: 2, limit: 2 });
+    // Within this guest's conversations, which nothing else adds to while the pages are read.
+    const contactId = session.id;
+    const all = await client.conversations.list({ contactId, page: 1, limit: 4 });
+    const first = await client.conversations.list({ contactId, page: 1, limit: 2 });
+    const second = await client.conversations.list({ contactId, page: 2, limit: 2 });
     const ids = (page: { items: { id: string }[] }) => page.items.map((item) => item.id);
 
-    await expect(client.conversations.count()).resolves.toBe(first.total);
-    expect(second.total).toBe(first.total);
-    expect([...ids(first), ...ids(second)]).toEqual(ids(four));
+    await expect(client.conversations.count({ contactId })).resolves.toBe(3);
+    expect(first.total).toBe(3);
+    expect(second.total).toBe(3);
+    expect(second.items).toHaveLength(1);
+    expect([...ids(first), ...ids(second)]).toEqual(ids(all));
     expect(first.nextCursor).toBeUndefined();
 
-    const theirs = await client.conversations.list({ contactId: session.id, page: 2, limit: 2 });
-    expect(theirs.total).toBe(3);
-    expect(theirs.items).toHaveLength(1);
+    // Everyone's, counted the same way.
+    const everyone = await client.conversations.list({ page: 1, limit: 2 });
+    expect(everyone.total).toBeGreaterThanOrEqual(3);
   });
 
   it("filters by status", async () => {
     const { client } = await signedInAgent();
+    const { session } = await newGuest();
+    const open = await startConversation(session.id);
+    const done = await startConversation(session.id);
+    await client.conversations.update(done, { status: "resolved" });
+    const contactId = session.id;
 
     const resolved = await client.conversations.list({ status: ["resolved"] });
-    expect(resolved.items.length).toBeGreaterThan(0);
     expect(resolved.items.every((item) => item.status === "resolved")).toBe(true);
+    const theirResolved = await client.conversations.list({ contactId, status: ["resolved"] });
+    expect(theirResolved.items.map((item) => item.id)).toEqual([done]);
 
     const active = await client.conversations.list({ status: ["open", "pending"] });
     expect(active.items.some((item) => item.status === "resolved")).toBe(false);
+    const theirActive = await client.conversations.list({ contactId, status: ["open", "pending"] });
+    expect(theirActive.items.map((item) => item.id)).toEqual([open]);
   });
 
   it("counts conversations that match a filter", async () => {
     const { client } = await signedInAgent();
+    const { session } = await newGuest();
+    await startConversation(session.id);
+    const closed = await startConversation(session.id);
+    const resolved = await startConversation(session.id);
+    await client.conversations.update(closed, { status: "closed" });
+    await client.conversations.update(resolved, { status: "resolved" });
+    const contactId = session.id;
 
-    const all = await client.conversations.list({ limit: 100 });
-    await expect(client.conversations.count()).resolves.toBe(all.items.length);
-    await expect(client.conversations.count({ status: ["closed"] })).resolves.toBe(0);
+    await expect(client.conversations.count({ contactId })).resolves.toBe(3);
+    await expect(client.conversations.count({ contactId, status: ["closed"] })).resolves.toBe(1);
+    await expect(
+      client.conversations.count({ contactId, status: ["resolved", "open"] }),
+    ).resolves.toBe(2);
+    expect(await client.conversations.count()).toBeGreaterThanOrEqual(3);
     expect(await client.conversations.count({ status: ["resolved"] })).toBeGreaterThan(0);
   });
 
@@ -235,7 +263,7 @@ describe("messages", () => {
 
     const { items } = await client.messages.list(id);
     expect(items.map((message) => message.channel)).toEqual(["chat", "email"]);
-    const { items: inbox } = await agent.client.conversations.list();
+    const { items: inbox } = await agent.client.conversations.list({ contactId: session.id });
     expect(inbox.find((conversation) => conversation.id === id)?.viaEmail).toBe(true);
   });
 
@@ -274,6 +302,74 @@ describe("messages", () => {
   });
 });
 
+describe("spam and blocking", () => {
+  it("refuses the same words a third time in a few minutes", async () => {
+    const { client, session } = await newGuest();
+    const id = await startConversation(session.id);
+    await client.messages.send(id, "Anyone there?");
+    await client.messages.send(id, "Anyone there?");
+    await expect(client.messages.send(id, "Anyone there?")).resolves.toEqual({
+      ok: false,
+      reason: "refused",
+    });
+  });
+
+  it("refuses a guest's bare link until the team has answered, and a list of links always", async () => {
+    const { client, session } = await newGuest();
+    const id = await startConversation(session.id);
+    await expect(client.messages.send(id, "https://spam.example/win")).resolves.toEqual({
+      ok: false,
+      reason: "refused",
+    });
+    const sent = await client.messages.send(id, "It breaks on https://shop.example/cart");
+    expect(sent.ok).toBe(true);
+
+    const { client: agent } = await signedInAgent();
+    await agent.messages.send(id, "Which browser?");
+    expect((await client.messages.send(id, "https://shop.example/cart")).ok).toBe(true);
+    const links = Array.from({ length: 6 }, (_, index) => `https://a${index}.example`).join(" ");
+    await expect(client.messages.send(id, `See ${links}`)).resolves.toEqual({
+      ok: false,
+      reason: "refused",
+    });
+  });
+
+  it("lets the team block a contact, who then cannot write, and unblock them", async () => {
+    const { client, session } = await newGuest();
+    const id = await startConversation(session.id);
+    const { client: agent } = await signedInAgent();
+
+    await expect(agent.contacts.block(session.id)).resolves.toEqual({ ok: true });
+    await expect(agent.contacts.blockStatus(session.id)).resolves.toMatchObject({
+      blockedAt: expect.any(String) as string,
+      networkBlocked: false,
+    });
+    await expect(client.messages.send(id, "Let me in")).resolves.toEqual({
+      ok: false,
+      reason: "blocked",
+    });
+
+    await expect(agent.contacts.unblock(session.id)).resolves.toEqual({ ok: true });
+    expect((await client.messages.send(id, "Thank you")).ok).toBe(true);
+
+    const { data: audit } = await serverClient()
+      .from("audit_events")
+      .select("action")
+      .eq("contact_id", session.id)
+      .order("created_at");
+    expect(audit?.map((event) => event.action)).toEqual(["contact_blocked", "contact_unblocked"]);
+  });
+
+  it("does not let a contact block anyone, themselves included", async () => {
+    const { client, session } = await newGuest();
+    await startConversation(session.id);
+    await expect(client.contacts.block(session.id)).resolves.toEqual({
+      ok: false,
+      reason: "forbidden",
+    });
+  });
+});
+
 describe("attachments", () => {
   // The smallest PNG there is: one transparent pixel.
   const pixel = Uint8Array.from(
@@ -284,49 +380,75 @@ describe("attachments", () => {
   );
   const png = () => new Blob([pixel], { type: "image/png" });
 
+  /** Stores a file as the app's server does, after checking it: the browser cannot. */
+  async function serverStores(conversationId: string, name: string, file: Blob) {
+    const path = `${conversationId}/${crypto.randomUUID()}-${name}`;
+    const { error } = await serverClient()
+      .storage.from("attachments")
+      .upload(path, file, { contentType: file.type });
+    if (error) throw error;
+    return { path, name, type: file.type, size: file.size };
+  }
+
   it("sends a file with a message, and lets both sides open it", async () => {
     const guest = await newGuest();
     const conversationId = await startConversation(guest.session.id);
 
-    const uploaded = await guest.client.attachments.upload(conversationId, png(), "my screen.png");
-    if (!uploaded.ok) throw new Error(`The upload was refused: ${uploaded.reason}`);
-    const sent = await guest.client.messages.send(conversationId, "", [uploaded.attachment]);
+    const stored = await serverStores(conversationId, "my-screen.png", png());
+    const attachment = { ...stored, name: "my screen.png" };
+    const sent = await guest.client.messages.send(conversationId, "", [attachment]);
     if (!sent.ok) throw new Error("The message was refused.");
 
     expect(sent.message.body).toBe("");
     expect(sent.message.attachments).toEqual([
-      {
-        path: uploaded.attachment.path,
-        name: "my screen.png",
-        type: "image/png",
-        size: pixel.length,
-      },
+      { path: stored.path, name: "my screen.png", type: "image/png", size: pixel.length },
     ]);
 
-    // The team reads the same message and gets a link that works.
+    // The team reads the same message and gets a link that works, shown in place.
     const { client: agent } = await signedInAgent();
     const { items } = await agent.messages.list(conversationId);
     expect(items.at(-1)?.attachments[0]?.name).toBe("my screen.png");
-    const links = await agent.attachments.urls([uploaded.attachment.path]);
-    const opened = await fetch(links[uploaded.attachment.path] ?? "");
+    const links = await agent.attachments.urls([attachment]);
+    const opened = await fetch(links[stored.path] ?? "");
     expect(opened.status).toBe(200);
     expect(opened.headers.get("content-type")).toBe("image/png");
+    expect(opened.headers.get("content-disposition")).toBeNull();
 
     const conversation = await agent.conversations.get(conversationId);
     expect(conversation?.lastMessagePreview).toBe("Sent a file: my screen.png");
   });
 
+  it("links any file that is not a picture as a download", async () => {
+    const guest = await newGuest();
+    const conversationId = await startConversation(guest.session.id);
+    const stored = await serverStores(
+      conversationId,
+      "notes.txt",
+      new Blob(["Order 1042"], { type: "text/plain" }),
+    );
+
+    const links = await guest.client.attachments.urls([stored]);
+    const opened = await fetch(links[stored.path] ?? "");
+    expect(opened.status).toBe(200);
+    expect(opened.headers.get("content-disposition")).toMatch(/^attachment/);
+  });
+
   it("keeps a conversation's files from everyone outside it", async () => {
     const owner = await newGuest();
     const conversationId = await startConversation(owner.session.id);
-    const uploaded = await owner.client.attachments.upload(conversationId, png(), "private.png");
-    if (!uploaded.ok) throw new Error(`The upload was refused: ${uploaded.reason}`);
+    const stored = await serverStores(conversationId, "private.png", png());
 
     const stranger = await newGuest();
-    await expect(stranger.client.attachments.urls([uploaded.attachment.path])).resolves.toEqual({});
-    await expect(
-      stranger.client.attachments.upload(conversationId, png(), "planted.png"),
-    ).resolves.toEqual({ ok: false, reason: "forbidden" });
+    await expect(stranger.client.attachments.urls([stored])).resolves.toEqual({});
+  });
+
+  it("lets no browser put a file in the bucket itself, not even the conversation's owner", async () => {
+    const owner = await newGuest();
+    const conversationId = await startConversation(owner.session.id);
+    const { error } = await owner.supabase.storage
+      .from("attachments")
+      .upload(`${conversationId}/planted.html`, new Blob(["<script>"], { type: "text/plain" }));
+    expect(error).not.toBeNull();
   });
 
   it("refuses a file that is too large or of a kind it does not take", async () => {

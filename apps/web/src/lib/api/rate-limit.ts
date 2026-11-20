@@ -1,35 +1,56 @@
-/**
- * Counts requests by key in fixed windows, in this server's memory. It protects the database
- * from one runaway browser; it is not shared between servers and does not survive a restart,
- * which is fine for that.
- */
-export function createRateLimit({
-  limit,
-  windowMs,
-  maxKeys = 10_000,
-}: {
-  /** How many requests one key may make in a window. */
-  limit: number;
-  windowMs: number;
-  /** Past this many keys, the oldest are forgotten, so memory stays bounded. */
-  maxKeys?: number;
-}) {
-  const windows = new Map<string, { start: number; count: number }>();
+import "server-only";
 
-  /** Whether a request with this key may go ahead now. */
-  return function allow(key: string, now = Date.now()): boolean {
-    const current = windows.get(key);
-    if (!current || now - current.start >= windowMs) {
-      windows.delete(key);
-      if (windows.size >= maxKeys) {
-        // Maps keep insertion order, so the first key is the one written longest ago.
-        const oldest = windows.keys().next().value;
-        if (oldest !== undefined) windows.delete(oldest);
-      }
-      windows.set(key, { start: now, count: 1 });
-      return true;
+import {
+  createDatabaseRateLimit,
+  createMemoryRateLimit,
+  type RateLimitRule,
+  type RateLimitStore,
+} from "@helpwren/adapters";
+
+import { serverEnv } from "@/lib/server-env";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+import { clientAddress, networkKey } from "./network";
+import { apiError } from "./respond";
+
+/** A limit on one kind of request. `name` keeps its counts apart from every other limit's. */
+export interface Limit extends RateLimitRule {
+  name: string;
+}
+
+// The database by default, so that several copies of the app share one count. Memory is for a
+// single server that would rather not write a row per request.
+const store: RateLimitStore =
+  serverEnv.RATE_LIMIT_STORE === "memory"
+    ? createMemoryRateLimit()
+    : createDatabaseRateLimit((args) => supabaseAdmin.rpc("hit_rate_limit", args));
+
+/** Where a request came from: its network address, and the keyed hash that stands for it. */
+export interface RequestNetwork {
+  address: string | null;
+  key: string | null;
+}
+
+export function requestNetwork(request: Request): RequestNetwork {
+  const address = clientAddress(request.headers, serverEnv.CLIENT_IP_HEADER);
+  return { address, key: networkKey(address, serverEnv.SUPABASE_SECRET_KEY) };
+}
+
+/**
+ * Counts a request under each limit whose key is known: a network, a session, a conversation.
+ * Returns the response to send when one of them is used up, or `null` to go ahead. A key that
+ * is not known, such as the network of a request with no proxy in front, is not counted.
+ */
+export async function checkLimits(
+  checks: readonly (readonly [Limit, string | null | undefined])[],
+): Promise<Response | null> {
+  for (const [limit, key] of checks) {
+    if (!key) continue;
+    if (!(await store.hit(`${limit.name}:${key}`, limit))) {
+      const response = apiError("rate_limited", "Too many requests. Wait a little and try again.");
+      response.headers.set("retry-after", String(limit.windowSeconds));
+      return response;
     }
-    current.count += 1;
-    return current.count <= limit;
-  };
+  }
+  return null;
 }

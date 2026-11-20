@@ -7,6 +7,7 @@ import {
 } from "@helpwren/adapters/settings";
 import {
   agentRoleSchema,
+  type Brand,
   guestDetailsSchema,
   HELP_FOOTER_LINKS_MAX,
   HELP_HEADER_LINKS_MAX,
@@ -20,15 +21,24 @@ import { z } from "zod";
 
 const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
-export const generalSchema = z.object({
-  guestDetails: guestDetailsSchema,
-  /** Whether a visitor can open a ticket themselves from the chat. */
-  ticketsFromChat: z.boolean(),
-  /** Whether the chat checks in, so the team sees who is on the site and where. */
-  trackVisitors: z.boolean(),
-  /** Whether the Visitors section lists them live and lets the team write first. */
-  liveVisitors: z.boolean(),
-});
+export const generalSchema = z
+  .object({
+    guestDetails: guestDetailsSchema,
+    /** Whether a visitor can open a ticket themselves from the chat. */
+    ticketsFromChat: z.boolean(),
+    /** Whether the chat checks in, so the team sees who is on the site and where. */
+    trackVisitors: z.boolean(),
+    /** Whether the Visitors section lists them live and lets the team write first. */
+    liveVisitors: z.boolean(),
+    /** Whether a guest answers Cloudflare Turnstile before their first message. */
+    captcha: z.boolean(),
+    /** Turnstile's site key. Empty while the captcha is off. */
+    captchaSiteKey: z.string().trim().max(100, "That is longer than a site key."),
+  })
+  .refine((values) => !values.captcha || values.captchaSiteKey !== "", {
+    message: "Paste the site key from Cloudflare.",
+    path: ["captchaSiteKey"],
+  });
 export type GeneralValues = z.infer<typeof generalSchema>;
 
 export const installationSchema = z.object({
@@ -124,6 +134,28 @@ export type BrandingValues = z.infer<typeof brandingSchema>;
 
 /** Helpwren's own green. Choosing it is the same as choosing no colour. */
 export const DEFAULT_ACCENT = "#3d6b57";
+
+/** The brand's name, logo and colour: the part of Branding the setup wizard asks for. */
+export const brandBasicsSchema = brandingSchema.pick({
+  brandName: true,
+  logo: true,
+  accent: true,
+  accentTo: true,
+});
+export type BrandBasicsValues = z.infer<typeof brandBasicsSchema>;
+
+/** The brand as stored, from the wizard's few fields, keeping everything else it had. */
+export function brandBasicsToBrand(values: BrandBasicsValues, current: Brand): Brand {
+  const own = values.accent !== DEFAULT_ACCENT || values.accentTo !== "";
+  const { logo: _logo, accent: _accent, accentTo: _accentTo, ...rest } = current;
+  return {
+    ...rest,
+    name: values.brandName,
+    ...(values.logo ? { logo: values.logo } : {}),
+    ...(own ? { accent: values.accent } : {}),
+    ...(own && values.accentTo ? { accentTo: values.accentTo } : {}),
+  };
+}
 
 type Patch = z.infer<typeof settingsPatchSchema>;
 

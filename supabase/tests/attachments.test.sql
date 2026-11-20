@@ -3,27 +3,30 @@ begin;
 
 select plan(11);
 
--- Storage fills in a file's type and size when it is uploaded; here they are written directly.
+-- Files are stored by the app's server, after it has checked their bytes. Storage fills in a
+-- file's type and size when it is uploaded; here they are written directly.
 select tests.act_as_server();
 insert into storage.objects (bucket_id, name, metadata) values
   ('attachments', tests.thing('guest_b_conversation') || '/b-file.png',
-   '{"mimetype": "image/png", "size": 2048}');
+   '{"mimetype": "image/png", "size": 2048}'),
+  ('attachments', tests.thing('guest_a_conversation') || '/invoice.pdf',
+   '{"mimetype": "application/pdf", "size": 1234}');
 
 select tests.act_as('guest_a');
-select lives_ok(
+select throws_ok(
   format(
     $$ insert into storage.objects (bucket_id, name, metadata)
-       values ('attachments', %L, '{"mimetype": "application/pdf", "size": 1234}') $$,
-    tests.thing('guest_a_conversation') || '/invoice.pdf'
+       values ('attachments', %L, '{"mimetype": "image/png", "size": 10}') $$,
+    tests.thing('guest_a_conversation') || '/page.png'
   ),
-  'a guest adds a file to their own conversation'
+  '42501', null, 'a guest cannot put a file in the bucket, even in their own conversation'
 );
 select throws_ok(
   format(
     $$ insert into storage.objects (bucket_id, name) values ('attachments', %L) $$,
     tests.thing('guest_b_conversation') || '/planted.png'
   ),
-  '42501', null, 'a guest cannot add a file to someone else''s conversation'
+  '42501', null, 'nor in someone else''s'
 );
 select is(
   (select count(*) from storage.objects where bucket_id = 'attachments'), 1::bigint,
@@ -93,12 +96,12 @@ select is(
   (select count(*) from storage.objects where bucket_id = 'attachments'), 2::bigint,
   'an agent sees the files in every conversation'
 );
-select lives_ok(
+select throws_ok(
   format(
     $$ insert into storage.objects (bucket_id, name) values ('attachments', %L) $$,
     tests.thing('guest_a_conversation') || '/reply.png'
   ),
-  'an agent adds a file to a conversation'
+  '42501', null, 'an agent does not put a file in the bucket either: the server does'
 );
 
 select * from finish();

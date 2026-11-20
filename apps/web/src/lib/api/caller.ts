@@ -17,9 +17,12 @@ async function verifiedClaims(request: Request) {
   // The chat frame and other API clients send their session as a bearer token; the inbox,
   // which lives on this site, sends it in cookies.
   const token = BEARER.exec(request.headers.get("authorization") ?? "")?.[1];
-  const { data } = token
-    ? await supabaseAdmin.auth.getClaims(token)
-    : await (await createSupabaseServerClient()).auth.getClaims();
+  if (token) return (await supabaseAdmin.auth.getClaims(token)).data?.claims ?? null;
+
+  // A browser sends cookies along with a request another site started. Such a request is not
+  // the team member's own doing, so their cookies are not taken as their word.
+  if (request.headers.get("sec-fetch-site") === "cross-site") return null;
+  const { data } = await (await createSupabaseServerClient()).auth.getClaims();
   return data?.claims ?? null;
 }
 

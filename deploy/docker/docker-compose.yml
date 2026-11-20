@@ -1,0 +1,78 @@
+# Helpwren, fully self-hosted: the app and a scheduler beside Supabase's own self-hosting stack.
+#
+# Supabase's services are not defined here. They come from Supabase's official Compose file
+# (https://supabase.com/docs/guides/self-hosting/docker), fetched unchanged into ./supabase at
+# the release pinned in packages/cli/src/docker.ts (self-hosted/v0.8.4) by
+# `pnpm helpwren install`. supabase-overrides.yml adds the few settings Helpwren needs on top.
+#
+# Everything reads ./.env, which the installer writes from Supabase's .env.example with fresh
+# secrets. Start it with `pnpm helpwren install`, or once that has run:
+#
+#   docker compose up --detach --build
+#
+# See docs/install.md.
+
+name: helpwren
+
+include:
+  # Merged in order, so the overrides change Supabase's services without editing its file.
+  - path:
+      - ./supabase/docker-compose.yml
+      - ./supabase-overrides.yml
+    env_file: ./.env
+
+services:
+  helpwren:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      # Written into the browser's code at build time, so they are build arguments too.
+      args:
+        NEXT_PUBLIC_APP_URL: ${HELPWREN_APP_URL}
+        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+        # Shown by /api/health. The installer passes the checkout's commit.
+        HELPWREN_COMMIT: ${HELPWREN_COMMIT:-}
+    image: helpwren-web:local
+    restart: unless-stopped
+    depends_on:
+      api-gw:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_APP_URL: ${HELPWREN_APP_URL}
+      NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_PUBLIC_URL}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${ANON_KEY}
+      # The public address may lead back to this container; the gateway's name on the private
+      # network always reaches Supabase.
+      SUPABASE_INTERNAL_URL: http://kong:8000
+      SUPABASE_SECRET_KEY: ${SERVICE_ROLE_KEY}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+      SMTP_URL: ${HELPWREN_SMTP_URL:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      CRON_SECRET: ${CRON_SECRET}
+    ports:
+      - ${HELPWREN_PORT:-3000}:3000
+
+  # Calls the jobs that send due emails and pushes, once a minute, as docs/install.md asks of
+  # every install. A loop, not cron: it needs nothing installed and its log shows each run.
+  scheduler:
+    image: alpine:3.22
+    restart: unless-stopped
+    depends_on:
+      helpwren:
+        condition: service_healthy
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          for job in email push; do
+            wget --quiet --output-document=- --post-data="" \
+              --header="Authorization: Bearer $$CRON_SECRET" \
+              "http://helpwren:3000/api/jobs/$$job" > /dev/null \
+              || echo "$$(date -Iseconds) the $$job job failed"
+          done
+          sleep 60
+        done

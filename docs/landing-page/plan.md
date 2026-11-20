@@ -367,7 +367,7 @@ may change it (versions released before a change stay usable under the old terms
 
 Consequence: GSAP stays inside `apps/site`, never in a published Helpwren package (the widget, the
 React Native screen, the design system), so the MIT packages carry no non-open-source dependency.
-This goes into an ADR (`docs/decisions/0022-landing-page.md`) in phase 1.
+This goes into an ADR (`docs/decisions/0025-landing-page.md`) in phase 1.
 
 ### 8.2 Lenis or ScrollSmoother
 

@@ -75,6 +75,8 @@ describe("StartForm", () => {
       message: "Hello",
       source: "web",
       contact: { name: "Ada", email: "ada@example.com" },
+      // How long the form was open, which tells a person from a script.
+      elapsedMs: expect.any(Number) as number,
     });
   });
 
@@ -185,6 +187,26 @@ describe("StartForm", () => {
       source: "web",
       contact: {},
       ticket: { subject: "Cracked screen" },
+      elapsedMs: expect.any(Number) as number,
     });
+  });
+
+  it("sends what a bot wrote in the field nobody sees, and says when the server refused", async () => {
+    start.mockResolvedValueOnce({ ok: false, reason: "refused" });
+    const user = renderForm("none");
+    const hidden = document.querySelector<HTMLInputElement>('input[name="website"]');
+    if (!hidden) throw new Error("No hidden field.");
+    // Out of reach of the keyboard and screen readers, so only a bot fills it in.
+    expect(hidden.tabIndex).toBe(-1);
+    expect(hidden.closest('[aria-hidden="true"]')).not.toBeNull();
+
+    await user.type(hidden, "https://cheap.example");
+    await user.type(screen.getByLabelText(/your message/i), "Hello");
+    await user.click(send());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your message was not sent");
+    expect(start).toHaveBeenCalledWith(
+      expect.objectContaining({ honeypot: "https://cheap.example" }),
+    );
   });
 });

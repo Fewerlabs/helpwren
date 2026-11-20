@@ -27,6 +27,13 @@ __screenshots__/
 !.vscode/extensions.json
 .idea/
 
+# Written by `pnpm helpwren install`: what it remembers, and database backups
+.helpwren/
+
+# Supabase's self-hosting files, fetched at a pinned release by the installer
+deploy/docker/supabase/
+deploy/docker/.supabase-checkout/
+
 # Local assistant tooling
 .claude/
 

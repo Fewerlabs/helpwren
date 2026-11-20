@@ -1,19 +1,14 @@
 import { afterAll, describe, expect, it } from "vitest";
 
-import { createHelpwrenClient } from "../src";
-import { browserClient, issueLoginCode, serverClient } from "./support/local-supabase";
+import { serverClient } from "./support/local-supabase";
+import { signIn } from "./support/test-data";
 
 // These run against the local database and its demo data (supabase/seed.sql), and remove the
 // replies they make. Shortcuts carry a random suffix, so a run never trips over another.
 const run = crypto.randomUUID().slice(0, 8);
 const madeIds: string[] = [];
 
-async function signedInAgent(email: string) {
-  const client = createHelpwrenClient({ supabase: browserClient() });
-  const result = await client.auth.verifyLoginCode(email, await issueLoginCode(email));
-  if (!result.ok) throw new Error(`Could not sign in as ${email}.`);
-  return { client, agent: result.agent };
-}
+const signedInAgent = (email: string) => signIn(email);
 
 afterAll(async () => {
   await serverClient().from("saved_replies").delete().in("id", madeIds);

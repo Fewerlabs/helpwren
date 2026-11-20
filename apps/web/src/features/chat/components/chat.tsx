@@ -55,6 +55,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const isOwn = useCallback((message: Message) => message.senderId === contactId, [contactId]);
 
   const teamName = settings.brand.name;
+  const captchaSiteKey = settings.spam.captcha === "turnstile" ? settings.spam.siteKey : undefined;
   const earlier = conversations.data ?? [];
   const unread = earlier.reduce((total, item) => total + item.unreadForContact, 0);
   // The list is newest first, so the first with something unread holds the newest reply.
@@ -155,6 +156,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
         <StartForm
           ticket
           guestDetails={settings.guestDetails}
+          captchaSiteKey={captchaSiteKey}
           source={source}
           teamName={teamName}
           welcome={undefined}
@@ -171,6 +173,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
         <ScreenHeader onBack={back} onClose={onClose} title="New conversation" />
         <StartForm
           guestDetails={settings.guestDetails}
+          captchaSiteKey={captchaSiteKey}
           source={source}
           teamName={teamName}
           welcome={settings.widget.welcome}

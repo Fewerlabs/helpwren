@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { type HelpwrenWidget, type Identity, type IdentityState } from "helpwren";
 import { SignJWT } from "jose";
 
-import { database, removeContactByEmail } from "./support/database";
+import { database, removeContactByEmail, RUN } from "./support/database";
 import { signInToInbox } from "./support/mailbox";
 
 // A site telling the chat who its visitor is: examples/plain-html, on another origin than the
@@ -11,7 +11,8 @@ import { signInToInbox } from "./support/mailbox";
 const SITE = "http://127.0.0.1:4100/";
 const KEY = { id: "e2e", secret: "e2e-signing-secret-e2e-signing-secret" };
 const AGENT = "sam@example.com";
-const GUEST = { name: "Noor Haddad", email: "noor.e2e@example.org" };
+const GUEST = { name: `Noor Haddad ${RUN}`, email: `noor.${RUN}@example.org` };
+const INES = { name: `Ines Marchetti ${RUN}`, email: `ines.${RUN}@example.org` };
 
 declare global {
   interface Window {
@@ -80,12 +81,12 @@ test("a guest keeps their conversation when they log in, and finds it on another
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await chat.getByLabel("Your name").fill(GUEST.name);
   await chat.getByRole("textbox", { name: "Email" }).fill(GUEST.email);
-  await chat.getByLabel("Your message").fill("Can I move my booking?");
+  await chat.getByLabel("Your message").pressSequentially("Can I move my booking?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText("Can I move my booking?");
 
   // Then they log in to the site, which tells the chat who they are.
-  const token = await tokenFor("noor", { name: "Noor Haddad" });
+  const token = await tokenFor("noor", { name: GUEST.name });
   await identify(page, { token });
   await expect
     .poll(async () => {
@@ -151,8 +152,8 @@ test("a logged-in user writes without saying who they are, and the team sees the
   );
   await identify(site, {
     token: await tokenFor("ines", {
-      name: "Ines Marchetti",
-      email: "ines.e2e@example.org",
+      name: INES.name,
+      email: INES.email,
       org: { id: `e2e-${run}-org`, name: "Marchetti Studio" },
     }),
   });
@@ -166,7 +167,9 @@ test("a logged-in user writes without saying who they are, and the team sees the
   const chat = chatOf(site);
   await chat.getByRole("button", { name: "Send us a message" }).click();
   await expect(chat.getByLabel("Your name")).toHaveCount(0);
-  await chat.getByLabel("Your message").fill("My invoice shows the wrong plan.");
+  await chat
+    .getByLabel("Your message")
+    .pressSequentially("My invoice shows the wrong plan.", { delay: 10 });
   // By keyboard: with so short a form, the dev server's own badge sits over the button.
   await chat.getByRole("button", { name: "Send message" }).press("Enter");
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText(
@@ -174,12 +177,12 @@ test("a logged-in user writes without saying who they are, and the team sees the
   );
 
   // The team sees who it is on the host product's word, and what the page said.
-  const row = list.getByRole("button", { name: /Ines Marchetti/ });
+  const row = list.getByRole("button", { name: new RegExp(INES.name) });
   await expect(row).toContainText("My invoice shows the wrong plan.");
   await row.click();
   const details = inbox.getByRole("region", { name: "Details" });
   await expect(details.getByText("Verified user")).toBeVisible();
-  await expect(details.getByText("ines.e2e@example.org")).toBeVisible();
+  await expect(details.getByText(INES.email)).toBeVisible();
   await expect(details.getByText("pro", { exact: true })).toBeVisible();
 
   await agentContext.close();
@@ -225,7 +228,7 @@ test("details given without a token label the conversation and unlock nothing", 
   // Who they are is filled in for them.
   await expect(chat.getByLabel("Your name")).toHaveValue(GUEST.name);
   await expect(chat.getByRole("textbox", { name: "Email" })).toHaveValue(GUEST.email);
-  await chat.getByLabel("Your message").fill("Which plan am I on?");
+  await chat.getByLabel("Your message").pressSequentially("Which plan am I on?", { delay: 10 });
   await chat.getByRole("button", { name: "Send message" }).click();
   await expect(chat.getByRole("log", { name: "Messages" })).toContainText("Which plan am I on?");
 

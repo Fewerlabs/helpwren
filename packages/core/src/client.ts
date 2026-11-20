@@ -37,8 +37,8 @@ export function createHelpwrenClient({ supabase, ...apiOptions }: HelpwrenClient
   return {
     auth: createAuth(supabase, agents),
     agents,
-    articles: createArticles(supabase),
-    attachments: createAttachments(supabase),
+    articles: createArticles(supabase, api),
+    attachments: createAttachments(supabase, api),
     sessions: createSessions(supabase, api),
     collections: createCollections(supabase),
     contacts: createContacts(supabase),

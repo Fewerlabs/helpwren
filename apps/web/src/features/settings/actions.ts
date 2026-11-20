@@ -24,6 +24,8 @@ import {
 } from "@/lib/push";
 
 import {
+  brandBasicsSchema,
+  brandBasicsToBrand,
   brandingSchema,
   emailSchema,
   type EmailValues,
@@ -37,6 +39,7 @@ import {
   inviteSchema,
   memberChangeSchema,
   profileSchema,
+  type BrandBasicsValues,
   type BrandingValues,
   type GeneralValues,
   type IdentityValues,
@@ -68,6 +71,10 @@ export async function saveGeneral(values: GeneralValues): Promise<SaveResult> {
     guestDetails: parsed.data.guestDetails,
     tickets: { fromChat: parsed.data.ticketsFromChat },
     visitors: { tracking: parsed.data.trackVisitors, liveList: parsed.data.liveVisitors },
+    spam: {
+      captcha: parsed.data.captcha ? "turnstile" : "off",
+      ...(parsed.data.captchaSiteKey ? { siteKey: parsed.data.captchaSiteKey } : {}),
+    },
   });
   if (result.ok) {
     revalidatePath(SETTINGS_PATH, "layout");
@@ -87,6 +94,21 @@ export async function saveBranding(values: BrandingValues): Promise<SaveResult> 
   if (result.ok) {
     revalidatePath(SETTINGS_PATH, "layout");
     // The help center keeps the brand for a minute, and should wear the new one at once.
+    revalidateTag(HELP_CENTER_TAG, { expire: 0 });
+  }
+  return result;
+}
+
+/** Saves the brand's name, logo and colour, leaving the rest of Branding as it was. */
+export async function saveBrandBasics(values: BrandBasicsValues): Promise<SaveResult> {
+  const parsed = brandBasicsSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+
+  const helpwren = await getHelpwren();
+  const { brand } = await helpwren.settings.getAll();
+  const result = await helpwren.settings.update({ brand: brandBasicsToBrand(parsed.data, brand) });
+  if (result.ok) {
+    revalidatePath(SETTINGS_PATH, "layout");
     revalidateTag(HELP_CENTER_TAG, { expire: 0 });
   }
   return result;
