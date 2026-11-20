@@ -3,7 +3,7 @@ import { Sketch } from "@helpwren/design-system";
 import { ANATOMY_VIEWBOX, anatomyLayers, PLANE } from "./layers";
 
 /** The four corners of a plane seen from above at an angle: left, back, right, front. */
-function rhombus(centreY: number): string {
+export function rhombus(centreY: number): string {
   const { width, depth, centreX } = PLANE;
   const half = width / 2;
   const points = [
@@ -15,8 +15,13 @@ function rhombus(centreY: number): string {
   return points.map(([x, y]) => `${String(x)},${String(y)}`).join(" ");
 }
 
+/** The same outline as a closed path, for the 3D scene. */
+export function outlinePath(centreY: number): string {
+  return `M${rhombus(centreY).replaceAll(" ", "L")}Z`;
+}
+
 /** A few strokes on each plane that stand for what that layer holds. */
-function contents(index: number, centreY: number): string {
+export function contents(index: number, centreY: number): string {
   const { centreX } = PLANE;
   const y = centreY;
   switch (index) {

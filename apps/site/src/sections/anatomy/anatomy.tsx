@@ -1,6 +1,7 @@
 import { MarginNote } from "@helpwren/design-system";
 
 import { Entry } from "@/components/journal";
+import { SceneSlot } from "@/scenes/scene-slot";
 
 import { AnatomySketch } from "./anatomy-sketch";
 import { anatomyLayers } from "./layers";
@@ -19,7 +20,9 @@ export function Anatomy() {
       sheetClassName="lg:min-h-[36rem]"
       sketch={
         <div className="@container relative w-full max-w-md" data-anatomy-stage>
-          <AnatomySketch />
+          <SceneSlot scene="anatomy">
+            <AnatomySketch />
+          </SceneSlot>
           <span
             aria-hidden="true"
             data-wren-waypoint="anatomy"

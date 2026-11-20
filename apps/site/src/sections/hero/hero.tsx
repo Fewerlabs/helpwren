@@ -3,6 +3,7 @@ import { Button, Icon } from "@helpwren/design-system";
 import { EntryHeader, HighlighterMark, PenCircle, Perch } from "@/components/journal";
 import { links } from "@/content/site";
 import { formatCount, MIN_STARS_SHOWN } from "@/lib/github";
+import { SceneSlot } from "@/scenes/scene-slot";
 
 import { HeroSketch } from "./hero-sketch";
 
@@ -51,7 +52,9 @@ export function Hero({ stars }: { stars: number | null }) {
           </div>
         </div>
         <div className="@container relative mx-auto w-full max-w-md">
-          <HeroSketch />
+          <SceneSlot scene="hero">
+            <HeroSketch />
+          </SceneSlot>
           <Perch name="first-sighting" x={47} y={63} size={24} animate />
         </div>
       </div>
