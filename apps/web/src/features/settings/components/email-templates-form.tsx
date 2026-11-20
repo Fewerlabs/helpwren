@@ -87,7 +87,8 @@ export function EmailTemplatesForm({
   const disabled = !canEdit || form.formState.isSubmitting;
   const info = emailTemplates[kind];
 
-  const wide = useMediaQuery("(min-width: 64rem)");
+  // Beside the form only where both have room; otherwise it opens over the form from a button.
+  const wide = useMediaQuery("(min-width: 80rem)");
   const [previewing, setPreviewing] = useState(false);
   const preview = (
     <EmailPreview
@@ -164,10 +165,10 @@ export function EmailTemplatesForm({
   const customised = Object.values(values[kind]).some((value) => value.trim() !== "");
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_28rem]">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
       <form
         noValidate
-        className="max-lg:pb-16"
+        className="max-xl:pb-16"
         onSubmit={(event) => {
           void form.handleSubmit(save)(event);
         }}
@@ -267,7 +268,7 @@ export function EmailTemplatesForm({
       {wide ? <aside className="sticky top-3">{preview}</aside> : null}
       <Button
         variant="secondary"
-        className="fixed right-4 bottom-18 z-20 rounded-full shadow-lg md:bottom-6 lg:hidden"
+        className="fixed right-4 bottom-18 z-20 rounded-full shadow-lg md:bottom-6 xl:hidden"
         onClick={() => {
           setPreviewing(true);
         }}
