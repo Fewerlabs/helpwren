@@ -1,6 +1,6 @@
 import { EntryHeader } from "@/components/journal";
+import { EntryMotion } from "@/motion/entry-motion";
 
-import { FieldGuideMotion } from "./motion";
 import { SpecimenCard, type Specimen } from "./specimen-card";
 
 const specimens: readonly Specimen[] = [
@@ -54,16 +54,16 @@ export function FieldGuide() {
       id="field-guide"
       aria-labelledby="field-guide-title"
       data-entry="field-guide"
-      className="relative isolate px-4 py-14 sm:py-24"
+      className="relative isolate px-4 py-12 sm:py-16"
     >
-      <FieldGuideMotion />
+      <EntryMotion />
       {/* A field-guide plate: a double ink frame, the plate's number above, figures inside. */}
       <div className="border-foreground/70 bg-card relative mx-auto max-w-6xl border p-1.5">
         <div className="border-foreground/30 relative border p-6 sm:p-10">
           <span
             aria-hidden="true"
             data-wren-waypoint="field-guide"
-            className="absolute top-[42%] left-1/2 size-0"
+            className="absolute top-[52%] left-1/2 size-0"
           />
           <div className="text-center">
             <EntryHeader number="06" subject="Field guide" note="Plate I: behaviours" />

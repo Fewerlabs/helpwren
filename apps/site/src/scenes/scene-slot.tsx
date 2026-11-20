@@ -40,7 +40,7 @@ const scenes = {
   anatomy: lazy(() =>
     import("./anatomy-scene").then((module) => ({ default: module.AnatomyScene })),
   ),
-} satisfies Record<string, ComponentType<{ onReady: () => void }>>;
+} satisfies Record<string, ComponentType<{ onReady: () => void; host: HTMLElement }>>;
 
 /**
  * Holds the still drawing, and when everything allows it, a 3D scene drawn over it. The drawing
@@ -78,7 +78,12 @@ export function SceneSlot({
   const Scene = scenes[scene];
   const live = ready && near;
   return (
-    <div ref={setElement} className="relative" data-scene-slot={scene}>
+    <div
+      ref={setElement}
+      className="relative"
+      data-scene-slot={scene}
+      data-scene-live={live && drawn ? "" : undefined}
+    >
       <div
         className="transition-opacity duration-500"
         style={{ opacity: live && drawn ? 0 : 1 }}
@@ -89,11 +94,14 @@ export function SceneSlot({
       {live ? (
         <div className="absolute inset-0" aria-hidden="true">
           <Suspense fallback={null}>
-            <Scene
-              onReady={() => {
-                setDrawn(true);
-              }}
-            />
+            {element ? (
+              <Scene
+                host={element}
+                onReady={() => {
+                  setDrawn(true);
+                }}
+              />
+            ) : null}
           </Suspense>
         </div>
       ) : null}

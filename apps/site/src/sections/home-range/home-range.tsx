@@ -2,8 +2,6 @@ import { Wren } from "@helpwren/design-system";
 
 import { Entry, HandLabel, Perch, SpecimenTag } from "@/components/journal";
 
-import { HomeRangeMotion } from "./motion";
-
 const traits = [
   { name: "Your address", text: "One install per product, at an address you choose." },
   { name: "Your database", text: "Everything is stored in your own Supabase project." },
@@ -15,7 +13,6 @@ const traits = [
 export function HomeRange() {
   return (
     <Entry
-      motion={<HomeRangeMotion />}
       id="home-range"
       number="08"
       subject="Home range"

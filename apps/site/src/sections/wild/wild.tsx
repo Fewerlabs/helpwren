@@ -5,7 +5,6 @@ import { LazyOpenChatButton } from "@/components/deferred";
 import { Entry, HandLabel, Taped } from "@/components/journal";
 import { DEMO_URL } from "@/content/demo";
 
-import { WildMotion } from "./motion";
 import { WildPerch } from "./wild-perch";
 
 /**
@@ -15,7 +14,6 @@ import { WildPerch } from "./wild-perch";
 export function Wild() {
   return (
     <Entry
-      motion={<WildMotion />}
       id="wild"
       number="05"
       subject="Observed in the wild"
@@ -23,23 +21,18 @@ export function Wild() {
       title="What your visitors see"
       flip
       sketch={
-        <Taped className="w-full max-w-sm">
-          <div className="@container relative">
-            <Capture
-              name="widget"
-              sizes="(min-width: 1024px) 384px, 90vw"
-              className="border-rule overflow-hidden rounded-[1.25rem] border"
-            />
-            {/* The wren stands on the launcher in the capture. */}
-            <WildPerch />
-            <MarginNote
-              arrow="down-right"
-              className="absolute top-[30%] -left-2 hidden w-32 -translate-x-full text-lg xl:flex"
-            >
-              suggested before they ask
-            </MarginNote>
-          </div>
-        </Taped>
+        <div className="w-full max-w-sm">
+          <Taped>
+            <div className="@container relative">
+              <Capture name="widget" sizes="(min-width: 1024px) 384px, 90vw" />
+              {/* The wren stands on the launcher in the capture. */}
+              <WildPerch />
+            </div>
+          </Taped>
+          <MarginNote arrow="up-left" className="mt-3 text-xl">
+            suggested before they ask
+          </MarginNote>
+        </div>
       }
       after={
         <div className="mt-14 grid gap-10 md:grid-cols-2">

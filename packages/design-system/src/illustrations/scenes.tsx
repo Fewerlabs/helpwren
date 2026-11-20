@@ -278,8 +278,10 @@ export const scenes: Record<WrenScene, { label: string; content: ReactNode }> = 
           stroke="var(--moss)"
           d="M8 120C40 120 30 80 60 80 84 80 78 112 104 110"
         />
-        <rect pathLength={1} x="104" y="98" width="30" height="24" rx="6" />
-        <path pathLength={1} d="M134 105H144M134 115H144" />
+        <g className="hw-plug">
+          <rect pathLength={1} x="104" y="98" width="30" height="24" rx="6" />
+          <path pathLength={1} d="M134 105H144M134 115H144" />
+        </g>
         <g className="hw-socket">
           <rect
             className="hw-hl"

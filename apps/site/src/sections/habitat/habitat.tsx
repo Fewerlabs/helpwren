@@ -2,13 +2,10 @@ import { Sketch } from "@helpwren/design-system";
 
 import { Entry, HandLabel, Perch } from "@/components/journal";
 
-import { HabitatMotion } from "./motion";
-
 /** Entry 02: why a team looks for something else. Fair and general: no products, no prices. */
 export function Habitat() {
   return (
     <Entry
-      motion={<HabitatMotion />}
       id="habitat"
       number="02"
       subject="Habitat under threat"

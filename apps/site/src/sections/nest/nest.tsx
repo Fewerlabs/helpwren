@@ -4,17 +4,14 @@ import { DeferredCodeSnippet } from "@/components/deferred";
 import { Entry, HandLabel, Perch, Taped } from "@/components/journal";
 import { snippetTabs } from "@/content/site";
 
-import { NestMotion } from "./motion";
-
 /** Entry 03: the install. The snippet is the one Settings → Installation writes. */
 export function Nest() {
   return (
     <Entry
-      motion={<NestMotion />}
       id="nest"
       number="03"
       subject="Install"
-      note="Time to first chat: about 10 min"
+      note="Target: first chat in about 10 min"
       title="Building the nest"
       sketch={
         <div className="@container relative w-full max-w-sm">

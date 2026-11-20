@@ -105,6 +105,11 @@ export function revealEntry(section: HTMLElement) {
     if (timeline) riseIn(timeline, tags, 0);
   }
 
+  for (const note of section.querySelectorAll("[data-slot='margin-note']")) {
+    const timeline = entryTimeline(note, "top 90%");
+    if (timeline) riseIn(timeline, [note], 0);
+  }
+
   const strips = [...section.querySelectorAll("[data-mark='tape']")];
   const firstStrip = strips[0];
   if (firstStrip) {

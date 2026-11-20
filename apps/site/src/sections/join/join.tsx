@@ -2,8 +2,7 @@ import { Button, Icon, type IconName, MarginNote } from "@helpwren/design-system
 
 import { EntryHeader } from "@/components/journal";
 import { links } from "@/content/site";
-
-import { JoinMotion } from "./motion";
+import { EntryMotion } from "@/motion/entry-motion";
 
 const routes: readonly { href: string; label: string; text: string; icon: IconName }[] = [
   {
@@ -35,7 +34,7 @@ export function Join() {
       data-entry="join"
       className="relative isolate overflow-hidden px-4 pt-10 pb-6 sm:pt-14"
     >
-      <JoinMotion />
+      <EntryMotion />
       <div className="mx-auto max-w-6xl">
         <EntryHeader number="Last" subject="Join the survey" note="Open to everyone" />
         <h2

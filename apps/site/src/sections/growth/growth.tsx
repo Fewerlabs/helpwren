@@ -2,8 +2,6 @@ import { Sketch } from "@helpwren/design-system";
 
 import { Entry, Perch, SpecimenTag } from "@/components/journal";
 
-import { GrowthMotion } from "./motion";
-
 export const levels = [
   {
     id: "level-0",
@@ -34,7 +32,6 @@ const branchHeights = [86, 64, 42, 20] as const;
 export function Growth() {
   return (
     <Entry
-      motion={<GrowthMotion />}
       id="growth"
       number="04"
       subject="Growth stages"

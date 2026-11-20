@@ -1,7 +1,9 @@
+import { EntryWatch } from "@/components/entry-watch";
 import { LiveWidget } from "@/components/live-widget";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { GITHUB_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/content/site";
 import { getStarCount } from "@/lib/github";
+import { SceneCanvasLayer } from "@/scenes/scene-canvas-layer";
 import { Anatomy } from "@/sections/anatomy/anatomy";
 import { FieldGuide } from "@/sections/field-guide/field-guide";
 import { Growth } from "@/sections/growth/growth";
@@ -39,7 +41,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <SiteHeader />
-      <main id="main">
+      <main id="main" className="journal">
         <Hero stars={stars} />
         <Habitat />
         <Nest />
@@ -53,6 +55,8 @@ export default async function Home() {
       <SiteFooter />
       <WrenFlightLayer />
       <LiveWidget />
+      <EntryWatch />
+      <SceneCanvasLayer />
     </>
   );
 }

@@ -7,6 +7,8 @@ import {
 } from "@helpwren/design-system";
 import type { CSSProperties, ReactNode } from "react";
 
+import { EntryMotion } from "@/motion/entry-motion";
+
 /*
  * The pieces of the field journal. Each mark carries a data-mark attribute so the motion layer
  * can find it and draw it in; without the motion layer every mark is drawn and complete.
@@ -34,8 +36,6 @@ export interface EntryProps {
   sheetClassName?: string;
   /** Behind the entry's content. */
   backdrop?: ReactNode;
-  /** The entry's motion component, which loads its animation once motion is allowed. */
-  motion?: ReactNode;
   /** Holds the entry on screen while the wren works through it (only while the wren flies). */
   pin?: boolean;
   /** Below the spread, across the page: more figures. */
@@ -58,7 +58,6 @@ export function Entry({
   className,
   sheetClassName,
   backdrop,
-  motion,
   pin = false,
   after,
 }: EntryProps) {
@@ -69,10 +68,10 @@ export function Entry({
       aria-labelledby={headingId}
       data-entry={id}
       data-pin={pin ? "" : undefined}
-      className={cn("relative isolate px-4 py-14 sm:py-24", className)}
+      className={cn("relative isolate px-4 py-12 sm:py-16", className)}
     >
       {backdrop}
-      {motion}
+      <EntryMotion />
       <div className={cn("pin-inner relative mx-auto max-w-6xl", sheetClassName)}>
         <EntryRule number={number} subject={subject} note={note} />
         <div

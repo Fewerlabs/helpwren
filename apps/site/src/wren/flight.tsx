@@ -1,13 +1,17 @@
 "use client";
 
 import { WrenBird, wrenPoses, type WrenPose } from "@helpwren/design-system";
-import { useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { useChatOpens } from "@/components/live-widget";
 import { gsap, MotionPathPlugin, ScrollTrigger, useGSAP } from "@/motion/kit";
 import { afterScroll } from "@/motion/scroll-sync";
+import { capable } from "@/scenes/scene-slot";
 
 import { arrivals, flightAt, routePoints, routeSegments, smoothPath, type Stop } from "./route";
+import { publishWrenFrame, wrenFrame } from "./state";
+
+const Wren3D = lazy(() => import("./wren-3d").then((module) => ({ default: module.Wren3D })));
 
 /** The wren never tilts further than this, so it never looks like it is falling. */
 const MAX_TILT_DEG = 18;
@@ -25,37 +29,19 @@ const FOOT_Y = 0.88;
 /** How high the wren hops between two branches of a pinned entry, in pixels. */
 const HOP_HEIGHT = 36;
 
-/** How many points each leg is sampled at, for placing the wren by height. */
-const LEG_SAMPLES = 48;
+/** The share of a pinned entry's scroll the wren spends hopping; it sits on the top branch after. */
+const PIN_SPAN = 0.8;
+/** The wren is kept this far inside the screen's top and bottom edges, in pixels. */
+const EDGE = { top: 90, bottom: 110, side: 48 } as const;
 
 /**
- * The length along a leg at which the route is at the height `along` of the way from one stop
- * to the next. Only for legs that mostly go down or up; null otherwise, to place by length.
+ * Keeps a value inside a range with a soft edge: inside, unchanged; past the edge, it slows and
+ * stops, so the wren is pulled along the edge rather than lost off screen, and never jumps.
  */
-function lengthFor(
-  samples: { length: number; y: number }[] | undefined,
-  fromY: number,
-  toY: number,
-  along: number,
-): number | null {
-  const first = samples?.[0];
-  const last = samples?.[samples.length - 1];
-  if (!samples || !first || !last || Math.abs(toY - fromY) < 1) return null;
-  if (along <= 0) return first.length;
-  if (along >= 1) return last.length;
-  const target = fromY + (toY - fromY) * along;
-  const down = toY > fromY;
-  for (let i = 1; i < samples.length; i++) {
-    const a = samples[i - 1];
-    const b = samples[i];
-    if (!a || !b) continue;
-    if (down ? b.y >= target : b.y <= target) {
-      const span = b.y - a.y;
-      const t = span === 0 ? 1 : Math.min(1, Math.max(0, (target - a.y) / span));
-      return a.length + (b.length - a.length) * t;
-    }
-  }
-  return last.length;
+function softClamp(value: number, low: number, high: number, give = 60): number {
+  if (value < low) return low - give * (1 - Math.exp((value - low) / give));
+  if (value > high) return high + give * (1 - Math.exp((high - value) / give));
+  return value;
 }
 
 /** The wren is never drawn smaller than this, in pixels, so it reads at a glance in flight. */
@@ -76,15 +62,19 @@ function measureStops(): Stop[] {
     // In a pinned entry the content stays on screen while the page scrolls past it. Each perch
     // there is placed where it will be when the wren reaches it, spread through the pin.
     const pinned = mark.closest<HTMLElement>("[data-pin]");
-    if (pinned) {
+    const inner = pinned?.querySelector(".pin-inner");
+    const held = inner ? getComputedStyle(inner).position === "sticky" : false;
+    if (pinned && held) {
       const top = pinned.getBoundingClientRect().top + window.scrollY;
       const range = Math.max(0, pinned.offsetHeight - window.innerHeight);
       const stuck = Math.min(range, Math.max(0, window.scrollY - top));
       const siblings = [...pinned.querySelectorAll("[data-wren-perch]")];
       const share = siblings.length > 1 ? siblings.indexOf(mark) / (siblings.length - 1) : 0;
       pin = { top, range, baseY: y - stuck };
-      y = y - stuck + share * range;
-      arriveAt = top + share * range;
+      // The top branch is where the wren leaves from, when the entry lets go: the route starts
+      // there. Lower branches are only flown between while the entry is held.
+      y = y - stuck + (share === 1 ? range : share * range * PIN_SPAN);
+      arriveAt = top + share * range * PIN_SPAN;
     }
 
     stops.push({
@@ -113,6 +103,14 @@ export function WrenFlight() {
   const bird = useRef<HTMLDivElement>(null);
   // The wren hops when the live chat opens.
   const opens = useChatOpens();
+  const opensRef = useRef(opens);
+  useEffect(() => {
+    opensRef.current = opens;
+  }, [opens]);
+  // The 3D wren, on devices that can draw it; the SVG wren until it has drawn its first frame.
+  // This component only ever renders in the browser, so the device can be asked at once.
+  const [threeD] = useState(capable);
+  const [drawn, setDrawn] = useState(false);
 
   useGSAP(() => {
     const root = document.documentElement;
@@ -125,6 +123,12 @@ export function WrenFlight() {
         page.current.style.transform = `translate3d(0, ${String(-window.scrollY)}px, 0)`;
     };
     const stopFollowing = afterScroll(follow);
+    const beat = () => {
+      const wren = bird.current;
+      if (wren?.dataset.flapping === undefined) return;
+      wren.dataset.pose = Math.floor(performance.now() / FLAP_MS) % 2 ? "wings-up" : "wings-down";
+    };
+    gsap.ticker.add(beat);
     window.addEventListener("scroll", follow, { passive: true });
 
     const build = () => {
@@ -149,17 +153,6 @@ export function WrenFlight() {
       const atStop = stops.map((_, index) =>
         lengths.slice(0, index * 2).reduce((sum, length) => sum + length, 0),
       );
-      // For each leg, points sampled along it, so the wren can be placed by how far down the page
-      // it should be rather than by how far along the curve: on a leg that starts sideways, it
-      // keeps pace with the scroll instead of falling behind.
-      const legSamples = stops.slice(0, -1).map((_, leg) => {
-        const start = atStop[leg] ?? 0;
-        const end = atStop[leg + 1] ?? start;
-        return Array.from({ length: LEG_SAMPLES + 1 }, (_, i) => {
-          const length = start + ((end - start) * i) / LEG_SAMPLES;
-          return { length, y: path.getPointAtLength(length).y };
-        });
-      });
       const maxScroll = height - window.innerHeight;
       const times = arrivals(stops, window.innerHeight, maxScroll);
       // MotionPathPlugin measures the route once; positions along it are then cheap to read.
@@ -175,9 +168,8 @@ export function WrenFlight() {
         if (!from || !to) return;
         const startLength = atStop[leg] ?? 0;
         const endLength = atStop[leg + 1] ?? startLength;
-        const length =
-          lengthFor(legSamples[leg], from.y, to.y, along) ??
-          startLength + (endLength - startLength) * along;
+        // By arc length, already eased: continuous, so the wren never jumps.
+        const length = startLength + (endLength - startLength) * along;
         const progress = total > 0 ? length / total : 0;
         const point = MotionPathPlugin.getPositionOnPath(raw, progress, true);
         const angle = "angle" in point && typeof point.angle === "number" ? point.angle : 0;
@@ -245,30 +237,73 @@ export function WrenFlight() {
             (Math.atan2(hopDy, Math.abs(hopDx)) * 180) / Math.PI,
           );
           if (along > 1 - LANDING_SHARE && to.land) pose = "landing";
-          else if (hopDy < 0)
-            pose = Math.floor(performance.now() / FLAP_MS) % 2 ? "wings-up" : "wings-down";
+          else if (hopDy < 0) pose = "wings-up";
           else pose = "gliding";
+        }
+        // Never lost off screen: a long or sideways leg pulls the wren along the screen's edge.
+        if (!sitting) {
+          const top = window.scrollY + EDGE.top;
+          const bottom = window.scrollY + window.innerHeight - EDGE.bottom;
+          y = softClamp(y, top, bottom);
+          x = softClamp(x, EDGE.side, window.innerWidth - EDGE.side);
         }
         const size = Math.max(MIN_SIZE, from.size + (to.size - from.size) * along);
         // At the birdhouse it hops in through the door, and comes out again for the next leg.
         wren.style.opacity = here === "home-range" ? "0" : "1";
         wren.dataset.pose = pose;
+        // Climbing, the SVG wren keeps beating its wings on the ticker, even when the scroll stops.
+        if (pose === "wings-up") wren.dataset.flapping = "";
+        else delete wren.dataset.flapping;
         wren.style.width = `${String(size)}px`;
         wren.style.height = `${String(size)}px`;
         wren.style.transform = `translate(${String(x - size * FOOT_X)}px, ${String(y - size * FOOT_Y)}px) rotate(${String(direction * tilt)}deg) scaleX(${String(direction)})`;
         gsap.set(path, { drawSVG: `0 ${String(progress * 100)}%` });
+
+        // Tell the 3D wren, when there is one, where it is and what it is doing.
+        wrenFrame.x = x;
+        wrenFrame.y = y;
+        wrenFrame.size = size;
+        wrenFrame.direction = direction < 0 ? -1 : 1;
+        wrenFrame.here = here;
+        wrenFrame.reacts = opensRef.current;
+        wrenFrame.mode = sitting
+          ? here === "home-range"
+            ? "inside"
+            : stop.land
+              ? stop.pose === "asleep"
+                ? "asleep"
+                : "perched"
+              : "gliding"
+          : pose === "landing"
+            ? "landing"
+            : hopDy < 0
+              ? "climbing"
+              : "gliding";
+        wrenFrame.ready = true;
+        publishWrenFrame();
       };
 
-      const proxy = { scroll: window.scrollY };
-      render(proxy.scroll);
-      tween = gsap.to(proxy, {
-        scroll: maxScroll,
-        ease: "none",
-        onUpdate: () => {
-          render(proxy.scroll);
+      // The tween runs from the top of the page to the bottom, whatever the scroll is when the
+      // route is built (after a reload part way down, or a resize), so the wren is always where
+      // the scroll says.
+      const proxy = { scroll: 0 };
+      tween = gsap.fromTo(
+        proxy,
+        { scroll: 0 },
+        {
+          scroll: maxScroll,
+          ease: "none",
+          immediateRender: true,
+          onUpdate: () => {
+            render(proxy.scroll);
+          },
+          scrollTrigger: { start: 0, end: maxScroll, scrub: SCRUB },
         },
-        scrollTrigger: { start: 0, end: maxScroll, scrub: SCRUB },
-      });
+      );
+      // Start exactly where the page is, not catching up from the top.
+      proxy.scroll = Math.min(maxScroll, window.scrollY);
+      tween.scrollTrigger?.update();
+      render(proxy.scroll);
     };
 
     const onResize = () => {
@@ -283,10 +318,13 @@ export function WrenFlight() {
     follow();
     void document.fonts.ready.then(build);
     window.addEventListener("resize", onResize);
+    ScrollTrigger.addEventListener("refresh", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
+      ScrollTrigger.removeEventListener("refresh", onResize);
       window.removeEventListener("scroll", follow);
       stopFollowing();
+      gsap.ticker.remove(beat);
       window.clearTimeout(timer);
       tween?.kill();
       delete root.dataset.wren;
@@ -301,18 +339,27 @@ export function WrenFlight() {
     >
       <div ref={page} className="absolute inset-x-0 top-0 will-change-transform">
         <svg className="absolute inset-0 size-full overflow-visible" fill="none">
+          <defs>
+            {/* Pencil grain: the line wavers a little, as a soft lead does on paper. */}
+            <filter id="wren-trail-grain" x="-5%" y="-1%" width="110%" height="102%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="3" />
+              <feDisplacementMap in="SourceGraphic" scale="1.6" />
+            </filter>
+          </defs>
           <path
             ref={trail}
-            stroke="var(--muted-foreground)"
-            strokeWidth={1}
+            stroke="var(--pencil)"
+            strokeWidth={1.4}
             strokeLinecap="round"
             strokeDasharray="0"
-            opacity={0.45}
+            opacity={0.7}
+            filter="url(#wren-trail-grain)"
           />
         </svg>
         <div
           ref={bird}
           data-pose="perched"
+          data-3d={drawn ? "" : undefined}
           className="wren-flyer absolute top-0 left-0 transition-opacity duration-500"
           style={{ transformOrigin: `${String(FOOT_X * 100)}% ${String(FOOT_Y * 100)}%` }}
         >
@@ -327,6 +374,15 @@ export function WrenFlight() {
           ))}
         </div>
       </div>
+      {threeD ? (
+        <Suspense fallback={null}>
+          <Wren3D
+            onReady={() => {
+              setDrawn(true);
+            }}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

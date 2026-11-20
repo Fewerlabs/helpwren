@@ -26,13 +26,15 @@ export interface Stop {
 /** How far above the straight line between two stops the wren arcs, as a share of the distance. */
 export const ARC_LIFT = 0.18;
 /** The arc never rises more than this, in pixels, so on a long leg the wren stays on screen. */
-export const MAX_LIFT = 48;
+export const MAX_LIFT = 28;
 /** The share of each leg's scroll spent sitting at the stop before taking off. */
-export const HOLD = 0.12;
+export const HOLD = 0.32;
 /** In a pinned entry, the share of each step the wren sits on its branch before hopping. */
 export const PIN_HOLD = 0.45;
 /** Where on the screen a stop is when the wren arrives at it: 45% down. */
 export const ARRIVE_AT = 0.45;
+/** The least scroll between two stops, as a share of the screen's height. */
+export const MIN_LEG = 0.3;
 
 /** A point through which the route passes: every stop, with a lifted midpoint between each pair. */
 export function routePoints(stops: readonly Stop[]): { x: number; y: number }[] {
@@ -86,8 +88,10 @@ export function arrivals(stops: readonly Stop[], viewport: number, maxScroll: nu
   return stops.map((stop, index) => {
     const natural = stop.y - viewport * ARRIVE_AT;
     const at = index === 0 ? 0 : Math.min(maxScroll, Math.max(0, stop.arriveAt ?? natural));
-    // Never earlier than the stop before, so the wren does not fly backwards.
-    last = Math.max(last, at);
+    // Never earlier than the stop before, and never less than a short stretch of scroll after
+    // it, so a leg between two stops at the same height (through the anatomy gap) is flown, not
+    // jumped.
+    last = index === 0 ? at : Math.min(maxScroll, Math.max(last + viewport * MIN_LEG, at));
     return last;
   });
 }
@@ -130,9 +134,18 @@ export function flightAt(
       // a pinned entry the wren sits longer: one hop per step of the scroll.
       const from = stops[leg];
       const to = stops[leg + 1];
-      const leavingPin = from?.arriveAt !== undefined && to?.arriveAt === undefined;
-      const inPin = from?.arriveAt !== undefined && to?.arriveAt !== undefined;
-      const hold = from?.land === false || leavingPin ? 0 : inPin ? PIN_HOLD : HOLD;
+      const leavingPin = from?.pin !== undefined && to?.pin === undefined;
+      const inPin = from?.pin !== undefined && to?.pin !== undefined;
+      // On the top branch it sits until the entry lets go, then flies on.
+      const pinEnd = from?.pin ? from.pin.top + from.pin.range : start;
+      const hold =
+        from?.land === false
+          ? 0
+          : leavingPin
+            ? Math.min(0.9, Math.max(0, (pinEnd - start) / (end - start)))
+            : inPin
+              ? PIN_HOLD
+              : HOLD;
       const t = (scroll - start) / (end - start);
       const flying = Math.min(1, Math.max(0, (t - hold) / (1 - hold)));
       return { leg, along: easeLeg(flying) };

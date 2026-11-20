@@ -1,17 +1,20 @@
 "use client";
 
-import { Html, Line } from "@react-three/drei";
-import { Canvas, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { Group } from "three";
+import { Line, PerspectiveCamera, View } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { Vector3, type Group } from "three";
 
 import { contents, outlinePath } from "@/sections/anatomy/anatomy-sketch";
 import { ANATOMY_VIEWBOX, anatomyLayers, PLANE } from "@/sections/anatomy/layers";
 
 import { sampleStroke, useBoil, useInk, useOnScreen, wobble } from "./lines";
+import { FirstFrame } from "./scene-canvas";
 
 const FOV = 30;
-const DISTANCE = ANATOMY_VIEWBOX.height / 2 / Math.tan(((FOV / 2) * Math.PI) / 180);
+/** A little further back than the drawing's own framing, so the opened stack stays in view. */
+const ZOOM_OUT = 1.22;
+const DISTANCE = (ANATOMY_VIEWBOX.height / 2 / Math.tan(((FOV / 2) * Math.PI) / 180)) * ZOOM_OUT;
 const LINE_WIDTH = 1.6;
 /** How much further apart the planes move as the entry scrolls through, as a share of the gap. */
 const SPREAD = 0.45;
@@ -21,10 +24,10 @@ const TURN = 0.14;
 const LEADER_FROM = PLANE.centreX + PLANE.width / 2 - ANATOMY_VIEWBOX.width / 2;
 const LEADER_LENGTH = 18;
 
-function Stack() {
-  const { invalidate, gl } = useThree();
+function Stack({ host }: { host: HTMLElement }) {
+  const { invalidate, camera, size } = useThree();
   const { ink, moss } = useInk();
-  const onScreen = useOnScreen(gl.domElement);
+  const onScreen = useOnScreen(host);
   const boilStep = useMemo(() => ({ value: 0 }), []);
   const withWobble = useMemo(() => wobble(boilStep), [boilStep]);
   useBoil(onScreen, boilStep, invalidate);
@@ -50,7 +53,7 @@ function Stack() {
 
   // The planes open out as the entry scrolls through the screen.
   useEffect(() => {
-    const section = gl.domElement.closest("section");
+    const section = host.closest("section");
     const update = () => {
       const box = section?.getBoundingClientRect();
       const progress = box
@@ -74,14 +77,25 @@ function Stack() {
     return () => {
       window.removeEventListener("scroll", update);
     };
-  }, [gl, invalidate, layers]);
+  }, [host, invalidate, layers]);
 
-  useEffect(
-    () => () => {
-      gl.forceContextLoss();
-    },
-    [gl],
-  );
+  // The names beside the drawing follow the ends of the leader lines, so they stay real text.
+  const end = useMemo(() => new Vector3(), []);
+  useFrame(() => {
+    const labels = (host.parentElement ?? host).querySelectorAll<HTMLElement>(
+      "[data-anatomy-label]",
+    );
+    planes.current.forEach((group, index) => {
+      const label = labels[index];
+      if (!group || !label) return;
+      end.set(LEADER_FROM + LEADER_LENGTH + 3, 0, 0);
+      group.localToWorld(end);
+      end.project(camera);
+      const x = ((end.x + 1) / 2) * size.width;
+      const y = ((1 - end.y) / 2) * size.height;
+      label.style.transform = `translate(${String(x)}px, ${String(y)}px) translateY(-50%)`;
+    });
+  });
 
   return (
     <group ref={stack}>
@@ -113,39 +127,28 @@ function Stack() {
             transparent
             opacity={0.6}
           />
-          <Html
-            position={[LEADER_FROM + LEADER_LENGTH + 4, 0, 0]}
-            center={false}
-            style={{ transform: "translateY(-50%)", pointerEvents: "none", whiteSpace: "nowrap" }}
-            zIndexRange={[20, 0]}
-          >
-            <span className="font-hand text-muted-foreground text-lg leading-none">
-              {String(index + 1)}
-            </span>
-          </Html>
         </group>
       ))}
     </group>
   );
 }
 
-/** The anatomy entry's exploded stack: the drawing's planes, opening out as you scroll. */
-export function AnatomyScene({ onReady }: { onReady: () => void }) {
-  const ready = useCallback(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(onReady);
-    });
-  }, [onReady]);
+/**
+ * The anatomy entry's exploded stack: the drawing's planes, opening out as you scroll, with
+ * leader lines to their names. A View of the page's one canvas.
+ */
+export function AnatomyScene({ onReady, host }: { onReady: () => void; host: HTMLElement }) {
   return (
-    <Canvas
-      frameloop="demand"
-      dpr={[1, 1.5]}
-      gl={{ antialias: false, alpha: true, powerPreference: "low-power" }}
-      camera={{ fov: FOV, position: [0, 0, DISTANCE], near: 1, far: DISTANCE * 3 }}
-      onCreated={ready}
-      style={{ position: "absolute", inset: 0 }}
-    >
-      <Stack />
-    </Canvas>
+    <View className="absolute inset-0">
+      <PerspectiveCamera
+        makeDefault
+        fov={FOV}
+        position={[0, 0, DISTANCE]}
+        near={1}
+        far={DISTANCE * 3}
+      />
+      <Stack host={host} />
+      <FirstFrame onReady={onReady} />
+    </View>
   );
 }
