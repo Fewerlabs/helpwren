@@ -113,8 +113,11 @@ test("an admin adds rules, puts them in order and tries a page against them", as
   // Switched off, the rule is skipped.
   await table.getByRole("switch", { name: `${BOOKINGS} is on` }).click();
   await expect(table.getByRole("switch", { name: `${BOOKINGS} is on` })).not.toBeChecked();
-  await page.getByRole("button", { name: "Try it" }).click();
-  await expect(result).toContainText("No rule matched.");
+  // The switch saves, then tells the server to read the rules again; try once that has landed.
+  await expect(async () => {
+    await page.getByRole("button", { name: "Try it" }).click();
+    await expect(result).toContainText("No rule matched.", { timeout: 1000 });
+  }).toPass();
 
   // An agent reads the rules and tries pages, but cannot change them.
   await page.context().clearCookies();

@@ -214,18 +214,6 @@ export function ContextualHelpSettings({ canEdit, fallback }: ContextualHelpSett
             className="py-10"
             title="No rules yet"
             description="Map a page, such as /bookings/*, to the articles it should show. Pages need no code."
-            action={
-              canEdit ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditing(null);
-                  }}
-                >
-                  New rule
-                </Button>
-              ) : undefined
-            }
           />
         }
         messages={{ error: "The rules could not be loaded." }}
