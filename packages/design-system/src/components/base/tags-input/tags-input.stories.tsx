@@ -28,6 +28,14 @@ export const WithValues: Story = {
   args: { defaultValue: ["billing", "refunds", "ios", "onboarding", "cancellations"] },
 };
 
+/** Values already in use are offered as the text is typed; anything else can still be typed. */
+export const WithSuggestions: Story = {
+  args: {
+    defaultValue: ["refunds"],
+    suggestions: ["billing", "bookings", "cancellations", "payouts", "refunds", "ios"],
+  },
+};
+
 function Domains() {
   const [domains, setDomains] = useState(["acme.example", "app.acme.example"]);
   return (

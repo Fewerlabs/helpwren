@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useId,
   useState,
   type ClipboardEvent,
   type ComponentProps,
@@ -11,6 +12,7 @@ import {
 import { cn } from "#lib/cn";
 
 import { ControlShell } from "../control-shell/control-shell";
+import { Popover, PopoverAnchor, PopoverContent } from "../popover/popover";
 import { bareInput } from "../styles";
 import { Chip } from "./chip";
 
@@ -50,7 +52,16 @@ export interface TagsInputProps extends Omit<
   append?: ReactNode;
   /** Classes for the inner `<input>`. `className` styles the outer box. */
   inputClassName?: string;
+  /**
+   * Values to offer while typing, such as the tags already in use. Those that hold the text
+   * typed are listed under the box, best first; the arrow keys move through them and Enter
+   * adds one. Anything else can still be typed.
+   */
+  suggestions?: readonly string[];
 }
+
+/** The most suggestions listed at once. */
+const SUGGESTIONS_SHOWN = 6;
 
 const DEFAULT_SEPARATORS = ["Enter", ","] as const;
 
@@ -74,19 +85,34 @@ export function TagsInput({
   append,
   className,
   inputClassName,
+  suggestions,
   name,
   disabled = false,
   placeholder,
   onKeyDown,
   onPaste,
   onBlur,
+  onFocus,
   ...props
 }: TagsInputProps) {
   const [internal, setInternal] = useState<readonly string[]>(defaultValue ?? []);
   const [text, setText] = useState("");
   const [announcement, setAnnouncement] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [active, setActive] = useState(-1);
+  const listId = useId();
   const tags = value ?? internal;
   const full = max !== undefined && tags.length >= max;
+
+  // What the text typed so far could become: values that start with it first, then any that
+  // hold it, leaving out those already added.
+  const typed = transform(text);
+  const offered = (suggestions ?? [])
+    .filter((suggestion) => !tags.includes(suggestion) && suggestion.includes(typed))
+    .sort((first, second) => Number(second.startsWith(typed)) - Number(first.startsWith(typed)))
+    .slice(0, SUGGESTIONS_SHOWN);
+  const listOpen = focused && !full && !disabled && offered.length > 0;
+  const activeOption = listOpen && active >= 0 && active < offered.length ? active : -1;
 
   function commit(next: string[], message: string) {
     if (value === undefined) {
@@ -142,6 +168,28 @@ export function TagsInput({
     if (event.defaultPrevented || event.nativeEvent.isComposing) {
       return;
     }
+    if (listOpen && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      const next = activeOption + step;
+      // Past either end goes back to the text, with nothing chosen.
+      setActive(next >= offered.length ? -1 : next < -1 ? offered.length - 1 : next);
+      return;
+    }
+    if (listOpen && event.key === "Escape" && activeOption >= 0) {
+      event.preventDefault();
+      setActive(-1);
+      return;
+    }
+    const chosen = offered[activeOption];
+    if (event.key === "Enter" && chosen !== undefined) {
+      event.preventDefault();
+      if (add([chosen])) {
+        setText("");
+      }
+      setActive(-1);
+      return;
+    }
     if (separators.includes(event.key)) {
       // Enter in an empty box is left alone so it can still submit a form.
       if (text.trim() !== "" || event.key !== "Enter") {
@@ -168,7 +216,7 @@ export function TagsInput({
     add(parts);
   }
 
-  return (
+  const shell = (
     <ControlShell
       data-slot="tags-input"
       // Tells assistive technology that the chips are part of a disabled control.
@@ -204,13 +252,29 @@ export function TagsInput({
         placeholder={tags.length === 0 ? placeholder : undefined}
         readOnly={full}
         autoComplete="off"
+        {...(suggestions === undefined
+          ? {}
+          : {
+              role: "combobox",
+              "aria-autocomplete": "list" as const,
+              "aria-expanded": listOpen,
+              "aria-controls": listId,
+              "aria-activedescendant": activeOption >= 0 ? `${listId}-${activeOption}` : undefined,
+            })}
         onChange={(event) => {
           setText(event.target.value);
+          setActive(-1);
         }}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
+        onFocus={(event) => {
+          onFocus?.(event);
+          setFocused(true);
+        }}
         onBlur={(event) => {
           onBlur?.(event);
+          setFocused(false);
+          setActive(-1);
           if (addOnBlur && add([text])) {
             setText("");
           }
@@ -225,5 +289,56 @@ export function TagsInput({
         {announcement}
       </span>
     </ControlShell>
+  );
+
+  if (suggestions === undefined) {
+    return shell;
+  }
+  return (
+    <Popover open={listOpen}>
+      <PopoverAnchor asChild>{shell}</PopoverAnchor>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-(--radix-popover-trigger-width) min-w-48 gap-0 p-1"
+        // Focus stays in the input, which moves through the list with aria-activedescendant.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+        }}
+      >
+        <div id={listId} role="listbox" aria-label="Suggestions">
+          {offered.map((suggestion, index) => (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- options are operated from the input through aria-activedescendant; they never take focus themselves.
+            <div
+              key={suggestion}
+              id={`${listId}-${index}`}
+              role="option"
+              tabIndex={-1}
+              aria-selected={index === activeOption}
+              data-active={index === activeOption || undefined}
+              onMouseMove={() => {
+                setActive(index);
+              }}
+              onMouseDown={(event) => {
+                // Keeps focus in the input.
+                event.preventDefault();
+              }}
+              onClick={() => {
+                if (add([suggestion])) {
+                  setText("");
+                }
+                setActive(-1);
+              }}
+              className="data-active:bg-accent data-active:text-accent-foreground flex min-h-8 cursor-default items-center rounded-md px-2 py-1 text-sm select-none"
+            >
+              {suggestion}
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
