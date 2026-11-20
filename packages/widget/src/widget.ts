@@ -414,7 +414,9 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       image.alt = "";
       image.src = logo;
       teaser.avatar.replaceChildren(image);
+      teaser.avatar.dataset.logo = "";
     } else {
+      delete teaser.avatar.dataset.logo;
       teaser.avatar.textContent = Array.from(name.trim())[0]?.toUpperCase() ?? "";
     }
     teaser.replies.replaceChildren(

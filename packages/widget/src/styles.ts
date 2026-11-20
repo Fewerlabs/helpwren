@@ -136,7 +136,9 @@ export const styles = `
   color: var(--hw-accent-ink);
   font-weight: 600;
 }
-.teaser-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+/* A logo sits on the teaser's own surface, so a transparent one blends in, whole. */
+.teaser-avatar[data-logo] { background: var(--hw-surface); }
+.teaser-avatar img { width: 100%; height: 100%; padding: 4px; object-fit: contain; }
 /* A dot that says someone is there. */
 .teaser-avatar::after {
   content: "";
