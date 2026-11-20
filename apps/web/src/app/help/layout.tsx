@@ -2,7 +2,8 @@ import { cn } from "@helpwren/design-system";
 import type { ReactNode } from "react";
 
 import { EmbedFrame, HelpChatLauncher } from "@/features/help-center";
-import { accentBodyCss, accentStyle } from "@/lib/accent";
+import { brandProps } from "@/lib/accent";
+import { BrandOnBody } from "@/lib/brand-on-body";
 import { getHelpSettings } from "@/lib/help-center-data";
 import { getHelpEmbed } from "@/lib/help-embed-request";
 
@@ -27,9 +28,9 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
       // It fills the frame it is given and is never smaller than is usable.
       <div
         className={cn("bg-card text-foreground flex min-h-80 min-w-72 flex-col")}
-        style={accentStyle(brand)}
+        {...brandProps(brand)}
       >
-        <BrandForPortals css={accentBodyCss(brand)} />
+        <BrandOnBody brand={brand} />
         {children}
         <EmbedFrame />
       </div>
@@ -39,20 +40,11 @@ export default async function HelpLayout({ children }: { children: ReactNode }) 
   return (
     <div
       className={cn("bg-card text-foreground relative isolate flex min-h-dvh flex-col")}
-      style={accentStyle(settings.brand)}
+      {...brandProps(settings.brand)}
     >
-      <BrandForPortals css={accentBodyCss(settings.brand)} />
+      <BrandOnBody brand={settings.brand} />
       {children}
       {settings.helpCenter.showChat ? <HelpChatLauncher /> : null}
     </div>
   );
-}
-
-/**
- * The brand's colours on the page's body too, so a sheet or dialog that opens above the page,
- * outside the element above, wears them as well. The values are colours the settings checked.
- */
-function BrandForPortals({ css }: { css: string }) {
-  if (!css) return null;
-  return <style dangerouslySetInnerHTML={{ __html: css }} />;
 }

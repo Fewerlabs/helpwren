@@ -50,7 +50,7 @@ export function HelpSidebar({ collections, current }: HelpSidebarProps) {
                   className={cn(
                     "focus-visible:outline-ring block rounded-md px-2 py-1.5 transition-colors focus-visible:outline-2",
                     here && !current.article
-                      ? "bg-brand/10 text-brand font-medium"
+                      ? "bg-brand/10 text-brand-ink font-medium"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
@@ -67,7 +67,7 @@ export function HelpSidebar({ collections, current }: HelpSidebarProps) {
                       className={cn(
                         "focus-visible:outline-ring block rounded-md px-2 py-1.5 text-pretty transition-colors focus-visible:outline-2",
                         active
-                          ? "bg-brand/10 text-brand font-medium"
+                          ? "bg-brand/10 text-brand-ink font-medium"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       )}
                     >

@@ -1,7 +1,7 @@
 import { type PublicSettings } from "@helpwren/core";
 import { cn } from "@helpwren/design-system";
 
-import { accentStyle } from "@/lib/accent";
+import { brandProps } from "@/lib/accent";
 
 import { CollectionGrid } from "./collection-grid";
 import { HelpHero } from "./help-hero";
@@ -46,7 +46,7 @@ export function HelpHomePreview({ settings, collections }: HelpHomePreviewProps)
       className={cn(
         "bg-card text-foreground relative isolate flex min-h-full flex-col overflow-hidden",
       )}
-      style={accentStyle(settings.brand)}
+      {...brandProps(settings.brand)}
     >
       <HelpShell settings={settings} collections={shown} home inert>
         <HelpHero settings={settings} />

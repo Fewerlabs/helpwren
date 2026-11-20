@@ -6,7 +6,8 @@ import { PREVIEW_MAX_LENGTH } from "helpwren/protocol";
 import { useCallback, useEffect, useMemo } from "react";
 
 import { Thread } from "@/features/conversation";
-import { accentStyle } from "@/lib/accent";
+import { brandProps } from "@/lib/accent";
+import { BrandOnBody } from "@/lib/brand-on-body";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { BrandProvider, TeamAvatar } from "../brand";
@@ -219,10 +220,8 @@ function Surface({ settings: saved, source, preview = false, className }: ChatPr
   return (
     <BrandProvider brand={settings.brand}>
       {/* White, so the chat reads as its own surface on whatever site it sits in. */}
-      <div
-        className={cn("bg-card flex h-dvh flex-col", className)}
-        style={accentStyle(settings.brand)}
-      >
+      <div className={cn("bg-card flex h-dvh flex-col", className)} {...brandProps(settings.brand)}>
+        <BrandOnBody brand={settings.brand} />
         <Screens settings={settings} source={source} />
       </div>
     </BrandProvider>

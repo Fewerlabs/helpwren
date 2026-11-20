@@ -5,6 +5,7 @@
  *   @import "@helpwren/design-system/styles.css";
  */
 @import "../tokens/tokens.css";
+@import "../tokens/brand.css";
 @import "../tokens/theme.css";
 @import "../illustrations/illustrations.css";
 @import "../components/shared/rich-text/rich-text.css";

@@ -7,6 +7,15 @@ export * from "./components/form";
 export * from "./illustrations";
 export { cn } from "./lib/cn";
 export {
+  brandShades,
+  inkOn,
+  readableShade,
+  themeSurfaces,
+  withLightness,
+  type BrandShades,
+} from "./lib/colour";
+export { contrastRatio } from "./lib/contrast";
+export {
   statusNames,
   themeOverrides,
   tokens,

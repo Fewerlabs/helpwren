@@ -40,6 +40,8 @@
   --color-ring: var(--ring);
   /* The install's own brand colour where one is set (accentStyle), else Helpwren's green. */
   --color-brand: var(--brand, var(--moss));
+  /* Words and icons in the brand colour: a shade of it readable on the theme (brand.css). */
+  --color-brand-ink: var(--brand-ink, var(--brand, var(--moss)));
 
   /* Brand colours */
   --color-paper: var(--paper);

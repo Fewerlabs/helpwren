@@ -1,0 +1,39 @@
+/*
+ * An install's own colour in place of Helpwren's, on an element marked `data-brand` and
+ * everything inside it. The app works the shades out once with `brandShades` (lib/colour.ts) and
+ * sets them on the element as --brand-* properties; this picks the light or dark set, so words,
+ * icons and lines in the brand colour stay readable in either theme while buttons keep the
+ * brand colour itself.
+ */
+
+[data-brand] {
+  --primary: var(--brand-text-light);
+  --primary-foreground: var(--brand-text-ink-light);
+  --primary-fill: var(--brand-button);
+  --primary-fill-foreground: var(--brand-button-ink);
+  --ring: var(--brand-text-light);
+}
+
+.dark [data-brand],
+.dark[data-brand] {
+  --primary: var(--brand-text-dark);
+  --primary-foreground: var(--brand-text-ink-dark);
+  --ring: var(--brand-text-dark);
+}
+
+/*
+ * The drawings' strokes and words in the brand colour (`text-brand-ink`), when the brand has a
+ * colour of its own besides its buttons'.
+ */
+[data-brand-accent] {
+  --moss: var(--brand-graphic-light);
+  --pen: var(--brand-graphic-light);
+  --brand-ink: var(--brand-accent-text-light);
+}
+
+.dark [data-brand-accent],
+.dark[data-brand-accent] {
+  --moss: var(--brand-graphic-dark);
+  --pen: var(--brand-graphic-dark);
+  --brand-ink: var(--brand-accent-text-dark);
+}

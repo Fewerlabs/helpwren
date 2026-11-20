@@ -56,7 +56,7 @@ export function ArticleFeedback({ articleId }: { articleId: string }) {
     >
       {before || state === "thanked" ? (
         <p role="status" className="text-muted-foreground flex items-center gap-2">
-          <Icon name="check-circle" className="text-brand size-4.5" />
+          <Icon name="check-circle" className="text-brand-ink size-4.5" />
           Thanks for letting us know.
         </p>
       ) : (
