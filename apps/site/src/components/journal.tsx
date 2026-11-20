@@ -131,7 +131,7 @@ export function EntryRule({
       <div className="flex items-end gap-4">
         <span
           aria-hidden="true"
-          className="text-muted-foreground/50 font-mono text-4xl leading-none sm:text-6xl"
+          className="text-muted-foreground font-mono text-4xl leading-none font-light sm:text-6xl"
         >
           {number === "Last" ? "—" : number}
         </span>

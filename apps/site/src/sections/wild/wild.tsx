@@ -1,8 +1,8 @@
 import { MarginNote } from "@helpwren/design-system";
 
 import { Capture } from "@/components/capture";
+import { LazyOpenChatButton } from "@/components/deferred";
 import { Entry, HandLabel, Taped } from "@/components/journal";
-import { OpenChatButton } from "@/components/live-widget";
 import { DEMO_URL } from "@/content/demo";
 
 import { WildMotion } from "./motion";
@@ -80,7 +80,7 @@ export function Wild() {
       </p>
       {DEMO_URL ? (
         <div className="space-y-2 pt-2">
-          <OpenChatButton />
+          <LazyOpenChatButton />
           <p className="text-sm">
             This is a demo install of Helpwren. Messages go to it, and may not get an answer.
           </p>

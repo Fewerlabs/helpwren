@@ -16,12 +16,21 @@ export interface Stop {
   facing: "left" | "right";
   /** For a stop inside a pinned entry: the scroll position at which the wren must be there. */
   arriveAt?: number;
+  /**
+   * For a stop inside a pinned entry: where the pin starts and how long it lasts, in scroll
+   * pixels, and the stop's page position before the pin moves it.
+   */
+  pin?: { top: number; range: number; baseY: number };
 }
 
 /** How far above the straight line between two stops the wren arcs, as a share of the distance. */
 export const ARC_LIFT = 0.18;
+/** The arc never rises more than this, in pixels, so on a long leg the wren stays on screen. */
+export const MAX_LIFT = 48;
 /** The share of each leg's scroll spent sitting at the stop before taking off. */
 export const HOLD = 0.12;
+/** In a pinned entry, the share of each step the wren sits on its branch before hopping. */
+export const PIN_HOLD = 0.45;
 /** Where on the screen a stop is when the wren arrives at it: 45% down. */
 export const ARRIVE_AT = 0.45;
 
@@ -34,7 +43,7 @@ export function routePoints(stops: readonly Stop[]): { x: number; y: number }[] 
       const distance = Math.hypot(stop.x - previous.x, stop.y - previous.y);
       points.push({
         x: (previous.x + stop.x) / 2,
-        y: Math.min(previous.y, stop.y) - distance * ARC_LIFT * 0.5,
+        y: Math.min(previous.y, stop.y) - Math.min(MAX_LIFT, distance * ARC_LIFT * 0.5),
       });
     }
     points.push({ x: stop.x, y: stop.y });
@@ -117,9 +126,13 @@ export function flightAt(
     const end = times[leg + 1] ?? start;
     if (scroll < end || leg === lastLeg) {
       if (end <= start) return { leg, along: scroll >= end ? 1 : 0 };
-      // No hold at a waypoint, or in a pinned entry, whose own spacing is the pause.
+      // No hold at a waypoint, nor on leaving a pinned entry (it scrolls away). Between perches of
+      // a pinned entry the wren sits longer: one hop per step of the scroll.
       const from = stops[leg];
-      const hold = from?.land === false || from?.arriveAt !== undefined ? 0 : HOLD;
+      const to = stops[leg + 1];
+      const leavingPin = from?.arriveAt !== undefined && to?.arriveAt === undefined;
+      const inPin = from?.arriveAt !== undefined && to?.arriveAt !== undefined;
+      const hold = from?.land === false || leavingPin ? 0 : inPin ? PIN_HOLD : HOLD;
       const t = (scroll - start) / (end - start);
       const flying = Math.min(1, Math.max(0, (t - hold) / (1 - hold)));
       return { leg, along: easeLeg(flying) };

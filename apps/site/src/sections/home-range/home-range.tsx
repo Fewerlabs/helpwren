@@ -31,7 +31,7 @@ export function HomeRange() {
             decorative
             className="max-w-none"
           />
-          <HandLabel className="absolute top-[50%] -right-2">nest: your own database</HandLabel>
+          <HandLabel className="absolute top-[4%] right-0">nest: your own database</HandLabel>
           <Perch name="home-range" x={50} y={36.5} size={20} />
         </div>
       }

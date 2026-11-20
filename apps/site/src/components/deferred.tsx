@@ -18,6 +18,9 @@ const ThemeMenu = lazy(() =>
 const CodeSnippet = lazy(() =>
   import("./islands/code-snippet").then((module) => ({ default: module.CodeSnippet })),
 );
+const OpenChatButton = lazy(() =>
+  import("./open-chat-button").then((module) => ({ default: module.OpenChatButton })),
+);
 const MotionToggle = lazy(() =>
   import("@/motion/motion-toggle").then((module) => ({ default: module.MotionToggle })),
 );
@@ -53,5 +56,17 @@ export function DeferredMotionToggle({ fallback }: { fallback: ReactNode }) {
     <Deferred fallback={fallback}>
       <MotionToggle />
     </Deferred>
+  );
+}
+
+/**
+ * The button that opens the live chat. Its code is fetched only when a page renders it (when a
+ * demo install is set), so pages without a demo never download it or the icon set.
+ */
+export function LazyOpenChatButton() {
+  return (
+    <Suspense fallback={<span className="block h-10" />}>
+      <OpenChatButton />
+    </Suspense>
   );
 }

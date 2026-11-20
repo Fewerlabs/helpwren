@@ -120,7 +120,7 @@ function Stack() {
             zIndexRange={[20, 0]}
           >
             <span className="font-hand text-muted-foreground text-lg leading-none">
-              {String(index + 1)}. {anatomyLayers[index]?.name}
+              {String(index + 1)}
             </span>
           </Html>
         </group>
