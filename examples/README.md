@@ -15,3 +15,9 @@ purpose: that is how a real site embeds the chat, and it is what the browser tes
 
 http://127.0.0.1:4100/inline shows the chat inside a page's own layout (`mode: "inline"`), with
 no launcher. Every option a site has is listed in [docs/widget.md](../docs/widget.md).
+
+## nextjs
+
+A Next.js app standing in for Glown, Helpwren's first install: a public site with the script
+tag and the help center at its own `/help`, and a web app that signs its users in to the chat
+with their own JWT through a profile endpoint. See [nextjs/README.md](nextjs/README.md).

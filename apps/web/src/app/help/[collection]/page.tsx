@@ -8,6 +8,7 @@ import {
   canonicalUrl,
   collectionPath,
   countArticles,
+  HELP_ICON_ROUTE,
   HELP_PATH,
   helpMetadata,
   HelpShell,
@@ -57,7 +58,12 @@ export default async function HelpCollectionPage({ params }: Props) {
       </Link>
       <header className="mb-8">
         <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-balance">
-          <CollectionIcon name={collection.icon} weight="duotone" className="text-primary size-7" />
+          <CollectionIcon
+            name={collection.icon}
+            weight="duotone"
+            route={HELP_ICON_ROUTE}
+            className="text-primary size-7"
+          />
           {collection.name}
         </h1>
         {collection.description ? (

@@ -182,13 +182,14 @@ test("a team member changes their own name, and how they are notified", async ({
   await expect(page.getByRole("radio", { name: "Only mine and unassigned ones" })).toBeChecked();
 });
 
-test("an admin sets which sites may show the chat, and copies the snippet", async ({ page }) => {
+test("an admin sets which sites may show the chat, and copies the snippet", async ({
+  page,
+  baseURL,
+}) => {
   await signInToInbox(page, "ada@example.com");
   await page.goto("/dashboard/settings/installation");
 
-  await expect(
-    page.getByText('<script src="http://localhost:3000/widget.js"></script>'),
-  ).toBeVisible();
+  await expect(page.getByText(`<script src="${baseURL ?? ""}/widget.js"></script>`)).toBeVisible();
   await expect(page.getByText("any site can show your chat")).toBeVisible();
 
   const domains = page.getByLabel("Domains");

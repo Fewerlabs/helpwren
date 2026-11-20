@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
 
-import { articlePath, collectionPath } from "../urls";
+import { articlePath, collectionPath, HELP_ICON_ROUTE } from "../urls";
 
 export interface CollectionGridProps {
   collections: readonly (Pick<Collection, "id" | "name" | "slug" | "description" | "icon"> & {
@@ -31,6 +31,7 @@ export function CollectionGrid({ collections, embed = null }: CollectionGridProp
               <CollectionIcon
                 name={collection.icon}
                 weight="duotone"
+                route={HELP_ICON_ROUTE}
                 className="text-foreground size-5"
               />
               <span className="text-pretty">{collection.name}</span>

@@ -125,15 +125,15 @@ test("a team member writes an article, publishes it and takes it down again", as
     )
     .toBe(true);
 
-  // The public help center wears the collection's chosen icon, drawn from the icon route.
+  // The public help center wears the collection's chosen icon, from the icon route under /help.
   const reader = await page.context().newPage();
   await reader.goto(`/help/shipping-${RUN}`);
   const heading = reader.getByRole("heading", { level: 1, name: `Shipping (${RUN})` });
   await expect(heading.locator("[data-slot=collection-icon]")).toHaveAttribute(
     "style",
-    /\/api\/icons\/duotone\/rocket\.svg/,
+    /\/help\/_icons\/duotone\/rocket\.svg/,
   );
-  const svg = await reader.request.get("/api/icons/duotone/rocket.svg");
+  const svg = await reader.request.get("/help/_icons/duotone/rocket.svg");
   expect(svg.headers()["content-type"]).toBe("image/svg+xml");
   await reader.close();
 

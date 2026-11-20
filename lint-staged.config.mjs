@@ -1,6 +1,6 @@
 import path from "node:path";
 
-const workspacePattern = /^(apps|packages)\/[^/]+/;
+const workspacePattern = /^((apps|packages)\/[^/]+|examples\/nextjs)/;
 
 /**
  * ESLint rules resolve paths and dependencies from the working directory, so staged

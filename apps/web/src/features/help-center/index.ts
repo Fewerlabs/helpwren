@@ -19,4 +19,11 @@ export { PageHalftone } from "./components/page-halftone";
 export { JsonLd } from "./components/json-ld";
 export { countArticles } from "./format";
 export { helpMetadata, type HelpPage } from "./metadata";
-export { articlePath, canonicalUrl, collectionPath, HELP_PATH, searchPath } from "./urls";
+export {
+  articlePath,
+  canonicalUrl,
+  collectionPath,
+  HELP_ICON_ROUTE,
+  HELP_PATH,
+  searchPath,
+} from "./urls";

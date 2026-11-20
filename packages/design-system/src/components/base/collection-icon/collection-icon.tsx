@@ -17,15 +17,24 @@ const FALLBACK = "book-open";
 // but names no icon is refused by the route and draws nothing.
 const NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** The address of a Phosphor icon's SVG file. */
-export function iconUrl(name: string, weight: IconWeight = "regular"): string {
-  return `${ICON_ROUTE}/${weight}/${NAME.test(name) ? name : FALLBACK}.svg`;
+/** The address of a Phosphor icon's SVG file, under `route`. */
+export function iconUrl(
+  name: string,
+  weight: IconWeight = "regular",
+  route: string = ICON_ROUTE,
+): string {
+  return `${route}/${weight}/${NAME.test(name) ? name : FALLBACK}.svg`;
 }
 
 export interface CollectionIconProps extends Omit<ComponentProps<"span">, "children"> {
   /** Any Phosphor icon's name, in kebab-case, such as `rocket-launch`. */
   name: string;
   weight?: IconWeight;
+  /**
+   * Where the icon files are, in place of `ICON_ROUTE`: for a page another site serves through
+   * a rewrite, which passes on only its own paths.
+   */
+  route?: string;
   /**
    * An accessible name. Leave it out when the icon only decorates text that says the same,
    * as it does beside a collection's name.
@@ -41,12 +50,13 @@ export interface CollectionIconProps extends Omit<ComponentProps<"span">, "child
 export function CollectionIcon({
   name,
   weight = "regular",
+  route,
   label,
   className,
   style,
   ...props
 }: CollectionIconProps) {
-  const image = `url("${iconUrl(name, weight)}")`;
+  const image = `url("${iconUrl(name, weight, route)}")`;
   const accessibility = label
     ? ({ role: "img", "aria-label": label } as const)
     : ({ "aria-hidden": true } as const);

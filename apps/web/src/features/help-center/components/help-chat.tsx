@@ -4,8 +4,16 @@ import { Icon } from "@helpwren/design-system";
 import { createWidget, type HelpwrenWidget } from "helpwren";
 import { useEffect } from "react";
 
+import { env } from "@/lib/env";
+
 /** The one widget on the page, once the launcher has made it. */
 let widget: HelpwrenWidget | null = null;
+
+/**
+ * The install's own address. Not the page's: a site that shows the help center at its own
+ * /help through a rewrite passes on nothing else, so the chat and its page are only here.
+ */
+const appOrigin = new URL(env.NEXT_PUBLIC_APP_URL).origin;
 
 /**
  * The chat launcher on help center pages, so a reader can ask when an article falls short. It
@@ -13,7 +21,7 @@ let widget: HelpwrenWidget | null = null;
  */
 export function HelpChatLauncher() {
   useEffect(() => {
-    const made = createWidget(window.location.origin);
+    const made = createWidget(appOrigin);
     made.init({ source: "web" });
     widget = made;
     return () => {
@@ -32,7 +40,7 @@ export function HelpChatLauncher() {
 export function ChatLink({ newTab = false }: { newTab?: boolean }) {
   return (
     <a
-      href="/chat"
+      href={`${appOrigin}/chat`}
       className="text-primary focus-visible:outline-ring inline-flex items-center gap-1.5 rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
       // Inside a host's frame the chat would be a frame within a frame, so it gets a tab.
       {...(newTab ? { target: "_blank", rel: "noopener" } : {})}

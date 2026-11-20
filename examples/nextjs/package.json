@@ -1,0 +1,30 @@
+{
+  "name": "@helpwren/example-nextjs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A Next.js product, standing in for Glown, with Helpwren on its public site and its web app.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/copy-brand.mjs && next dev --port ${PORT:-4300}",
+    "build": "node scripts/copy-brand.mjs && next build",
+    "start": "next start --port ${PORT:-4300}",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "helpwren": "workspace:*",
+    "jose": "^6.2.17",
+    "next": "^16.4.6",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@helpwren/config": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

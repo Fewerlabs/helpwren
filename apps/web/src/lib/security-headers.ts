@@ -54,7 +54,9 @@ export function contentSecurityPolicy({
     "img-src": ["'self'", "data:", "blob:", "https:", supabase[0] ?? ""],
     "font-src": ["'self'", "data:"],
     "connect-src": ["'self'", app, ...supabase, ...(development ? ["ws:"] : [])],
-    "frame-src": ["'self'", TURNSTILE, YOUTUBE],
+    // The app itself by its address too: a help center page served by another site through a
+    // rewrite carries this policy, and its chat launcher frames the app.
+    "frame-src": ["'self'", app, TURNSTILE, YOUTUBE],
     "media-src": ["'self'", "blob:", "https:"],
     "worker-src": ["'self'", "blob:"],
     "object-src": ["'none'"],
