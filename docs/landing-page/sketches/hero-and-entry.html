@@ -1,0 +1,366 @@
+<!doctype html>
+<!--
+  Rough sketch for the phase 0 plan: the hero and entry 03, in light and dark.
+  Static, no animation. Colours are copied from packages/design-system/src/tokens/tokens.css.
+  Fonts load from Google Fonts here only; the real site self-hosts them with next/font.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Landing sketch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Figtree:wght@400;600&family=JetBrains+Mono:wght@400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .theme {
+        --paper: #f7f7f7;
+        --card: #ffffff;
+        --ink: #1a1a1a;
+        --pencil: #666666;
+        --edge: #8a8a8a;
+        --rule: #e8e8e8;
+        --moss: #3d6b57;
+        --pen: #b23520;
+        --hl: #f5d547;
+        --hl-fg: #1a1a1a;
+        --fill: #3d6b57;
+        --tape: 45%;
+      }
+      .theme.dark {
+        --paper: #0c0c0d;
+        --card: #161616;
+        --ink: #e5e5e5;
+        --pencil: #969696;
+        --edge: #6e6e6e;
+        --rule: #262626;
+        --moss: #7fb59a;
+        --pen: #f07a5a;
+        --hl: #e8c64a;
+        --hl-fg: #0c0c0d;
+        --fill: #3d6b57;
+        --tape: 30%;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #ddd;
+        font-family: Figtree, sans-serif;
+      }
+      .label {
+        font:
+          12px "JetBrains Mono",
+          monospace;
+        padding: 12px 16px;
+        color: #333;
+      }
+      .theme {
+        background: var(--paper);
+        color: var(--ink);
+        padding: 48px 16px 64px;
+        position: relative;
+        overflow: hidden;
+      }
+      .halftone {
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 70%;
+        height: 420px;
+        background-image: radial-gradient(
+          color-mix(in srgb, var(--moss) 55%, transparent) 1px,
+          transparent 1.5px
+        );
+        background-size: 7px 7px;
+        -webkit-mask-image:
+          radial-gradient(85% 100% at 100% 0%, #000 0%, rgb(0 0 0 / 0.5) 35%, transparent 75%),
+          linear-gradient(to bottom, #000 55%, transparent);
+        -webkit-mask-composite: source-in;
+        mask-image:
+          radial-gradient(85% 100% at 100% 0%, #000 0%, rgb(0 0 0 / 0.5) 35%, transparent 75%),
+          linear-gradient(to bottom, #000 55%, transparent);
+        mask-composite: intersect;
+        pointer-events: none;
+      }
+      .mono {
+        font:
+          11px/16px "JetBrains Mono",
+          monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pencil);
+      }
+      .hero {
+        max-width: 960px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 24px;
+        align-items: center;
+        position: relative;
+      }
+      h1 {
+        font-weight: 600;
+        font-size: clamp(40px, 6vw, 60px);
+        line-height: 1.05;
+        letter-spacing: -0.035em;
+        margin: 12px 0 16px;
+      }
+      .circled {
+        position: relative;
+        white-space: nowrap;
+      }
+      .circled svg {
+        position: absolute;
+        inset: -14px -12px -10px -12px;
+        width: calc(100% + 24px);
+        height: calc(100% + 24px);
+        overflow: visible;
+      }
+      .hl {
+        background: linear-gradient(transparent 55%, var(--hl) 55%, var(--hl) 92%, transparent 92%);
+        color: var(--hl-fg);
+      }
+      p {
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--pencil);
+        max-width: 46ch;
+        margin: 0 0 24px;
+      }
+      .buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        font:
+          600 14px Figtree,
+          sans-serif;
+        border-radius: 10px;
+        padding: 10px 16px;
+        border: 1.5px solid var(--edge);
+        color: var(--ink);
+        background: transparent;
+      }
+      .btn.fill {
+        background: var(--fill);
+        border-color: var(--fill);
+        color: #fff;
+      }
+      .tag {
+        display: inline-block;
+        border: 1.5px solid var(--edge);
+        border-radius: 999px;
+        padding: 2px 10px;
+      }
+      .hand {
+        font:
+          500 20px Caveat,
+          cursive;
+        fill: var(--pencil);
+      }
+      .sheet {
+        max-width: 960px;
+        margin: 64px auto 0;
+        background: var(--card);
+        border: 1.5px solid var(--rule);
+        border-radius: 16px;
+        display: grid;
+        grid-template-columns: 1fr 1px 1fr;
+        position: relative;
+      }
+      .gutter {
+        background: var(--rule);
+      }
+      .page {
+        padding: 32px;
+      }
+      h2 {
+        font-weight: 600;
+        font-size: 32px;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 8px 0 12px;
+      }
+      .taped {
+        position: relative;
+        margin-top: 24px;
+        border: 1.5px solid var(--edge);
+        border-radius: 10px;
+        background: var(--paper);
+        font:
+          13px/20px "JetBrains Mono",
+          monospace;
+        padding: 16px;
+        white-space: pre;
+        overflow-x: auto;
+      }
+      .tape {
+        position: absolute;
+        width: 64px;
+        height: 18px;
+        background: color-mix(in srgb, var(--hl) var(--tape), transparent);
+      }
+      .tape.a {
+        left: -14px;
+        top: -9px;
+        transform: rotate(-5deg);
+      }
+      .tape.b {
+        right: -14px;
+        bottom: -9px;
+        transform: rotate(4deg);
+      }
+      .pen {
+        stroke: var(--pen);
+      }
+      @media (max-width: 720px) {
+        .hero,
+        .sheet {
+          grid-template-columns: 1fr;
+        }
+        .gutter {
+          height: 1px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <template id="frame">
+      <div class="halftone"></div>
+      <section class="hero">
+        <div>
+          <div class="mono">
+            Entry 01 · First sighting · <span class="tag">Early · not yet released</span>
+          </div>
+          <h1>
+            Live chat, tickets and help articles that
+            <span class="circled"
+              >plug into<svg viewBox="0 0 100 40" preserveAspectRatio="none" fill="none">
+                <path
+                  class="pen"
+                  stroke-width="1.6"
+                  vector-effect="non-scaling-stroke"
+                  stroke-linecap="round"
+                  d="M8 22C6 8 40 3 70 5 95 7 99 20 92 30 82 39 30 40 12 33 4 29 3 20 14 13"
+                /></svg
+            ></span>
+            <span class="hl">any product.</span>
+          </h1>
+          <p>Open source and self-hosted. Your database, no per-seat pricing.</p>
+          <div class="buttons">
+            <span class="btn fill">Read the setup guide</span
+            ><span class="btn">View on GitHub</span>
+          </div>
+        </div>
+        <svg
+          viewBox="0 0 260 220"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M6 150C60 140 110 152 160 144 196 138 226 140 256 128" />
+          <path
+            d="M190 140C198 128 208 122 222 118M222 118C228 108 238 107 243 112 239 120 230 122 222 118Z"
+            stroke="var(--moss)"
+          />
+          <path d="M70 146C64 136 67 127 75 124 81 131 79 140 70 146Z" stroke="var(--moss)" />
+          <g transform="translate(78,62) scale(1.4)" stroke-width="1.15">
+            <path
+              d="M61.5 27.6 53.6 28.4C52 23 47.5 19.5 42 19.5 35.5 19.5 29 22.5 25 28.5 21.5 25 19 20 18 14.5L13.5 16.5C15 23 18.5 30 22 34.5 22 43.5 28.5 49.5 37.5 50 47 50.5 54.5 43 54.5 34 54.5 33 54.5 32.3 54.3 31.6Z"
+            />
+            <path
+              d="M42 24.4C45 22.8 48.3 23 50.8 24.6M28 34.5C30.5 41 38 44 45 39.5M35.5 50 35 57M41.5 49.5 42.5 57"
+            />
+            <circle cx="47.5" cy="28.2" r="1.2" fill="currentColor" stroke="none" />
+          </g>
+          <path
+            d="M150 70C170 60 190 58 204 64"
+            stroke="var(--pencil)"
+            stroke-width="1"
+            stroke-dasharray="2 4"
+          />
+          <text x="254" y="56" class="hand" stroke="none" text-anchor="end">first sighting</text>
+        </svg>
+      </section>
+
+      <article class="sheet">
+        <div class="page">
+          <div class="mono">Entry 03 · Install · One snippet</div>
+          <h2>Building the nest</h2>
+          <p>
+            Paste one snippet. Settings → Installation writes it for you with your address in it.
+            Guest chat works at once.
+          </p>
+          <div class="taped">
+            <span class="tape a"></span><span class="tape b"></span>&lt;script
+            src="https://support.example.com/widget.js"&gt;&lt;/script&gt; &lt;script&gt;
+            Helpwren.init({ source: "web" }); &lt;/script&gt;
+          </div>
+        </div>
+        <div class="gutter"></div>
+        <div class="page">
+          <svg
+            viewBox="0 0 220 170"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path stroke="var(--moss)" d="M8 120C40 120 30 80 60 80 84 80 78 112 104 110" />
+            <rect x="104" y="98" width="30" height="24" rx="6" />
+            <path d="M134 105H144M134 115H144" />
+            <rect x="164" y="88" width="34" height="44" rx="6" />
+            <path d="M174 105H180M174 115H180" />
+            <path class="pen" stroke-width="1.8" d="M150 96 154 90M152 124 156 130M149 110H157" />
+            <g transform="translate(24,23)">
+              <path
+                d="M61.5 27.6 53.6 28.4C52 23 47.5 19.5 42 19.5 35.5 19.5 29 22.5 25 28.5 21.5 25 19 20 18 14.5L13.5 16.5C15 23 18.5 30 22 34.5 22 43.5 28.5 49.5 37.5 50 47 50.5 54.5 43 54.5 34 54.5 33 54.5 32.3 54.3 31.6Z"
+              />
+              <path
+                d="M42 24.4C45 22.8 48.3 23 50.8 24.6M28 34.5C30.5 41 38 44 45 39.5M35.5 50 35 57M41.5 49.5 42.5 57"
+              />
+              <circle cx="47.5" cy="28.2" r="1.3" fill="currentColor" stroke="none" />
+            </g>
+            <path d="M181 136C181 148 170 154 158 154" stroke="var(--pencil)" stroke-width="1" />
+            <text x="98" y="164" class="hand" stroke="none" style="font-size: 15px">
+              socket: your site
+            </text>
+            <path d="M119 94C119 80 128 70 140 66" stroke="var(--pencil)" stroke-width="1" />
+            <text
+              x="216"
+              y="60"
+              text-anchor="end"
+              class="hand"
+              stroke="none"
+              style="font-size: 15px"
+            >
+              plug: one snippet
+            </text>
+          </svg>
+        </div>
+      </article>
+    </template>
+
+    <div class="label">Light</div>
+    <div class="theme" id="light"></div>
+    <div class="label">Dark</div>
+    <div class="theme dark" id="dark"></div>
+    <script>
+      const t = document.getElementById("frame");
+      for (const id of ["light", "dark"]) {
+        document.getElementById(id).append(t.content.cloneNode(true));
+      }
+    </script>
+  </body>
+</html>

@@ -9,13 +9,13 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  ThemeMenu,
+  ThemeSwitch,
   Tooltip,
 } from "@helpwren/design-system";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-
-import { ThemeMenu, ThemeSwitch } from "@/features/theme";
 
 import { useTeamUnread } from "../hooks/use-unread";
 import { sections } from "../sections";
