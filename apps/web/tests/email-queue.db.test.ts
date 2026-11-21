@@ -1,3 +1,4 @@
+import { parseSettings } from "@helpwren/core";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { type EmailMessage, type SendEmailResult } from "@/lib/email";
@@ -88,10 +89,13 @@ describe("processEmailQueue", () => {
     const post = mailbox();
     await processEmailQueue(post.send);
 
+    // The install's brand, whatever the shared database is set to now.
+    const { data: settings } = await supabaseAdmin.from("settings").select("key, value");
+    const brand = parseSettings(settings ?? []).brand.name;
     const [email] = post.to(address);
     expect(post.to(address)).toHaveLength(1);
-    expect(email?.subject).toBe("New reply from Helpwren Demo");
-    expect(email?.text).toContain("You have 2 new replies from Helpwren Demo");
+    expect(email?.subject).toBe(`New reply from ${brand}`);
+    expect(email?.text).toContain(`You have 2 new replies from ${brand}`);
     expect(email?.text).toContain("Sam Rivera:\nIt ships tomorrow.");
     expect(email?.text).toContain("Continue the conversation: https://shop.example/orders");
     expect(email?.html).toContain("Here is the tracking &lt;link&gt;.");
