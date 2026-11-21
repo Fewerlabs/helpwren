@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import { z } from "zod";
 
+import { notifyAboutSchema } from "./push-schema";
+
 /**
  * How one team member wants to hear about new messages. Kept in this browser and not on the
  * server, because permission to show a notification is the browser's to give, one device at a
@@ -12,7 +14,7 @@ export const preferencesSchema = z.object({
   /** Play a short sound when a message arrives. */
   sound: z.boolean().default(false),
   /** `mine` leaves out conversations assigned to somebody else. */
-  about: z.enum(["all", "mine"]).default("all"),
+  about: notifyAboutSchema.default("all"),
 });
 
 export type Preferences = z.infer<typeof preferencesSchema>;

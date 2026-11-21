@@ -49,6 +49,21 @@ const serverEnvSchema = z.object({
    * `http://kong:8000` beside a self-hosted Supabase in Docker. Unset means the public one.
    */
   SUPABASE_INTERNAL_URL: z.url().optional(),
+  /**
+   * The keys that sign web pushes to the team's browsers, as `web-push generate-vapid-keys`
+   * prints them. Unset, the install makes a pair once and keeps it in the database. Set both or
+   * neither: changing them stops every browser's notifications until it is turned on again.
+   */
+  VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  /**
+   * Who push services can contact about this install's pushes: a `mailto:` address or an
+   * `https:` page. Unset means the install's own address when it is HTTPS.
+   */
+  VAPID_SUBJECT: z
+    .string()
+    .regex(/^(mailto:|https:\/\/)/, "Use a mailto: address or an https:// address.")
+    .optional(),
 });
 
 function parseServerEnv(source: Record<string, string | undefined>) {
@@ -76,4 +91,7 @@ export const serverEnv = parseServerEnv({
   CLIENT_IP_HEADER: set(process.env.CLIENT_IP_HEADER),
   TURNSTILE_SECRET_KEY: set(process.env.TURNSTILE_SECRET_KEY),
   SUPABASE_INTERNAL_URL: set(process.env.SUPABASE_INTERNAL_URL),
+  VAPID_PUBLIC_KEY: set(process.env.VAPID_PUBLIC_KEY),
+  VAPID_PRIVATE_KEY: set(process.env.VAPID_PRIVATE_KEY),
+  VAPID_SUBJECT: set(process.env.VAPID_SUBJECT),
 });
