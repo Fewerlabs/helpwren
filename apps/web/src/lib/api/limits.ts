@@ -22,6 +22,9 @@ export const LIMITS = {
   // Each identify may ask the host product's profile endpoint, so it is kept well below what
   // that endpoint could take.
   identifyPerNetwork: { name: "identify:network", limit: 60, windowSeconds: MINUTE },
+  // The chat asks after a guest's key each time it opens, as often as a page checks in.
+  guestPerNetwork: { name: "guest:network", limit: 300, windowSeconds: MINUTE },
+  guestPerSession: { name: "guest:session", limit: 30, windowSeconds: MINUTE },
   unreadPerNetwork: { name: "unread:network", limit: 120, windowSeconds: MINUTE },
   devicesPerNetwork: { name: "devices:network", limit: 30, windowSeconds: MINUTE },
   uploadPerSession: { name: "upload:session", limit: 30, windowSeconds: 10 * MINUTE },

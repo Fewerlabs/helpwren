@@ -335,6 +335,7 @@ export function StartForm({
 
       if (result.ok) {
         await queryClient.invalidateQueries({ queryKey: chatKeys.session });
+        await queryClient.invalidateQueries({ queryKey: chatKeys.details });
         await queryClient.invalidateQueries({ queryKey: chatKeys.conversations });
         show({ name: "conversation", id: result.conversation.id });
       } else if (result.reason === "details_required") {

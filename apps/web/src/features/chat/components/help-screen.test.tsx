@@ -55,7 +55,7 @@ const install = summary({
 const articles = { list: vi.fn(), search: vi.fn(), getBySlug: vi.fn(), forPage: vi.fn() };
 const collections = { list: vi.fn() };
 // A visitor who has not written yet has no session.
-const sessions = { current: () => Promise.resolve(null) };
+const sessions = { resume: () => Promise.resolve(null) };
 const client = { articles, collections, sessions } as unknown as HelpwrenClient;
 const billing = { id: "33333333-3333-4333-8333-333333333333", name: "Billing" };
 
