@@ -24,10 +24,23 @@ const pushResultSchema = z.object({
   seeds: z.array(z.string()).default([]),
 });
 
+/** What to do about the failures people meet most, keyed by words in the CLI's message. */
+const hints: readonly [RegExp, string][] = [
+  [
+    /password authentication failed/i,
+    "The database password in the connection string is wrong. Check that [YOUR-PASSWORD] was replaced, without its brackets. A password with @, #, /, ? or % has to be percent-encoded, or reset it to letters and digits under Project Settings, then Database. Run the installer again: it keeps the values it already wrote.",
+  ],
+  [
+    /no route to host|network is unreachable|dial tcp \[/i,
+    "This network cannot reach the direct connection, which needs IPv6. Use the Session pooler string instead: Connect, then Direct, then Session pooler.",
+  ],
+];
+
 export class DatabaseError extends Error {
   constructor(message: string, detail: string) {
-    // The CLI's own words, with any password it echoed taken out.
-    super(`${message}\n${redactUrl(detail.trim())}`);
+    // The CLI's own words, with any password it echoed taken out, and a way out if one is known.
+    const hint = hints.find(([pattern]) => pattern.test(detail))?.[1];
+    super(`${message}\n${redactUrl(detail.trim())}${hint ? `\n\n${hint}` : ""}`);
     this.name = "DatabaseError";
   }
 }

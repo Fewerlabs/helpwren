@@ -100,7 +100,10 @@ async function installCloud(ctx: Context, options: InstallOptions): Promise<stri
   const existing = parseEnv(readEnvFile(file));
 
   ctx.out.step("Your Supabase project");
-  ctx.out.info("Find these in the Supabase dashboard: Project Settings, then API Keys.");
+  ctx.out.info(
+    "In the Supabase dashboard: the Project URL is under Connect (top of the page), then Framework, as NEXT_PUBLIC_SUPABASE_URL; or Project Settings, then Data API.",
+  );
+  ctx.out.info("The keys are under Project Settings, then API Keys.");
   const appUrl = trimSlash(
     options.appUrl ??
       (await ctx.prompt.text("The address Helpwren will be reached at", {
@@ -145,11 +148,14 @@ async function installCloud(ctx: Context, options: InstallOptions): Promise<stri
   reportEnv(ctx, file, answers, generated);
 
   ctx.out.step("The database");
+  ctx.out.info(
+    "Connect (top of the dashboard), then Direct, then Session pooler: the one on port 5432. Put your database password in place of [YOUR-PASSWORD]. It is hidden as you type or paste.",
+  );
   const projectRef = projectRefFromUrl(supabaseUrl);
   const dbUrl =
     options.dbUrl ??
     (await ctx.prompt.text(
-      "Database connection string (Connect, then Session pooler). Leave empty to use `supabase link`",
+      "Session pooler connection string. Leave empty to sign in with `supabase link` instead",
       { secret: true, validate: validDatabaseUrl },
     ));
   let target: DbTarget;

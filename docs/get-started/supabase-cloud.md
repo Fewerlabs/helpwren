@@ -14,12 +14,19 @@ Node host.
 
 1. At [supabase.com/dashboard](https://supabase.com/dashboard), create a project. Note the
    database password you choose.
-2. When it has finished setting up, open **Project Settings → API Keys**. Keep the tab open: you
-   need the **Project URL**, the **publishable key** (`sb_publishable_…`) and a **secret key**
-   (`sb_secret_…`).
-3. Open **Connect** at the top of the dashboard and copy the **Session pooler** connection
-   string, with your database password in it. The installer uses it only to apply the
-   migrations.
+2. When it has finished setting up, collect four values. Keep the tab open while the installer
+   asks for them.
+
+   | Value                                         | Where it is                                                                                                                               |
+   | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+   | **Project URL** (`https://<ref>.supabase.co`) | **Connect** at the top of the dashboard → **Framework**: the `NEXT_PUBLIC_SUPABASE_URL` line. Also under **Project Settings → Data API**. |
+   | **Publishable key** (`sb_publishable_…`)      | **Project Settings → API Keys**                                                                                                           |
+   | **Secret key** (`sb_secret_…`)                | **Project Settings → API Keys**, with the copy button: the field shows only its start                                                     |
+   | **Session pooler connection string**          | **Connect → Direct**, method **Session pooler** (port 5432, a host ending in `pooler.supabase.com`)                                       |
+
+   In the connection string, put your database password in place of `[YOUR-PASSWORD]`, without
+   the brackets. Forgotten it? Reset it under **Project Settings → Database**. The installer uses
+   the string only to apply the migrations, and never writes it to a file.
 
 ## Run the installer
 
