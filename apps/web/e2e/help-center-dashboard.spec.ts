@@ -258,3 +258,22 @@ test("a team member puts a collection's articles in order with the keyboard", as
   await page.reload();
   await expect(titles).toHaveText([`Second (${RUN})`, `Third (${RUN})`, `First (${RUN})`]);
 });
+
+test("a team member makes a collection from the article's collection list", async ({ page }) => {
+  await signInToInbox(page, "sam@example.com");
+  await page.goto("/dashboard/help/new");
+  const settings = page.getByRole("complementary", { name: "Article settings" });
+
+  await settings.getByRole("combobox", { name: "Collection" }).click();
+  await page.getByRole("option", { name: "New collection" }).click();
+  const form = page.getByRole("dialog", { name: "New collection" });
+  await form.getByLabel("Name").fill(`Returns (${RUN})`);
+  await form.getByRole("button", { name: "Add collection" }).click();
+
+  // The editor stays open, with the new collection chosen.
+  await expect(form).toBeHidden();
+  await expect(page).toHaveURL(/\/dashboard\/help\/new$/);
+  await expect(settings.getByRole("combobox", { name: "Collection" })).toHaveText(
+    `Returns (${RUN})`,
+  );
+});

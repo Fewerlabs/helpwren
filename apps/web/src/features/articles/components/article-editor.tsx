@@ -63,9 +63,12 @@ import {
   useCollections,
 } from "../hooks/use-articles";
 import { ArticleStatusChip } from "./article-status";
+import { CollectionDialog } from "./collection-dialog";
 
 /** Stands for "no collection" in the list of choices, where a value cannot be empty. */
 const NONE = "none";
+/** Stands for "make a new collection", which opens the form instead of choosing. */
+const NEW_COLLECTION = "new-collection";
 
 type Failure =
   | Exclude<ChangeArticleResult, { ok: true }>["reason"]
@@ -265,6 +268,7 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
   const confirm = useConfirm();
   const changed = useArticlesChanged();
   const collections = useCollections().data ?? [];
+  const [addingCollection, setAddingCollection] = useState(false);
 
   /** The article as the database last had it. */
   const [saved, setSaved] = useState(article);
@@ -747,7 +751,8 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
           <Select
             value={collectionId ?? NONE}
             onValueChange={(value) => {
-              setCollectionId(value === NONE ? null : value);
+              if (value === NEW_COLLECTION) setAddingCollection(true);
+              else setCollectionId(value === NONE ? null : value);
             }}
           >
             <Field
@@ -767,8 +772,21 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
                   {item.name}
                 </SelectItem>
               ))}
+              <SelectItem value={NEW_COLLECTION} className="text-primary">
+                <Icon name="plus" />
+                New collection
+              </SelectItem>
             </SelectContent>
           </Select>
+          <CollectionDialog
+            collection={null}
+            collections={collections}
+            open={addingCollection}
+            onOpenChange={setAddingCollection}
+            onCreated={(created) => {
+              setCollectionId(created.id);
+            }}
+          />
 
           <Field label="Tags" hint="Labels to find and group articles by. Press Enter after each.">
             <TagsInput

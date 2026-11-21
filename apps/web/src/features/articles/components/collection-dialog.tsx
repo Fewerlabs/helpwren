@@ -31,6 +31,11 @@ export interface CollectionDialogProps {
   collections: readonly Collection[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Called with a new collection once it is saved, in place of opening it. For a form that
+   * makes one while choosing where something goes, such as the article editor.
+   */
+  onCreated?: ((collection: Collection) => void) | undefined;
 }
 
 const fields: FieldItem<CollectionFormValues>[] = [
@@ -71,6 +76,7 @@ export function CollectionDialog({
   collections,
   open,
   onOpenChange,
+  onCreated,
 }: CollectionDialogProps) {
   const router = useRouter();
   const getClient = useHelpwren();
@@ -98,7 +104,10 @@ export function CollectionDialog({
       }
       await changed();
       onOpenChange(false);
-      if (!collection) router.push(collectionHref(result.collection.slug));
+      if (!collection) {
+        if (onCreated) onCreated(result.collection);
+        else router.push(collectionHref(result.collection.slug));
+      }
       toast.success(collection ? "Collection saved" : "Collection added");
     } catch {
       form.setError("root", { message: FAILED });
