@@ -24,6 +24,14 @@ their row, for someone who has none or has forgotten theirs; it replaces any the
 them what it is. Each person changes their own under **Settings → Profile**. Passwords are at
 least 8 characters, and Supabase Auth keeps them hashed.
 
+When nobody can sign in to set one, such as an admin with no password on an install with no
+email yet, set it from the command line with the install's secret key. It asks for the password
+without showing it:
+
+```bash
+pnpm agent:password admin@example.com
+```
+
 After 10 tries for one email, or 50 from one network, within 15 minutes, sign-in with a
 password is refused until the time is up. A code still works.
 

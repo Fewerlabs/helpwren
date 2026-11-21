@@ -24,6 +24,7 @@
     "test:db": "pnpm --filter @helpwren/core --filter @helpwren/web test:db",
     "test:e2e": "pnpm --filter @helpwren/web test:e2e",
     "agent:invite": "pnpm --filter @helpwren/web agent:invite",
+    "agent:password": "pnpm --filter @helpwren/web agent:password",
     "helpwren": "node packages/cli/src/main.ts",
     "db:types": "supabase gen types typescript --schema public > packages/core/src/database.types.ts && prettier --write packages/core/src/database.types.ts",
     "format": "prettier --write .",
