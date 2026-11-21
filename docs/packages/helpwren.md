@@ -32,30 +32,37 @@ createWidget(appOrigin: string): HelpwrenWidget
 `appOrigin` is your install's address. The returned object has the [methods](../chat/methods.md)
 of `window.Helpwren`:
 
-| Method                   | Signature                                     |
-| ------------------------ | --------------------------------------------- |
-| `init`                   | `(options?: InitOptions) => void`             |
-| `show`, `hide`, `toggle` | `() => void`                                  |
-| `isOpen`                 | `() => boolean`                               |
-| `startConversation`      | `(draft?: string) => void`                    |
-| `identify`               | `(identity: Identity) => void`                |
-| `reset`                  | `() => void`                                  |
-| `setContext`             | `(context: PageContext) => void`              |
-| `update`                 | `(changes: { appearance?, layout? }) => void` |
-| `on`                     | `(event, listener) => () => void`             |
-| `destroy`                | `() => void`                                  |
+| Method                   | Signature                                                            |
+| ------------------------ | -------------------------------------------------------------------- |
+| `init`                   | `(options?: InitOptions) => void`                                    |
+| `show`, `hide`, `toggle` | `() => void`                                                         |
+| `isOpen`                 | `() => boolean`                                                      |
+| `startConversation`      | `(draft?: string) => void`                                           |
+| `identify`               | `(identity: Identity) => void`                                       |
+| `reset`                  | `() => void`                                                         |
+| `setContext`             | `(context: PageContext) => void`                                     |
+| `update`                 | `(changes: { appearance?, layout? }) => void`                        |
+| `on`                     | `(event, listener) => () => void`                                    |
+| `destroy`                | `() => void`                                                         |
+| `embedHelp`              | `(container: HTMLElement, options?: HelpEmbedOptions) => () => void` |
+
+`createHelpEmbed(appOrigin, container, options?)` does the same as `embedHelp` without a widget,
+and `helpEmbedUrl(appOrigin, options?)` returns the frame's address. See
+[Embedding](../help-center/embedding.md).
 
 ## Types
 
-| Type             | What it is                                                                                                                                     |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `InitOptions`    | The options of `init`. See [Options](../chat/options.md)                                                                                       |
-| `Appearance`     | `position`, `offsetX`, `offsetY`, `accent`, `accentTo`, `accentInk`, `launcher`. See [Appearance](../chat/appearance.md)                       |
-| `WidgetLayout`   | `width`, `height`, `zIndex`                                                                                                                    |
-| `Identity`       | `{ token: string \| (() => string \| Promise<string>) }`, or `{ id?, name?, email? }` for [unverified details](../users/unverified-details.md) |
-| `IdentityState`  | `{ state: "guest" }`, `{ state: "user" }` or `{ state: "failed", reason: "expired" \| "rejected" \| "off" \| "error" }`                        |
-| `PageContext`    | `Record<string, string \| number \| boolean \| null>`. See [Context](../users/context.md)                                                      |
-| `HelpwrenEvents` | The [events](../chat/events.md) and their listeners                                                                                            |
+| Type               | What it is                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `InitOptions`      | The options of `init`. See [Options](../chat/options.md)                                                                                       |
+| `Appearance`       | `position`, `offsetX`, `offsetY`, `accent`, `accentTo`, `accentInk`, `launcher`. See [Appearance](../chat/appearance.md)                       |
+| `WidgetLayout`     | `width`, `height`, `zIndex`                                                                                                                    |
+| `Identity`         | `{ token: string \| (() => string \| Promise<string>) }`, or `{ id?, name?, email? }` for [unverified details](../users/unverified-details.md) |
+| `IdentityState`    | `{ state: "guest" }`, `{ state: "user" }` or `{ state: "failed", reason: "expired" \| "rejected" \| "off" \| "error" }`                        |
+| `PageContext`      | `Record<string, string \| number \| boolean \| null>`. See [Context](../users/context.md)                                                      |
+| `HelpwrenEvents`   | The [events](../chat/events.md) and their listeners                                                                                            |
+| `HelpEmbedOptions` | `hide`, `collection`, `query`, `padding`, `background`, `theme`, `accent`, `title`. See [Embedding](../help-center/embedding.md)               |
+| `HelpEmbedPart`    | A part `hide` can leave out, such as `"search"`                                                                                                |
 
 ## helpwren/protocol
 
