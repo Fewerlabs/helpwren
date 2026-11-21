@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
-import { playSound, showDesktopAlert } from "../alert";
+import { playSound, showDesktopAlert, unlockSoundOnFirstTouch } from "../alert";
 import { usePreferences } from "../preferences";
 import { turnOnPush } from "../push";
 import { shouldNotify } from "../should-notify";
@@ -33,6 +33,10 @@ export function Notifier({ agentId }: NotifierProps) {
   }, [preferences]);
 
   const listening = preferences.desktop || preferences.sound;
+
+  // An iPhone plays nothing until the page has been touched; see unlockSoundOnFirstTouch.
+  const soundOn = preferences.sound;
+  useEffect(() => (soundOn ? unlockSoundOnFirstTouch() : undefined), [soundOn]);
 
   // With desktop notifications on, this browser also gets them with Helpwren closed. Saved again
   // each time the dashboard opens, which also hands a shared browser to whoever signed in.

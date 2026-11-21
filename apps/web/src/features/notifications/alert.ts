@@ -63,9 +63,49 @@ export async function showDesktopAlert({ title, body, tag, url, onOpen }: Deskto
   };
 }
 
+let audio: AudioContext | undefined;
+
+/** The one audio context the dashboard plays through, made the first time it is needed. */
+function audioContext(): AudioContext | undefined {
+  if (typeof window === "undefined" || typeof AudioContext === "undefined") return undefined;
+  audio ??= new AudioContext();
+  return audio;
+}
+
+/**
+ * Lets the dashboard play sounds later. iOS keeps a page's audio muted until it is started
+ * from a tap or a key press, and a new message arrives with neither: so the first tap anywhere
+ * starts the one context the sound plays through, and it stays started. Run once, as the
+ * dashboard opens.
+ */
+export function unlockSoundOnFirstTouch(): () => void {
+  const events = ["pointerdown", "touchend", "keydown"] as const;
+  const unlock = () => {
+    const context = audioContext();
+    if (!context) return;
+    void context.resume().then(() => {
+      if (context.state !== "running") return;
+      // A moment of silence, which is what finally lets iOS play through it.
+      const buffer = context.createBuffer(1, 1, 22_050);
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      source.start();
+      for (const event of events) window.removeEventListener(event, unlock, true);
+    });
+  };
+  for (const event of events) window.addEventListener(event, unlock, true);
+  return () => {
+    for (const event of events) window.removeEventListener(event, unlock, true);
+  };
+}
+
 /** Two short rising notes, made here so there is no sound file to ship. */
 export function playSound() {
-  const context = new AudioContext();
+  const context = audioContext();
+  if (!context) return;
+  // Suspended again by the system, as iOS does after a call or with the app in the background.
+  if (context.state !== "running") void context.resume();
   const now = context.currentTime;
   [660, 880].forEach((frequency, index) => {
     const start = now + index * 0.12;
@@ -80,7 +120,4 @@ export function playSound() {
     oscillator.start(start);
     oscillator.stop(start + 0.24);
   });
-  window.setTimeout(() => {
-    void context.close();
-  }, 600);
 }
