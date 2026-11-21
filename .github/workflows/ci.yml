@@ -37,7 +37,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Install Chromium for story tests
-        run: pnpm --filter @helpwren/design-system exec playwright install --with-deps chromium
+        run: pnpm --filter @helpwren/design-system exec playwright install --with-deps chromium webkit
 
       - run: pnpm format:check
 
@@ -89,8 +89,8 @@ jobs:
       - name: Test the client library and the API against the database
         run: pnpm test:db
 
-      - name: Install Chromium for the browser tests
-        run: pnpm --filter @helpwren/web exec playwright install --with-deps chromium
+      - name: Install Chromium and WebKit for the browser tests
+        run: pnpm --filter @helpwren/web exec playwright install --with-deps chromium webkit
 
       - name: Test sign-in in a browser
         run: pnpm db:env && pnpm test:e2e

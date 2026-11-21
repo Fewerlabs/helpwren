@@ -223,6 +223,7 @@ export { HelpwrenError } from "./errors";
 export { conversationEventSchema, type ConversationEvent } from "./events";
 export {
   CONTEXT_MAX_KEYS,
+  guestCheckSchema,
   identifyInputSchema,
   identifyResponseSchema,
   pageContextSchema,

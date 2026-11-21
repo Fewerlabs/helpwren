@@ -301,7 +301,7 @@ export function StartForm({
 
     try {
       // The session is created here, with the first message, not when the chat is opened.
-      await client.sessions.startGuest();
+      const session = await client.sessions.startGuest();
       const result = await client.conversations.start({
         message: values.message,
         source,
@@ -334,7 +334,9 @@ export function StartForm({
       }
 
       if (result.ok) {
-        await queryClient.invalidateQueries({ queryKey: chatKeys.session });
+        // Set, not asked for again: the session is known, and asking could wait on the network.
+        queryClient.setQueryData(chatKeys.session, session);
+        await queryClient.invalidateQueries({ queryKey: chatKeys.details });
         await queryClient.invalidateQueries({ queryKey: chatKeys.conversations });
         show({ name: "conversation", id: result.conversation.id });
       } else if (result.reason === "details_required") {

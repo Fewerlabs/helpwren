@@ -23,7 +23,12 @@ export default defineConfig({
     navigationTimeout: 15_000,
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Safari keeps and drops a site's storage its own way, so a returning guest is tried there
+    // too.
+    { name: "webkit", use: { ...devices["Desktop Safari"] }, testMatch: /returning-guest/ },
+  ],
   webServer: [
     {
       command: process.env.CI

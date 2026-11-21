@@ -11,8 +11,10 @@ With only the script tag on your page, everyone who writes is a guest.
   before the first message: a name and email (the default), a name and phone number, a name and
   either, or nothing.
 - **Their history stays on that device.** A guest sees their earlier conversations in the chat
-  on the same browser. On another device, or after clearing site data, they start afresh. To
-  carry history across devices, sign them in as a [verified user](index.md).
+  on the same browser, even if the browser lost their session (see
+  [Returning guests](../chat/returning-guests.md)). On another device, or after clearing site
+  data, they start afresh. To carry history across devices, sign them in as a
+  [verified user](index.md).
 - **Your team sees them as guests.** Under **Contacts**, the Guests segment lists them. Their
   details are what they typed, so treat them as unconfirmed.
 

@@ -823,6 +823,28 @@ export type Database = {
           },
         ];
       };
+      guest_keys: {
+        Row: {
+          created_at: string;
+          guest_id: string;
+          key_hash: string;
+          last_used_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          guest_id: string;
+          key_hash: string;
+          last_used_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          guest_id?: string;
+          key_hash?: string;
+          last_used_at?: string;
+        };
+        Relationships: [];
+      };
       help_rules: {
         Row: {
           audience: string | null;
@@ -1526,6 +1548,8 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      forget_guest_key: { Args: { key_hash: string }; Returns: undefined };
+      guest_for_key: { Args: { key_hash: string }; Returns: string };
       hit_rate_limit: {
         Args: { key: string; max_hits: number; window_seconds: number };
         Returns: boolean;
@@ -1579,6 +1603,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      issue_guest_key: { Args: { guest_id: string; key_hash: string }; Returns: undefined };
       link_visitor: { Args: { contact_id: string; visitor_id: string }; Returns: undefined };
       merge_guest_into_user: { Args: { guest_id: string; user_id: string }; Returns: number };
       receive_email_reply: {
@@ -1613,6 +1638,13 @@ export type Database = {
       reorder_articles: { Args: { ids: string[] }; Returns: undefined };
       reorder_collections: { Args: { ids: string[] }; Returns: undefined };
       reorder_help_rules: { Args: { ids: string[] }; Returns: undefined };
+      restore_guest: {
+        Args: { into_guest: string; key_hash: string; new_key_hash: string };
+        Returns: {
+          moved: number;
+          previous_guest: string;
+        }[];
+      };
       save_push_subscription: {
         Args: {
           auth_key: string;

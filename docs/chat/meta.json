@@ -1,4 +1,13 @@
 {
   "title": "Add the chat",
-  "pages": ["options", "methods", "events", "inline", "own-button", "appearance", "visitors"]
+  "pages": [
+    "options",
+    "methods",
+    "events",
+    "inline",
+    "own-button",
+    "appearance",
+    "visitors",
+    "returning-guests"
+  ]
 }

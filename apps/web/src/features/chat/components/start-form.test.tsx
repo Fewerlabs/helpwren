@@ -14,7 +14,7 @@ const startGuest = vi.fn();
 const start = vi.fn();
 const getClient = () =>
   ({
-    sessions: { startGuest, current: () => Promise.resolve(null) },
+    sessions: { startGuest, resume: () => Promise.resolve(null) },
     conversations: { start },
   }) as unknown as HelpwrenClient;
 

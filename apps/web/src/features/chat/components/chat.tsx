@@ -1,6 +1,6 @@
 "use client";
 
-import { type Message, type PublicSettings } from "@helpwren/core";
+import { hasRequiredGuestDetails, type Message, type PublicSettings } from "@helpwren/core";
 import { cn, Skeleton } from "@helpwren/design-system";
 import { PREVIEW_MAX_LENGTH } from "helpwren/protocol";
 import { useCallback, useEffect, useMemo } from "react";
@@ -15,8 +15,10 @@ import { getChatClient } from "../client";
 import {
   useConversations,
   useLiveConversations,
+  useOwnDetails,
   useRefreshConversations,
   useSession,
+  useSessionEnd,
 } from "../hooks/use-chat";
 import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { usePreviewSettings } from "../hooks/use-preview-settings";
@@ -48,8 +50,10 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const tab = useTab();
   const show = useShowScreen();
   const session = useSession();
+  const details = useOwnDetails();
   const conversations = useConversations();
   const refresh = useRefreshConversations();
+  useSessionEnd();
   useLiveConversations(session.data?.id);
 
   const contactId = session.data?.id;
@@ -76,14 +80,22 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
   const bridge = useEmbedBridge(unreadState);
   useVisitorTracking(settings, source);
   const onClose = bridge.embedded && bridge.closable ? bridge.close : undefined;
-  // Someone who has written before, or whom the host product vouches for, is not asked who
-  // they are.
-  const known = earlier.length > 0 || session.data?.isGuest === false;
+  // Someone who has said who they are before, or whom the host product vouches for, is not
+  // asked again. What they said is the server's test too; the conversations stand in for it
+  // when it cannot be read.
+  const known =
+    session.data?.isGuest === false ||
+    (details.data
+      ? details.data.verified || hasRequiredGuestDetails(settings.guestDetails, details.data)
+      : earlier.length > 0);
   const back = () => {
     show({ name: tab });
   };
 
-  if (!preview && (session.isPending || (Boolean(session.data) && conversations.isPending))) {
+  if (
+    !preview &&
+    (session.isPending || (Boolean(session.data) && (conversations.isPending || details.isPending)))
+  ) {
     return (
       <div className="grid gap-3 p-5" aria-busy="true" aria-label="Loading">
         <Skeleton className="size-8 rounded-full" />

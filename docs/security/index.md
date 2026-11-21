@@ -21,6 +21,7 @@ header.
 | Register or remove a device      | 30 a minute  |                                 |
 | Attachments                      | 200 an hour  | 30 every 10 minutes per session |
 | Article ratings                  | 30 an hour   | 1 a day per article             |
+| Guest keys (`/api/guest`)        | 300 a minute | 30 a minute per session         |
 
 The database adds its own limits on top:
 
@@ -76,6 +77,11 @@ audit log, and **Unblock** reverses it.
   policy that turns off the camera, microphone, location and payments, and HSTS.
 - Session cookies are `SameSite=Lax`, and `Secure` when `NEXT_PUBLIC_APP_URL` is HTTPS. A
   cross-site request is never signed in by cookies.
+- A guest's browser holds one more cookie, the guest key, which brings their conversations back
+  if the browser loses their session. It is `HttpOnly`, random, kept only as a hash on the
+  server, swapped for a new one on each visit, and given up when the host product logs the
+  visitor out. A request another site started cannot use it. See
+  [Returning guests](../chat/returning-guests.md).
 
 ## Report a vulnerability
 

@@ -34,3 +34,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0027 | [Passwords for team members](0027-password-sign-in.md)                                     |
 | 0028 | [Team invites](0028-team-invites.md)                                                       |
 | 0029 | [The dashboard as an installable app, with web push](0029-installable-dashboard.md)        |
+| 0030 | [Returning guests](0030-returning-guests.md)                                               |

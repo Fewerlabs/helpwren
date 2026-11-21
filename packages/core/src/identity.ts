@@ -33,6 +33,12 @@ export type IdentifyResult =
   | { ok: false; reason: IdentifyFailure };
 
 /**
+ * Whether the browser still holds a key to a guest it had before, whose session it lost. Asked
+ * before a new guest is started for them, so nobody else gets one just for opening the chat.
+ */
+export const guestCheckSchema = z.object({ restorable: z.boolean() });
+
+/**
  * The id the chat makes up for a browser and keeps in its own storage. It names a browser, not
  * a person, and proves nothing about who is using it.
  */
