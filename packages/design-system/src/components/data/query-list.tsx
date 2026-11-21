@@ -8,7 +8,7 @@ import {
   useQuery,
   type QueryKey,
 } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type Key, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type Key, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 import { useMediaQuery } from "#lib/media-query";
@@ -25,6 +25,7 @@ import {
 } from "../base/pagination/pagination";
 import { Spinner } from "../base/spinner/spinner";
 import { focusRing } from "../base/styles";
+import { PullIndicator, pullStyle, usePullToRefresh } from "./pull-to-refresh";
 import {
   DefaultEmpty,
   DefaultError,
@@ -207,6 +208,11 @@ export interface QueryListProps<Item, Cursor = unknown>
   contentClassName?: string;
   listClassName?: string;
   itemClassName?: string;
+  /**
+   * On a touch screen, pulling down at the top refreshes the list. Only for a list that is its
+   * own scrolling box (`className` with `overflow-y-auto`), since the pull starts from its top.
+   */
+  pullToRefresh?: boolean;
   "aria-label"?: string;
 }
 
@@ -307,6 +313,7 @@ function ListView<Item, Cursor>({
   contentClassName,
   listClassName,
   itemClassName,
+  pullToRefresh = false,
   "aria-label": ariaLabel,
 }: ViewProps<Item, Cursor>) {
   const messages = { ...defaultQueryListMessages, ...overrides };
@@ -315,6 +322,20 @@ function ListView<Item, Cursor>({
   const scrollable = useScrollableFocus<HTMLDivElement>();
   const { hasMore, loadMore, items, status, isFetching, isFetchingMore, isEnd, retry, error } =
     state;
+  const pull = usePullToRefresh({
+    enabled: pullToRefresh && status !== "loading",
+    onRefresh: state.refetch,
+    busy: isFetching,
+  });
+  const { ref: scrollRef } = scrollable;
+  const { ref: pullRef } = pull;
+  const ref = useCallback(
+    (element: HTMLDivElement | null) => {
+      scrollRef(element);
+      pullRef(element);
+    },
+    [scrollRef, pullRef],
+  );
   const autoLoad = mode === "infinite" && loadMoreOn === "scroll";
 
   useEffect(() => {
@@ -450,12 +471,14 @@ function ListView<Item, Cursor>({
       data-slot="query-list"
       data-status={status}
       aria-busy={isFetching || undefined}
-      className={cn("relative", focusRing, className)}
+      className={cn("relative", pullToRefresh && "overscroll-y-contain", focusRing, className)}
       {...scrollable}
+      ref={ref}
     >
       {/* With items on screen, loading shows as a bar along the top so the list does not jump. */}
-      <StickyProgress active={state.isRefreshing} label={messages.loading} />
-      <div data-slot="query-list-content" className={contentClassName}>
+      <StickyProgress active={state.isRefreshing && !pull.refreshing} label={messages.loading} />
+      <PullIndicator state={pull} label={messages.loading} />
+      <div data-slot="query-list-content" className={contentClassName} style={pullStyle(pull)}>
         {body()}
       </div>
     </div>

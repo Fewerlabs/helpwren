@@ -1,7 +1,7 @@
 "use client";
 
 import { hashKey } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import { cn } from "#lib/cn";
 import { useScrollableFocus } from "#lib/scrollable-focus";
@@ -14,6 +14,7 @@ import {
   type DataTableReorder,
 } from "../base/table/data-table";
 import { EmptyState } from "../shared/empty-state/empty-state";
+import { PullIndicator, pullStyle, usePullToRefresh } from "./pull-to-refresh";
 import {
   defaultQueryListMessages,
   QueryList,
@@ -142,6 +143,9 @@ function TableView<Item>({
   loadingRows,
   reorder,
   placeholder = "loader",
+  // The table always scrolls in its own box, so pulling its top refreshes it. Not while rows
+  // can be dragged into order, where a drag down from the top is a move.
+  pullToRefresh = !reorder,
   toolbar,
   empty,
   filtered = false,
@@ -157,6 +161,20 @@ function TableView<Item>({
   const scrollable = useScrollableFocus<HTMLDivElement>();
   const [dropped, setDropped] = useState<Dropped | null>(null);
   const { items, status, error, isFetching, retry } = state;
+  const pull = usePullToRefresh({
+    enabled: pullToRefresh && status !== "loading",
+    onRefresh: state.refetch,
+    busy: isFetching,
+  });
+  const { ref: scrollRef } = scrollable;
+  const { ref: pullRef } = pull;
+  const ref = useCallback(
+    (element: HTMLDivElement | null) => {
+      scrollRef(element);
+      pullRef(element);
+    },
+    [scrollRef, pullRef],
+  );
 
   const order = dropped?.list === listKey ? dropped.keys : null;
   const byKey = new Map(items.map((item, index) => [getRowKey(item, index), item]));
@@ -181,61 +199,65 @@ function TableView<Item>({
         data-slot="query-table-scroll"
         data-status={status}
         aria-busy={isFetching || undefined}
-        className={cn("relative min-h-0 flex-1 overflow-y-auto", focusRing)}
+        className={cn("relative min-h-0 flex-1 overflow-y-auto overscroll-y-contain", focusRing)}
         {...scrollable}
+        ref={ref}
       >
         {/* A refresh shows as a bar along the top, so the rows stay put while it runs. */}
-        <StickyProgress active={state.isRefreshing} label={messages.loading} />
-        {status === "loading" && placeholder === "loader" ? (
-          <DefaultLoading label={messages.loading} />
-        ) : status === "error" ? (
-          <DefaultError
-            title={messages.error}
-            retryLabel={messages.retry}
-            retry={retry}
-            retrying={isFetching}
-          />
-        ) : (
-          <DataTable
-            caption={caption}
-            columns={columns}
-            rows={rows}
-            getRowKey={getRowKey}
-            // Placeholder rows only on the first load; after that the rows stay on screen.
-            loading={status === "loading"}
-            empty={emptyContent}
-            {...(showCaption === undefined ? {} : { showCaption })}
-            {...(density === undefined ? {} : { density })}
-            {...(rowProps === undefined ? {} : { rowProps })}
-            {...(renderMobileRow === undefined ? {} : { renderMobileRow })}
-            {...(loadingRows === undefined ? {} : { loadingRows })}
-            reorder={
-              reorder
-                ? {
-                    label: reorder.label,
-                    onReorder: (keys) => {
-                      const next = { list: listKey, keys };
-                      setDropped(next);
-                      const clear = () => {
-                        // A later drop may have happened meanwhile; its order stays until its own save is back.
-                        setDropped((current) => (current === next ? null : current));
-                      };
-                      Promise.resolve(reorder.onReorder(keys)).then(clear, clear);
-                    },
-                  }
-                : undefined
-            }
-          />
-        )}
-        {/* A failed refresh keeps the rows it had, with a way to try again under them. */}
-        {status === "ready" && error !== null && error !== undefined && !isFetching ? (
-          <InlineError
-            title={messages.error}
-            retryLabel={messages.retry}
-            retry={retry}
-            retrying={isFetching}
-          />
-        ) : null}
+        <StickyProgress active={state.isRefreshing && !pull.refreshing} label={messages.loading} />
+        <PullIndicator state={pull} label={messages.loading} />
+        <div style={pullStyle(pull)}>
+          {status === "loading" && placeholder === "loader" ? (
+            <DefaultLoading label={messages.loading} />
+          ) : status === "error" ? (
+            <DefaultError
+              title={messages.error}
+              retryLabel={messages.retry}
+              retry={retry}
+              retrying={isFetching}
+            />
+          ) : (
+            <DataTable
+              caption={caption}
+              columns={columns}
+              rows={rows}
+              getRowKey={getRowKey}
+              // Placeholder rows only on the first load; after that the rows stay on screen.
+              loading={status === "loading"}
+              empty={emptyContent}
+              {...(showCaption === undefined ? {} : { showCaption })}
+              {...(density === undefined ? {} : { density })}
+              {...(rowProps === undefined ? {} : { rowProps })}
+              {...(renderMobileRow === undefined ? {} : { renderMobileRow })}
+              {...(loadingRows === undefined ? {} : { loadingRows })}
+              reorder={
+                reorder
+                  ? {
+                      label: reorder.label,
+                      onReorder: (keys) => {
+                        const next = { list: listKey, keys };
+                        setDropped(next);
+                        const clear = () => {
+                          // A later drop may have happened meanwhile; its order stays until its own save is back.
+                          setDropped((current) => (current === next ? null : current));
+                        };
+                        Promise.resolve(reorder.onReorder(keys)).then(clear, clear);
+                      },
+                    }
+                  : undefined
+              }
+            />
+          )}
+          {/* A failed refresh keeps the rows it had, with a way to try again under them. */}
+          {status === "ready" && error !== null && error !== undefined && !isFetching ? (
+            <InlineError
+              title={messages.error}
+              retryLabel={messages.retry}
+              retry={retry}
+              retrying={isFetching}
+            />
+          ) : null}
+        </div>
       </div>
       {status === "ready" ? (
         <QueryListFooter

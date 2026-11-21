@@ -40,7 +40,7 @@ export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
   const shown = sections.filter((section) => !hiddenSections.includes(section.href));
 
   return (
-    <aside className="border-rule flex shrink-0 items-center gap-1 max-md:order-last max-md:h-14 max-md:border-t max-md:px-2 md:w-14 md:flex-col md:border-r md:py-3">
+    <aside className="border-rule flex shrink-0 items-center gap-1 max-md:order-last max-md:h-[calc(3.5rem+env(safe-area-inset-bottom))] max-md:border-t max-md:px-2 max-md:pb-[env(safe-area-inset-bottom)] md:w-14 md:flex-col md:border-r md:py-3">
       <Logo variant="mark" size={24} className="mb-3 max-md:hidden" />
       <nav
         aria-label="Dashboard"

@@ -37,11 +37,15 @@ export function DashboardShell({ agent, signOut, hiddenSections, children }: Das
       <ConfirmProvider>
         {/* A lighter canvas than the page colour, so the white panels sit on it quietly. */}
         <div
+          data-app-shell=""
           className={cn(
             // Positioned and clipped, so nothing can scroll the app as a whole: a screen-reader
             // line (`sr-only`, absolutely placed) under a long page otherwise lands below the
             // viewport, since no scroll area is positioned, and stretches the document.
             "bg-canvas relative flex h-dvh overflow-clip text-[0.8125rem] leading-5 max-md:flex-col",
+            // Drawn edge to edge (`viewport-fit=cover`): clear of a notch at the top or sides.
+            // The bottom bar keeps clear of the home indicator itself.
+            "pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]",
             // A dashboard is used with a mouse and keyboard, all day: everything is a size down.
             compactControls,
           )}

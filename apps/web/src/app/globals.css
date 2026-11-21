@@ -13,3 +13,11 @@
 ::view-transition-new(root) {
   z-index: 1;
 }
+
+/*
+ * The dashboard is an app: its panels scroll, the page never does. A phone otherwise bounces
+ * or pulls the whole screen when a panel reaches its end.
+ */
+html:has([data-app-shell]) {
+  overscroll-behavior: none;
+}

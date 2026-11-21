@@ -15,6 +15,9 @@ export const appMetadata: Metadata = {
 
 /** The browser's bar matches the dashboard's canvas, in either theme. */
 export const appViewport: Viewport = {
+  // The app draws to the screen's edges; the bottom bar keeps clear of the home indicator
+  // itself, with the safe area insets.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: APP_COLOURS.light },
     { media: "(prefers-color-scheme: dark)", color: APP_COLOURS.dark },

@@ -272,6 +272,7 @@ export function ListPanel({
           error: "The inbox could not be loaded.",
         }}
         className="min-h-0 flex-1 overflow-y-auto"
+        pullToRefresh
         contentClassName="p-1.5"
         listClassName="flex flex-col gap-px"
       />
