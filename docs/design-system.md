@@ -200,6 +200,12 @@ same height as an input), `sm` (32px), `icon` and `icon-sm`. An icon size requir
 `loading` shows a spinner and blocks clicks. `asChild` styles a child element, such as a router
 link, as a button. Use `Link` instead when the result is navigation and it should look like text.
 
+**ActionMenu** holds a row's actions behind a "⋯" button, as Featurebase and Intercom do, so a
+list stays one line a row however many actions each has. Give it `target` (the button reads
+"More actions for Ada") and `items`, each with a `label`, an optional `icon` and `onSelect`.
+`destructive` items go last, in red, after a line; confirm them with a `ConfirmDialog`. For one or
+two actions that are always wanted, plain buttons beside the row are clearer.
+
 **Link** is for navigation inside text. It is biro blue and always underlined. `external` opens a
 new tab, adds an icon and tells screen readers. `asChild` styles a router link. Use `Button` for
 actions.

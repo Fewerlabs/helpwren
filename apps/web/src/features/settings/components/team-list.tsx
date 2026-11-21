@@ -2,7 +2,7 @@
 
 import { type TeamMember } from "@helpwren/core";
 import {
-  ActionButton,
+  ActionMenu,
   Avatar,
   Badge,
   Dialog,
@@ -147,18 +147,15 @@ export function TeamList({ members, invited, emailReady, currentId, canEdit }: T
           const busy = pending === member.id;
           const isInvited = member.active && invited.includes(member.id);
           return (
-            <li key={member.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2.5">
+            <li key={member.id} className="flex items-center gap-3 py-2.5">
               <Avatar
                 name={member.name}
                 src={member.photo}
                 size="sm"
                 className="text-2xs size-7 shrink-0"
               />
-              {/*
-                Takes the room the badges and actions leave, and cuts long names short. When a
-                row has more actions than fit beside a readable name, they move to a line below.
-              */}
-              <div className="min-w-40 flex-1">
+              {/* Takes the room the badges and the menu leave, and cuts long names short. */}
+              <div className="min-w-0 flex-1">
                 <p className="flex min-w-0 items-center gap-2 font-medium">
                   <span className="truncate">{member.name}</span>
                   {isSelf ? (
@@ -181,69 +178,66 @@ export function TeamList({ members, invited, emailReady, currentId, canEdit }: T
                 </Badge>
               )}
               {canEdit && !isSelf ? (
-                <div className="ml-auto flex shrink-0 gap-1">
-                  {isInvited && emailReady ? (
-                    <ActionButton
-                      variant="ghost"
-                      icon="envelope"
-                      label="Send invite again"
-                      disabled={busy}
-                      target={member.name}
-                      onClick={() => {
-                        void reinvite(member, "email");
-                      }}
-                    />
-                  ) : null}
-                  {isInvited ? (
-                    <ActionButton
-                      variant="ghost"
-                      icon="link"
-                      label="Copy invite link"
-                      disabled={busy}
-                      target={member.name}
-                      onClick={() => {
-                        void reinvite(member, "link");
-                      }}
-                    />
-                  ) : null}
-                  <ActionButton
-                    variant="ghost"
-                    icon="key"
-                    label="Set password"
-                    disabled={busy}
-                    target={member.name}
-                    onClick={() => {
-                      setSettingPassword(member);
-                    }}
-                  />
-                  {member.active ? (
-                    <ActionButton
-                      variant="ghost"
-                      icon={member.role === "admin" ? "shield-slash" : "shield-check"}
-                      label={member.role === "admin" ? "Make agent" : "Make admin"}
-                      disabled={busy}
-                      target={member.name}
-                      onClick={() => {
-                        changeRole(member);
-                      }}
-                    />
-                  ) : null}
-                  <ActionButton
-                    variant="ghost"
-                    icon={member.active ? "user-minus" : "user-check"}
-                    label={member.active ? "Deactivate" : "Reactivate"}
-                    disabled={busy}
-                    target={member.name}
-                    // Taking away someone's access is the one action here that hurts if misclicked.
-                    className={
-                      member.active ? "text-destructive hover:text-destructive" : undefined
-                    }
-                    onClick={() => {
-                      if (member.active) deactivate(member);
-                      else change(member, { active: true });
-                    }}
-                  />
-                </div>
+                <ActionMenu
+                  target={member.name}
+                  className="ml-auto"
+                  items={[
+                    ...(isInvited && emailReady
+                      ? [
+                          {
+                            label: "Send invite again",
+                            icon: "envelope" as const,
+                            disabled: busy,
+                            onSelect: () => void reinvite(member, "email"),
+                          },
+                        ]
+                      : []),
+                    ...(isInvited
+                      ? [
+                          {
+                            label: "Copy invite link",
+                            icon: "link" as const,
+                            disabled: busy,
+                            onSelect: () => void reinvite(member, "link"),
+                          },
+                        ]
+                      : []),
+                    {
+                      label: "Set password",
+                      icon: "key",
+                      disabled: busy,
+                      onSelect: () => {
+                        setSettingPassword(member);
+                      },
+                    },
+                    ...(member.active
+                      ? [
+                          {
+                            label: member.role === "admin" ? "Make agent" : "Make admin",
+                            icon:
+                              member.role === "admin"
+                                ? ("shield-slash" as const)
+                                : ("shield-check" as const),
+                            disabled: busy,
+                            onSelect: () => {
+                              changeRole(member);
+                            },
+                          },
+                        ]
+                      : []),
+                    {
+                      label: member.active ? "Deactivate" : "Reactivate",
+                      icon: member.active ? "user-minus" : "user-check",
+                      // Taking away someone's access is the one action here that hurts if misclicked.
+                      destructive: member.active,
+                      disabled: busy,
+                      onSelect: () => {
+                        if (member.active) deactivate(member);
+                        else change(member, { active: true });
+                      },
+                    },
+                  ]}
+                />
               ) : null}
             </li>
           );

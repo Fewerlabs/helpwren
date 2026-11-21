@@ -49,6 +49,12 @@ function renderList(
   );
 }
 
+/** Opens a member's "⋯" menu and picks an action in it. */
+async function choose(user: ReturnType<typeof userEvent.setup>, member: string, action: string) {
+  await user.click(screen.getByRole("button", { name: `More actions for ${member}` }));
+  await user.click(screen.getByRole("menuitem", { name: action }));
+}
+
 describe("TeamList", () => {
   beforeEach(() => {
     vi.mocked(changeMember).mockReset().mockResolvedValue({ ok: true });
@@ -59,7 +65,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Deactivate, Sam Rivera" }));
+    await choose(user, "Sam Rivera", "Deactivate");
     const dialog = screen.getByRole("alertdialog", { name: "Deactivate Sam Rivera?" });
     // The safe answer has the focus, so Enter cannot lock someone out by accident.
     expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
@@ -72,7 +78,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Deactivate, Sam Rivera" }));
+    await choose(user, "Sam Rivera", "Deactivate");
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Deactivate" }),
     );
@@ -88,7 +94,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Deactivate, Sam Rivera" }));
+    await choose(user, "Sam Rivera", "Deactivate");
     const dialog = screen.getByRole("alertdialog");
     await user.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
@@ -102,7 +108,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Make admin, Sam Rivera" }));
+    await choose(user, "Sam Rivera", "Make admin");
     expect(changeMember).not.toHaveBeenCalled();
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Make admin" }),
@@ -115,7 +121,7 @@ describe("TeamList", () => {
     const user = userEvent.setup();
     renderList();
 
-    await user.click(screen.getByRole("button", { name: "Make admin, Sam Rivera" }));
+    await choose(user, "Sam Rivera", "Make admin");
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }),
     );
@@ -130,9 +136,10 @@ describe("TeamList", () => {
     const [adaRow, samRow] = screen.getAllByRole("listitem");
     expect(within(samRow ?? document.body).getByText("Invited")).toBeInTheDocument();
     expect(within(adaRow ?? document.body).queryByText("Invited")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Copy invite link, Ada Okafor" })).toBeNull();
+    // Your own row has no menu: you change yourself under Profile.
+    expect(screen.queryByRole("button", { name: "More actions for Ada Okafor" })).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Send invite again, Sam Rivera" }));
+    await choose(user, "Sam Rivera", "Send invite again");
     expect(reinviteMember).toHaveBeenCalledWith(sam.id, "email");
     expect(await screen.findByText("Invite sent to sam@example.com")).toBeInTheDocument();
   });
@@ -147,8 +154,9 @@ describe("TeamList", () => {
     renderList([ada, sam], { invited: [sam.id], emailReady: false });
 
     // Without email, there is no invite to send again; the link still works.
-    expect(screen.queryByRole("button", { name: "Send invite again, Sam Rivera" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Copy invite link, Sam Rivera" }));
+    await user.click(screen.getByRole("button", { name: "More actions for Sam Rivera" }));
+    expect(screen.queryByRole("menuitem", { name: "Send invite again" })).toBeNull();
+    await user.click(screen.getByRole("menuitem", { name: "Copy invite link" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Invite link for Sam Rivera" });
     expect(within(dialog).getByText(link)).toBeInTheDocument();

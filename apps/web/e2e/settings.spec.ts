@@ -233,20 +233,24 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   await expect(row).toContainText("Agent");
   await expect(row).toContainText("Invited");
 
-  await page.getByRole("button", { name: `Make admin, ${NEW_MEMBER.name}` }).click();
+  await page.getByRole("button", { name: `More actions for ${NEW_MEMBER.name}` }).click();
+  await page.getByRole("menuitem", { name: "Make admin" }).click();
   await page
     .getByRole("alertdialog", { name: `Make ${NEW_MEMBER.name} an admin?` })
     .getByRole("button", { name: "Make admin" })
     .click();
   await expect(row).toContainText("Admin");
 
-  await page.getByRole("button", { name: `Deactivate, ${NEW_MEMBER.name}` }).click();
+  await page.getByRole("button", { name: `More actions for ${NEW_MEMBER.name}` }).click();
+  await page.getByRole("menuitem", { name: "Deactivate" }).click();
   await page
     .getByRole("alertdialog", { name: `Deactivate ${NEW_MEMBER.name}?` })
     .getByRole("button", { name: "Deactivate" })
     .click();
   await expect(row).toContainText("Deactivated");
-  await expect(page.getByRole("button", { name: `Reactivate, ${NEW_MEMBER.name}` })).toBeVisible();
+  await page.getByRole("button", { name: `More actions for ${NEW_MEMBER.name}` }).click();
+  await expect(page.getByRole("menuitem", { name: "Reactivate" })).toBeVisible();
+  await page.keyboard.press("Escape");
 });
 
 test("an admin sets who emails are from, and is told when no provider is set up", async ({
@@ -294,5 +298,5 @@ test("an agent who is not an admin can read settings and change nothing", async 
   await page.getByRole("link", { name: "Team" }).click();
   await expect(page.getByRole("list", { name: "Team members" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Invite", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Deactivate/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /More actions for/ })).toHaveCount(0);
 });
