@@ -33,3 +33,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0026 | [Contextual help](0026-contextual-help.md)                                                 |
 | 0027 | [Passwords for team members](0027-password-sign-in.md)                                     |
 | 0028 | [Team invites](0028-team-invites.md)                                                       |
+| 0029 | [Returning guests](0029-returning-guests.md)                                               |
