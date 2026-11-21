@@ -1,44 +1,7 @@
 "use client";
 
-import {
-  Button,
-  cn,
-  Icon,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Textarea,
-  type TextareaProps,
-} from "@helpwren/design-system";
-import { useRef, useState, type ReactNode, type RefObject } from "react";
-
-/** A short list of the emoji people reach for most in a support chat. */
-const EMOJI = [
-  ["😀", "Grinning face"],
-  ["😊", "Smiling face"],
-  ["😂", "Tears of joy"],
-  ["🙂", "Slight smile"],
-  ["😉", "Winking face"],
-  ["😍", "Heart eyes"],
-  ["🤔", "Thinking face"],
-  ["😅", "Sweat smile"],
-  ["😢", "Crying face"],
-  ["😮", "Surprised face"],
-  ["😬", "Grimacing face"],
-  ["🙏", "Folded hands"],
-  ["👍", "Thumbs up"],
-  ["👎", "Thumbs down"],
-  ["👏", "Clapping hands"],
-  ["🙌", "Raised hands"],
-  ["👋", "Waving hand"],
-  ["💪", "Flexed arm"],
-  ["❤️", "Red heart"],
-  ["🎉", "Party popper"],
-  ["🔥", "Fire"],
-  ["✨", "Sparkles"],
-  ["✅", "Check mark"],
-  ["👀", "Eyes"],
-] as const;
+import { Button, cn, Icon, Textarea, type TextareaProps } from "@helpwren/design-system";
+import { type ReactNode } from "react";
 
 /**
  * The visitor's message box: a soft rounded well set into the white chat panel, with the text on
@@ -51,8 +14,8 @@ export function ChatBox({
   send,
 }: {
   children: ReactNode;
-  /** Small ghost buttons on the left of the bottom row, such as attach and emoji. */
-  tools: ReactNode;
+  /** Small ghost buttons on the left of the bottom row, such as attach. */
+  tools?: ReactNode;
   /** The send button, on the right of the bottom row. */
   send: ReactNode;
 }) {
@@ -121,85 +84,5 @@ export function ChatBoxSend({
     >
       <Icon name="arrow-up" weight="bold" />
     </Button>
-  );
-}
-
-/**
- * Opens a small grid of emoji. A pick goes in where the caret was in `field`, and the caret is
- * put back just after it.
- */
-export function EmojiPicker({
-  field,
-  onInsert,
-  disabled = false,
-}: {
-  field: RefObject<HTMLTextAreaElement | null>;
-  /** Called with the field's whole new text. */
-  onInsert: (value: string) => void;
-  disabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  // Where the caret goes once the panel has closed, when an emoji was picked.
-  const caret = useRef<number | null>(null);
-
-  function pick(emoji: string) {
-    const box = field.current;
-    if (!box) return;
-    const { value, selectionStart, selectionEnd } = box;
-    const next = value.slice(0, selectionStart) + emoji + value.slice(selectionEnd);
-    setOpen(false);
-    if (box.maxLength > 0 && next.length > box.maxLength) return;
-    caret.current = selectionStart + emoji.length;
-    onInsert(next);
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Add an emoji"
-          disabled={disabled}
-          className={chatBoxTool}
-        >
-          <Icon name="smiley" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        side="top"
-        align="start"
-        aria-label="Emoji"
-        className="w-auto p-1.5"
-        onCloseAutoFocus={(event) => {
-          const box = field.current;
-          const at = caret.current;
-          caret.current = null;
-          if (!box || at === null) return;
-          // Back to writing, rather than to the button that opened the panel.
-          event.preventDefault();
-          box.focus();
-          box.setSelectionRange(at, at);
-        }}
-      >
-        <ul className="grid grid-cols-6">
-          {EMOJI.map(([emoji, name]) => (
-            <li key={emoji}>
-              <button
-                type="button"
-                aria-label={name}
-                title={name}
-                className="hover:bg-muted focus-visible:outline-ring grid size-10 place-items-center rounded-lg text-xl focus-visible:outline-2"
-                onClick={() => {
-                  pick(emoji);
-                }}
-              >
-                {emoji}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </PopoverContent>
-    </Popover>
   );
 }

@@ -23,7 +23,7 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
-import { ChatBox, ChatBoxField, ChatBoxSend, EmojiPicker } from "@/features/conversation";
+import { ChatBox, ChatBoxField, ChatBoxSend } from "@/features/conversation";
 import { useHelpwren } from "@/lib/helpwren-context";
 
 import { TeamAvatar } from "../brand";
@@ -269,7 +269,6 @@ export function StartForm({
   });
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
   const written = useWatch({ control: form.control, name: "message" });
-  const messageField = useRef<HTMLTextAreaElement | null>(null);
 
   // What tells a person from a script: the field only a bot fills in, how long the form was
   // open, and the captcha when the install asks for one.
@@ -426,15 +425,6 @@ export function StartForm({
             </p>
           ) : null}
           <ChatBox
-            tools={
-              <EmojiPicker
-                field={messageField}
-                disabled={isSubmitting}
-                onInsert={(value) => {
-                  form.setValue("message", value, { shouldDirty: true });
-                }}
-              />
-            }
             send={
               <ChatBoxSend
                 label="Send message"
@@ -449,10 +439,6 @@ export function StartForm({
               maxLength={MESSAGE_MAX_LENGTH}
               disabled={isSubmitting}
               {...message}
-              ref={(element) => {
-                message.ref(element);
-                messageField.current = element;
-              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                   event.preventDefault();

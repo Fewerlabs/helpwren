@@ -25,7 +25,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { useAddNote, useSendMessage } from "../hooks/use-thread";
 import { type TypingControls } from "../hooks/use-typing";
-import { ChatBox, ChatBoxField, ChatBoxSend, chatBoxTool, EmojiPicker } from "./chat-box";
+import { ChatBox, ChatBoxField, ChatBoxSend, chatBoxTool } from "./chat-box";
 
 const NO_PLACEHOLDERS: PlaceholderValues = {};
 
@@ -54,7 +54,7 @@ type Mode = "reply" | "note";
 export interface ComposerProps {
   conversationId: string;
   /**
-   * `bar` is the visitor's chat: a soft rounded box with attach, emoji and a round send button.
+   * `bar` is the visitor's chat: a soft rounded box with attach and a round send button.
    * `card` is an outlined box with a send button below the text, for the inbox.
    */
   variant?: "bar" | "card";
@@ -379,15 +379,7 @@ export function Composer({
       }}
     >
       {alert}
-      <ChatBox
-        tools={
-          <>
-            {attach}
-            <EmojiPicker field={box} onInsert={write} />
-          </>
-        }
-        send={<ChatBoxSend label="Send" ready={ready} loading={pending} />}
-      >
+      <ChatBox tools={attach} send={<ChatBoxSend label="Send" ready={ready} loading={pending} />}>
         {chosenFiles}
         <ChatBoxField {...fieldProps} placeholder="Send us a message…" />
       </ChatBox>

@@ -139,18 +139,4 @@ describe("the visitor's message box", () => {
     await user.type(box, "Hello");
     expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
   });
-
-  it("puts a picked emoji where the caret was, and goes back to writing", async () => {
-    const user = userEvent.setup();
-    const box = renderBar();
-    await user.type(box, "Thanks!");
-    await user.keyboard("{ArrowLeft}");
-
-    await user.click(screen.getByRole("button", { name: "Add an emoji" }));
-    await user.click(await screen.findByRole("button", { name: "Thumbs up" }));
-
-    expect(box).toHaveValue("Thanks👍!");
-    expect(box).toHaveFocus();
-    expect(screen.queryByRole("dialog", { name: "Emoji" })).not.toBeInTheDocument();
-  });
 });
