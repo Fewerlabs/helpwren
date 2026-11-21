@@ -1,3 +1,5 @@
+import { existsSync, readdirSync, writeFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { unattendedPrompter } from "./io.ts";
@@ -89,18 +91,25 @@ describe("upgrade", () => {
   it("stops before changing anything, and says what to install, when no pg_dump is new enough", async () => {
     const { ctx, ran } = installed(["20261201100000_agent_invites.sql"]);
     const plain = ctx.run;
-    ctx.run = (command, args, options) =>
-      command.endsWith("pg_dump")
-        ? Promise.resolve(
-            args[0] === "--version"
-              ? { code: 127, stdout: "", stderr: "not found" }
-              : { code: 1, stdout: "", stderr: "server version mismatch\nserver version: 17.12" },
-          )
-        : plain(command, args, options);
+    ctx.run = (command, args, options) => {
+      if (!command.endsWith("pg_dump")) return plain(command, args, options);
+      if (args[0] === "--version") {
+        return Promise.resolve({ code: 127, stdout: "", stderr: "not found" });
+      }
+      // Like the real one, a refused dump still creates its output file, empty.
+      if (options?.stdoutFile) writeFileSync(options.stdoutFile, "");
+      return Promise.resolve({
+        code: 1,
+        stdout: "",
+        stderr: "server version mismatch\nserver version: 17.12",
+      });
+    };
 
     await expect(
       upgrade(ctx, { dryRun: false, pull: false, backup: true, dbUrl: DB_URL }),
     ).rejects.toThrow(/PostgreSQL 17, newer than the pg_dump here/);
+    // Nothing that could pass for a backup is left behind.
+    expect(existsSync(ctx.paths.backups) ? readdirSync(ctx.paths.backups) : []).toEqual([]);
     expect(ran().some((command) => command.includes("push") && command.includes("--yes"))).toBe(
       false,
     );

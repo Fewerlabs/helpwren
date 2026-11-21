@@ -1,4 +1,4 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { InstallError, validDatabaseUrl, type Context } from "./context.ts";
@@ -104,6 +104,7 @@ async function dumpUrl(ctx: Context, connection: string, file: string) {
 
   const newer = await findPgDump(ctx.run, serverMajor);
   if (newer === null) {
+    rmSync(file, { force: true });
     throw new InstallError(
       `The backup failed, so nothing was changed. The database runs PostgreSQL ${serverMajor}, newer than the pg_dump here. ${installHint(serverMajor)}`,
     );
@@ -150,6 +151,8 @@ async function backUp(ctx: Context, state: InstallState, target: DbTarget): Prom
     return null;
   }
   if (result.code !== 0) {
+    // A failed dump leaves an empty or partial file, which would pass for a backup later.
+    rmSync(file, { force: true });
     throw new InstallError(
       `The backup failed, so nothing was changed. ${result.stderr.trim() || "Is pg_dump installed?"}`,
     );
