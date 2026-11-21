@@ -36,6 +36,8 @@ export default defineConfig({
     {
       // A site on another origin that embeds the widget, as an adopter's would.
       command: "node ../../examples/plain-html/serve.mjs",
+      // It loads the widget from the app under test, on whichever port that is.
+      env: { HELPWREN_URL: APP_URL },
       url: "http://127.0.0.1:4100",
       reuseExistingServer: !process.env.CI,
     },
