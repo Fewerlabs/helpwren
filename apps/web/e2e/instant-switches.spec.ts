@@ -14,6 +14,7 @@ test("an admin flips a setting and it is saved at once, leaving other changes fo
 
   // A change not saved yet, which the flip must not send.
   const ask = page.getByRole("combobox", { name: "Ask guests for" });
+  await expect(ask).not.toHaveText("");
   const askedBefore = await ask.textContent();
   await ask.click();
   const other = askedBefore?.includes("Nothing") ? "Name and email" : "Nothing";
