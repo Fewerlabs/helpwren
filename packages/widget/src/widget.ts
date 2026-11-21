@@ -1,4 +1,5 @@
 import { defaultAppearance, parseAppearance, type Appearance } from "./appearance";
+import { createHelpEmbed, type HelpEmbedOptions } from "./help-embed";
 import {
   CHANNEL,
   isFrameMessage,
@@ -13,6 +14,8 @@ import {
 import { closeIcon, dismissIcon, openIcon, styles, wrenIcon } from "./styles";
 
 export type { Appearance } from "./appearance";
+export { createHelpEmbed, helpEmbedUrl } from "./help-embed";
+export type { HelpEmbedOptions, HelpEmbedPart } from "./help-embed";
 export type {
   ArticleFilter,
   HelpArticle,
@@ -156,6 +159,11 @@ export interface HelpwrenWidget {
   preview: (preview: WidgetPreview) => void;
   /** Takes the widget off the page. `init` can add it again. */
   destroy: () => void;
+  /**
+   * Puts the help center in a frame inside `container`, sized to what it shows, with only the
+   * parts you keep. Needs no `init`. Returns a function that takes it away.
+   */
+  embedHelp: (container: HTMLElement, options?: HelpEmbedOptions) => () => void;
 }
 
 interface Teaser {
@@ -933,6 +941,10 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       return () => {
         listeners[event].delete(listener);
       };
+    },
+
+    embedHelp(container, options) {
+      return createHelpEmbed(appOrigin, container, options);
     },
   };
   return widget;
