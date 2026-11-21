@@ -117,6 +117,15 @@ outside the dashboard. See [ADR 0028](decisions/0028-team-invites.md). Notificat
 and shows a desktop notification or plays a sound. See
 [ADR 0010](decisions/0010-dashboard-and-settings.md).
 
+The dashboard installs as an app (`src/features/pwa`). Its manifest is a route at
+`/dashboard/manifest.webmanifest`, linked only from the dashboard and the sign-in page; its service
+worker, `public/sw.js`, is registered with the scope `/dashboard` as `/sw.js?v=<build version>`, so
+each deploy waits as a new worker until the team member chooses **Update**. With desktop
+notifications on, the browser is also subscribed to web push: `agent_push_subscriptions` holds one
+row per browser, a trigger on `messages` queues each contact message in `agent_push_queue`, and
+`processAgentPushQueue` (`src/lib/agent-push.ts`) sends them from `/api/jobs/push` with the
+install's VAPID keys. See [ADR 0029](decisions/0029-installable-dashboard.md).
+
 Every section is laid out by `DashboardPage` (`src/features/dashboard`): one card holds the
 section's navigation and, where there is one, the list it selects from; a second card holds the
 work, in columns (`Panel`s) divided by a hairline. Views, segments, the open conversation and the open contact are kept in the address,
@@ -381,7 +390,7 @@ between screens does not refetch what was loaded a moment ago.
 | `POST /api/unread`                  | How many replies a person has not read, from an app's own token or a Helpwren session, for a badge                                                                          |
 | `POST /api/devices`                 | Registers a phone for pushes, from an app's own token or a Helpwren session                                                                                                 |
 | `DELETE /api/devices`               | Stops pushes to a phone                                                                                                                                                     |
-| `POST /api/jobs/push`               | Sends the pushes that are due. Called every minute by the scheduler, with `CRON_SECRET`                                                                                     |
+| `POST /api/jobs/push`               | Sends the pushes that are due, to contacts' phones and the team's browsers. Called every minute by the scheduler, with `CRON_SECRET`                                        |
 | `POST /api/visitors`                | A browser checking in with its page. No session needed; answers whether a message from the team is waiting. 410 while tracking is off                                       |
 | `POST /api/visitors/outreach`       | Takes up the team's waiting message for this browser, as a conversation of the caller's session                                                                             |
 | `POST /api/visitors/{id}/outreach`  | A team member leaves a first message for a visitor. `DELETE` takes it back                                                                                                  |

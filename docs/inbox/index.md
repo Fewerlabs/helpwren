@@ -71,4 +71,5 @@ needs **Track visitors** and **Live visitors** on in **Settings → General**. S
 
 In **Settings → Notifications**, each person chooses desktop notifications, a sound, and whether
 to hear about every conversation or only their own and unassigned ones. These are kept per
-browser.
+browser. Desktop notifications also arrive with Helpwren closed, on a phone where the app is
+installed: see [Install the app](install-the-app.md).

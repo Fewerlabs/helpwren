@@ -2,10 +2,10 @@
 
 Call two jobs every minute to send emails and pushes that are due.
 
-| Job                    | Sends                                       | Answers                                     |
-| ---------------------- | ------------------------------------------- | ------------------------------------------- |
-| `POST /api/jobs/email` | Unread replies and ticket changes, by email | `{ sent, skipped, failed }`                 |
-| `POST /api/jobs/push`  | Replies, as push notifications to phones    | `{ sent, skipped, failed, removedDevices }` |
+| Job                    | Sends                                                                                            | Answers                                           |
+| ---------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| `POST /api/jobs/email` | Unread replies and ticket changes, by email                                                      | `{ sent, skipped, failed }`                       |
+| `POST /api/jobs/push`  | Replies, as push notifications to phones; new messages, to the team's installed app and browsers | `{ sent, skipped, failed, removedDevices, team }` |
 
 Each call needs `Authorization: Bearer <CRON_SECRET>`. Without `CRON_SECRET` set, the jobs answer
 `404` and do nothing; with a wrong secret, `401`. They accept only `POST`.
