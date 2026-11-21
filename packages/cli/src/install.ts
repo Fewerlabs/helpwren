@@ -179,7 +179,7 @@ async function installCloud(ctx: Context, options: InstallOptions): Promise<stri
     ctx.out.ok("Anonymous sign-ins on, sign-in codes in the email, Site URL set");
   } else {
     ctx.out.warn(
-      "Set these once in the Supabase dashboard (or pass --access-token to have it done): " +
+      "Set these once with `pnpm helpwren auth`, or in the Supabase dashboard: " +
         "Authentication, then Sign In / Providers: allow anonymous sign-ins. " +
         "Authentication, then Emails, Magic link: paste supabase/templates/sign-in-code.html. " +
         `URL Configuration: Site URL ${appUrl}. See https://helpwren.fewerlabs.dev/docs/get-started/supabase-cloud#configure-auth`,

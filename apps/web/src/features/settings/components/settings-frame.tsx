@@ -86,8 +86,9 @@ export function SettingsPage({
 }: SettingsPageProps) {
   return (
     <section aria-labelledby="settings-page-title" className="h-full overflow-y-auto">
-      <div className={cn("mx-auto px-4 py-5 md:px-8 md:py-8", wide ? "max-w-6xl" : "max-w-3xl")}>
-        <header className="flex items-start justify-between gap-4 pb-6">
+      <div className={cn("mx-auto px-4 pb-5 md:px-8 md:pb-8", wide ? "max-w-6xl" : "max-w-3xl")}>
+        {/* Stays in view while the page scrolls under it, with its action beside it. */}
+        <header className="bg-card sticky top-0 z-10 flex items-start justify-between gap-4 pt-5 pb-6 md:pt-8">
           <div className="grid gap-1">
             <h2 id="settings-page-title" className="text-lg font-semibold">
               {title}

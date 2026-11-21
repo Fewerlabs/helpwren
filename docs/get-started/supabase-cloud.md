@@ -88,7 +88,19 @@ pnpm helpwren install --yes --mode cloud --app-url https://support.example.com
 
 ## Configure Auth
 
-Skip this step if you gave the installer `--access-token`. Otherwise, in the Supabase dashboard:
+Skip this step if you gave the installer `--access-token`. Otherwise, set Auth up with one
+command, at any time after installing:
+
+```bash title="Terminal"
+pnpm helpwren auth
+```
+
+It reads the project and your install's address from `apps/web/.env.local`, asks for a
+[personal access token](https://supabase.com/dashboard/account/tokens) without showing it, and
+sets the three things below. The token is not saved. In CI, pass `--access-token` or
+`SUPABASE_ACCESS_TOKEN` with `--yes`.
+
+Or set them yourself in the Supabase dashboard:
 
 1. **Authentication → Sign In / Providers**: turn on **Allow anonymous sign-ins**. Visitors
    chat as anonymous users; without this the chat cannot start.

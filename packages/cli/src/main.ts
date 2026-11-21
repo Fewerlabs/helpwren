@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// `pnpm helpwren <install|upgrade>`. See https://helpwren.fewerlabs.dev/docs/get-started, or run with --help.
+// `pnpm helpwren <install|upgrade|auth>`. See https://helpwren.fewerlabs.dev/docs/get-started, or run with --help.
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { z } from "zod";
 
+import { auth, type AuthOptions } from "./auth.ts";
 import { InstallError, type Context } from "./context.ts";
 import { DatabaseError } from "./database.ts";
 import { spawnRunner } from "./exec.ts";
@@ -18,6 +19,8 @@ const HELP = `Usage: pnpm helpwren <command> [options]
 Commands
   install    Set up this copy of Helpwren: env file, database migrations, next steps
   upgrade    Bring in the new version, apply its migrations, rebuild
+  auth       Set Supabase Auth up on a hosted project: the sign-in code email,
+             anonymous sign-ins and the Site URL. For when install had no token
 
 Install options (each also read from the environment variable in brackets)
   --mode cloud|docker        How to run it [HELPWREN_MODE]
@@ -38,7 +41,12 @@ Upgrade options
   --backup / --no-backup     Back up the database first, without asking
   --db-url <url>             [SUPABASE_DB_URL]
 
-Both
+Auth options
+  --supabase-url <url>       Defaults to the one in apps/web/.env.local
+  --app-url <url>            Defaults to the one in apps/web/.env.local
+  --access-token <token>     From supabase.com/dashboard/account/tokens [SUPABASE_ACCESS_TOKEN]
+
+All
   --yes                      Ask nothing: take flags, the environment and defaults (for CI)
   --help`;
 
@@ -120,6 +128,15 @@ async function main(): Promise<void> {
       ...withValue("dbUrl", dbUrl ?? (unattended ? "" : undefined)),
     };
     await upgrade(ctx, options);
+    return;
+  }
+  if (command === "auth") {
+    const options: AuthOptions = {
+      ...withValue("supabaseUrl", given(values["supabase-url"], env.NEXT_PUBLIC_SUPABASE_URL)),
+      ...withValue("appUrl", given(values["app-url"], env.NEXT_PUBLIC_APP_URL)),
+      ...withValue("accessToken", given(values["access-token"], env.SUPABASE_ACCESS_TOKEN)),
+    };
+    await auth(ctx, options);
     return;
   }
   throw new InstallError(`Unknown command "${command}". Run with --help to see the commands.`);

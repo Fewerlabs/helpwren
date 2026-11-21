@@ -30,8 +30,8 @@ Supabase organisation, a few an hour; set up SMTP (see
 `deploy/docker/.env`, or the test mailbox at http://localhost:8025, and
 `docker compose logs auth`.
 
-**The email has a link instead of a code.** The magic link template was not changed. See
-[Configure Auth](../get-started/supabase-cloud.md#configure-auth), step 2.
+**The email has a link instead of a code.** The magic link template was not changed. Run
+`pnpm helpwren auth`, or see [Configure Auth](../get-started/supabase-cloud.md#configure-auth).
 
 **`/setup` sends me to the sign-in page.** Someone is already on the team. Sign in as them, or ask
 an admin to invite you.
