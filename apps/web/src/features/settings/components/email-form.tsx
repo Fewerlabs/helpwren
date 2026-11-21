@@ -19,8 +19,12 @@ import { makeInboundSecret, saveEmail, sendTestEmail } from "../actions";
 import { emailSchema, type EmailValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
+import { useInstantSwitches } from "./use-instant-switches";
 
 /** The provider saved in Settings → Email, as the browser may see it: never its secret. */
+
+/** Plain on and off settings, saved the moment they are flipped. */
+const INSTANT: readonly (keyof EmailValues)[] = ["replies", "status"];
 export type SavedSending =
   | { provider: "smtp"; host: string; port: number; user: string; hasPassword: boolean }
   | { provider: "resend" };
@@ -147,6 +151,7 @@ export function EmailForm({
       smtpPassword: "",
     },
   });
+  useInstantSwitches(form, INSTANT, saveEmail);
   const [inboundEnabled, inboundProvider, replyAddress, sendingProvider] = useWatch({
     control: form.control,
     name: ["inboundEnabled", "inboundProvider", "replyAddress", "sendingProvider"],

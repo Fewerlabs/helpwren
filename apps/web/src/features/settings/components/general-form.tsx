@@ -11,6 +11,7 @@ import { saveGeneral } from "../actions";
 import { generalSchema, type GeneralValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
+import { useInstantSwitches } from "./use-instant-switches";
 
 const guestDetailOptions = [
   { value: "email", label: "Name and email" },
@@ -19,6 +20,12 @@ const guestDetailOptions = [
   { value: "none", label: "Nothing" },
 ] as const;
 
+/** Plain on and off settings, saved the moment they are flipped. */
+const INSTANT: readonly (keyof GeneralValues)[] = [
+  "ticketsFromChat",
+  "trackVisitors",
+  "liveVisitors",
+];
 export interface GeneralFormProps {
   settings: Settings;
   canEdit: boolean;
@@ -41,6 +48,7 @@ export function GeneralForm({ settings, canEdit, captchaSecretConfigured }: Gene
       captchaSiteKey: settings.spam.siteKey ?? "",
     },
   });
+  useInstantSwitches(form, INSTANT, saveGeneral);
   const tracking = useWatch({ control: form.control, name: "trackVisitors" });
   const captcha = useWatch({ control: form.control, name: "captcha" });
 

@@ -51,9 +51,13 @@ import { ImageField, type ImageFieldProps } from "./image-field";
 import { LinksField } from "./links-field";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
+import { useInstantSwitches } from "./use-instant-switches";
 import { WidgetPreview } from "./widget-preview";
 
 /** A few colours to start from, on one row. Any other comes from the picker at the end. */
+
+/** Plain on and off settings, saved the moment they are flipped. */
+const INSTANT: readonly (keyof BrandingValues)[] = ["poweredBy", "helpShowChat"];
 export const brandSwatches: readonly ColorSwatch[] = [
   { label: "Helpwren green", color: DEFAULT_ACCENT },
   { label: "Blue", color: "#1d4ed8" },
@@ -165,6 +169,7 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       helpUrl: helpCenter.url ?? "",
     },
   });
+  useInstantSwitches(form, INSTANT, saveBranding);
   const values = useWatch({ control: form.control }) as BrandingValues;
   const disabled = !canEdit || form.formState.isSubmitting;
 
