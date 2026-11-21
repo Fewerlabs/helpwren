@@ -83,7 +83,14 @@ const { data: member, error: lookupError } = await supabase
   .eq("email", email.data)
   .maybeSingle();
 if (lookupError) fail(lookupError.message);
-if (!member) fail(`${email.data} is not on the team.`);
+if (!member) {
+  // Whoever runs this holds the secret key, so the team's addresses are theirs to see.
+  const { data: team } = await supabase.from("agents").select("email, role").order("email");
+  const list = (team ?? []).map((row) => `  ${row.email} (${row.role})`).join("\n");
+  fail(
+    `${email.data} is not on the team.${list ? ` The team is:\n${list}` : " The team is empty."}`,
+  );
+}
 
 const password = await askHidden(`New password for ${member.name}: `);
 const checked = passwordSchema.safeParse(password);
