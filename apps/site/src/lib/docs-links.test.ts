@@ -75,8 +75,8 @@ describe("links on the site", () => {
     expect(siteHref("../decisions/0009-widget.md", from)).toBe(
       "https://github.com/Fewerlabs/helpwren/blob/main/docs/decisions/0009-widget.md",
     );
-    expect(siteHref("../../examples/nextjs", from)).toBe(
-      "https://github.com/Fewerlabs/helpwren/tree/main/examples/nextjs",
+    expect(siteHref("../../examples/plain-html", from)).toBe(
+      "https://github.com/Fewerlabs/helpwren/tree/main/examples/plain-html",
     );
   });
 
