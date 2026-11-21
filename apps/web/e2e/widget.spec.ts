@@ -81,18 +81,27 @@ test("a visitor chats through the widget on another site", async ({ page }) => {
   await expect(chat.getByRole("log", { name: "Messages" })).toBeHidden();
 });
 
-test("only allowed sites can show the chat, once domains are set", async ({ page }) => {
+test("only allowed sites can show the chat, once domains are set", async ({ browser }) => {
   await setAllowedDomains(["example.com"]);
-  await page.goto(SITE);
-  await page.getByRole("button", { name: "Open chat" }).click();
-  const chat = page.frameLocator('iframe[title="Chat"]');
-  // The browser refuses to load the chat into a frame on a site that is not listed.
-  await expect(chat.getByRole("button", { name: "Send us a message" })).toHaveCount(0);
+  const refused = await browser.newPage();
+  const errors: string[] = [];
+  refused.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await refused.goto(SITE);
+  // No launcher that would open on a blank panel: the widget says why and goes.
+  await expect.poll(() => errors.join("\n")).toContain("may not show this chat");
+  await expect(refused.getByRole("button", { name: "Open chat" })).toHaveCount(0);
+  await refused.close();
 
+  // A fresh browser, as the install's answer is kept for a minute.
   await setAllowedDomains(["example.com", "127.0.0.1:4100"]);
-  await page.reload();
-  await page.getByRole("button", { name: "Open chat" }).click();
+  const allowed = await browser.newPage();
+  await allowed.goto(SITE);
+  await allowed.getByRole("button", { name: "Open chat" }).click();
+  const chat = allowed.frameLocator('iframe[title="Chat"]');
   await expect(chat.getByRole("button", { name: "Send us a message" })).toBeVisible();
+  await allowed.close();
 });
 
 test("a site puts the chat inside its own page, and opens it its own way", async ({ page }) => {

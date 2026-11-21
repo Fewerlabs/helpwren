@@ -341,6 +341,41 @@ describe("messages it must ignore", () => {
 });
 
 describe("appearance", () => {
+  it("stays hidden until the install answers, so it never shows the default colour first", async () => {
+    answer = { accent: "#f1635e", accentInk: "#ffffff" };
+    widget.init();
+    expect(host().style.display).toBe("none");
+
+    await vi.waitFor(() => {
+      expect(host().style.display).toBe("");
+    });
+    expect(host().style.getPropertyValue("--hw-accent-fill")).toContain("#f1635e");
+  });
+
+  it("shows itself with its defaults when the install cannot be asked", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("offline"))),
+    );
+    widget.init();
+
+    await vi.waitFor(() => {
+      expect(host().style.display).toBe("");
+    });
+  });
+
+  it("removes itself and says why when the install does not allow this site", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    answer = { allowed: false };
+    widget.init();
+
+    await vi.waitFor(() => {
+      expect(document.querySelector("[data-helpwren]")).toBeNull();
+    });
+    expect(error).toHaveBeenCalledWith(expect.stringContaining("allowed domains"));
+    error.mockRestore();
+  });
+
   it("asks the install how to look, and follows the answer", async () => {
     answer = {
       position: "left",

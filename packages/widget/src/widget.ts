@@ -495,17 +495,25 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     frame.contentWindow?.postMessage(message, appOrigin);
   }
 
-  /** Asks the install how its widget should look. Without an answer the defaults stay. */
-  async function loadAppearance() {
+  /**
+   * Asks the install how its widget should look, and whether this site may show it. Without an
+   * answer the defaults stay. Returns `true` when the install says this site is not allowed.
+   */
+  async function loadAppearance(): Promise<boolean> {
     try {
       const response = await fetch(new URL("/api/widget", appOrigin));
-      if (!response.ok) return;
+      if (!response.ok) return false;
+      const data: unknown = await response.json();
+      if (typeof data === "object" && data !== null && "allowed" in data && !data.allowed) {
+        return true;
+      }
       // The install's settings first, then whatever this page asked for on top of them.
-      appearance = parseAppearance(overrides, parseAppearance(await response.json(), appearance));
+      appearance = parseAppearance(overrides, parseAppearance(data, appearance));
       paint();
     } catch {
       // Offline, or blocked by the page's own rules: the widget still works as it is.
     }
+    return false;
   }
 
   /** Sizes and stacking the page asked for, each kept within a range that still works. */
@@ -705,7 +713,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     } else setOpen(false);
   }
 
-  return {
+  const widget: HelpwrenWidget = {
     init(options = {}) {
       if (mounted) return;
 
@@ -818,7 +826,19 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       } else {
         appearance = parseAppearance(overrides, appearance);
         paint();
-        void loadAppearance();
+        // Hidden until the install answers, so a site it refuses never shows a launcher that
+        // opens on a blank panel. It says why to whoever is building the site, and goes.
+        host.style.display = "none";
+        void loadAppearance().then((refused) => {
+          if (!refused) {
+            host.style.removeProperty("display");
+            return;
+          }
+          console.error(
+            `Helpwren: ${window.location.origin} may not show this chat. Add it to the allowed domains in ${appOrigin}/dashboard/settings/installation.`,
+          );
+          widget.destroy();
+        });
       }
     },
 
@@ -915,4 +935,5 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       };
     },
   };
+  return widget;
 }
