@@ -56,6 +56,56 @@ describe("upgrade", () => {
     expect(readState(ctx.paths)?.upgradedAt).toBe("2026-11-19T12:00:00.000Z");
   });
 
+  it("backs up with a newer pg_dump when the one on the PATH is older than the database", async () => {
+    const { ctx, ran, printed } = installed(["20261201100000_agent_invites.sql"]);
+    const plain = ctx.run;
+    ctx.run = (command, args, options) => {
+      if (command === "pg_dump") {
+        return Promise.resolve({
+          code: 1,
+          stdout: "",
+          stderr:
+            "pg_dump: error: aborting because of server version mismatch\npg_dump: detail: server version: 17.12; pg_dump version: 15.12",
+        });
+      }
+      if (command === "/opt/homebrew/opt/libpq/bin/pg_dump" && args[0] === "--version") {
+        return Promise.resolve({ code: 0, stdout: "pg_dump (PostgreSQL) 18.1\n", stderr: "" });
+      }
+      if (command.endsWith("/pg_dump") && args[0] === "--version") {
+        return Promise.resolve({ code: 127, stdout: "", stderr: "not found" });
+      }
+      return plain(command, args, options);
+    };
+
+    await upgrade(ctx, { dryRun: false, pull: false, backup: true, dbUrl: DB_URL });
+
+    expect(ran()).toContainEqual(
+      expect.stringMatching(/^\/opt\/homebrew\/opt\/libpq\/bin\/pg_dump --format=custom/),
+    );
+    expect(printed.join("\n")).toContain("can back up PostgreSQL 17");
+    expect(readState(ctx.paths)?.upgradedAt).toBeDefined();
+  });
+
+  it("stops before changing anything, and says what to install, when no pg_dump is new enough", async () => {
+    const { ctx, ran } = installed(["20261201100000_agent_invites.sql"]);
+    const plain = ctx.run;
+    ctx.run = (command, args, options) =>
+      command.endsWith("pg_dump")
+        ? Promise.resolve(
+            args[0] === "--version"
+              ? { code: 127, stdout: "", stderr: "not found" }
+              : { code: 1, stdout: "", stderr: "server version mismatch\nserver version: 17.12" },
+          )
+        : plain(command, args, options);
+
+    await expect(
+      upgrade(ctx, { dryRun: false, pull: false, backup: true, dbUrl: DB_URL }),
+    ).rejects.toThrow(/PostgreSQL 17, newer than the pg_dump here/);
+    expect(ran().some((command) => command.includes("push") && command.includes("--yes"))).toBe(
+      false,
+    );
+  });
+
   it("does not pull over changes that are not committed", async () => {
     const root = makeRoot();
     const runner = fakeRunner();

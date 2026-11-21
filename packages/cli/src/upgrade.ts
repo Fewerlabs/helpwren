@@ -5,6 +5,7 @@ import { InstallError, validDatabaseUrl, type Context } from "./context.ts";
 import { describeTarget, pushMigrations, type DbTarget } from "./database.ts";
 import { compose, dockerDatabaseUrl } from "./docker.ts";
 import { parseEnv, readEnvFile } from "./env-file.ts";
+import { findPgDump, installHint, serverMajorFromMismatch } from "./pg-dump.ts";
 import { readState, writeState, type InstallState } from "./state.ts";
 
 export interface UpgradeOptions {
@@ -82,15 +83,33 @@ async function databaseTarget(
   return url === "" ? { kind: "linked" } : { kind: "url", url };
 }
 
-/** pg_dump from a connection string, with the password in its environment, not its arguments. */
-function dumpUrl(ctx: Context, connection: string, file: string) {
+/**
+ * pg_dump from a connection string, with the password in its environment, not its arguments.
+ * pg_dump refuses a server newer than itself, so when it does, a newer one installed elsewhere
+ * on the machine is found and used instead; failing that, the person is told what to install.
+ */
+async function dumpUrl(ctx: Context, connection: string, file: string) {
   const url = new URL(connection);
   const password = decodeURIComponent(url.password);
   url.password = "";
-  return ctx.run("pg_dump", ["--format=custom", `--dbname=${url.toString()}`], {
-    env: { PGPASSWORD: password },
-    stdoutFile: file,
-  });
+  const dump = (pgDump: string) =>
+    ctx.run(pgDump, ["--format=custom", `--dbname=${url.toString()}`], {
+      env: { PGPASSWORD: password },
+      stdoutFile: file,
+    });
+
+  const first = await dump("pg_dump");
+  const serverMajor = first.code === 0 ? null : serverMajorFromMismatch(first.stderr);
+  if (serverMajor === null) return first;
+
+  const newer = await findPgDump(ctx.run, serverMajor);
+  if (newer === null) {
+    throw new InstallError(
+      `The backup failed, so nothing was changed. The database runs PostgreSQL ${serverMajor}, newer than the pg_dump here. ${installHint(serverMajor)}`,
+    );
+  }
+  ctx.out.info(`Using ${newer}, which can back up PostgreSQL ${serverMajor}.`);
+  return dump(newer);
 }
 
 /**

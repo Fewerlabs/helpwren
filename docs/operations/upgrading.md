@@ -5,7 +5,10 @@ Move an install to a new version of Helpwren, with a backup taken first.
 ## Before you start
 
 - The checkout you installed from, with no uncommitted changes.
-- On Supabase Cloud, `pg_dump` on your machine if you want the upgrade to back up the database.
+- On Supabase Cloud, `pg_dump` on your machine if you want the upgrade to back up the database,
+  at the same major version as the database or newer (Supabase runs PostgreSQL 17). On a Mac,
+  `brew install libpq` gives you a current one; the upgrade finds it even when an older
+  `pg_dump` comes first on your PATH.
 - Read the [changelog](../../CHANGELOG.md) for the versions you are moving across.
 
 ## Upgrade
