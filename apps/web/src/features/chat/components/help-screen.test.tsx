@@ -7,7 +7,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
-import { resetChatStore, useScreen, useSetPage } from "../store/chat-store";
+import {
+  resetChatStore,
+  useScreen,
+  useSetPage,
+  useSetPanelLayout,
+  type PanelLayout,
+} from "../store/chat-store";
 import {
   ArticleScreen,
   CollectionScreen,
@@ -65,6 +71,16 @@ function OnPage({ url, title }: { url: string; title: string }) {
   useEffect(() => {
     setPage({ url, title });
   }, [setPage, url, title]);
+  return null;
+}
+
+/** Says what the widget's panel can do, as its script does: grow on a wide screen, or not. */
+function Panel(layout: PanelLayout) {
+  const setPanelLayout = useSetPanelLayout();
+  const { expandable, expanded } = layout;
+  useEffect(() => {
+    setPanelLayout({ expandable, expanded });
+  }, [setPanelLayout, expandable, expanded]);
   return null;
 }
 
@@ -210,5 +226,60 @@ describe("the chat's Help", () => {
     expect(screen.getByRole("status")).toHaveTextContent('{"name":"start"}');
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(onBack).toHaveBeenCalledOnce();
+  });
+
+  describe("the reading size", () => {
+    beforeEach(() => {
+      articles.getBySlug.mockResolvedValue({ ...invoice, body: { type: "doc", content: [] } });
+    });
+
+    it("offers to expand the article on a wide screen, and to collapse it once expanded", async () => {
+      const user = userEvent.setup();
+      const onResize = vi.fn();
+      const queryClient = new QueryClient();
+      const chat = (expanded: boolean) => (
+        <QueryClientProvider client={queryClient}>
+          <HelpwrenProvider getClient={() => client}>
+            <Panel expandable expanded={expanded} />
+            <ArticleScreen slug={invoice.slug} onBack={vi.fn()} onResize={onResize} />
+          </HelpwrenProvider>
+        </QueryClientProvider>
+      );
+      const { rerender } = render(chat(false));
+
+      const expand = await screen.findByRole("button", { name: "Expand article" });
+      await user.click(expand);
+      expect(onResize).toHaveBeenLastCalledWith("expanded");
+
+      // The widget answers that the panel grew. The same button, still focused, now collapses.
+      rerender(chat(true));
+      const collapse = await screen.findByRole("button", { name: "Collapse article" });
+      expect(collapse).toBe(expand);
+      expect(collapse).toHaveFocus();
+      await user.click(collapse);
+      expect(onResize).toHaveBeenLastCalledWith("normal");
+    });
+
+    it("offers nothing on a narrow screen, where the panel already fills it", async () => {
+      renderChat(
+        <>
+          <Panel expandable={false} expanded={false} />
+          <ArticleScreen slug={invoice.slug} onBack={vi.fn()} onResize={vi.fn()} />
+        </>,
+      );
+      expect(await screen.findByRole("heading", { name: "Read your invoice" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Expand article" })).not.toBeInTheDocument();
+    });
+
+    it("offers nothing outside the widget, as on the chat page", async () => {
+      renderChat(
+        <>
+          <Panel expandable expanded={false} />
+          <ArticleScreen slug={invoice.slug} onBack={vi.fn()} />
+        </>,
+      );
+      expect(await screen.findByRole("heading", { name: "Read your invoice" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Expand article" })).not.toBeInTheDocument();
+    });
   });
 });

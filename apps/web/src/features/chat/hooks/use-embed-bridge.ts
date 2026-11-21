@@ -9,17 +9,21 @@ import {
   type FrameMessage,
   type IdentityState,
   type LatestUnread,
+  type PanelSize,
 } from "helpwren/protocol";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import {
+  usePanelLayout,
   usePreview,
+  useScreen,
   useSetClaimed,
   useSetHelpFilter,
   useSetHostVisible,
   useSetPage,
   useSetPageContext,
+  useSetPanelLayout,
   useSetPendingStart,
   useSetReferrer,
   useSetShowing,
@@ -88,6 +92,12 @@ const laterSchema = z.discriminatedUnion("type", [
   }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("article"), slug: slugSchema }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("open"), conversationId: z.uuid() }),
+  z.object({
+    channel: z.literal(CHANNEL),
+    type: z.literal("layout"),
+    expandable: z.boolean(),
+    expanded: z.boolean(),
+  }),
 ]);
 
 /** What an app's web view gives the page, to send messages back to the app with. */
@@ -168,6 +178,9 @@ export function useEmbedBridge(unread: UnreadState) {
   const setClaimed = useSetClaimed();
   const setPageContext = useSetPageContext();
   const setHelpFilter = useSetHelpFilter();
+  const setPanelLayout = useSetPanelLayout();
+  const panelLayout = usePanelLayout();
+  const screen = useScreen();
   const identity = useIdentity();
   const preview = usePreview();
   const [embedded, setEmbedded] = useState(false);
@@ -224,6 +237,8 @@ export function useEmbedBridge(unread: UnreadState) {
         } else if (message.type === "context") {
           setPageContext(message.context);
           setHelpFilter(message.filter ?? null);
+        } else if (message.type === "layout") {
+          setPanelLayout({ expandable: message.expandable, expanded: message.expanded });
         } else if (message.type === "article") {
           show({ name: "article", slug: message.slug });
         } else if (message.type === "reset") {
@@ -268,6 +283,7 @@ export function useEmbedBridge(unread: UnreadState) {
     setHostVisible,
     setPage,
     setPageContext,
+    setPanelLayout,
     setPendingStart,
     setReferrer,
     setShowing,
@@ -283,5 +299,19 @@ export function useEmbedBridge(unread: UnreadState) {
     send({ channel: CHANNEL, type: "close" });
   }, [send]);
 
-  return { embedded, closable, close };
+  /** Asks the page to grow the panel to a reading size, or to put it back. */
+  const resize = useCallback(
+    (size: PanelSize) => {
+      send({ channel: CHANNEL, type: "size", size });
+    },
+    [send],
+  );
+
+  // The panel grows only to read an article: anywhere else, it goes back to its usual size.
+  const reading = screen.name === "article";
+  useEffect(() => {
+    if (panelLayout.expanded && !reading) resize("normal");
+  }, [panelLayout.expanded, reading, resize]);
+
+  return { embedded, closable, close, resize };
 }

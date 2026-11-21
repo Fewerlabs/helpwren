@@ -180,6 +180,12 @@ function isHelpArticle(data: unknown): data is HelpArticle {
   );
 }
 
+/**
+ * A screen the panel floats on, rather than covering. Keep in step with the full-screen rule in
+ * `styles.ts`, `(max-width: 640px), (max-height: 480px)`, of which this is the opposite.
+ */
+const FLOATING_SCREEN = "(min-width: 641px) and (min-height: 481px)";
+
 /** Remembers, for this visit, that the welcome message has been seen or dismissed. */
 const TEASER_SEEN = "helpwren.welcome-seen";
 
@@ -232,6 +238,9 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   // The reply the visitor waved away. A newer one shows again.
   let dismissedReply: string | undefined;
   let stopWatchingPage: (() => void) | undefined;
+  // Whether the panel is at its reading size, and the screen size that allows it.
+  let expanded = false;
+  let floatingScreen: MediaQueryList | undefined;
 
   /** Whether the visitor has already seen or dismissed the welcome message on this visit. */
   function readTeaserSeen(): boolean {
@@ -533,12 +542,42 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     }
   }
 
+  /** Whether the panel may grow to read an article: floating, on a screen it floats on. */
+  const canExpand = () => !inline && floatingScreen?.matches === true;
+
+  function sendLayout() {
+    post({ channel: CHANNEL, type: "layout", expandable: canExpand(), expanded });
+  }
+
+  /** Grows the panel to a reading size, or puts it back. Only an open, floating panel grows. */
+  function setExpanded(wanted: boolean) {
+    if (!mounted) return;
+    const next = wanted && canExpand() && isOpen();
+    if (next === expanded) return;
+    expanded = next;
+    if (next) mounted.host.dataset.expanded = "";
+    else delete mounted.host.dataset.expanded;
+    sendLayout();
+  }
+
+  /** The screen became too small for the panel to float, or large enough again. */
+  function onScreenChange() {
+    if (expanded && !canExpand()) setExpanded(false);
+    else sendLayout();
+  }
+
+  function isOpen() {
+    return mounted?.panel.dataset.open === "true";
+  }
+
   function setOpen(wanted: boolean) {
     if (!mounted) return;
     // Inline, the chat is the content of its container: there is nothing to close.
     const open = inline || wanted;
     const changed = mounted.panel.dataset.open !== String(open);
     mounted.panel.dataset.open = String(open);
+    // It opens again at its usual size.
+    if (!open) setExpanded(false);
     for (const trigger of triggers) trigger.setAttribute("aria-expanded", String(open));
     mounted.launcher?.setAttribute("aria-expanded", String(open));
     mounted.launcher?.setAttribute("aria-label", open ? "Close chat" : "Open chat");
@@ -556,7 +595,6 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     }
   }
 
-  const isOpen = () => mounted?.panel.dataset.open === "true";
   const toggle = () => {
     setOpen(!isOpen());
   };
@@ -686,6 +724,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     };
     // Addressed to the app's origin only, so no other site loaded in the frame could read it.
     frame.contentWindow?.postMessage(hello, appOrigin);
+    sendLayout();
     if (context || filter) sendContext();
     void sendIdentity();
   }
@@ -710,7 +749,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     else if (event.data.type === "identity") {
       const { state } = event.data;
       onIdentity(state === "failed" ? { state, reason: event.data.reason } : { state });
-    } else setOpen(false);
+    } else if (event.data.type === "size") setExpanded(event.data.size === "expanded");
+    else setOpen(false);
   }
 
   const widget: HelpwrenWidget = {
@@ -807,6 +847,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       for (const trigger of triggers) trigger.addEventListener("click", toggle);
 
       mounted = { host, teaser, launcher, badge, panel, frame };
+      floatingScreen = window.matchMedia(FLOATING_SCREEN);
+      floatingScreen.addEventListener("change", onScreenChange);
       if (container) host.dataset.contained = "";
       if (inline) host.dataset.mode = "inline";
       applyLayout(options.layout);
@@ -861,6 +903,9 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     destroy() {
       if (!mounted) return;
       window.removeEventListener("message", onMessage);
+      floatingScreen?.removeEventListener("change", onScreenChange);
+      floatingScreen = undefined;
+      expanded = false;
       stopWatchingPage?.();
       stopWatchingPage = undefined;
       stopWatchingHelp?.();

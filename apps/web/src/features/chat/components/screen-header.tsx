@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Icon } from "@helpwren/design-system";
+import { Button, cn, Icon } from "@helpwren/design-system";
 import { type ReactNode } from "react";
 
 export interface ScreenHeaderProps {
@@ -11,6 +11,8 @@ export interface ScreenHeaderProps {
   backLabel?: string;
   /** Shows a close button that calls this. Given when the chat is in a frame it can close. */
   onClose?: (() => void) | undefined;
+  /** Icon buttons for the screen, such as Expand article, before the close button. */
+  actions?: ReactNode;
 }
 
 /** Closes the chat's frame. Needed on a phone, where the chat covers the page's own button. */
@@ -29,9 +31,23 @@ export function CloseButton({ onClose, className }: { onClose: () => void; class
 }
 
 /** The bar at the top of every screen but Home: a centred title, and a way back on sub-screens. */
-export function ScreenHeader({ title, onBack, backLabel = "Back", onClose }: ScreenHeaderProps) {
+export function ScreenHeader({
+  title,
+  onBack,
+  backLabel = "Back",
+  onClose,
+  actions,
+}: ScreenHeaderProps) {
+  const close = onClose ? <CloseButton onClose={onClose} /> : null;
   return (
-    <header className="grid h-14 shrink-0 grid-cols-[2.5rem_1fr_2.5rem] items-center px-2">
+    <header
+      className={cn(
+        "grid h-14 shrink-0 items-center px-2",
+        // Each side as wide as the other, so the title stays centred. With an action, the close
+        // button keeps the place it has on every other screen.
+        actions ? "grid-cols-[4.75rem_1fr_4.75rem]" : "grid-cols-[2.5rem_1fr_2.5rem]",
+      )}
+    >
       {onBack ? (
         <Button variant="ghost" size="icon-sm" aria-label={backLabel} onClick={onBack}>
           <Icon name="caret-left" />
@@ -42,7 +58,14 @@ export function ScreenHeader({ title, onBack, backLabel = "Back", onClose }: Scr
       <h1 className="flex min-w-0 items-center justify-center gap-2 text-sm font-semibold">
         {title}
       </h1>
-      {onClose ? <CloseButton onClose={onClose} /> : null}
+      {actions ? (
+        <div className="flex items-center gap-1">
+          {actions}
+          {close}
+        </div>
+      ) : (
+        close
+      )}
     </header>
   );
 }

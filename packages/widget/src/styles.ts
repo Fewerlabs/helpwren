@@ -76,7 +76,17 @@ export const styles = `
   background: var(--hw-surface);
   box-shadow: 0 12px 40px rgb(24 24 27 / 0.16);
   transform-origin: bottom right;
-  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    visibility 150ms,
+    width 240ms cubic-bezier(0.2, 0, 0, 1),
+    height 240ms cubic-bezier(0.2, 0, 0, 1);
+}
+/* Grown to read an article, from the same corner. Still within the screen's own bounds. */
+:host([data-expanded]) .panel {
+  width: min(760px, 92vw);
+  height: min(860px, 90vh);
 }
 .panel[data-open="false"] {
   visibility: hidden;
@@ -241,7 +251,7 @@ export const styles = `
 }
 
 /* On a phone, upright or on its side, the chat takes the whole screen, and its own close
-   button closes it. */
+   button closes it. The widget's FLOATING_SCREEN query is the opposite of this one. */
 @media (max-width: 640px), (max-height: 480px) {
   :host(:not([data-contained])) .panel {
     inset: 0;

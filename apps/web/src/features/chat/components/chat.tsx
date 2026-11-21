@@ -146,6 +146,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
             : back
         }
         onClose={onClose}
+        onResize={bridge.embedded ? bridge.resize : undefined}
       />
     );
   }

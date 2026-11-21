@@ -36,6 +36,15 @@ export interface PendingStart {
   draft?: string | undefined;
 }
 
+/**
+ * The widget's panel, as its script reports it: whether it can grow to a reading size (a
+ * floating panel on a wide screen), and whether it has.
+ */
+export interface PanelLayout {
+  expandable: boolean;
+  expanded: boolean;
+}
+
 /** Who the page says the visitor is, without proof. Labels for the team, and nothing more. */
 export interface ClaimedIdentity {
   id?: string | undefined;
@@ -62,6 +71,9 @@ interface ChatState {
    */
   showing: boolean;
   setShowing: (showing: boolean) => void;
+  /** The widget's panel. Nothing grows until its script says it can. */
+  panelLayout: PanelLayout;
+  setPanelLayout: (layout: PanelLayout) => void;
   claimed: ClaimedIdentity | null;
   setClaimed: (claimed: ClaimedIdentity | null) => void;
   /** What the page wants the team to know about where the visitor is. */
@@ -85,6 +97,7 @@ const initial = {
   referrer: null,
   hostVisible: true,
   showing: true,
+  panelLayout: { expandable: false, expanded: false },
   preview: false,
   pendingStart: null,
   claimed: null,
@@ -105,6 +118,9 @@ const useChatStore = create<ChatState>()((set) => ({
   },
   setShowing: (showing) => {
     set({ showing });
+  },
+  setPanelLayout: (panelLayout) => {
+    set({ panelLayout });
   },
   setClaimed: (claimed) => {
     set({ claimed });
@@ -151,6 +167,8 @@ export const useHostVisible = () => useChatStore((state) => state.hostVisible);
 export const useSetHostVisible = () => useChatStore((state) => state.setHostVisible);
 export const useShowing = () => useChatStore((state) => state.showing);
 export const useSetShowing = () => useChatStore((state) => state.setShowing);
+export const usePanelLayout = () => useChatStore((state) => state.panelLayout);
+export const useSetPanelLayout = () => useChatStore((state) => state.setPanelLayout);
 
 /** For tests: puts the store back to its starting state. */
 export function resetChatStore() {

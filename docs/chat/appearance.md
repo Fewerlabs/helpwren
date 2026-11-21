@@ -58,6 +58,15 @@ never mixes with one from the page.
 | `height` | The floating panel's height in pixels, 420 to 900. Default 680 |
 | `zIndex` | The widget's `z-index`, for a page with layers of its own      |
 
+## Reading an article
+
+On a screen wider than 640 pixels, an article opened in the floating panel has an **Expand
+article** button beside the close button. It grows the panel from its corner to a reading size,
+up to 760 by 860 pixels and never past the screen, whatever `layout` sets. **Collapse article**
+puts it back, and so does going back from the article, opening another screen, or closing the
+chat. On a phone, where the chat already fills the screen, inline, and on the chat page there is
+no button.
+
 ## Change it after init
 
 `Helpwren.update` changes `appearance` or `layout` later, for example when your site switches
