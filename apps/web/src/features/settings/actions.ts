@@ -3,8 +3,9 @@
 import { endpointUrlSchema } from "@helpwren/adapters/settings";
 import { emailTemplateKinds, type EmailTemplateKind, type EmailTemplates } from "@helpwren/core";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { redirect } from "next/navigation";
 
-import { getCurrentAgent } from "@/features/agent-auth";
+import { DASHBOARD_PATH, finishPasswordChange, getCurrentAgent } from "@/features/agent-auth";
 import { emailSetOnServer, sendEmail } from "@/lib/email";
 import { type SavedEmail } from "@/lib/email/choose";
 import { createInboundSecret, saveResendInbound } from "@/lib/email/inbound";
@@ -19,6 +20,7 @@ import {
   testIdentityToken,
   type IdentityTestResult,
 } from "@/lib/identity";
+import { passwordTwiceSchema, type PasswordTwiceValues } from "@/lib/password-schema";
 import {
   createWebhookSecret,
   saveExpoAccessToken,
@@ -44,8 +46,8 @@ import {
   installationSchema,
   inviteSchema,
   memberChangeSchema,
+  reinviteSchema,
   memberPasswordSchema,
-  ownPasswordSchema,
   profileSchema,
   type BrandBasicsValues,
   type BrandingValues,
@@ -56,16 +58,14 @@ import {
   type InviteValues,
   type MemberChange,
   type MemberPasswordValues,
-  type OwnPasswordValues,
   type ProfileValues,
 } from "./schemas";
+import { inviteTeamMember, reinviteTeamMember, type InviteResult } from "./server/invites";
 import {
   changeTeamMember,
-  inviteTeamMember,
   setMemberPassword,
   updateOwnProfile,
   type ChangeMemberResult,
-  type InviteResult,
   type SetPasswordResult,
 } from "./server/team";
 
@@ -152,6 +152,7 @@ export async function saveInstallation(values: InstallationValues): Promise<Save
   return result;
 }
 
+/** Adds someone to the team and gives them a way in: an email, a link or a temporary password. */
 export async function inviteMember(
   values: InviteValues,
 ): Promise<InviteResult | { ok: false; reason: "invalid" }> {
@@ -163,6 +164,18 @@ export async function inviteMember(
   const result = await inviteTeamMember(caller, parsed.data);
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
+}
+
+/** Emails someone who has not joined yet a new invite, or makes a new link to copy. */
+export async function reinviteMember(
+  id: string,
+  method: "email" | "link",
+): Promise<InviteResult | { ok: false; reason: "invalid" }> {
+  const caller = await getCurrentAgent();
+  if (!caller) return { ok: false, reason: "forbidden" };
+  const parsed = reinviteSchema.safeParse({ id, method });
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  return reinviteTeamMember(caller, parsed.data.id, parsed.data.method);
 }
 
 export async function changeMember(id: string, change: MemberChange): Promise<ChangeMemberResult> {
@@ -191,15 +204,27 @@ export async function setPasswordFor(
 export type OwnPasswordResult =
   { ok: true } | { ok: false; reason: "forbidden" | "invalid" | "weak" | "same" };
 
-/** Sets the signed-in team member's own password. */
-export async function saveOwnPassword(values: OwnPasswordValues): Promise<OwnPasswordResult> {
+/**
+ * Sets the signed-in team member's own password. Someone who was on a temporary password is no
+ * longer asked to choose one.
+ */
+export async function saveOwnPassword(values: PasswordTwiceValues): Promise<OwnPasswordResult> {
   const caller = await getCurrentAgent();
   if (!caller) return { ok: false, reason: "forbidden" };
-  const parsed = ownPasswordSchema.safeParse(values);
+  const parsed = passwordTwiceSchema.safeParse(values);
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   const helpwren = await getHelpwren();
-  return helpwren.auth.setPassword(parsed.data.password);
+  const result = await helpwren.auth.setPassword(parsed.data.password);
+  if (result.ok) await finishPasswordChange(caller.id);
+  return result;
+}
+
+/** The same, at the first sign-in with a temporary password, then on to the dashboard. */
+export async function chooseFirstPassword(values: PasswordTwiceValues): Promise<OwnPasswordResult> {
+  const result = await saveOwnPassword(values);
+  if (!result.ok) return result;
+  redirect(DASHBOARD_PATH);
 }
 
 /**

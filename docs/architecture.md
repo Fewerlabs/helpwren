@@ -110,7 +110,9 @@ Settings pages load their data in the Server Component and save through Server A
 (`src/features/settings/actions.ts`). Settings go through the client library, where the database
 lets only admins write. The team is changed with the secret key, after checking the caller is an
 admin (`src/features/settings/server/team.ts`); a team member's own name is changed the same way,
-found by who is signed in. Notification preferences are personal and stay in the browser
+found by who is signed in. Invites (`src/features/invites`) keep only a hash of each link's token
+in `agent_invites`, which no browser role can read; `/invite/[token]` and `/choose-password` sit
+outside the dashboard. See [ADR 0028](decisions/0028-team-invites.md). Notification preferences are personal and stay in the browser
 (`src/features/notifications`), where `Notifier` in the dashboard shell listens to the inbox
 and shows a desktop notification or plays a sound. See
 [ADR 0010](decisions/0010-dashboard-and-settings.md).

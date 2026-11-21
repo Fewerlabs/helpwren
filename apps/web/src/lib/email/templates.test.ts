@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { REPLY_HINT, buildEmail, fillPlaceholders, sampleEmail } from "./templates";
+import {
+  REPLY_HINT,
+  buildEmail,
+  buildInviteEmail,
+  fillPlaceholders,
+  sampleEmail,
+} from "./templates";
 
 const brand = { name: "Glown", accent: "#f1635e" };
 
@@ -73,5 +79,30 @@ describe("buildEmail", () => {
     const email = buildEmail(sampleEmail({ brand, kind: "chatReply", template: undefined }));
     expect(email.subject).toBe("New reply from Glown");
     expect(email.text).toContain("Sam Rivera");
+  });
+});
+
+describe("buildInviteEmail", () => {
+  const url = "https://support.example.com/invite/abc";
+
+  it("says who invited them, to which team, with a button to set a password", () => {
+    const email = buildInviteEmail({ brand, inviter: "Ada Okafor", url, days: 7 });
+    expect(email.subject).toBe("Ada Okafor invited you to Glown's support team");
+    expect(email.html).toContain(`href="${url}"`);
+    expect(email.html).toContain("Set your password");
+    expect(email.text).toContain(`Set your password: ${url}`);
+    expect(email.text).toContain("The link works once, for 7 days.");
+  });
+
+  it("wears the brand, and escapes what the admin typed", () => {
+    const email = buildInviteEmail({
+      brand: { ...brand, name: "<Glown>" },
+      inviter: "Ada <b>",
+      url,
+      days: 7,
+    });
+    expect(email.html).toContain("#f1635e");
+    expect(email.html).toContain("&lt;Glown&gt;");
+    expect(email.html).not.toContain("Ada <b>");
   });
 });

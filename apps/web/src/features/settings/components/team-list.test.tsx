@@ -4,11 +4,11 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { changeMember } from "../actions";
+import { changeMember, reinviteMember } from "../actions";
 import { TeamList } from "./team-list";
 
 // The action runs on the server and the router belongs to Next; neither exists in a unit test.
-vi.mock("../actions", () => ({ changeMember: vi.fn() }));
+vi.mock("../actions", () => ({ changeMember: vi.fn(), reinviteMember: vi.fn() }));
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 
@@ -29,11 +29,20 @@ const sam: TeamMember = {
   photo: undefined,
 };
 
-function renderList(members: TeamMember[] = [ada, sam]) {
+function renderList(
+  members: TeamMember[] = [ada, sam],
+  { invited = [], emailReady = true }: { invited?: string[]; emailReady?: boolean } = {},
+) {
   render(
     <TooltipProvider>
       <ConfirmProvider>
-        <TeamList members={members} currentId={ada.id} canEdit />
+        <TeamList
+          members={members}
+          invited={invited}
+          emailReady={emailReady}
+          currentId={ada.id}
+          canEdit
+        />
         <Toaster />
       </ConfirmProvider>
     </TooltipProvider>,
@@ -111,5 +120,38 @@ describe("TeamList", () => {
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }),
     );
     expect(changeMember).not.toHaveBeenCalled();
+  });
+
+  it("marks someone who has not joined, and offers a new invite only to them", async () => {
+    vi.mocked(reinviteMember).mockResolvedValue({ ok: true, delivery: { kind: "emailed" } });
+    const user = userEvent.setup();
+    renderList([ada, sam], { invited: [sam.id] });
+
+    const [adaRow, samRow] = screen.getAllByRole("listitem");
+    expect(within(samRow ?? document.body).getByText("Invited")).toBeInTheDocument();
+    expect(within(adaRow ?? document.body).queryByText("Invited")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Copy invite link, Ada Okafor" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Send invite again, Sam Rivera" }));
+    expect(reinviteMember).toHaveBeenCalledWith(sam.id, "email");
+    expect(await screen.findByText("Invite sent to sam@example.com")).toBeInTheDocument();
+  });
+
+  it("shows a new invite link once, to copy", async () => {
+    const link = "https://support.example.com/invite/abc";
+    vi.mocked(reinviteMember).mockResolvedValue({
+      ok: true,
+      delivery: { kind: "link", link, emailFailed: false, days: 7 },
+    });
+    const user = userEvent.setup();
+    renderList([ada, sam], { invited: [sam.id], emailReady: false });
+
+    // Without email, there is no invite to send again; the link still works.
+    expect(screen.queryByRole("button", { name: "Send invite again, Sam Rivera" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Copy invite link, Sam Rivera" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Invite link for Sam Rivera" });
+    expect(within(dialog).getByText(link)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Copy link" })).toBeInTheDocument();
   });
 });

@@ -48,14 +48,26 @@ export const installationSchema = z.object({
 });
 export type InstallationValues = z.infer<typeof installationSchema>;
 
+/**
+ * How someone added to the team gets in: an emailed link, a link the admin sends themselves, or
+ * a temporary password they change at their first sign-in.
+ */
+export const inviteMethodSchema = z.enum(["email", "link", "password"]);
+export type InviteMethod = z.infer<typeof inviteMethodSchema>;
+
 export const inviteSchema = z.object({
   name: z.string().trim().min(1, "Enter their name.").max(120),
   email: z.string().trim().toLowerCase().pipe(z.email("Enter their email address.")),
   role: agentRoleSchema,
-  /** Optional: without one, they sign in with an emailed code until they set their own. */
-  password: z.union([z.literal(""), newPasswordSchema]).optional(),
+  method: inviteMethodSchema,
 });
 export type InviteValues = z.infer<typeof inviteSchema>;
+
+/** A new invite for someone added who has not joined yet. */
+export const reinviteSchema = z.object({
+  id: z.uuid(),
+  method: inviteMethodSchema.exclude(["password"]),
+});
 
 export const memberChangeSchema = z.object({
   id: z.uuid(),
@@ -66,15 +78,6 @@ export type MemberChange = z.infer<typeof memberChangeSchema>["change"];
 /** A password an admin sets for a team member. */
 export const memberPasswordSchema = z.object({ password: newPasswordSchema });
 export type MemberPasswordValues = z.infer<typeof memberPasswordSchema>;
-
-/** The signed-in team member's own new password, typed twice. */
-export const ownPasswordSchema = z
-  .object({ password: newPasswordSchema, confirm: z.string() })
-  .refine((values) => values.password === values.confirm, {
-    error: "The two passwords do not match.",
-    path: ["confirm"],
-  });
-export type OwnPasswordValues = z.infer<typeof ownPasswordSchema>;
 
 const hex = /^#[0-9a-f]{6}$/;
 
