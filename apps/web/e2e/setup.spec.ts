@@ -4,12 +4,11 @@ import { type AddressInfo } from "node:net";
 import { expect, test } from "@playwright/test";
 
 import { database } from "./support/database";
-import { markMailbox, readSignInCode } from "./support/mailbox";
 
 // The wizard only opens on an install with nobody on its team, which the demo data is not.
 // Run this against a fresh database, as docs/get-started/supabase-cloud.md describes:
-//   E2E_PORT=3170 MAILPIT_URL=http://127.0.0.1:55424 pnpm test:e2e setup.spec.ts
-const ADMIN = { name: "Rosa Diaz", email: "rosa.setup@example.com" };
+//   E2E_PORT=3170 pnpm test:e2e setup.spec.ts
+const ADMIN = { name: "Rosa Diaz", email: "rosa.setup@example.com", password: "rosa-setup-pass" };
 
 // A customer's site on another origin, with the HTML snippet the widget step shows pasted in.
 // A real server, because Chrome only lets a page on a local address load the widget from one.
@@ -43,18 +42,14 @@ test("a new install is set up in the browser, from the first admin to a live wid
   page,
   context,
 }) => {
-  const mailbox = await markMailbox(page.request, ADMIN.email);
-
   // With nobody on the team, sign-in sends people to set up.
   await page.goto("/login");
   await expect(page).toHaveURL(/\/setup$/);
 
   await page.getByLabel("Your name").fill(ADMIN.name);
   await page.getByLabel("Work email").fill(ADMIN.email);
-  await page.getByRole("button", { name: "Create admin and email me a code" }).click();
-  await expect(page.getByRole("heading", { name: `Sign in, ${ADMIN.name}` })).toBeVisible();
-  await page.getByLabel("Sign-in code").fill(await readSignInCode(page.request, mailbox));
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByLabel(/^Password/).fill(ADMIN.password);
+  await page.getByRole("button", { name: "Create admin" }).click();
 
   // Brand.
   await expect(page).toHaveURL(/\/setup\?step=brand$/);
@@ -92,8 +87,6 @@ test("once set up, nobody else can become the first admin", async ({ browser }) 
   await stranger.goto("/setup");
   // Sent on to the dashboard, which sends someone with no session to sign in.
   await expect(stranger).toHaveURL(/\/login$/);
-  await expect(
-    stranger.getByRole("button", { name: "Create admin and email me a code" }),
-  ).toHaveCount(0);
+  await expect(stranger.getByRole("button", { name: "Create admin" })).toHaveCount(0);
   await stranger.close();
 });

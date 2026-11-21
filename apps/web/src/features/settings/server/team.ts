@@ -31,7 +31,8 @@ async function findOrCreateUser(email: string): Promise<string> {
 }
 
 /**
- * Adds someone to the team. They can sign in at once, with a code sent to their email. The
+ * Adds someone to the team. They can sign in at once, with the password given or a code sent
+ * to their email. The
  * team table has no rules that let the browser write to it, so this runs on the server with
  * the secret key, after checking that the caller is an admin.
  */
@@ -48,6 +49,41 @@ export async function inviteTeamMember(caller: Agent, invite: InviteValues): Pro
     if (error.code === "23505") return { ok: false, reason: "already_member" };
     throw error;
   }
+  if (invite.password) {
+    const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: invite.password,
+    });
+    if (passwordError) throw passwordError;
+  }
+  return { ok: true };
+}
+
+export type SetPasswordResult =
+  { ok: true } | { ok: false; reason: "forbidden" | "self" | "not_found" };
+
+/**
+ * Sets a team member's password, for someone who has none or has forgotten theirs. Admins
+ * only, and never their own, which they change under Profile where it is typed twice.
+ */
+export async function setMemberPassword(
+  caller: Agent,
+  id: string,
+  password: string,
+): Promise<SetPasswordResult> {
+  if (caller.role !== "admin") return { ok: false, reason: "forbidden" };
+  if (caller.id === id) return { ok: false, reason: "self" };
+
+  // Only someone on the team: the id must not reach any other account.
+  const { data, error } = await supabaseAdmin
+    .from("agents")
+    .select("user_id")
+    .eq("user_id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return { ok: false, reason: "not_found" };
+
+  const updated = await supabaseAdmin.auth.admin.updateUserById(id, { password });
+  if (updated.error) throw updated.error;
   return { ok: true };
 }
 

@@ -42,6 +42,8 @@ import {
   installationSchema,
   inviteSchema,
   memberChangeSchema,
+  memberPasswordSchema,
+  ownPasswordSchema,
   profileSchema,
   type BrandBasicsValues,
   type BrandingValues,
@@ -51,14 +53,18 @@ import {
   type InstallationValues,
   type InviteValues,
   type MemberChange,
+  type MemberPasswordValues,
+  type OwnPasswordValues,
   type ProfileValues,
 } from "./schemas";
 import {
   changeTeamMember,
   inviteTeamMember,
+  setMemberPassword,
   updateOwnProfile,
   type ChangeMemberResult,
   type InviteResult,
+  type SetPasswordResult,
 } from "./server/team";
 
 export type SaveResult = { ok: true } | { ok: false; reason: "forbidden" | "invalid" };
@@ -166,6 +172,32 @@ export async function changeMember(id: string, change: MemberChange): Promise<Ch
   const result = await changeTeamMember(caller, parsed.data.id, parsed.data.change);
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
+}
+
+/** Sets another team member's password. Admins only. */
+export async function setPasswordFor(
+  id: string,
+  values: MemberPasswordValues,
+): Promise<SetPasswordResult | { ok: false; reason: "invalid" }> {
+  const caller = await getCurrentAgent();
+  if (!caller) return { ok: false, reason: "forbidden" };
+  const parsed = memberPasswordSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  return setMemberPassword(caller, id, parsed.data.password);
+}
+
+export type OwnPasswordResult =
+  { ok: true } | { ok: false; reason: "forbidden" | "invalid" | "weak" | "same" };
+
+/** Sets the signed-in team member's own password. */
+export async function saveOwnPassword(values: OwnPasswordValues): Promise<OwnPasswordResult> {
+  const caller = await getCurrentAgent();
+  if (!caller) return { ok: false, reason: "forbidden" };
+  const parsed = ownPasswordSchema.safeParse(values);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+
+  const helpwren = await getHelpwren();
+  return helpwren.auth.setPassword(parsed.data.password);
 }
 
 /**

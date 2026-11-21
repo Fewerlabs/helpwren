@@ -19,6 +19,8 @@ import {
 } from "@helpwren/core";
 import { z } from "zod";
 
+import { newPasswordSchema } from "@/lib/password-schema";
+
 const widgetPatchSchema = settingsPatchSchema.shape.widget.unwrap();
 
 export const generalSchema = z
@@ -50,6 +52,8 @@ export const inviteSchema = z.object({
   name: z.string().trim().min(1, "Enter their name.").max(120),
   email: z.string().trim().toLowerCase().pipe(z.email("Enter their email address.")),
   role: agentRoleSchema,
+  /** Optional: without one, they sign in with an emailed code until they set their own. */
+  password: z.union([z.literal(""), newPasswordSchema]).optional(),
 });
 export type InviteValues = z.infer<typeof inviteSchema>;
 
@@ -58,6 +62,19 @@ export const memberChangeSchema = z.object({
   change: z.union([z.object({ role: agentRoleSchema }), z.object({ active: z.boolean() })]),
 });
 export type MemberChange = z.infer<typeof memberChangeSchema>["change"];
+
+/** A password an admin sets for a team member. */
+export const memberPasswordSchema = z.object({ password: newPasswordSchema });
+export type MemberPasswordValues = z.infer<typeof memberPasswordSchema>;
+
+/** The signed-in team member's own new password, typed twice. */
+export const ownPasswordSchema = z
+  .object({ password: newPasswordSchema, confirm: z.string() })
+  .refine((values) => values.password === values.confirm, {
+    error: "The two passwords do not match.",
+    path: ["confirm"],
+  });
+export type OwnPasswordValues = z.infer<typeof ownPasswordSchema>;
 
 const hex = /^#[0-9a-f]{6}$/;
 

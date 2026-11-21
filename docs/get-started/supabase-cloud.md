@@ -99,7 +99,7 @@ Skip this step if you gave the installer `--access-token`. Otherwise, in the Sup
 
 > [!NOTE]
 > Supabase's built-in email reaches only the members of your Supabase organisation, a few times
-> an hour. That is enough for the first admin if you use your own address. To sign in anyone
+> an hour. Passwords need no email, so the team can sign in without it. For codes to reach anyone
 > else, set up **Authentication → Emails → SMTP Settings**
 > ([guide](https://supabase.com/docs/guides/auth/auth-smtp)).
 

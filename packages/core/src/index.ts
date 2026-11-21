@@ -115,6 +115,11 @@ export {
   LOGIN_CODE_LENGTH,
   loginCodeSchema,
   loginEmailSchema,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  passwordSchema,
+  type PasswordSignInResult,
+  type SetPasswordResult,
   type VerifyLoginCodeResult,
 } from "./auth";
 export { apiErrorSchema, RATE_LIMITED_SQLSTATE, type ApiErrorCode, type ApiOptions } from "./api";

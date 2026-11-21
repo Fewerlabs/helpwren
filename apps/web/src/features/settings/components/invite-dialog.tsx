@@ -40,9 +40,16 @@ const fields: FieldItem<InviteValues>[] = [
       ],
     },
   },
+  {
+    name: "password",
+    label: "Password",
+    type: "password",
+    hint: "Optional. Without one, they sign in with a code sent to their email.",
+    props: { autoComplete: "new-password" },
+  },
 ];
 
-const empty: InviteValues = { name: "", email: "", role: "agent" };
+const empty: InviteValues = { name: "", email: "", role: "agent", password: "" };
 
 const failures = {
   forbidden: "Only admins can add team members.",
@@ -101,8 +108,7 @@ export function InviteDialog() {
           <DialogHeader>
             <DialogTitle>Add a team member</DialogTitle>
             <DialogDescription>
-              They can sign in straight away, with a code sent to this email. No invitation is
-              emailed, so let them know.
+              No invitation is emailed, so let them know they can sign in.
             </DialogDescription>
           </DialogHeader>
           <form

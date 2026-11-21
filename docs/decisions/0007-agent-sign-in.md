@@ -50,3 +50,5 @@ Sign-in also sets the pattern for how the app talks to Supabase and to `@helpwre
 
 - 2026-11-18: the team's screens moved from `/inbox` to `/dashboard`, and sign-in from
   `/inbox/login` to `/login`. Where this record says `/inbox`, read `/dashboard`.
+- 2026-11-21: team members can also sign in with a password, which needs no email. See
+  [0027](0027-password-sign-in.md).

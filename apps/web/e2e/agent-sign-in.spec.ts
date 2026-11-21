@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { newTeamMember, uniqueEmail } from "./support/database";
+import { database, newTeamMember, uniqueEmail } from "./support/database";
 import { countNewEmails, markMailbox, readSignInCode } from "./support/mailbox";
 
 // Runs against the local Supabase stack: `pnpm db:start`, then `pnpm db:env`. The team member is
@@ -61,4 +61,20 @@ test("an email that is not on the team gets the same answer and no code", async 
   await expect(page.getByRole("status")).toContainText(`If ${nobody} is on the team`);
 
   expect(await countNewEmails(request, mark)).toBe(0);
+});
+
+test("a team member signs in with a password an admin set for them", async ({ page }) => {
+  const password = "rosa-signin-pass";
+  const { error } = await database.auth.admin.updateUserById(agent.id, { password });
+  if (error) throw error;
+
+  await page.goto("/login");
+  await page.getByLabel("Work email").fill(agent.email);
+  await page.getByLabel(/^Password/).fill("not-her-password");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByText("That email and password do not match.")).toBeVisible();
+
+  await page.getByLabel(/^Password/).fill(password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard\/inbox$/);
 });

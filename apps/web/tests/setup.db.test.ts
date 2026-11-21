@@ -17,6 +17,8 @@ vi.mock("next/server", async (original) => ({
   after: (task: () => Promise<unknown>) => void task(),
 }));
 
+const PASSWORD = "setup-test-password";
+
 async function accountExists(email: string): Promise<boolean> {
   const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
   return data.users.some((user) => user.email === email);
@@ -27,7 +29,7 @@ describe("the first admin, on an install that has a team", () => {
   const email = "intruder.setup-test@example.com";
 
   it("is refused, and no account or team member is made", async () => {
-    await expect(createFirstAdmin("Intruder", email)).resolves.toBe("taken");
+    await expect(createFirstAdmin("Intruder", email, PASSWORD)).resolves.toBe("taken");
     expect(await accountExists(email)).toBe(false);
     const { data } = await supabaseAdmin.from("agents").select("user_id").eq("email", email);
     expect(data).toEqual([]);
@@ -101,7 +103,9 @@ describe.runIf(process.env.SETUP_EMPTY_INSTALL === "1")("the first admin, on a n
     expect(await hasTeam()).toBe(false);
     const emails = Array.from({ length: 5 }, (_, index) => `racer${index}.setup-test@example.com`);
 
-    const results = await Promise.all(emails.map((email) => createFirstAdmin("Racer", email)));
+    const results = await Promise.all(
+      emails.map((email) => createFirstAdmin("Racer", email, PASSWORD)),
+    );
 
     expect(results.filter((result) => result === "created")).toHaveLength(1);
     const { data: agents } = await supabaseAdmin.from("agents").select("email, role, active");
@@ -112,7 +116,9 @@ describe.runIf(process.env.SETUP_EMPTY_INSTALL === "1")("the first admin, on a n
     for (const [index, email] of emails.entries()) {
       expect(await accountExists(email)).toBe(results[index] === "created");
     }
-    await expect(createFirstAdmin("Late", "late.setup-test@example.com")).resolves.toBe("taken");
+    await expect(createFirstAdmin("Late", "late.setup-test@example.com", PASSWORD)).resolves.toBe(
+      "taken",
+    );
   });
 
   afterAll(async () => {

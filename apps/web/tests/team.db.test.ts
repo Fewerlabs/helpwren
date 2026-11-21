@@ -1,10 +1,17 @@
 import { randomUUID } from "node:crypto";
 
 import { type Agent } from "@helpwren/core";
+import { createClient } from "@supabase/supabase-js";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { changeTeamMember, inviteTeamMember } from "@/features/settings/server/team";
+import {
+  changeTeamMember,
+  inviteTeamMember,
+  setMemberPassword,
+} from "@/features/settings/server/team";
+import { env } from "@/lib/env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { supabaseServerUrl } from "@/lib/supabase/server-url";
 
 // These run against the shared local database. Whoever is signed in to try the app keeps their
 // access: the team members changed here are made here, and the demo's Ada and Sam are left alone.
@@ -46,6 +53,15 @@ async function member(email: string) {
   return data;
 }
 
+/** Whether this email and password sign in to Supabase Auth. */
+async function signsIn(email: string, password: string): Promise<boolean> {
+  const client = createClient(supabaseServerUrl, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  return !error;
+}
+
 afterAll(async () => {
   await Promise.all(made.map((id) => supabaseAdmin.auth.admin.deleteUser(id)));
 });
@@ -73,6 +89,11 @@ describe("inviteTeamMember", () => {
       role: "agent",
       active: true,
     });
+  });
+
+  it("gives them the password set when they were added", async () => {
+    await inviteTeamMember(admin, { ...invite, password: "kofi-password" });
+    expect(await signsIn(invite.email, "kofi-password")).toBe(true);
   });
 
   it("says so when the person is already on the team", async () => {
@@ -157,6 +178,30 @@ describe("changeTeamMember", () => {
 
   it("says so when the person is not on the team", async () => {
     await expect(changeTeamMember(admin, randomUUID(), { active: false })).resolves.toEqual({
+      ok: false,
+      reason: "not_found",
+    });
+  });
+});
+
+describe("setMemberPassword", () => {
+  it("sets the password of someone on the team", async () => {
+    const { id, email } = await newMember("agent");
+    await expect(setMemberPassword(admin, id, "a-new-password")).resolves.toEqual({ ok: true });
+    expect(await signsIn(email, "a-new-password")).toBe(true);
+  });
+
+  it("refuses an agent, the admin themself, and anyone not on the team", async () => {
+    const { id } = await newMember("agent");
+    await expect(setMemberPassword(caller("agent"), id, "a-new-password")).resolves.toEqual({
+      ok: false,
+      reason: "forbidden",
+    });
+    await expect(setMemberPassword({ ...admin, id }, id, "a-new-password")).resolves.toEqual({
+      ok: false,
+      reason: "self",
+    });
+    await expect(setMemberPassword(admin, randomUUID(), "a-new-password")).resolves.toEqual({
       ok: false,
       reason: "not_found",
     });

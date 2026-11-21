@@ -32,8 +32,27 @@ export interface RequestNetwork {
 }
 
 export function requestNetwork(request: Request): RequestNetwork {
-  const address = clientAddress(request.headers, serverEnv.CLIENT_IP_HEADER);
+  return networkFromHeaders(request.headers);
+}
+
+/** The same, from a request's headers, as a Server Action has them. */
+export function networkFromHeaders(headers: Headers): RequestNetwork {
+  const address = clientAddress(headers, serverEnv.CLIENT_IP_HEADER);
   return { address, key: networkKey(address, serverEnv.SUPABASE_SECRET_KEY) };
+}
+
+/**
+ * Counts one try under each limit whose key is known, for a Server Action, which answers with
+ * a result rather than a response. False when one of them is used up.
+ */
+export async function withinLimits(
+  checks: readonly (readonly [Limit, string | null | undefined])[],
+): Promise<boolean> {
+  for (const [limit, key] of checks) {
+    if (!key) continue;
+    if (!(await store.hit(`${limit.name}:${key}`, limit))) return false;
+  }
+  return true;
 }
 
 /**
@@ -46,7 +65,7 @@ export async function checkLimits(
 ): Promise<Response | null> {
   for (const [limit, key] of checks) {
     if (!key) continue;
-    if (!(await store.hit(`${limit.name}:${key}`, limit))) {
+    if (!(await withinLimits([[limit, key]]))) {
       const response = apiError("rate_limited", "Too many requests. Wait a little and try again.");
       response.headers.set("retry-after", String(limit.windowSeconds));
       return response;

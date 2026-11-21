@@ -40,8 +40,8 @@ every option.
 
 Supabase holds everything: Postgres for conversations, contacts, articles and settings; Realtime
 for live messages, typing and online status; Storage for attachments and logos; and Auth for
-sign-in. A visitor chats as an anonymous Supabase user, and the team signs in with a six-digit
-code sent by email. Access rules in the database decide who can read what, so the visitor's chat
+sign-in. A visitor chats as an anonymous Supabase user, and the team signs in with a password or
+a six-digit code sent by email. Access rules in the database decide who can read what, so the visitor's chat
 can read and write only its own conversations even though it talks to Supabase directly.
 
 Settings live in the database too, not in code: an admin changes the brand, identity, email and

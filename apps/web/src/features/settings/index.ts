@@ -10,6 +10,7 @@ export { identityToValues } from "./schemas";
 export { InstallationForm } from "./components/installation-form";
 export { InviteDialog } from "./components/invite-dialog";
 export { NotificationForm } from "./components/notification-form";
+export { PasswordForm } from "./components/password-form";
 export { ProfileForm } from "./components/profile-form";
 export { SettingsFrame, SettingsPage, SettingsSection } from "./components/settings-frame";
 export { TeamGroups } from "./components/team-groups";

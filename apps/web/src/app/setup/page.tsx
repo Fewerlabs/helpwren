@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { type ReactNode } from "react";
 
-import { DASHBOARD_PATH, getCurrentAgent } from "@/features/agent-auth";
+import { DASHBOARD_PATH, getCurrentAgent, LoginForm } from "@/features/agent-auth";
 import { FirstAdminStep, SetupSteps, SetupWizard, setupStepSchema } from "@/features/setup";
 import { getEmailAdapter } from "@/lib/email";
 import { summariseInbound } from "@/lib/email/inbound";
@@ -15,16 +15,6 @@ export const metadata: Metadata = { title: "Set up Helpwren" };
 
 // Who is on the team changes as the wizard runs, so it is never built ahead of a request.
 export const dynamic = "force-dynamic";
-
-/**
- * The local stack's test mailbox, three ports above its API by the Supabase CLI's convention,
- * when this install runs on one. A hosted project has none.
- */
-function localMailbox(): string | null {
-  const url = new URL(env.NEXT_PUBLIC_SUPABASE_URL);
-  if (url.hostname !== "127.0.0.1" && url.hostname !== "localhost") return null;
-  return `${url.protocol}//${url.hostname}:${Number(url.port || 80) + 3}`;
-}
 
 /**
  * The first-run wizard. With nobody on the team, anyone who opens it can create the first
@@ -47,7 +37,11 @@ export default async function SetupPage({
       <Shell>
         <SetupSteps current="admin" />
         <Card className="p-6">
-          <FirstAdminStep mailboxUrl={localMailbox()} adminExists={team} />
+          {team ? (
+            <LoginForm title="Sign in to finish setting up" next="/setup" />
+          ) : (
+            <FirstAdminStep />
+          )}
         </Card>
       </Shell>
     );

@@ -93,6 +93,7 @@ export { Label, type LabelProps } from "./label/label";
 export { LinearProgress, type LinearProgressProps } from "./linear-progress/linear-progress";
 export { Link, type LinkProps } from "./link/link";
 export { OtpInput, type OtpInputProps } from "./otp-input/otp-input";
+export { PasswordInput, type PasswordInputProps } from "./password-input/password-input";
 export { OptionList, type OptionListOption, type OptionListProps } from "./option-list/option-list";
 export { readPageSize, rememberPageSize } from "./pagination/page-size-memory";
 export {

@@ -77,11 +77,19 @@ export type FirstAdminResult = "created" | "taken";
  * under a lock (`create_first_admin`), so two people setting up at the same moment cannot both
  * win; the one who loses gets "taken", and any account made for them is removed again.
  */
-export async function createFirstAdmin(name: string, email: string): Promise<FirstAdminResult> {
+export async function createFirstAdmin(
+  name: string,
+  email: string,
+  password: string,
+): Promise<FirstAdminResult> {
   // Refuse before making an account, so a set-up install never gains one through here.
   if (await hasTeam()) return "taken";
 
-  const created = await supabaseAdmin.auth.admin.createUser({ email, email_confirm: true });
+  const created = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
   let userId: string | null;
   let madeNow = false;
   if (!created.error) {
@@ -93,6 +101,11 @@ export async function createFirstAdmin(name: string, email: string): Promise<Fir
     throw created.error;
   }
   if (!userId) throw new Error(`An account for ${email} exists but could not be found.`);
+  if (!madeNow) {
+    // An account left from an earlier try: the password chosen now is the one that signs in.
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+    if (error) throw error;
+  }
 
   const { data: won, error } = await supabaseAdmin.rpc("create_first_admin", {
     user_id: userId,

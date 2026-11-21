@@ -23,11 +23,12 @@ needed.
 
 ## Signing in
 
-**No sign-in code arrives.** On Supabase Cloud, the built-in email reaches only members of your
+**No sign-in code arrives.** Sign in with a password instead, if you have one; an admin can set
+one under **Settings → Team**. On Supabase Cloud, the built-in email reaches only members of your
 Supabase organisation, a few an hour; set up SMTP (see
 [Configure Auth](../get-started/supabase-cloud.md#configure-auth)). With Docker, check `SMTP_*` in
 `deploy/docker/.env`, or the test mailbox at http://localhost:8025, and
-`docker compose logs auth`. In the setup wizard, **Send a new code** shows Supabase's own error.
+`docker compose logs auth`.
 
 **The email has a link instead of a code.** The magic link template was not changed. See
 [Configure Auth](../get-started/supabase-cloud.md#configure-auth), step 2.

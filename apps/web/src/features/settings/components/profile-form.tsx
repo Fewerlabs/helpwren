@@ -84,10 +84,7 @@ export function ProfileForm({ agent }: ProfileFormProps) {
       >
         <FieldList control={form.control} fields={fields} disabled={form.formState.isSubmitting} />
       </SettingsSection>
-      <SettingsSection
-        title="Sign-in"
-        description="You sign in with a code sent to this address. An admin can change your role."
-      >
+      <SettingsSection title="Sign-in" description="An admin can change your role.">
         <dl className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5">
           <dt className="text-muted-foreground">Email</dt>
           <dd className="truncate">{agent.email}</dd>

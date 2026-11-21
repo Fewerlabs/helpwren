@@ -3,7 +3,7 @@
 Answer conversations, find contacts and see who is on your site, from the dashboard.
 
 The dashboard is at `https://support.example.com/dashboard`. Team members sign in with their
-email and a six-digit code; there are no passwords.
+email and a password, or a six-digit code sent to that email.
 
 ## Views
 

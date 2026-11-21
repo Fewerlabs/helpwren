@@ -155,3 +155,73 @@ describe("signing in", () => {
     expect(data.session).toBeNull();
   });
 });
+
+describe("signing in with a password", () => {
+  const PASSWORD = `pass-${runMarker()}`;
+  let adminEmail = "";
+  let adminId = "";
+  const made: string[] = [];
+
+  beforeAll(async () => {
+    const outsiderId = await newAccount(uniqueEmail("password-outsider"));
+    made.push(outsiderId);
+    const admin = await newAgent(`Admin ${runMarker()}`, "admin");
+    made.push(admin.id);
+    adminEmail = admin.email;
+    adminId = admin.id;
+    const { error } = await serverClient().auth.admin.updateUserById(adminId, {
+      password: PASSWORD,
+    });
+    if (error) throw error;
+  });
+
+  afterAll(async () => {
+    await removeAccounts(made);
+  });
+
+  it("signs a team member in with the right password", async () => {
+    const client = newClient();
+    const result = await client.auth.signInWithPassword(adminEmail, PASSWORD);
+    expect(result).toMatchObject({ ok: true, agent: { email: adminEmail, role: "admin" } });
+    await expect(client.agents.me()).resolves.toMatchObject({ email: adminEmail });
+  });
+
+  it("gives the same answer for a wrong password and an unknown email", async () => {
+    await expect(newClient().auth.signInWithPassword(adminEmail, "not-the-one")).resolves.toEqual({
+      ok: false,
+      reason: "invalid_credentials",
+    });
+    await expect(
+      newClient().auth.signInWithPassword(uniqueEmail("nobody"), PASSWORD),
+    ).resolves.toEqual({ ok: false, reason: "invalid_credentials" });
+  });
+
+  it("turns away someone with a password who is not on the team, leaving no session", async () => {
+    const email = uniqueEmail("password-only");
+    const id = await newAccount(email);
+    made.push(id);
+    await serverClient().auth.admin.updateUserById(id, { password: PASSWORD });
+    const supabase = browserClient();
+    const client = createHelpwrenClient({ supabase });
+
+    await expect(client.auth.signInWithPassword(email, PASSWORD)).resolves.toEqual({
+      ok: false,
+      reason: "not_an_agent",
+    });
+    const { data } = await supabase.auth.getSession();
+    expect(data.session).toBeNull();
+  });
+
+  it("lets a signed-in team member change their own password", async () => {
+    const client = newClient();
+    await client.auth.signInWithPassword(adminEmail, PASSWORD);
+    const next = `${PASSWORD}-new`;
+
+    await expect(client.auth.setPassword("short")).resolves.toEqual({ ok: false, reason: "weak" });
+    await expect(client.auth.setPassword(next)).resolves.toEqual({ ok: true });
+    await expect(newClient().auth.signInWithPassword(adminEmail, next)).resolves.toMatchObject({
+      ok: true,
+    });
+    await serverClient().auth.admin.updateUserById(adminId, { password: PASSWORD });
+  });
+});

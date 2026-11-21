@@ -27,6 +27,10 @@ export const LIMITS = {
   uploadPerSession: { name: "upload:session", limit: 30, windowSeconds: 10 * MINUTE },
   uploadPerNetwork: { name: "upload:network", limit: 200, windowSeconds: HOUR },
   feedbackPerNetwork: { name: "feedback:network", limit: 30, windowSeconds: HOUR },
+  // Guessing a team member's password: a handful of tries for one address, more for a network
+  // where a whole office may be signing in at once.
+  passwordPerEmail: { name: "password:email", limit: 10, windowSeconds: 15 * MINUTE },
+  passwordPerNetwork: { name: "password:network", limit: 50, windowSeconds: 15 * MINUTE },
   // One answer per article from one network a day. A second answer is not an error to the
   // reader: it is simply not counted.
   feedbackPerArticle: { name: "feedback:article", limit: 1, windowSeconds: 24 * HOUR },

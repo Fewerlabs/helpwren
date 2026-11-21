@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { changeMember } from "../actions";
 import { type MemberChange } from "../schemas";
+import { MemberPasswordDialog } from "./member-password-dialog";
 
 const failures = {
   forbidden: "Only admins can change the team.",
@@ -36,6 +37,7 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
   const router = useRouter();
   const confirm = useConfirm();
   const [pending, setPending] = useState<string | null>(null);
+  const [settingPassword, setSettingPassword] = useState<TeamMember | null>(null);
 
   /** Saves a change, or throws an error whose message is written for the person. */
   async function save(member: TeamMember, change: MemberChange) {
@@ -87,68 +89,88 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
   }
 
   return (
-    <ul aria-label="Team members" className="border-rule divide-rule divide-y border-y">
-      {members.map((member) => {
-        const isSelf = member.id === currentId;
-        const busy = pending === member.id;
-        return (
-          <li key={member.id} className="flex items-center gap-3 py-2.5">
-            <Avatar
-              name={member.name}
-              src={member.photo}
-              size="sm"
-              className="text-2xs size-7 shrink-0"
-            />
-            {/* Takes the room the badges and actions leave, and cuts long names short. */}
-            <div className="min-w-0 flex-1">
-              <p className="flex min-w-0 items-center gap-2 font-medium">
-                <span className="truncate">{member.name}</span>
-                {isSelf ? (
-                  <span className="text-muted-foreground shrink-0 font-normal">(you)</span>
-                ) : null}
-              </p>
-              <p className="text-muted-foreground truncate text-xs">{member.email}</p>
-            </div>
-            <Badge variant={member.role === "admin" ? "accent" : "neutral"} className="shrink-0">
-              {member.role === "admin" ? "Admin" : "Agent"}
-            </Badge>
-            {member.active ? null : (
-              <Badge variant="outline" className="shrink-0">
-                Deactivated
+    <>
+      <ul aria-label="Team members" className="border-rule divide-rule divide-y border-y">
+        {members.map((member) => {
+          const isSelf = member.id === currentId;
+          const busy = pending === member.id;
+          return (
+            <li key={member.id} className="flex items-center gap-3 py-2.5">
+              <Avatar
+                name={member.name}
+                src={member.photo}
+                size="sm"
+                className="text-2xs size-7 shrink-0"
+              />
+              {/* Takes the room the badges and actions leave, and cuts long names short. */}
+              <div className="min-w-0 flex-1">
+                <p className="flex min-w-0 items-center gap-2 font-medium">
+                  <span className="truncate">{member.name}</span>
+                  {isSelf ? (
+                    <span className="text-muted-foreground shrink-0 font-normal">(you)</span>
+                  ) : null}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">{member.email}</p>
+              </div>
+              <Badge variant={member.role === "admin" ? "accent" : "neutral"} className="shrink-0">
+                {member.role === "admin" ? "Admin" : "Agent"}
               </Badge>
-            )}
-            {canEdit && !isSelf ? (
-              <div className="flex shrink-0 gap-1">
-                {member.active ? (
+              {member.active ? null : (
+                <Badge variant="outline" className="shrink-0">
+                  Deactivated
+                </Badge>
+              )}
+              {canEdit && !isSelf ? (
+                <div className="flex shrink-0 gap-1">
                   <ActionButton
                     variant="ghost"
-                    icon={member.role === "admin" ? "shield-slash" : "shield-check"}
-                    label={member.role === "admin" ? "Make agent" : "Make admin"}
+                    icon="key"
+                    label="Set password"
                     disabled={busy}
                     target={member.name}
                     onClick={() => {
-                      changeRole(member);
+                      setSettingPassword(member);
                     }}
                   />
-                ) : null}
-                <ActionButton
-                  variant="ghost"
-                  icon={member.active ? "user-minus" : "user-check"}
-                  label={member.active ? "Deactivate" : "Reactivate"}
-                  disabled={busy}
-                  target={member.name}
-                  // Taking away someone's access is the one action here that hurts if misclicked.
-                  className={member.active ? "text-destructive hover:text-destructive" : undefined}
-                  onClick={() => {
-                    if (member.active) deactivate(member);
-                    else change(member, { active: true });
-                  }}
-                />
-              </div>
-            ) : null}
-          </li>
-        );
-      })}
-    </ul>
+                  {member.active ? (
+                    <ActionButton
+                      variant="ghost"
+                      icon={member.role === "admin" ? "shield-slash" : "shield-check"}
+                      label={member.role === "admin" ? "Make agent" : "Make admin"}
+                      disabled={busy}
+                      target={member.name}
+                      onClick={() => {
+                        changeRole(member);
+                      }}
+                    />
+                  ) : null}
+                  <ActionButton
+                    variant="ghost"
+                    icon={member.active ? "user-minus" : "user-check"}
+                    label={member.active ? "Deactivate" : "Reactivate"}
+                    disabled={busy}
+                    target={member.name}
+                    // Taking away someone's access is the one action here that hurts if misclicked.
+                    className={
+                      member.active ? "text-destructive hover:text-destructive" : undefined
+                    }
+                    onClick={() => {
+                      if (member.active) deactivate(member);
+                      else change(member, { active: true });
+                    }}
+                  />
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      <MemberPasswordDialog
+        member={settingPassword}
+        onClose={() => {
+          setSettingPassword(null);
+        }}
+      />
+    </>
   );
 }

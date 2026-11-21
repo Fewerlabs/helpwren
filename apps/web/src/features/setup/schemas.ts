@@ -1,9 +1,12 @@
 import { z } from "zod";
 
+import { newPasswordSchema } from "@/lib/password-schema";
+
 /** The install's first admin, as typed in the setup wizard. */
 export const firstAdminSchema = z.object({
   name: z.string().trim().min(1, "Enter your name.").max(120),
   email: z.string().trim().toLowerCase().pipe(z.email("Enter your email address.")),
+  password: newPasswordSchema,
 });
 export type FirstAdminValues = z.infer<typeof firstAdminSchema>;
 

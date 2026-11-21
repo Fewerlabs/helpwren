@@ -26,6 +26,9 @@ await helpwren.conversations.unreadCount("contact");
 // A team member
 await helpwren.auth.sendLoginCode(email);
 await helpwren.auth.verifyLoginCode(email, code);
+// Or with a password
+await helpwren.auth.signInWithPassword(email, password);
+await helpwren.auth.setPassword(newPassword); // the signed-in team member's own
 await helpwren.agents.me();
 await helpwren.conversations.list(); // every conversation
 await helpwren.conversations.subscribe({ inbox: true }, (conversation) => {});

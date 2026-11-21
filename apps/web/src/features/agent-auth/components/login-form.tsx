@@ -7,13 +7,15 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { useForm, type Control, type FieldValues } from "react-hook-form";
 import { z } from "zod";
 
-import { requestLoginCode, submitLoginCode } from "../actions";
+import { requestLoginCode, submitLoginCode, submitPassword } from "../actions";
 
 // The same rules the client library applies, with messages written for this form.
-const emailFormSchema = z.object({
-  email: z.string().refine((value) => loginEmailSchema.safeParse(value).success, {
-    error: "Enter your email address.",
-  }),
+const emailRule = z.string().refine((value) => loginEmailSchema.safeParse(value).success, {
+  error: "Enter your email address.",
+});
+const passwordFormSchema = z.object({
+  email: emailRule,
+  password: z.string().min(1, "Enter your password."),
 });
 const codeFormSchema = z.object({
   code: z.string().refine((value) => loginCodeSchema.safeParse(value).success, {
@@ -21,10 +23,10 @@ const codeFormSchema = z.object({
   }),
 });
 
-type EmailForm = z.infer<typeof emailFormSchema>;
+type PasswordForm = z.infer<typeof passwordFormSchema>;
 type CodeForm = z.infer<typeof codeFormSchema>;
 
-const emailFields: FieldItem<EmailForm>[] = [
+const passwordFields: FieldItem<PasswordForm>[] = [
   {
     name: "email",
     label: "Work email",
@@ -38,6 +40,7 @@ const emailFields: FieldItem<EmailForm>[] = [
       prepend: <Icon name="envelope" />,
     },
   },
+  { name: "password", label: "Password", type: "password", required: true },
 ];
 
 const codeFields: FieldItem<CodeForm>[] = [
@@ -68,16 +71,25 @@ const codeFields: FieldItem<CodeForm>[] = [
 ];
 
 const TRY_AGAIN = "Something went wrong on our side. Try again in a moment.";
+const NOT_ON_TEAM = "This email is not on the team. Ask an admin to invite you.";
+
+const passwordErrors = {
+  invalid_credentials: "That email and password do not match.",
+  not_an_agent: NOT_ON_TEAM,
+  rate_limited: "Too many tries. Wait a few minutes, or sign in with a code.",
+  failed: TRY_AGAIN,
+} as const;
 
 const codeErrors = {
   invalid_code: "That code is wrong or out of date. Check it, or send a new one.",
-  not_an_agent: "This email is not on the team. Ask an admin to invite you.",
+  not_an_agent: NOT_ON_TEAM,
   failed: TRY_AGAIN,
 } as const;
 
 interface StepProps<Values extends FieldValues> {
-  /** Under the heading: what this step is for, or what has just happened. */
-  description: ReactNode;
+  title: string;
+  /** Under the heading, when there is something to say: what has just happened. */
+  description?: ReactNode;
   control: Control<Values>;
   fields: FieldItem<Values>[];
   rootError: string | undefined;
@@ -88,6 +100,7 @@ interface StepProps<Values extends FieldValues> {
 }
 
 function Step<Values extends FieldValues>({
+  title,
   description,
   control,
   fields,
@@ -100,8 +113,8 @@ function Step<Values extends FieldValues>({
   return (
     <form noValidate className="grid gap-5" onSubmit={onSubmit}>
       <div className="grid gap-1">
-        <h1 className="text-xl font-semibold">Sign in to Helpwren</h1>
-        <p className="text-muted-foreground text-sm">{description}</p>
+        <h1 className="text-xl font-semibold">{title}</h1>
+        {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
       </div>
       <FieldList control={control} fields={fields} disabled={submitting} />
       {rootError ? (
@@ -117,25 +130,50 @@ function Step<Values extends FieldValues>({
   );
 }
 
-/** Sign-in for team members: ask for an email, then for the code sent to it. */
-export function LoginForm() {
+export interface LoginFormProps {
+  title?: string;
+  /** Where to go once signed in. Only `/setup` is honoured; anything else goes to the dashboard. */
+  next?: string;
+}
+
+/**
+ * Sign-in for team members: an email and a password, or a code emailed to them for anyone
+ * without a password.
+ */
+export function LoginForm({ title = "Sign in to Helpwren", next }: LoginFormProps) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
-  const emailForm = useForm<EmailForm>({
-    resolver: zodResolver(emailFormSchema),
-    defaultValues: { email: "" },
+  const passwordForm = useForm<PasswordForm>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: { email: "", password: "" },
   });
   const codeForm = useForm<CodeForm>({
     resolver: zodResolver(codeFormSchema),
     defaultValues: { code: "" },
   });
+  const [sendingCode, setSendingCode] = useState(false);
 
-  async function sendCode({ email }: EmailForm) {
-    const result = await requestLoginCode(email);
-    if (result.ok) {
-      setSentTo(email);
-    } else {
-      emailForm.setError("root", { message: TRY_AGAIN });
+  async function signInWithPassword({ email, password }: PasswordForm) {
+    // On success the action redirects, so a result here is always a failure.
+    const result = await submitPassword(email, password, next);
+    passwordForm.setError("root", { message: passwordErrors[result.reason] });
+  }
+
+  /** Checks only the email, as a code needs no password. */
+  async function sendCode() {
+    if (!(await passwordForm.trigger("email"))) return;
+    const email = passwordForm.getValues("email");
+    setSendingCode(true);
+    try {
+      const result = await requestLoginCode(email);
+      if (result.ok) {
+        passwordForm.clearErrors();
+        setSentTo(email);
+      } else {
+        passwordForm.setError("root", { message: TRY_AGAIN });
+      }
+    } finally {
+      setSendingCode(false);
     }
   }
 
@@ -150,31 +188,43 @@ export function LoginForm() {
     }
   }
 
-  async function signIn(email: string, { code }: CodeForm) {
+  async function signInWithCode(email: string, { code }: CodeForm) {
     setResent(false);
-    // On success the action redirects to the inbox, so a result here is always a failure.
-    const result = await submitLoginCode(email, code);
+    const result = await submitLoginCode(email, code, next);
     codeForm.setError("root", { message: codeErrors[result.reason] });
   }
 
   if (sentTo === null) {
+    const busy = passwordForm.formState.isSubmitting || sendingCode;
     return (
       <Step
-        description="For team members. We will email you a code; there is no password."
-        control={emailForm.control}
-        fields={emailFields}
-        rootError={emailForm.formState.errors.root?.message}
-        submitting={emailForm.formState.isSubmitting}
-        submitLabel="Email me a code"
+        title={title}
+        control={passwordForm.control}
+        fields={passwordFields}
+        rootError={passwordForm.formState.errors.root?.message}
+        submitting={busy}
+        submitLabel="Sign in"
         onSubmit={(event) => {
-          void emailForm.handleSubmit(sendCode)(event);
+          void passwordForm.handleSubmit(signInWithPassword)(event);
         }}
-      />
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={busy}
+          onClick={() => {
+            void sendCode();
+          }}
+        >
+          Email me a code instead
+        </Button>
+      </Step>
     );
   }
 
   return (
     <Step
+      title={title}
       // What was done with the email takes the place of the introduction, where the eye already is.
       description={
         <span role="status">
@@ -189,7 +239,7 @@ export function LoginForm() {
       submitting={codeForm.formState.isSubmitting}
       submitLabel="Sign in"
       onSubmit={(event) => {
-        void codeForm.handleSubmit((values) => signIn(sentTo, values))(event);
+        void codeForm.handleSubmit((values) => signInWithCode(sentTo, values))(event);
       }}
     >
       <div className="flex flex-wrap gap-2">
@@ -213,7 +263,7 @@ export function LoginForm() {
             setSentTo(null);
           }}
         >
-          Use a different email
+          Use a password
         </Button>
       </div>
     </Step>

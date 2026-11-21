@@ -188,7 +188,7 @@ export function SetupWizard({
             description={
               emailProvider
                 ? `This install sends mail through ${emailProvider}. Say who it comes from, then send yourself a test.`
-                : "No email provider is set up yet, so Helpwren sends no mail of its own: no reply notifications, no ticket updates. Set EMAIL_PROVIDER in the server's environment to turn it on (see https://helpwren.fewerlabs.dev/docs/email). Sign-in codes are separate: Supabase Auth sends those."
+                : "No email provider is set up yet, so Helpwren sends no mail of its own: no reply notifications, no ticket updates. Set EMAIL_PROVIDER in the server's environment to turn it on (see https://helpwren.fewerlabs.dev/docs/email)."
             }
             footer={
               <>
