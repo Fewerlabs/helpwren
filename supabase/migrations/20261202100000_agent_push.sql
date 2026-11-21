@@ -47,12 +47,12 @@ create policy agent_push_subscriptions_own_delete on public.agent_push_subscript
 -- Keeps this browser's subscription for the team member asking. A browser that another team
 -- member signed in to before moves to whoever signs in now: holding the endpoint, which only
 -- the browser knows, is the proof it is theirs.
-create function public.save_push_subscription(
+create function private.save_push_subscription(
   endpoint text,
   p256dh text,
   auth_key text,
-  user_agent text default null,
-  notify_about text default 'all'
+  user_agent text,
+  notify_about text
 ) returns uuid
 language plpgsql security definer set search_path = ''
 as $$
@@ -75,6 +75,20 @@ begin
   return saved;
 end;
 $$;
+
+revoke execute on function private.save_push_subscription from public, anon;
+grant execute on function private.save_push_subscription to authenticated;
+
+-- The same, for a team member's browser to call through the Data API.
+create function public.save_push_subscription(
+  endpoint text,
+  p256dh text,
+  auth_key text,
+  user_agent text default null,
+  notify_about text default 'all'
+) returns uuid
+language sql set search_path = ''
+as $$ select private.save_push_subscription(endpoint, p256dh, auth_key, user_agent, notify_about); $$;
 
 revoke execute on function public.save_push_subscription from public, anon;
 grant execute on function public.save_push_subscription to authenticated;
