@@ -1,4 +1,5 @@
 // The public API of the dashboard's settings. Code outside this folder imports only from here.
+export { AppSettings } from "./components/app-settings";
 export { BrandBasicsForm } from "./components/brand-basics-form";
 export { BrandingForm } from "./components/branding-form";
 export { EmailForm, type EmailFormProps, type SavedSending } from "./components/email-form";

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Offline · Helpwren</title>
+    <!-- The dashboard's colours, from packages/design-system/src/tokens/tokens.css. Shown by the
+         service worker when a dashboard page cannot be reached, so it needs nothing else. -->
+    <style>
+      :root {
+        --canvas: #f3f3f3;
+        --card: #ffffff;
+        --ink: #1a1a1a;
+        --pencil: #666666;
+        --rule: #e8e8e8;
+        --moss: #3d6b57;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --canvas: #0c0c0d;
+          --card: #161616;
+          --ink: #e5e5e5;
+          --pencil: #969696;
+          --rule: #262626;
+          --moss: #7fb59a;
+        }
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        box-sizing: border-box;
+        background: var(--canvas);
+        color: var(--ink);
+        font:
+          0.875rem/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        max-width: 22rem;
+        padding: 24px;
+        border: 1px solid var(--rule);
+        border-radius: 14px;
+        background: var(--card);
+        text-align: center;
+      }
+      svg {
+        width: 40px;
+        height: 40px;
+        color: var(--moss);
+      }
+      h1 {
+        margin: 12px 0 4px;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      p {
+        margin: 0 0 16px;
+        color: var(--pencil);
+      }
+      button {
+        font: inherit;
+        padding: 6px 14px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: var(--card);
+        color: var(--ink);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <g
+          transform="translate(-5.5 -4)"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M61.5 27.6 53.6 28.4C52 23 47.5 19.5 42 19.5 35.5 19.5 29 22.5 25 28.5 21.5 25 19 20 18 14.5L13.5 16.5C15 23 18.5 30 22 34.5 22 43.5 28.5 49.5 37.5 50 47 50.5 54.5 43 54.5 34 54.5 33 54.5 32.3 54.3 31.6Z"
+          />
+          <path d="M35.5 50 35 57M41.5 49.5 42.5 57" />
+        </g>
+      </svg>
+      <h1>You're offline</h1>
+      <p>Helpwren will reconnect when you're back online.</p>
+      <button type="button" onclick="location.reload()">Try again</button>
+    </main>
+    <script>
+      // Back online: load the page that was asked for.
+      addEventListener("online", () => location.reload());
+    </script>
+  </body>
+</html>

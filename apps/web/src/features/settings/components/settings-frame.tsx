@@ -47,6 +47,7 @@ const pages = [
     icon: "bell",
     group: PERSONAL,
   },
+  { href: "/dashboard/settings/app", label: "App", icon: "download-simple", group: PERSONAL },
 ] as const;
 
 /** The frame around every settings page: the list of pages beside the one that is open. */

@@ -1,13 +1,16 @@
 import { Card, Logo, Wren } from "@helpwren/design-system";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
 
 import { getCurrentAgent, DASHBOARD_PATH, LoginForm } from "@/features/agent-auth";
+import { appMetadata, appViewport } from "@/features/pwa";
 import { getEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { hasTeam } from "@/lib/install-status";
 
-export const metadata: Metadata = { title: "Sign in" };
+// The app can be installed from here too, and opens here when the session has ended.
+export const metadata: Metadata = { ...appMetadata, title: "Sign in" };
+export const viewport: Viewport = appViewport;
 
 /** A local Supabase stack catches sign-in codes in its own test mailbox, so they always arrive. */
 function isLocalSupabase(): boolean {

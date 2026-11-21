@@ -5,6 +5,7 @@ import { cn, compactControls, ConfirmProvider, Toaster } from "@helpwren/design-
 import { type ReactNode } from "react";
 
 import { Notifier } from "@/features/notifications";
+import { InstallableApp } from "@/features/pwa";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
 import { getDashboardClient } from "../client";
@@ -43,6 +44,7 @@ export function DashboardShell({ agent, signOut, hiddenSections, children }: Das
           )}
         >
           <Notifier agentId={agent.id} />
+          <InstallableApp />
           <TeamPresence />
           <Sidebar
             agent={agent}

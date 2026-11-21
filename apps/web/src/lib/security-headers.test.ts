@@ -39,6 +39,12 @@ describe("contentSecurityPolicy", () => {
     expect(directive(policy, "form-action")).toEqual(["'self'"]);
   });
 
+  it("lets the dashboard load its own service worker and web app manifest", () => {
+    const policy = contentSecurityPolicy(base);
+    expect(directive(policy, "worker-src")).toContain("'self'");
+    expect(directive(policy, "manifest-src")).toEqual(["'self'"]);
+  });
+
   it("lets only the app frame a page unless told otherwise", () => {
     expect(directive(contentSecurityPolicy(base), "frame-ancestors")).toEqual(["'self'"]);
     const listed = contentSecurityPolicy({ ...base, frameAncestors: ["https://shop.example"] });

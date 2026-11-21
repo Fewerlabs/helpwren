@@ -17,6 +17,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
+import { InstallMenuItem } from "@/features/pwa";
+
 import { useTeamUnread } from "../hooks/use-unread";
 import { sections } from "../sections";
 
@@ -94,8 +96,8 @@ export function Sidebar({ agent, signOut, hiddenSections = [] }: SidebarProps) {
 }
 
 /**
- * The signed-in team member's avatar, which opens who they are, a way to their profile, and
- * signing out.
+ * The signed-in team member's avatar, which opens who they are, a way to their profile,
+ * installing the app where the browser offers it, and signing out.
  */
 function AccountMenu({ agent, signOut }: SidebarProps) {
   const [open, setOpen] = useState(false);
@@ -134,6 +136,11 @@ function AccountMenu({ agent, signOut }: SidebarProps) {
         </Link>
         {/* On a phone the theme button leaves the bar, so the choice is made here. */}
         <ThemeSwitch className="my-0.5 md:hidden [&>*]:flex-1" />
+        <InstallMenuItem
+          onSelect={() => {
+            setOpen(false);
+          }}
+        />
         {signOut}
       </PopoverContent>
     </Popover>
