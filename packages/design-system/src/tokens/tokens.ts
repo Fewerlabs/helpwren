@@ -27,6 +27,7 @@ const colorNames = [
   "ring",
   "paper",
   "canvas",
+  "well",
   "ink",
   "pencil",
   "edge",

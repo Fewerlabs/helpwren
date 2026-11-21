@@ -35,6 +35,7 @@ Dark mode applies under any element with the `dark` class.
 | `border`, `input` / `edge`     | `#8A8A8A` | `#6E6E6E` | Borders of controls and cards                            |
 | `rule`                         | `#E8E8E8` | `#262626` | Dividers only, never control borders                     |
 | `muted`, `secondary`, `accent` | `#F1F1F1` | `#1E1E1E` | Hover and secondary fills                                |
+| `well`                         | `#EBEBEB` | `#232323` | A field set into a white panel, such as the chat's box   |
 | `primary` / `moss`             | `#3D6B57` | `#7FB59A` | Brand accent: links, icons, the focus ring               |
 | `primary-fill`                 | `#3D6B57` | `#3D6B57` | Filled buttons, with white words in both themes          |
 | `destructive` / `pen`          | `#B23520` | `#F07A5A` | Destructive actions, errors, urgent                      |
