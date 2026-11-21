@@ -129,3 +129,51 @@ test("a site puts the chat inside its own page, and opens it its own way", async
   await expect(chat.getByLabel("Your message")).toHaveValue("I have a question about my order.");
   await expect(chat.getByRole("log", { name: "Messages" })).toHaveCount(0);
 });
+
+test("a visitor reads an article in a larger panel, then puts it back", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(SITE);
+  await page.getByRole("button", { name: "Open chat" }).click();
+  const chat = page.frameLocator('iframe[title="Chat"]');
+  const panel = page.locator("[data-helpwren] .panel");
+  const size = async () => {
+    const box = await panel.boundingBox();
+    return { width: Math.round(box?.width ?? 0), height: Math.round(box?.height ?? 0) };
+  };
+
+  await chat
+    .getByRole("navigation", { name: "Chat" })
+    .getByRole("button", { name: "Help" })
+    .click();
+  await chat.getByRole("button", { name: /Getting started/ }).click();
+  await chat.getByRole("button", { name: /Add the chat to your website/ }).click();
+  await expect(chat.getByRole("heading", { name: "Add the chat to your website" })).toBeVisible();
+  const normal = await size();
+  expect(normal).toEqual({ width: 400, height: 680 });
+
+  // Larger, from the same corner, and the same button now puts it back, keeping focus.
+  await chat.getByRole("button", { name: "Expand article" }).click();
+  const collapse = chat.getByRole("button", { name: "Collapse article" });
+  await expect(collapse).toBeFocused();
+  // As wide as it may be, and as tall as the screen leaves room for above the launcher.
+  await expect.poll(size).toEqual({ width: 760, height: 696 });
+  const expanded = await panel.boundingBox();
+  expect(Math.round((expanded?.x ?? 0) + (expanded?.width ?? 0))).toBe(1280 - 20);
+
+  await collapse.click();
+  await expect(chat.getByRole("button", { name: "Expand article" })).toBeFocused();
+  await expect.poll(size).toEqual(normal);
+
+  // Going back from the article puts it back too.
+  await chat.getByRole("button", { name: "Expand article" }).click();
+  await expect.poll(size).toEqual({ width: 760, height: 696 });
+  await chat.getByRole("button", { name: "Back" }).click();
+  await expect.poll(size).toEqual(normal);
+
+  // On a phone the chat fills the screen, and offers nothing to grow.
+  await chat.getByRole("button", { name: /Add the chat to your website/ }).click();
+  await page.setViewportSize({ width: 390, height: 800 });
+  await expect(chat.getByRole("heading", { name: "Add the chat to your website" })).toBeVisible();
+  await expect(chat.getByRole("button", { name: "Expand article" })).toBeHidden();
+  await expect.poll(size).toEqual({ width: 390, height: 800 });
+});

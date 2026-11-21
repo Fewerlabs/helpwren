@@ -76,7 +76,12 @@ export type PageMessage =
    * Settings to show in place of the saved ones, for the preview in the dashboard. The chat
    * checks them, and takes them only from a page on its own origin.
    */
-  | { channel: typeof CHANNEL; type: "preview"; settings: unknown };
+  | { channel: typeof CHANNEL; type: "preview"; settings: unknown }
+  /**
+   * Whether the panel can grow to a reading size (a floating panel on a wide screen), and
+   * whether it has. Sent after `hello`, and again whenever either changes.
+   */
+  | { channel: typeof CHANNEL; type: "layout"; expandable: boolean; expanded: boolean };
 
 /** What a page says about a visitor without proof. Shown to the team; unlocks nothing. */
 export interface VisitorDetails {
@@ -140,7 +145,15 @@ export type FrameMessage =
   /** The visitor pressed the close button inside the chat. */
   | { channel: typeof CHANNEL; type: "close" }
   /** The answer to `identify` and `reset`. */
-  | ({ channel: typeof CHANNEL; type: "identity" } & IdentityState);
+  | ({ channel: typeof CHANNEL; type: "identity" } & IdentityState)
+  /**
+   * The size the visitor wants the panel: `expanded` to read an article, `normal` after. The
+   * page answers with `layout`, and ignores it when the panel cannot grow.
+   */
+  | { channel: typeof CHANNEL; type: "size"; size: PanelSize };
+
+/** The floating panel's two sizes. */
+export type PanelSize = "normal" | "expanded";
 
 /** The newest reply the visitor has not read. The preview is plain text, shown as text. */
 export interface LatestUnread {
@@ -170,6 +183,7 @@ export function isFrameMessage(data: unknown): data is FrameMessage {
   const message = data as Record<string, unknown>;
   if (message.channel !== CHANNEL) return false;
   if (message.type === "ready" || message.type === "close") return true;
+  if (message.type === "size") return message.size === "normal" || message.size === "expanded";
   if (message.type === "identity") {
     if (message.state === "guest" || message.state === "user") return true;
     return message.state === "failed" && (FAILURES as readonly unknown[]).includes(message.reason);

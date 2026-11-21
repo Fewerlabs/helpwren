@@ -47,7 +47,13 @@ sends the chat about the page. Every message is listed in
 { channel: "helpwren", type: "page", page: { url, title }, visible: true }
 // When the visitor opens or closes the chat:
 { channel: "helpwren", type: "panel", open: true }
+// After hello, and whenever it changes: whether the panel can grow to read an article, and has.
+{ channel: "helpwren", type: "layout", expandable: true, expanded: false }
 ```
+
+The chat shows its Expand article button only after a `layout` message with `expandable: true`,
+and asks for a size with `{ channel: "helpwren", type: "size", size: "expanded" }` (or
+`"normal"`). A host without a panel to grow never sends `layout`, and can ignore `size`.
 
 A host that leaves `open` out of `hello`, such as a mobile app showing the chat as a whole
 screen, counts as open. The chat's `unread` message carries the newest unread reply as well:

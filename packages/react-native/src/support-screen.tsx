@@ -126,7 +126,7 @@ export function SupportScreen({
         props.onUnread?.(message.count);
       } else if (message.type === "close") {
         props.onClose?.();
-      } else {
+      } else if (message.type === "identity") {
         const state: IdentityState =
           message.state === "failed"
             ? { state: "failed", reason: message.reason }

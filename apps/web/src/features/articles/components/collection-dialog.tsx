@@ -17,6 +17,7 @@ import {
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { useHelpwren } from "@/lib/helpwren-context";
@@ -70,6 +71,15 @@ const fields: FieldItem<CollectionFormValues>[] = [
 
 const FAILED = "The collection could not be saved. Try again.";
 
+/** What the form starts with: the collection's own values, or a new one's. */
+function startingValues(collection: Collection | null): CollectionFormValues {
+  return {
+    name: collection?.name ?? "",
+    description: collection?.description ?? "",
+    icon: collection?.icon ?? "book-open",
+  };
+}
+
 /** The form that makes a collection, or renames, reorders and removes one. */
 export function CollectionDialog({
   collection,
@@ -84,12 +94,14 @@ export function CollectionDialog({
   const changed = useArticlesChanged();
   const form = useForm<CollectionFormValues>({
     resolver: zodResolver(collectionFormSchema),
-    values: {
-      name: collection?.name ?? "",
-      description: collection?.description ?? "",
-      icon: collection?.icon ?? "book-open",
-    },
+    defaultValues: startingValues(collection),
   });
+  // Each time it opens, the form starts again: empty for a new collection, or with what is saved
+  // for one being changed. Nothing typed into an earlier form carries over.
+  const { reset } = form;
+  useEffect(() => {
+    if (open) reset(startingValues(collection));
+  }, [open, collection, reset]);
   const busy = form.formState.isSubmitting;
   const place = collection ? collections.findIndex((item) => item.id === collection.id) : -1;
 
@@ -102,6 +114,8 @@ export function CollectionDialog({
         form.setError("root", { message: FAILED });
         return;
       }
+      // What was saved is now what the form holds, so nothing in it is left unsaved.
+      reset(values);
       await changed();
       onOpenChange(false);
       if (!collection) {

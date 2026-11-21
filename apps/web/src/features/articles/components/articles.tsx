@@ -1,6 +1,11 @@
 "use client";
 
-import { articleStatusSchema, articleVisibilitySchema, type ArticleSummary } from "@helpwren/core";
+import {
+  articleStatusSchema,
+  articleVisibilitySchema,
+  type ArticleSummary,
+  type Collection,
+} from "@helpwren/core";
 import {
   ActionButton,
   Badge,
@@ -101,7 +106,13 @@ export function Articles() {
   const shown = useShown(collections.data);
   const changed = useArticlesChanged();
   const list = useListParams(listOptions);
-  const [editing, setEditing] = useState<"new" | "current" | null>(null);
+  // The collection the form is for, or null for a new one, kept as it was when the form opened.
+  // Not read from the address, which can stop matching while the form is still on screen:
+  // as it closes, or once a save reloads the collections.
+  const [editing, setEditing] = useState<{ open: boolean; collection: Collection | null }>({
+    open: false,
+    collection: null,
+  });
   const router = useRouter();
   const filter = list.filters;
   const status = articleStatusSchema.safeParse(only(filter, "status")).data;
@@ -307,7 +318,7 @@ export function Articles() {
           size="sm"
           className="text-muted-foreground w-full justify-start px-2"
           onClick={() => {
-            setEditing("new");
+            setEditing({ open: true, collection: null });
           }}
         >
           <Icon name="plus" />
@@ -395,7 +406,7 @@ export function Articles() {
                         size="icon-sm"
                         aria-label={`Edit the ${collection.name} collection`}
                         onClick={() => {
-                          setEditing("current");
+                          setEditing({ open: true, collection });
                         }}
                       >
                         <Icon name="pencil-simple" />
@@ -420,11 +431,11 @@ export function Articles() {
       </Panel>
 
       <CollectionDialog
-        collection={editing === "current" ? (collection ?? null) : null}
+        collection={editing.collection}
         collections={collections.data ?? []}
-        open={editing !== null}
+        open={editing.open}
         onOpenChange={(open) => {
-          if (!open) setEditing(null);
+          setEditing((current) => ({ ...current, open }));
         }}
       />
     </DashboardPage>

@@ -277,3 +277,62 @@ test("a team member makes a collection from the article's collection list", asyn
     `Returns (${RUN})`,
   );
 });
+
+test("a team member adds collections one after another, and renames one", async ({ page }) => {
+  await signInToInbox(page, "sam@example.com");
+  await page.goto("/dashboard/help");
+  const collections = page.getByRole("navigation", { name: "Collections" });
+
+  // Each new collection starts from an empty form, whatever the last one was called.
+  for (const [name, description] of [
+    [`Bookings (${RUN})`, "Change or cancel a booking."],
+    [`Account and payments (${RUN})`, ""],
+  ] as const) {
+    await page.getByRole("button", { name: "New collection" }).click();
+    const form = page.getByRole("dialog", { name: "New collection" });
+    await expect(form.getByLabel("Name")).toHaveValue("");
+    await expect(form.getByLabel("Description")).toHaveValue("");
+    await form.getByLabel("Name").pressSequentially(name, { delay: 10 });
+    if (description) await form.getByLabel("Description").pressSequentially(description);
+    await form.getByRole("button", { name: "Add collection" }).click();
+    await expect(form).toBeHidden();
+    await expect(collections.getByRole("link", { name })).toBeVisible();
+  }
+  const { data: added } = await database
+    .from("collections")
+    .select("name, description")
+    .in("name", [`Bookings (${RUN})`, `Account and payments (${RUN})`])
+    .order("name");
+  expect(added).toEqual([
+    { name: `Account and payments (${RUN})`, description: null },
+    { name: `Bookings (${RUN})`, description: "Change or cancel a booking." },
+  ]);
+
+  // Renamed, the collection is saved and the form goes, with no other opening in its place.
+  await page
+    .getByRole("button", { name: `Edit the Account and payments (${RUN}) collection` })
+    .click();
+  const edit = page.getByRole("dialog", { name: "Edit collection" });
+  await expect(edit.getByLabel("Name")).toHaveValue(`Account and payments (${RUN})`);
+  await edit.getByLabel("Name").fill(`Payments (${RUN})`);
+  // Every title a dialog shows from here on, however briefly, as it closes too.
+  await page.evaluate(() => {
+    const seen = new Set<string>();
+    document.body.dataset.dialogTitles = "";
+    new MutationObserver(() => {
+      for (const title of document.querySelectorAll('[role="dialog"] [data-slot="dialog-title"]')) {
+        seen.add(title.textContent);
+      }
+      document.body.dataset.dialogTitles = [...seen].join("|");
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+  await edit.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Collection saved")).toBeVisible();
+  await expect(collections.getByRole("link", { name: `Payments (${RUN})` })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("table", { name: `Payments (${RUN})` })).toBeVisible();
+  // Still none a moment later, once everything has reloaded, and none came and went.
+  await page.waitForTimeout(1_500);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(await page.locator("body").getAttribute("data-dialog-titles")).toBe("Edit collection");
+});

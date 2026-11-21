@@ -37,8 +37,35 @@ function receive(
 /** What the install answers when the widget asks how it should look. */
 let answer: unknown;
 
+/**
+ * The screen, as `matchMedia` reports it: wide enough for the panel to float, or a phone's.
+ * `resize` changes it and tells whoever is listening.
+ */
+const screenSize = {
+  floating: true,
+  listeners: new Set<() => void>(),
+  resize(floating: boolean) {
+    this.floating = floating;
+    for (const listener of this.listeners) listener();
+  },
+};
+
 beforeEach(() => {
   answer = {};
+  screenSize.floating = true;
+  screenSize.listeners.clear();
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    media: query,
+    get matches() {
+      return screenSize.floating;
+    },
+    addEventListener: (_: "change", listener: () => void) => {
+      screenSize.listeners.add(listener);
+    },
+    removeEventListener: (_: "change", listener: () => void) => {
+      screenSize.listeners.delete(listener);
+    },
+  }));
   vi.stubGlobal(
     "fetch",
     vi.fn(() => Promise.resolve(new Response(JSON.stringify(answer)))),
@@ -920,5 +947,107 @@ describe("contextual help", () => {
   it("finds articles for a list of the page's own, keeping only well-formed ones", async () => {
     answerArticles([...articles, { title: "No slug" }, { ...articles[0], url: "javascript:x" }]);
     await expect(widget.findArticles({ collection: "billing" })).resolves.toEqual(articles);
+  });
+});
+
+describe("reading size", () => {
+  function ready() {
+    const { frame } = parts();
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+    receive({ channel: "helpwren", type: "ready" });
+    return post;
+  }
+  const layouts = (post: ReturnType<typeof ready>) =>
+    post.mock.calls
+      .map(([message]) => message as Record<string, unknown>)
+      .filter((message) => message.type === "layout")
+      .map(({ expandable, expanded }) => ({ expandable, expanded }));
+  const size = (wanted: string) => {
+    receive({ channel: "helpwren", type: "size", size: wanted });
+  };
+
+  it("grows the open panel when the chat asks, and goes back when asked", () => {
+    widget.init();
+    const post = ready();
+    widget.show();
+    expect(layouts(post)).toEqual([{ expandable: true, expanded: false }]);
+
+    size("expanded");
+    expect(host().dataset.expanded).toBe("");
+    size("normal");
+    expect(host().dataset.expanded).toBeUndefined();
+    expect(layouts(post)).toEqual([
+      { expandable: true, expanded: false },
+      { expandable: true, expanded: true },
+      { expandable: true, expanded: false },
+    ]);
+  });
+
+  it("goes back to its usual size when the panel closes", () => {
+    widget.init();
+    const post = ready();
+    widget.show();
+    size("expanded");
+
+    widget.hide();
+    expect(host().dataset.expanded).toBeUndefined();
+    expect(layouts(post).at(-1)).toEqual({ expandable: true, expanded: false });
+    widget.show();
+    expect(host().dataset.expanded).toBeUndefined();
+  });
+
+  it("does not grow a closed panel", () => {
+    widget.init();
+    ready();
+    size("expanded");
+    expect(host().dataset.expanded).toBeUndefined();
+  });
+
+  it("is ignored when the chat is inline", () => {
+    const container = document.createElement("div");
+    container.id = "support";
+    document.body.append(container);
+    widget.init({ container: "#support", mode: "inline" });
+    const post = ready();
+
+    size("expanded");
+    expect(host().dataset.expanded).toBeUndefined();
+    expect(layouts(post)).toEqual([{ expandable: false, expanded: false }]);
+  });
+
+  it("does not grow on a phone's screen, and goes back if the screen becomes one", () => {
+    screenSize.floating = false;
+    widget.init();
+    const post = ready();
+    widget.show();
+    size("expanded");
+    expect(host().dataset.expanded).toBeUndefined();
+
+    screenSize.resize(true);
+    size("expanded");
+    expect(host().dataset.expanded).toBe("");
+    screenSize.resize(false);
+    expect(host().dataset.expanded).toBeUndefined();
+    expect(layouts(post)).toEqual([
+      { expandable: false, expanded: false },
+      { expandable: true, expanded: false },
+      { expandable: true, expanded: true },
+      { expandable: false, expanded: false },
+    ]);
+  });
+
+  it("ignores a size it does not know", () => {
+    widget.init();
+    ready();
+    widget.show();
+    size("huge");
+    expect(host().dataset.expanded).toBeUndefined();
+  });
+
+  it("stops listening to the screen once destroyed", () => {
+    widget.init();
+    widget.destroy();
+    expect(screenSize.listeners.size).toBe(0);
   });
 });

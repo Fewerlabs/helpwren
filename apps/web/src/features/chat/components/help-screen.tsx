@@ -13,6 +13,7 @@ import {
   SearchField,
 } from "@helpwren/design-system";
 import { useQueryClient } from "@tanstack/react-query";
+import { type PanelSize } from "helpwren/protocol";
 import { useState } from "react";
 
 import { ArticleFeedback } from "@/features/help-center";
@@ -20,7 +21,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
 import { usePageHelp, usePageHelpQuery } from "../hooks/use-page-help";
-import { useShowScreen, type OpenCollection } from "../store/chat-store";
+import { usePanelLayout, useShowScreen, type OpenCollection } from "../store/chat-store";
 import { ScreenHeader } from "./screen-header";
 
 /** The start of every help query's key in the chat. */
@@ -307,16 +308,51 @@ export interface ArticleScreenProps {
   slug: string;
   onBack: () => void;
   onClose?: (() => void) | undefined;
+  /** Asks the widget to grow its panel or put it back. Given when the chat is in its frame. */
+  onResize?: ((size: PanelSize) => void) | undefined;
+}
+
+interface ResizeButtonProps {
+  expanded: boolean;
+  onResize: (size: PanelSize) => void;
+}
+
+/** Grows the widget's panel to a reading size, and back. One button, so focus stays on it. */
+function ResizeButton({ expanded, onResize }: ResizeButtonProps) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={expanded ? "Collapse article" : "Expand article"}
+      onClick={() => {
+        onResize(expanded ? "normal" : "expanded");
+      }}
+    >
+      <Icon name={expanded ? "arrows-in" : "arrows-out"} />
+    </Button>
+  );
 }
 
 /** One article, read inside the chat, with a way to write to the team if it falls short. */
-export function ArticleScreen({ slug, onBack, onClose }: ArticleScreenProps) {
+export function ArticleScreen({ slug, onBack, onClose, onResize }: ArticleScreenProps) {
   const getClient = useHelpwren();
   const show = useShowScreen();
+  // Only where the panel can grow: a floating panel on a wide screen, as the widget says. Never
+  // inline, on the chat page or in an app.
+  const panel = usePanelLayout();
 
   return (
     <>
-      <ScreenHeader title="Help" onBack={onBack} onClose={onClose} />
+      <ScreenHeader
+        title="Help"
+        onBack={onBack}
+        onClose={onClose}
+        actions={
+          onResize && panel.expandable ? (
+            <ResizeButton expanded={panel.expanded} onResize={onResize} />
+          ) : undefined
+        }
+      />
       <QueryDetail
         queryKey={[...HELP_QUERY_KEY, "article", slug]}
         queryFn={() => getClient().articles.getBySlug(slug, { publishedOnly: true })}
