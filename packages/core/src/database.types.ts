@@ -3,6 +3,52 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      agent_invites: {
+        Row: {
+          agent_id: string;
+          created_at: string;
+          created_by: string | null;
+          expires_at: string;
+          id: string;
+          token_hash: string;
+          used_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          token_hash: string;
+          used_at?: string | null;
+        };
+        Update: {
+          agent_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string;
+          id?: string;
+          token_hash?: string;
+          used_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_invites_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "agent_invites_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       agents: {
         Row: {
           active: boolean;
@@ -1276,6 +1322,13 @@ export type Database = {
       };
     };
     Functions: {
+      agent_sign_ins: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          last_sign_in_at: string;
+          user_id: string;
+        }[];
+      };
       claim_email_queue: {
         Args: { batch?: number };
         Returns: {
