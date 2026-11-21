@@ -123,15 +123,15 @@ export function useVisitorTracking(settings: PublicSettings, source: string) {
       claiming.current = true;
       try {
         const client = getClient();
-        await client.sessions.startGuest();
+        const session = await client.sessions.startGuest();
         const conversationId = await client.visitors.claimOutreach({
           visitorId: id,
           source,
           page: { url, ...(title ? { title } : {}) },
         });
         if (conversationId) {
-          // A new session, and a new conversation: both are asked for again.
-          await queryClient.invalidateQueries({ queryKey: chatKeys.session });
+          // The session is known; the new conversation is asked for.
+          queryClient.setQueryData(chatKeys.session, session);
           await queryClient.invalidateQueries({ queryKey: chatKeys.conversations });
         }
       } finally {
