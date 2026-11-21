@@ -14,7 +14,7 @@ import {
 } from "@helpwren/design-system";
 import { useQueryClient } from "@tanstack/react-query";
 import { type PanelSize } from "helpwren/protocol";
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import { ArticleFeedback } from "@/features/help-center";
 import { useHelpwren } from "@/lib/helpwren-context";
@@ -340,6 +340,15 @@ export function ArticleScreen({ slug, onBack, onClose, onResize }: ArticleScreen
   // Only where the panel can grow: a floating panel on a wide screen, as the widget says. Never
   // inline, on the chat page or in an app.
   const panel = usePanelLayout();
+
+  // Every article opens at the reading size where the panel can grow. Once per article, so
+  // Collapse keeps it small until the next one.
+  const openLarge = useEffectEvent(() => {
+    onResize?.("expanded");
+  });
+  useEffect(() => {
+    if (panel.expandable) openLarge();
+  }, [slug, panel.expandable]);
 
   return (
     <>

@@ -233,6 +233,31 @@ describe("the chat's Help", () => {
       articles.getBySlug.mockResolvedValue({ ...invoice, body: { type: "doc", content: [] } });
     });
 
+    it("opens each article at the reading size, and leaves it collapsed once collapsed", () => {
+      const onResize = vi.fn();
+      const queryClient = new QueryClient();
+      const chat = (slug: string, expanded: boolean) => (
+        <QueryClientProvider client={queryClient}>
+          <HelpwrenProvider getClient={() => client}>
+            <Panel expandable expanded={expanded} />
+            <ArticleScreen slug={slug} onBack={vi.fn()} onResize={onResize} />
+          </HelpwrenProvider>
+        </QueryClientProvider>
+      );
+      const { rerender } = render(chat(invoice.slug, false));
+      expect(onResize).toHaveBeenCalledExactlyOnceWith("expanded");
+
+      // Grown, then collapsed by the reader: it stays that size while they read.
+      rerender(chat(invoice.slug, true));
+      rerender(chat(invoice.slug, false));
+      expect(onResize).toHaveBeenCalledOnce();
+
+      // The next article opens large again.
+      rerender(chat("another-article", false));
+      expect(onResize).toHaveBeenCalledTimes(2);
+      expect(onResize).toHaveBeenLastCalledWith("expanded");
+    });
+
     it("offers to expand the article on a wide screen, and to collapse it once expanded", async () => {
       const user = userEvent.setup();
       const onResize = vi.fn();

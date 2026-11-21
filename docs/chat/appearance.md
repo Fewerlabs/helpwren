@@ -60,12 +60,12 @@ never mixes with one from the page.
 
 ## Reading an article
 
-On a screen wider than 640 pixels, an article opened in the floating panel has an **Expand
-article** button beside the close button. It grows the panel from its corner to a reading size,
-up to 760 by 860 pixels and never past the screen, whatever `layout` sets. **Collapse article**
-puts it back, and so does going back from the article, opening another screen, or closing the
-chat. On a phone, where the chat already fills the screen, inline, and on the chat page there is
-no button.
+On a screen wider than 640 pixels, an article opened in the floating panel opens at a reading
+size: the panel grows from its corner up to 760 by 860 pixels, never past the screen, whatever
+`layout` sets. **Collapse article**, beside the close button, puts it back for that article, and
+**Expand article** grows it again. Going back from the article, opening another screen or
+closing the chat puts it back too. On a phone, where the chat already fills the screen, inline,
+and on the chat page, the panel keeps its size.
 
 ## Change it after init
 
