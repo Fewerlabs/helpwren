@@ -1,6 +1,5 @@
 import { currentPlatform, isStandalone, WORKER_SCOPE } from "@/features/pwa";
 
-import { getPushPublicKey, removePushSubscription, savePushSubscription } from "./actions";
 import { type Preferences } from "./preferences";
 
 /**
@@ -16,6 +15,12 @@ export function pushSupport(): PushSupport {
   if (currentPlatform() === "ios" && !isStandalone()) return "needs-install";
   return "unsupported";
 }
+
+/**
+ * The Server Actions, loaded when first needed: the dashboard shell keeps this module, and only
+ * a browser with notifications on ever calls the server about pushes.
+ */
+const actions = () => import("./actions");
 
 /** How long to wait for the dashboard's service worker, and how often to look. */
 const WORKER_WAIT_MS = 10_000;
@@ -65,6 +70,7 @@ export async function currentPushSubscription(): Promise<PushSubscription | null
  */
 export async function turnOnPush(about: Preferences["about"]): Promise<boolean> {
   if (pushSupport() !== "supported" || Notification.permission !== "granted") return false;
+  const { getPushPublicKey, savePushSubscription } = await actions();
   const [registration, publicKey] = await Promise.all([workerRegistration(), getPushPublicKey()]);
   if (!registration || !publicKey) return false;
 
@@ -86,6 +92,7 @@ export async function turnOnPush(about: Preferences["about"]): Promise<boolean> 
 export async function turnOffPush(): Promise<void> {
   const subscription = await currentPushSubscription();
   if (!subscription) return;
+  const { removePushSubscription } = await actions();
   await removePushSubscription(subscription.endpoint);
   await subscription.unsubscribe();
 }

@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { APP_COLOURS, buildManifest } from "./manifest";
 
+// Tests run from apps/web.
 const tokens = readFileSync(
-  new URL("../../../../../packages/design-system/src/tokens/tokens.css", import.meta.url),
+  resolve(process.cwd(), "../../packages/design-system/src/tokens/tokens.css"),
   "utf8",
 );
 
