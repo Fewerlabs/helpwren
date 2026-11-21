@@ -32,3 +32,4 @@ Add a new numbered file when you make such a choice; do not rewrite an old recor
 | 0025 | [The website at helpwren.fewerlabs.dev](0025-landing-page.md)                              |
 | 0026 | [Contextual help](0026-contextual-help.md)                                                 |
 | 0027 | [Passwords for team members](0027-password-sign-in.md)                                     |
+| 0028 | [Team invites](0028-team-invites.md)                                                       |
