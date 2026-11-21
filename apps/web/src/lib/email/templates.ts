@@ -147,6 +147,39 @@ export function buildEmail({
   };
 }
 
+export interface InviteEmailOptions {
+  brand: Brand;
+  /** The admin who added them. */
+  inviter: string;
+  /** The link that lets them choose a password. */
+  url: string;
+  /** How many days the link works. */
+  days: number;
+}
+
+/**
+ * The email that invites someone to the team, in the brand. Helpwren's own words: it goes to
+ * the team, not to contacts, so it is not one of the templates an admin edits.
+ */
+export function buildInviteEmail({ brand, inviter, url, days }: InviteEmailOptions): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const heading = `${inviter} invited you to ${brand.name}'s support team`;
+  const { html, text } = renderEmail(brand, {
+    preview: "Set a password to start answering conversations.",
+    heading,
+    body: [
+      "Set a password to start answering conversations.",
+      `The link works once, for ${String(days)} days.`,
+    ],
+    action: { label: "Set your password", url },
+    footer: `You are getting this because ${inviter} added you to ${brand.name}'s team. If you did not expect it, you can ignore this email.`,
+  });
+  return { subject: heading, html, text };
+}
+
 /** Made-up details for the preview and test emails, so each placeholder shows what it becomes. */
 export function sampleEmail({
   brand,

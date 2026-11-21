@@ -1,12 +1,23 @@
 "use client";
 
 import { type TeamMember } from "@helpwren/core";
-import { ActionButton, Avatar, Badge, toast, useConfirm } from "@helpwren/design-system";
+import {
+  ActionButton,
+  Avatar,
+  Badge,
+  Dialog,
+  DialogContent,
+  StatusChip,
+  toast,
+  useConfirm,
+} from "@helpwren/design-system";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { changeMember } from "../actions";
+import { changeMember, reinviteMember } from "../actions";
 import { type MemberChange } from "../schemas";
+import type { InviteDelivery } from "../server/invites";
+import { InviteHandoff } from "./invite-handoff";
 import { MemberPasswordDialog } from "./member-password-dialog";
 
 const failures = {
@@ -15,6 +26,17 @@ const failures = {
   last_admin: "The team needs at least one active admin.",
   not_found: "This person is no longer on the team.",
   failed: "The change could not be saved. Try again.",
+} as const;
+
+const inviteFailures = {
+  forbidden: "Only admins can invite people.",
+  already_member: "This person is already on the team.",
+  self: "You are already on the team.",
+  not_found: "This person is no longer on the team.",
+  email_unavailable: "Email is not set up. Copy the invite link instead.",
+  rate_limited: "You have sent many invites. Wait an hour, or copy the link instead.",
+  invalid: "The invite could not be made. Try again.",
+  failed: "The invite could not be made. Try again.",
 } as const;
 
 /** Says what a change did, for the toast shown once it is saved. */
@@ -27,17 +49,26 @@ function changeMessage(member: TeamMember, change: MemberChange): string {
 
 export interface TeamListProps {
   members: readonly TeamMember[];
+  /** The ids of members who have never signed in. */
+  invited: readonly string[];
+  /** Whether the install can send email, which sending an invite again needs. */
+  emailReady: boolean;
   /** The signed-in team member, who cannot change their own access. */
   currentId: string;
   canEdit: boolean;
 }
 
 /** Everyone on the team, with their role and whether they can still sign in. */
-export function TeamList({ members, currentId, canEdit }: TeamListProps) {
+export function TeamList({ members, invited, emailReady, currentId, canEdit }: TeamListProps) {
   const router = useRouter();
   const confirm = useConfirm();
   const [pending, setPending] = useState<string | null>(null);
   const [settingPassword, setSettingPassword] = useState<TeamMember | null>(null);
+  // A new invite link, shown once for the admin to copy.
+  const [handoff, setHandoff] = useState<{
+    name: string;
+    delivery: Extract<InviteDelivery, { kind: "link" }>;
+  } | null>(null);
 
   /** Saves a change, or throws an error whose message is written for the person. */
   async function save(member: TeamMember, change: MemberChange) {
@@ -59,6 +90,26 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
     save(member, memberChange).catch((error: unknown) => {
       toast.error(error instanceof Error ? error.message : failures.failed);
     });
+  }
+
+  /** Emails a new invite, or makes a new link to copy. Either way, the old link stops working. */
+  async function reinvite(member: TeamMember, method: "email" | "link") {
+    setPending(member.id);
+    try {
+      const result = await reinviteMember(member.id, method).catch(() => ({
+        ok: false as const,
+        reason: "failed" as const,
+      }));
+      if (!result.ok) {
+        toast.error(inviteFailures[result.reason]);
+      } else if (result.delivery.kind === "link") {
+        setHandoff({ name: member.name, delivery: result.delivery });
+      } else {
+        toast.success(`Invite sent to ${member.email}`);
+      }
+    } finally {
+      setPending(null);
+    }
   }
 
   /** A role decides who can change settings and the team, so it is confirmed before it changes. */
@@ -94,16 +145,20 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
         {members.map((member) => {
           const isSelf = member.id === currentId;
           const busy = pending === member.id;
+          const isInvited = member.active && invited.includes(member.id);
           return (
-            <li key={member.id} className="flex items-center gap-3 py-2.5">
+            <li key={member.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2.5">
               <Avatar
                 name={member.name}
                 src={member.photo}
                 size="sm"
                 className="text-2xs size-7 shrink-0"
               />
-              {/* Takes the room the badges and actions leave, and cuts long names short. */}
-              <div className="min-w-0 flex-1">
+              {/*
+                Takes the room the badges and actions leave, and cuts long names short. When a
+                row has more actions than fit beside a readable name, they move to a line below.
+              */}
+              <div className="min-w-40 flex-1">
                 <p className="flex min-w-0 items-center gap-2 font-medium">
                   <span className="truncate">{member.name}</span>
                   {isSelf ? (
@@ -115,13 +170,42 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
               <Badge variant={member.role === "admin" ? "accent" : "neutral"} className="shrink-0">
                 {member.role === "admin" ? "Admin" : "Agent"}
               </Badge>
+              {isInvited ? (
+                <StatusChip status="waiting" size="sm">
+                  Invited
+                </StatusChip>
+              ) : null}
               {member.active ? null : (
                 <Badge variant="outline" className="shrink-0">
                   Deactivated
                 </Badge>
               )}
               {canEdit && !isSelf ? (
-                <div className="flex shrink-0 gap-1">
+                <div className="ml-auto flex shrink-0 gap-1">
+                  {isInvited && emailReady ? (
+                    <ActionButton
+                      variant="ghost"
+                      icon="envelope"
+                      label="Send invite again"
+                      disabled={busy}
+                      target={member.name}
+                      onClick={() => {
+                        void reinvite(member, "email");
+                      }}
+                    />
+                  ) : null}
+                  {isInvited ? (
+                    <ActionButton
+                      variant="ghost"
+                      icon="link"
+                      label="Copy invite link"
+                      disabled={busy}
+                      target={member.name}
+                      onClick={() => {
+                        void reinvite(member, "link");
+                      }}
+                    />
+                  ) : null}
                   <ActionButton
                     variant="ghost"
                     icon="key"
@@ -165,6 +249,24 @@ export function TeamList({ members, currentId, canEdit }: TeamListProps) {
           );
         })}
       </ul>
+      <Dialog
+        open={handoff !== null}
+        onOpenChange={(open) => {
+          if (!open) setHandoff(null);
+        }}
+      >
+        <DialogContent>
+          {handoff ? (
+            <InviteHandoff
+              name={handoff.name}
+              delivery={handoff.delivery}
+              onDone={() => {
+                setHandoff(null);
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
       <MemberPasswordDialog
         member={settingPassword}
         onClose={() => {

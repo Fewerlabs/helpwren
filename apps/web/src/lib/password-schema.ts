@@ -8,3 +8,12 @@ export const newPasswordSchema = z
   .refine((value) => passwordSchema.safeParse(value).success, {
     error: `Use at most ${PASSWORD_MAX_LENGTH} characters.`,
   });
+
+/** A new password typed twice, as someone chooses their own. */
+export const passwordTwiceSchema = z
+  .object({ password: newPasswordSchema, confirm: z.string() })
+  .refine((values) => values.password === values.confirm, {
+    error: "The two passwords do not match.",
+    path: ["confirm"],
+  });
+export type PasswordTwiceValues = z.infer<typeof passwordTwiceSchema>;

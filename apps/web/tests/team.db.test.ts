@@ -2,13 +2,9 @@ import { randomUUID } from "node:crypto";
 
 import { type Agent } from "@helpwren/core";
 import { createClient } from "@supabase/supabase-js";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
-import {
-  changeTeamMember,
-  inviteTeamMember,
-  setMemberPassword,
-} from "@/features/settings/server/team";
+import { changeTeamMember, setMemberPassword } from "@/features/settings/server/team";
 import { env } from "@/lib/env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { supabaseServerUrl } from "@/lib/supabase/server-url";
@@ -64,54 +60,6 @@ async function signsIn(email: string, password: string): Promise<boolean> {
 
 afterAll(async () => {
   await Promise.all(made.map((id) => supabaseAdmin.auth.admin.deleteUser(id)));
-});
-
-describe("inviteTeamMember", () => {
-  let invite: { name: string; email: string; role: "agent" };
-
-  beforeEach(() => {
-    invite = {
-      name: "Kofi Mensah",
-      email: `kofi.${randomUUID().slice(0, 8)}@example.test`,
-      role: "agent",
-    };
-  });
-
-  afterEach(async () => {
-    const added = await member(invite.email);
-    if (added) await supabaseAdmin.auth.admin.deleteUser(added.user_id);
-  });
-
-  it("adds someone who can then sign in", async () => {
-    await expect(inviteTeamMember(admin, invite)).resolves.toEqual({ ok: true });
-    expect(await member(invite.email)).toMatchObject({
-      name: "Kofi Mensah",
-      role: "agent",
-      active: true,
-    });
-  });
-
-  it("gives them the password set when they were added", async () => {
-    await inviteTeamMember(admin, { ...invite, password: "kofi-password" });
-    expect(await signsIn(invite.email, "kofi-password")).toBe(true);
-  });
-
-  it("says so when the person is already on the team", async () => {
-    await inviteTeamMember(admin, invite);
-    await expect(inviteTeamMember(admin, { ...invite, role: "admin" })).resolves.toEqual({
-      ok: false,
-      reason: "already_member",
-    });
-    expect(await member(invite.email)).toMatchObject({ role: "agent" });
-  });
-
-  it("refuses an agent who is not an admin", async () => {
-    await expect(inviteTeamMember(caller("agent"), invite)).resolves.toEqual({
-      ok: false,
-      reason: "forbidden",
-    });
-    expect(await member(invite.email)).toBeNull();
-  });
 });
 
 describe("changeTeamMember", () => {

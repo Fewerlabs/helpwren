@@ -31,6 +31,12 @@ export const LIMITS = {
   // where a whole office may be signing in at once.
   passwordPerEmail: { name: "password:email", limit: 10, windowSeconds: 15 * MINUTE },
   passwordPerNetwork: { name: "password:network", limit: 50, windowSeconds: 15 * MINUTE },
+  // Invite emails an admin sends: enough to bring in a whole team at once, too few to use the
+  // install's sender for spam.
+  inviteEmailPerAdmin: { name: "invite-email:admin", limit: 30, windowSeconds: HOUR },
+  // Accepting an invite. A link cannot be guessed, but each try sets a password, so it is kept
+  // to what people joining from one office would need.
+  acceptInvitePerNetwork: { name: "invite-accept:network", limit: 30, windowSeconds: 15 * MINUTE },
   // One answer per article from one network a day. A second answer is not an error to the
   // reader: it is simply not counted.
   feedbackPerArticle: { name: "feedback:article", limit: 1, windowSeconds: 24 * HOUR },

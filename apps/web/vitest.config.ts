@@ -28,6 +28,8 @@ export default defineConfig({
         },
       },
       {
+        // Server code reaches features through their index, which also lists their components.
+        plugins: [react()],
         resolve: {
           alias: { "@": path("./src"), "server-only": path("./tests/support/empty.ts") },
         },

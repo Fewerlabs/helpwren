@@ -58,13 +58,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/embed")) return secure(NextResponse.next(), await allowedFramers());
   if (pathname.startsWith("/help") && !pathname.startsWith("/help/preview")) return help(request);
-  // The dashboard, the sign-in page, the setup wizard and a team member's preview of a draft
-  // have sessions to refresh. Only the app itself may frame them, which stops another site tricking a team
-  // member into clicking inside one.
+  // The dashboard, the sign-in page, the setup wizard, accepting an invite, choosing a first
+  // password and a team member's preview of a draft have sessions to refresh. Only the app
+  // itself may frame them, which stops another site tricking a team member into clicking
+  // inside one.
   if (
     pathname.startsWith("/dashboard") ||
     pathname === "/login" ||
     pathname === "/setup" ||
+    pathname.startsWith("/invite/") ||
+    pathname === "/choose-password" ||
     pathname.startsWith("/help/preview")
   ) {
     return secure(await refreshSession(request));

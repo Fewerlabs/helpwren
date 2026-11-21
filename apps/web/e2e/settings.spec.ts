@@ -219,14 +219,19 @@ test("an admin adds a team member, changes their role and deactivates them", asy
   // An admin has no controls for their own access.
   await expect(team.getByRole("button", { name: /Ada Okafor/ })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Invite" }).click();
-  const dialog = page.getByRole("dialog", { name: "Add a team member" });
+  await page.getByRole("button", { name: "Invite", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Invite a team member" });
   await dialog.getByLabel("Name").fill(NEW_MEMBER.name);
   await dialog.getByLabel("Work email").fill(NEW_MEMBER.email);
-  await dialog.getByRole("button", { name: "Add to team" }).click();
+  await dialog.getByRole("button", { name: "Create link" }).click();
+  await page
+    .getByRole("dialog", { name: `Invite link for ${NEW_MEMBER.name}` })
+    .getByRole("button", { name: "Done" })
+    .click();
 
   const row = team.getByRole("listitem").filter({ hasText: NEW_MEMBER.name });
   await expect(row).toContainText("Agent");
+  await expect(row).toContainText("Invited");
 
   await page.getByRole("button", { name: `Make admin, ${NEW_MEMBER.name}` }).click();
   await page
@@ -288,6 +293,6 @@ test("an agent who is not an admin can read settings and change nothing", async 
 
   await page.getByRole("link", { name: "Team" }).click();
   await expect(page.getByRole("list", { name: "Team members" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Invite" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Invite", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Deactivate/ })).toHaveCount(0);
 });

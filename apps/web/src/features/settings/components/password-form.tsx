@@ -1,96 +1,41 @@
 "use client";
 
-import { Button, FieldList, type FieldItem } from "@helpwren/design-system";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { NewPasswordForm } from "@/lib/new-password-form";
+import { type PasswordTwiceValues } from "@/lib/password-schema";
 
-import { saveOwnPassword } from "../actions";
-import { ownPasswordSchema, type OwnPasswordValues } from "../schemas";
+import { chooseFirstPassword, saveOwnPassword, type OwnPasswordResult } from "../actions";
 import { SettingsSection } from "./settings-frame";
 
-const fields: FieldItem<OwnPasswordValues>[] = [
-  {
-    name: "password",
-    label: "New password",
-    type: "password",
-    required: true,
-    hint: "At least 8 characters.",
-    props: { autoComplete: "new-password" },
-  },
-  {
-    name: "confirm",
-    label: "Type it again",
-    type: "password",
-    required: true,
-    props: { autoComplete: "new-password" },
-  },
-];
-
-const failures = {
+const failures: Record<Extract<OwnPasswordResult, { ok: false }>["reason"], string> = {
   forbidden: "Sign in again to change your password.",
   invalid: "Check the password and try again.",
   weak: "Choose a longer password.",
   same: "That is already your password.",
-  failed: "The password could not be changed. Try again.",
-} as const;
+};
 
-const empty: OwnPasswordValues = { password: "", confirm: "" };
+/** Saves the password with an action, and says what went wrong. */
+function saveWith(action: (values: PasswordTwiceValues) => Promise<OwnPasswordResult>) {
+  return async (values: PasswordTwiceValues): Promise<string | null> => {
+    const result = await action(values);
+    return result.ok ? null : failures[result.reason];
+  };
+}
 
 /** Sets or changes the signed-in team member's own password. */
 export function PasswordForm() {
-  const [saved, setSaved] = useState(false);
-  const form = useForm<OwnPasswordValues>({
-    resolver: zodResolver(ownPasswordSchema),
-    defaultValues: empty,
-  });
-
-  async function save(values: OwnPasswordValues) {
-    setSaved(false);
-    try {
-      const result = await saveOwnPassword(values);
-      if (result.ok) {
-        form.reset(empty);
-        setSaved(true);
-      } else {
-        form.setError("root", { message: failures[result.reason] });
-      }
-    } catch {
-      form.setError("root", { message: failures.failed });
-    }
-  }
-
   return (
-    <form
-      noValidate
-      onSubmit={(event) => {
-        void form.handleSubmit(save)(event);
-      }}
-    >
-      <SettingsSection title="Password" description="Sign in with your email and this password.">
-        <div className="grid gap-4">
-          <FieldList
-            control={form.control}
-            fields={fields}
-            disabled={form.formState.isSubmitting}
-          />
-          {form.formState.errors.root ? (
-            <p role="alert" className="text-destructive text-sm">
-              {form.formState.errors.root.message}
-            </p>
-          ) : null}
-          {saved ? (
-            <p role="status" className="text-sm">
-              Password saved.
-            </p>
-          ) : null}
-          <div>
-            <Button type="submit" variant="secondary" loading={form.formState.isSubmitting}>
-              Save password
-            </Button>
-          </div>
-        </div>
-      </SettingsSection>
-    </form>
+    <SettingsSection title="Password" description="Sign in with your email and this password.">
+      <NewPasswordForm
+        save={saveWith(saveOwnPassword)}
+        submitLabel="Save password"
+        submitVariant="secondary"
+        savedMessage="Password saved."
+      />
+    </SettingsSection>
   );
+}
+
+/** The same form at the first sign-in with a temporary password; once saved, on to the inbox. */
+export function FirstPasswordForm() {
+  return <NewPasswordForm save={saveWith(chooseFirstPassword)} submitLabel="Save and continue" />;
 }
