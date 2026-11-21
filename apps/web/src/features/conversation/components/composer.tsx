@@ -7,7 +7,16 @@ import {
   type Attachment,
   type PlaceholderValues,
 } from "@helpwren/core";
-import { Button, cn, Icon, Kbd, Spinner, Textarea, Tooltip } from "@helpwren/design-system";
+import {
+  Button,
+  cn,
+  Icon,
+  Kbd,
+  Spinner,
+  Textarea,
+  Tooltip,
+  type TextareaProps,
+} from "@helpwren/design-system";
 import { useRef, useState } from "react";
 
 import { useSavedReplyPicker } from "@/features/saved-replies";
@@ -16,6 +25,7 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { useAddNote, useSendMessage } from "../hooks/use-thread";
 import { type TypingControls } from "../hooks/use-typing";
+import { ChatBox, ChatBoxField, ChatBoxSend, chatBoxTool, EmojiPicker } from "./chat-box";
 
 const NO_PLACEHOLDERS: PlaceholderValues = {};
 
@@ -44,8 +54,8 @@ type Mode = "reply" | "note";
 export interface ComposerProps {
   conversationId: string;
   /**
-   * `bar` is a single line with a send button, for the chat on a phone. `card` is a roomier
-   * box with the send button below the text, for the inbox.
+   * `bar` is the visitor's chat: a soft rounded box with attach, emoji and a round send button.
+   * `card` is an outlined box with a send button below the text, for the inbox.
    */
   variant?: "bar" | "card";
   /** Lets the writer switch to an internal note, which only the team sees. Team side only. */
@@ -178,6 +188,7 @@ export function Composer({
           variant="ghost"
           size={card ? "icon-sm" : "icon"}
           aria-label="Attach files"
+          className={card ? undefined : chatBoxTool}
           disabled={files.length >= ATTACHMENTS_MAX}
           onClick={() => fileInput.current?.click()}
         >
@@ -206,7 +217,7 @@ export function Composer({
     note || files.length === 0 ? null : (
       <ul
         aria-label="Files to send"
-        className={cn("flex flex-wrap gap-1.5", card && "px-3 pt-2 max-md:px-2.5")}
+        className={cn("flex flex-wrap gap-1.5", card ? "px-3 pt-2 max-md:px-2.5" : "px-3 pt-3")}
       >
         {files.map((file) => (
           <li
@@ -235,50 +246,38 @@ export function Composer({
       </ul>
     );
 
-  const field = (
-    <Textarea
-      ref={box}
-      aria-label={note ? "Your note" : "Your message"}
-      {...picker.fieldProps}
-      placeholder={
-        note ? "Write a note only your team will see" : card ? "Write a reply" : "Write a message"
-      }
-      rows={card ? 2 : 1}
-      maxLength={MESSAGE_MAX_LENGTH}
-      className={cn(
-        "max-h-40 flex-1 resize-none",
-        card
-          ? "min-h-14 rounded-none border-0 bg-transparent px-3 pt-2.5 pb-1 text-[0.8125rem] shadow-none focus:border-0 data-keyboard-focus:outline-0 max-md:min-h-12 max-md:px-2.5 max-md:pt-2 md:text-[0.8125rem] dark:bg-transparent"
-          : "min-h-10",
-      )}
-      value={text}
-      onChange={(event) => {
-        write(event.target.value);
-        picker.track(event.target);
-      }}
-      onSelect={(event) => {
-        picker.track(event.currentTarget);
-      }}
-      onBlur={() => {
-        typing?.stop();
-        picker.close();
-      }}
-      onKeyDown={(event) => {
-        if (picker.onKeyDown(event)) return;
-        if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-          event.preventDefault();
-          submit();
-        }
-      }}
-      // A screenshot or a copied file pasted into the box is attached, not typed.
-      onPaste={(event) => {
-        const pasted = [...event.clipboardData.files];
-        if (note || pasted.length === 0) return;
+  // What both the inbox's box and the chat's share; each lays out its own field.
+  const fieldProps = {
+    ref: box,
+    "aria-label": note ? "Your note" : "Your message",
+    maxLength: MESSAGE_MAX_LENGTH,
+    value: text,
+    onChange: (event) => {
+      write(event.target.value);
+      picker.track(event.target);
+    },
+    onSelect: (event) => {
+      picker.track(event.currentTarget);
+    },
+    onBlur: () => {
+      typing?.stop();
+      picker.close();
+    },
+    onKeyDown: (event) => {
+      if (picker.onKeyDown(event)) return;
+      if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
         event.preventDefault();
-        addFiles(pasted);
-      }}
-    />
-  );
+        submit();
+      }
+    },
+    // A screenshot or a copied file pasted into the box is attached, not typed.
+    onPaste: (event) => {
+      const pasted = [...event.clipboardData.files];
+      if (note || pasted.length === 0) return;
+      event.preventDefault();
+      addFiles(pasted);
+    },
+  } satisfies TextareaProps;
 
   const alert = failure ? (
     <p role="alert" className="text-destructive text-xs">
@@ -339,7 +338,13 @@ export function Composer({
           ) : null}
           {picker.list}
           {chosenFiles}
-          {field}
+          <Textarea
+            {...picker.fieldProps}
+            {...fieldProps}
+            placeholder={note ? "Write a note only your team will see" : "Write a reply"}
+            rows={2}
+            className="max-h-40 min-h-14 flex-1 resize-none rounded-none border-0 bg-transparent px-3 pt-2.5 pb-1 text-[0.8125rem] shadow-none focus:border-0 data-keyboard-focus:outline-0 max-md:min-h-12 max-md:px-2.5 max-md:pt-2 md:text-[0.8125rem] dark:bg-transparent"
+          />
           <div className="flex items-center justify-between gap-2 px-2 pb-2 max-md:px-1.5 max-md:pb-1.5">
             <div className="flex items-center gap-1">
               {attach}
@@ -367,21 +372,25 @@ export function Composer({
 
   return (
     <form
-      className="border-rule grid gap-2 border-t p-3"
+      className="grid gap-2 p-3"
       onSubmit={(event) => {
         event.preventDefault();
         submit();
       }}
     >
       {alert}
-      {chosenFiles}
-      <div className="flex items-end gap-1.5">
-        {attach}
-        {field}
-        <Button type="submit" size="icon" aria-label="Send" disabled={!ready} loading={pending}>
-          <Icon name="paper-plane-tilt" />
-        </Button>
-      </div>
+      <ChatBox
+        tools={
+          <>
+            {attach}
+            <EmojiPicker field={box} onInsert={write} />
+          </>
+        }
+        send={<ChatBoxSend label="Send" ready={ready} loading={pending} />}
+      >
+        {chosenFiles}
+        <ChatBoxField {...fieldProps} placeholder="Send us a message…" />
+      </ChatBox>
     </form>
   );
 }
