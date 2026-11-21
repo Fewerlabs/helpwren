@@ -281,6 +281,27 @@ export const emailSchema = z.object({
   resendSigningSecret: z.string().trim(),
   /** Empty to keep the saved one, or to use the server's own key. */
   resendApiKey: z.string().trim(),
+  /** The SMTP server's name, when it is set here rather than on the server. Empty for none. */
+  smtpHost: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .refine((host) => host === "" || /^[a-z0-9.-]+$/.test(host), {
+      message: "Enter the server's name, such as smtp.example.com.",
+    }),
+  smtpPort: z
+    .string()
+    .trim()
+    .refine(
+      (port) => port === "" || (/^\d+$/.test(port) && Number(port) >= 1 && Number(port) <= 65535),
+      {
+        message: "Enter a port, such as 587 or 465.",
+      },
+    ),
+  /** Often an email address. Empty for a server that takes mail without signing in. */
+  smtpUser: z.string().trim(),
+  /** Empty to keep the saved one. Kept exactly as typed, spaces included. */
+  smtpPassword: z.string(),
 });
 export type EmailValues = z.infer<typeof emailSchema>;
 

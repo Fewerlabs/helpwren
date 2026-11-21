@@ -17,16 +17,21 @@ export interface PasswordInputProps extends Omit<
   autoComplete?: "current-password" | "new-password";
 }
 
-/** A password box with a button that shows what was typed, for checking it before sending. */
+/**
+ * A password box with a lock at its start, like the other fields' icons, and a button that
+ * shows what was typed, for checking it before sending.
+ */
 export function PasswordInput({
   autoComplete = "current-password",
   disabled,
+  prepend = <Icon name="lock" />,
   ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
   return (
     <Input
       {...props}
+      prepend={prepend}
       type={visible ? "text" : "password"}
       autoComplete={autoComplete}
       autoCapitalize="none"

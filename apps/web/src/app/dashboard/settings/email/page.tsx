@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 
 import { requireAgent } from "@/features/agent-auth";
 import { EmailForm, SettingsPage } from "@/features/settings";
-import { getEmailAdapter, getEmailProblem } from "@/lib/email";
+import { emailSetOnServer, getEmail } from "@/lib/email";
 import { summariseInbound } from "@/lib/email/inbound";
+import { getSavedSmtp } from "@/lib/email/saved-smtp";
 import { env } from "@/lib/env";
 import { getHelpwren } from "@/lib/helpwren";
 
@@ -12,7 +13,12 @@ export const metadata: Metadata = { title: "Email" };
 export default async function EmailSettingsPage() {
   const agent = await requireAgent();
   const helpwren = await getHelpwren();
-  const [settings, inbound] = await Promise.all([helpwren.settings.getAll(), summariseInbound()]);
+  const [settings, inbound, email, savedSmtp] = await Promise.all([
+    helpwren.settings.getAll(),
+    summariseInbound(),
+    getEmail(),
+    getSavedSmtp(),
+  ]);
   const canEdit = agent.role === "admin";
 
   return (
@@ -23,8 +29,19 @@ export default async function EmailSettingsPage() {
     >
       <EmailForm
         settings={settings}
-        provider={getEmailAdapter()?.name ?? null}
-        providerProblem={getEmailProblem()}
+        provider={email.adapter?.name ?? null}
+        providerProblem={email.problem}
+        // The password stays on the server; the form only learns that one is saved.
+        smtp={
+          emailSetOnServer
+            ? "server"
+            : savedSmtp && {
+                host: savedSmtp.host,
+                port: savedSmtp.port,
+                user: savedSmtp.user,
+                hasPassword: savedSmtp.password !== "",
+              }
+        }
         testAddress={agent.email}
         inbound={inbound}
         origin={new URL(env.NEXT_PUBLIC_APP_URL).origin}

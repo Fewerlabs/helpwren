@@ -9,10 +9,21 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   /** Supabase's secret key. It bypasses the access rules, so it never leaves the server. */
   SUPABASE_SECRET_KEY: z.string().min(1),
-  /** How the install sends mail. Unset means it sends none. */
+  /**
+   * How the install sends mail. Unset, an SMTP_HOST or SMTP_URL still means SMTP; with none of
+   * them, an admin can enter an SMTP server in Settings → Email.
+   */
   EMAIL_PROVIDER: z.enum(["smtp", "resend"]).optional(),
-  /** For `smtp`: the server and its sign-in, such as `smtps://user:password@host:465`. */
+  /** For `smtp`: the server and its sign-in in one address, such as `smtps://user:pass@host`. */
   SMTP_URL: z.string().min(1).optional(),
+  /** For `smtp`, as plain values that need no encoding: the server's name. */
+  SMTP_HOST: z.string().min(1).optional(),
+  /** The server's port. 465 uses TLS from the start; 587, the default, upgrades with STARTTLS. */
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  /** The username to sign in with, often an email address. Unset for a server with no sign-in. */
+  SMTP_USER: z.string().min(1).optional(),
+  /** The password, exactly as it is. */
+  SMTP_PASSWORD: z.string().min(1).optional(),
   /** For `resend`: an API key that may send. */
   RESEND_API_KEY: z.string().min(1).optional(),
   /**
@@ -55,6 +66,10 @@ export const serverEnv = parseServerEnv({
   SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
   EMAIL_PROVIDER: set(process.env.EMAIL_PROVIDER),
   SMTP_URL: set(process.env.SMTP_URL),
+  SMTP_HOST: set(process.env.SMTP_HOST),
+  SMTP_PORT: set(process.env.SMTP_PORT),
+  SMTP_USER: set(process.env.SMTP_USER),
+  SMTP_PASSWORD: set(process.env.SMTP_PASSWORD),
   RESEND_API_KEY: set(process.env.RESEND_API_KEY),
   CRON_SECRET: set(process.env.CRON_SECRET),
   RATE_LIMIT_STORE: set(process.env.RATE_LIMIT_STORE),

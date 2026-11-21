@@ -27,6 +27,13 @@ beforeEach(() => {
 });
 
 describe("LoginForm", () => {
+  it("offers no code by email where the install cannot send one", () => {
+    render(<LoginForm allowCode={false} />);
+
+    expect(screen.getByLabelText(/^password/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Email me a code instead" })).toBeNull();
+  });
+
   it("asks for a real email address before sending anything", async () => {
     const user = userEvent.setup();
     render(<LoginForm />);

@@ -20,12 +20,25 @@ import { emailSchema, type EmailValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 
+/** An SMTP server saved in Settings → Email, as the browser may see it. */
+export interface SavedSmtp {
+  host: string;
+  port: number;
+  user: string;
+  hasPassword: boolean;
+}
+
 export interface EmailFormProps {
   settings: Settings;
   /** How this install sends mail, such as "SMTP", or `null` when no provider is set up. */
   provider: string | null;
-  /** Why the provider set on the server cannot be used, such as an `SMTP_URL` it cannot read. */
+  /** Why the provider set up cannot be used, such as an `SMTP_URL` the server cannot read. */
   providerProblem?: string | null;
+  /**
+   * `"server"` when the server's environment sets how mail is sent; otherwise the SMTP server
+   * saved here, without its password, or `null` when none is saved.
+   */
+  smtp?: "server" | SavedSmtp | null;
   /** Where a test email goes: the signed-in admin's own address. */
   testAddress: string;
   /** Which secrets for replies by email are saved. Their values never reach the browser. */
@@ -103,6 +116,7 @@ export function EmailForm({
   settings,
   provider,
   providerProblem = null,
+  smtp = null,
   testAddress,
   inbound,
   origin,
@@ -125,6 +139,10 @@ export function EmailForm({
       inboundProvider: settings.email.inbound.provider,
       resendSigningSecret: "",
       resendApiKey: "",
+      smtpHost: smtp && smtp !== "server" ? smtp.host : "",
+      smtpPort: smtp && smtp !== "server" ? String(smtp.port) : "",
+      smtpUser: smtp && smtp !== "server" ? smtp.user : "",
+      smtpPassword: "",
     },
   });
   const [inboundEnabled, inboundProvider, replyAddress] = useWatch({
@@ -148,6 +166,37 @@ export function EmailForm({
       type: "input",
       hint: "Leave empty to use your brand's name.",
       props: { placeholder: settings.brand.name },
+    },
+  ];
+
+  const savedPassword = smtp !== null && smtp !== "server" && smtp.hasPassword;
+  const smtpFields: FieldItem<EmailValues>[] = [
+    {
+      name: "smtpHost",
+      label: "SMTP server",
+      type: "input",
+      props: { autoCapitalize: "none", spellCheck: false, placeholder: "smtp.example.com" },
+    },
+    {
+      name: "smtpPort",
+      label: "Port",
+      type: "input",
+      hint: "587 for most providers, or 465.",
+      props: { inputMode: "numeric", placeholder: "587" },
+    },
+    {
+      name: "smtpUser",
+      label: "Username",
+      type: "input",
+      hint: "Often your email address.",
+      props: { autoCapitalize: "none", spellCheck: false, autoComplete: "off" },
+    },
+    {
+      name: "smtpPassword",
+      label: "Password",
+      type: "password",
+      ...(savedPassword ? { hint: "Saved. Leave empty to keep it." } : {}),
+      props: { autoComplete: "new-password" },
     },
   ];
 
@@ -223,12 +272,14 @@ export function EmailForm({
     try {
       const result = await saveEmail(values);
       if (result.ok) {
-        form.reset({ ...values, resendSigningSecret: "", resendApiKey: "" });
+        form.reset({ ...values, resendSigningSecret: "", resendApiKey: "", smtpPassword: "" });
         setSaved(true);
         toast.success("Changes saved");
         router.refresh();
       } else if (result.reason === "invalid" && values.inboundEnabled && !values.replyAddress) {
         form.setError("replyAddress", { message: "Enter the address replies should go to." });
+      } else if (result.reason === "invalid" && values.smtpUser && !values.smtpPassword) {
+        form.setError("smtpPassword", { message: "Enter the password for this username." });
       } else {
         form.setError("root", { message: saveErrors[result.reason] });
       }
@@ -286,7 +337,7 @@ export function EmailForm({
     >
       <SettingsSection
         title="Sending"
-        description="How this install sends mail. It is set on the server, with EMAIL_PROVIDER, because it holds a secret."
+        description="The mail server this install sends through. Your mail provider lists these details."
       >
         <div className="flex items-center gap-2">
           {provider ? (
@@ -297,12 +348,17 @@ export function EmailForm({
             <Badge variant="outline">Not set up</Badge>
           )}
           <p className="text-muted-foreground text-xs">
-            {provider
-              ? "Emails go out through this provider."
-              : (providerProblem ??
-                "No emails are sent until a provider is set. See the setup guide.")}
+            {providerProblem ??
+              (smtp === "server"
+                ? "Set on the server with environment variables."
+                : provider
+                  ? "Emails go out through this server."
+                  : "No emails are sent until a server is set.")}
           </p>
         </div>
+        {smtp === "server" ? null : (
+          <FieldList control={form.control} fields={smtpFields} disabled={disabled} />
+        )}
       </SettingsSection>
       <SettingsSection
         title="Sender"
@@ -441,7 +497,7 @@ export function EmailForm({
           </div>
           {ready ? null : (
             <p role="note" className="text-muted-foreground text-xs">
-              {provider ? "Save a from address first." : "Set up a provider on the server first."}
+              {provider ? "Save a from address first." : "Save an SMTP server above first."}
             </p>
           )}
         </SettingsSection>

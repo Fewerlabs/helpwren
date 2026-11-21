@@ -282,7 +282,8 @@ server can read. See [ADR 0013](decisions/0013-sessions-for-identified-users.md)
 ### Email
 
 `src/lib/email` sends and receives mail. Sending goes through an `EmailAdapter` (SMTP or Resend,
-chosen by `EMAIL_PROVIDER`) and `sendEmail`; the database queues what is owed and
+chosen by the environment, or else an SMTP server saved in Settings > Email and kept in
+`secrets`; see `choose.ts`) and `sendEmail`; the database queues what is owed and
 `processEmailQueue` (`queue.ts`), called by `/api/jobs/email`, sends it, with a Message-ID chain
 per conversation so mail apps thread it. See [ADR 0015](decisions/0015-email.md).
 

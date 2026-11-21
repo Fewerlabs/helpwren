@@ -134,13 +134,19 @@ export interface LoginFormProps {
   title?: string;
   /** Where to go once signed in. Only `/setup` is honoured; anything else goes to the dashboard. */
   next?: string;
+  /** Offer a code by email in place of a password. Only where the install can send email. */
+  allowCode?: boolean;
 }
 
 /**
  * Sign-in for team members: an email and a password, or a code emailed to them for anyone
  * without a password.
  */
-export function LoginForm({ title = "Sign in to Helpwren", next }: LoginFormProps) {
+export function LoginForm({
+  title = "Sign in to Helpwren",
+  next,
+  allowCode = true,
+}: LoginFormProps) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
   const passwordForm = useForm<PasswordForm>({
@@ -208,16 +214,18 @@ export function LoginForm({ title = "Sign in to Helpwren", next }: LoginFormProp
           void passwordForm.handleSubmit(signInWithPassword)(event);
         }}
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={busy}
-          onClick={() => {
-            void sendCode();
-          }}
-        >
-          Email me a code instead
-        </Button>
+        {allowCode ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() => {
+              void sendCode();
+            }}
+          >
+            Email me a code instead
+          </Button>
+        ) : null}
       </Step>
     );
   }

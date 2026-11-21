@@ -5,8 +5,10 @@ import { emailTemplateKinds, type EmailTemplateKind, type EmailTemplates } from 
 import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
-import { sendEmail } from "@/lib/email";
+import { emailSetOnServer, sendEmail } from "@/lib/email";
 import { createInboundSecret, saveResendInbound } from "@/lib/email/inbound";
+import { getSavedSmtp, saveSmtp } from "@/lib/email/saved-smtp";
+import { type SmtpServer } from "@/lib/email/smtp";
 import { buildEmail, sampleEmail } from "@/lib/email/templates";
 import { HELP_CENTER_TAG } from "@/lib/help-center-cache";
 import { getHelpwren } from "@/lib/helpwren";
@@ -214,6 +216,10 @@ export async function saveEmail(values: EmailValues): Promise<SaveResult> {
   const secretsGiven = resendSigningSecret !== "" || resendApiKey !== "";
   if (secretsGiven && !(await isAdmin())) return { ok: false, reason: "forbidden" };
 
+  const smtp = await smtpToSave(parsed.data);
+  if (smtp === "forbidden") return { ok: false, reason: "forbidden" };
+  if (smtp === "invalid") return { ok: false, reason: "invalid" };
+
   const helpwren = await getHelpwren();
   // Saved on their own page; kept as they are.
   const { templates } = (await helpwren.settings.getAll()).email;
@@ -232,8 +238,33 @@ export async function saveEmail(values: EmailValues): Promise<SaveResult> {
     },
   });
   if (result.ok && secretsGiven) await saveResendInbound(resendSigningSecret, resendApiKey);
+  if (result.ok && smtp !== "unchanged") await saveSmtp(smtp);
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
+}
+
+/**
+ * The SMTP server the form asks to save: a new or changed one, `null` to remove it, or
+ * `"unchanged"`. The server's environment wins over this form, so nothing is saved while it
+ * sets how mail is sent. An empty password keeps the saved one. Only admins may change it.
+ */
+async function smtpToSave(
+  values: Pick<EmailValues, "smtpHost" | "smtpPort" | "smtpUser" | "smtpPassword">,
+): Promise<SmtpServer | null | "unchanged" | "forbidden" | "invalid"> {
+  if (emailSetOnServer) return "unchanged";
+  const saved = await getSavedSmtp();
+  const { smtpHost: host, smtpPort, smtpUser: user, smtpPassword } = values;
+  if (host === "") {
+    if (saved === null) return "unchanged";
+    return (await isAdmin()) ? null : "forbidden";
+  }
+  const port = smtpPort === "" ? 587 : Number(smtpPort);
+  const password = smtpPassword === "" ? (saved?.password ?? "") : smtpPassword;
+  // A username with no password, saved or given, cannot sign in.
+  if (user !== "" && password === "") return "invalid";
+  const next: SmtpServer = { host, port, user, password };
+  if (saved && JSON.stringify(saved) === JSON.stringify(next)) return "unchanged";
+  return (await isAdmin()) ? next : "forbidden";
 }
 
 /**

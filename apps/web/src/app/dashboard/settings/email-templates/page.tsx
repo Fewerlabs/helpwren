@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { requireAgent } from "@/features/agent-auth";
 import { EmailTemplatesForm, SettingsPage } from "@/features/settings";
-import { getEmailAdapter } from "@/lib/email";
+import { getEmail } from "@/lib/email";
 import { getHelpwren } from "@/lib/helpwren";
 
 export const metadata: Metadata = { title: "Email templates" };
@@ -22,7 +22,7 @@ export default async function EmailTemplatesSettingsPage() {
     >
       <EmailTemplatesForm
         settings={settings}
-        canSend={getEmailAdapter() !== null && settings.email.fromAddress !== undefined}
+        canSend={(await getEmail()).adapter !== null && settings.email.fromAddress !== undefined}
         testAddress={agent.email}
         canEdit={canEdit}
       />

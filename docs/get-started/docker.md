@@ -71,8 +71,10 @@ container.
 
 ## Send email from Helpwren
 
-Reply notifications are separate from Supabase Auth's sign-in emails. Set `EMAIL_PROVIDER` and
-`HELPWREN_SMTP_URL` (or `RESEND_API_KEY`) in `deploy/docker/.env`, then run
+Reply notifications are separate from Supabase Auth's sign-in emails. Enter an SMTP server in
+**Settings → Email**, or set `HELPWREN_SMTP_HOST`, `HELPWREN_SMTP_PORT`, `HELPWREN_SMTP_USER`
+and `HELPWREN_SMTP_PASSWORD` (or `EMAIL_PROVIDER` and `RESEND_API_KEY`) in `deploy/docker/.env`,
+then run
 `docker compose up --detach helpwren`. See [Sending email](../email/index.md).
 
 ## Run the pieces yourself

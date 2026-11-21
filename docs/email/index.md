@@ -3,31 +3,50 @@
 Email contacts about replies they have not read and changes to their tickets, through SMTP or
 Resend.
 
-Email is off until a provider is set. It covers what Helpwren itself sends; team members'
+Email is off until a mail server is set. It covers what Helpwren itself sends; team members'
 sign-in codes are sent by Supabase Auth, set up separately (see
-[Configure Auth](../get-started/supabase-cloud.md#configure-auth)).
+[Configure Auth](../get-started/supabase-cloud.md#configure-auth)). The sign-in page offers
+**Email me a code** only once the install can send email.
 
 ## Before you start
 
-- An SMTP server, or a [Resend](https://resend.com) account with a verified domain.
+- An SMTP server, or a [Resend](https://resend.com) account with a verified domain. Your mail
+  provider lists its SMTP server, port, username and password.
 - The [scheduled jobs](../operations/scheduled-jobs.md) running: the email job sends what is due.
 
 ## Set it up
 
-1. Add the provider to the app's environment and restart or redeploy it:
+1. Choose where the mail server is set.
+
+   **In the dashboard** (simplest). In **Settings → Email**, under **Sending**, enter the
+   **SMTP server**, **Port** (587 for most providers, or 465), **Username** and **Password**,
+   exactly as your provider gives them, then **Save changes**. It works at once, with no
+   redeploy. The password is kept on the server and never shown again; leave the field empty to
+   keep it, and clear **SMTP server** to remove it. Only admins can change it.
+
+   **On the server.** Add the values to the app's environment and restart or redeploy it. These
+   win over the dashboard, which then only shows the status:
 
    ```bash title="apps/web/.env.local"
-   # Any SMTP server
-   EMAIL_PROVIDER=smtp
-   SMTP_URL=smtps://user:password@smtp.example.com:465
+   # Any SMTP server, values as they are
+   SMTP_HOST=smtp.example.com
+   SMTP_PORT=587
+   SMTP_USER=support@example.com
+   SMTP_PASSWORD=your-password
 
    # Or Resend
    EMAIL_PROVIDER=resend
    RESEND_API_KEY=re_...
    ```
 
-   With Docker Compose, set `EMAIL_PROVIDER` and `HELPWREN_SMTP_URL` (or `RESEND_API_KEY`) in
-   `deploy/docker/.env`, then run `docker compose up --detach helpwren`.
+   `SMTP_URL`, such as `smtps://user:password@smtp.example.com:465`, still works in place of the
+   four values. In it, characters such as `@`, `#`, `/` and `?` in the username or password must
+   be percent-encoded (`%40`, `%23`, `%2F`, `%3F`), which is why the separate values are easier.
+
+   With Docker Compose, set `HELPWREN_SMTP_HOST`, `HELPWREN_SMTP_PORT`, `HELPWREN_SMTP_USER`
+   and `HELPWREN_SMTP_PASSWORD` (or `EMAIL_PROVIDER` and `RESEND_API_KEY`) in
+   `deploy/docker/.env`, then run `docker compose up --detach helpwren`. Or leave them out and
+   use the dashboard.
 
 2. In **Settings → Email**, set the **From address**, on a domain your provider lets you send
    from, and optionally a **From name**. Without one, your brand's name is used.

@@ -1,38 +1,78 @@
 import { createResendAdapter } from "./resend";
-import { createSmtpAdapter } from "./smtp";
+import { createSmtpAdapter, type SmtpServer } from "./smtp";
 import { type EmailAdapter } from "./types";
 
-export interface EmailSetup {
+/** What the server's environment says about sending mail. */
+export interface EmailEnv {
   provider?: string | undefined;
   smtpUrl?: string | undefined;
+  smtpHost?: string | undefined;
+  smtpPort?: number | undefined;
+  smtpUser?: string | undefined;
+  smtpPassword?: string | undefined;
   resendApiKey?: string | undefined;
 }
+
+/** Where the way of sending was set: the server's environment, or Settings → Email. */
+export type EmailSource = "server" | "settings";
 
 export interface EmailChoice {
   adapter: EmailAdapter | null;
   /** Why the chosen provider cannot be used, in words safe to show an admin. */
   problem: string | null;
+  /** Where it was set, or `null` when it is not set anywhere. */
+  source: EmailSource | null;
+}
+
+const UNREADABLE_URL =
+  "SMTP_URL could not be read. Use SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD instead, which take the values as they are.";
+
+/** Whether the environment chooses how mail is sent, which then wins over Settings → Email. */
+export function envChoosesEmail(env: EmailEnv): boolean {
+  return Boolean(env.provider ?? env.smtpUrl ?? env.smtpHost);
+}
+
+/** An SMTP server made from plain values, or `null` when there is no host. */
+function serverFromEnv(env: EmailEnv): SmtpServer | null {
+  if (!env.smtpHost) return null;
+  return {
+    host: env.smtpHost,
+    port: env.smtpPort ?? 587,
+    user: env.smtpUser ?? "",
+    password: env.smtpPassword ?? "",
+  };
+}
+
+function smtp(server: string | SmtpServer, source: EmailSource, problem: string): EmailChoice {
+  try {
+    return { adapter: createSmtpAdapter(server), problem: null, source };
+  } catch {
+    return { adapter: null, problem, source };
+  }
 }
 
 /**
- * The adapter the server's settings ask for. A provider that is chosen but cannot be built is
- * reported rather than thrown, so a settings page can say what is wrong instead of failing.
- * The problem never repeats `SMTP_URL`, which holds a password.
+ * The adapter to send with. The server's environment comes first; without it, an SMTP server
+ * saved in Settings → Email. A provider that is chosen but cannot be built is reported rather
+ * than thrown, so a settings page can say what is wrong instead of failing. The problem never
+ * repeats a password.
  */
-export function chooseEmailAdapter(setup: EmailSetup): EmailChoice {
-  if (setup.provider === "smtp" && setup.smtpUrl) {
-    try {
-      return { adapter: createSmtpAdapter(setup.smtpUrl), problem: null };
-    } catch {
-      return {
-        adapter: null,
-        problem:
-          "SMTP_URL could not be read. Percent-encode special characters in the username and password, such as # as %23, / as %2F and ? as %3F.",
-      };
+export function chooseEmailAdapter(env: EmailEnv, saved: SmtpServer | null = null): EmailChoice {
+  if (envChoosesEmail(env)) {
+    if (env.provider === "resend") {
+      return env.resendApiKey
+        ? { adapter: createResendAdapter(env.resendApiKey), problem: null, source: "server" }
+        : { adapter: null, problem: "RESEND_API_KEY is not set.", source: "server" };
     }
+    const server = serverFromEnv(env);
+    if (server) return smtp(server, "server", "SMTP_HOST or SMTP_PORT could not be used.");
+    if (env.smtpUrl) return smtp(env.smtpUrl, "server", UNREADABLE_URL);
+    return {
+      adapter: null,
+      problem: "EMAIL_PROVIDER is smtp, but SMTP_HOST is not set.",
+      source: "server",
+    };
   }
-  if (setup.provider === "resend" && setup.resendApiKey) {
-    return { adapter: createResendAdapter(setup.resendApiKey), problem: null };
-  }
-  return { adapter: null, problem: null };
+  if (saved) return smtp(saved, "settings", "The saved SMTP server could not be used.");
+  return { adapter: null, problem: null, source: null };
 }

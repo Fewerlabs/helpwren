@@ -5,7 +5,7 @@ import { type ReactNode } from "react";
 
 import { DASHBOARD_PATH, getCurrentAgent, LoginForm } from "@/features/agent-auth";
 import { FirstAdminStep, SetupSteps, SetupWizard, setupStepSchema } from "@/features/setup";
-import { getEmailAdapter } from "@/lib/email";
+import { getEmail } from "@/lib/email";
 import { summariseInbound } from "@/lib/email/inbound";
 import { env } from "@/lib/env";
 import { getHelpwren } from "@/lib/helpwren";
@@ -49,9 +49,10 @@ export default async function SetupPage({
   if (status.setupCompletedAt || agent?.role !== "admin") redirect(DASHBOARD_PATH);
 
   const step = setupStepSchema.parse((await searchParams).step);
-  const [settings, inbound] = await Promise.all([
+  const [settings, inbound, email] = await Promise.all([
     getHelpwren().then((helpwren) => helpwren.settings.getAll()),
     summariseInbound(),
+    getEmail(),
   ]);
   return (
     <Shell wide>
@@ -59,7 +60,7 @@ export default async function SetupPage({
         <SetupWizard
           step={step}
           settings={settings}
-          emailProvider={getEmailAdapter()?.name ?? null}
+          emailProvider={email.adapter?.name ?? null}
           adminEmail={agent.email}
           inbound={inbound}
           appUrl={env.NEXT_PUBLIC_APP_URL}

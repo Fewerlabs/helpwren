@@ -5,34 +5,40 @@ import { parseSettings } from "@helpwren/core";
 import { serverEnv } from "@/lib/server-env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-import { chooseEmailAdapter, type EmailChoice } from "./choose";
-import { type EmailAdapter, type EmailMessage, type SendResult } from "./types";
+import { chooseEmailAdapter, envChoosesEmail, type EmailChoice, type EmailEnv } from "./choose";
+import { getSavedSmtp } from "./saved-smtp";
+import { type EmailMessage, type SendResult } from "./types";
 
 export { type EmailMessage, type SendResult } from "./types";
 
-let choice: EmailChoice | undefined;
+const env: EmailEnv = {
+  provider: serverEnv.EMAIL_PROVIDER,
+  smtpUrl: serverEnv.SMTP_URL,
+  smtpHost: serverEnv.SMTP_HOST,
+  smtpPort: serverEnv.SMTP_PORT,
+  smtpUser: serverEnv.SMTP_USER,
+  smtpPassword: serverEnv.SMTP_PASSWORD,
+  resendApiKey: serverEnv.RESEND_API_KEY,
+};
 
-function chosen(): EmailChoice {
-  choice ??= chooseEmailAdapter({
-    provider: serverEnv.EMAIL_PROVIDER,
-    smtpUrl: serverEnv.SMTP_URL,
-    resendApiKey: serverEnv.RESEND_API_KEY,
-  });
-  return choice;
-}
+// An SMTP connection is worth keeping, so a choice is made again only when what it was made
+// from changes: never for the environment, and when an admin saves a new server.
+let kept: { key: string; choice: EmailChoice } | undefined;
 
 /**
- * The way this install sends mail, chosen by `EMAIL_PROVIDER`, or `null` when none is set up or
- * the one set up cannot be used. Made once: an SMTP connection is worth keeping.
+ * How this install sends mail: through the provider the server's environment sets, or else the
+ * SMTP server saved in Settings → Email. `adapter` is `null` when neither is set up, or the
+ * one set up cannot be used; `problem` then says why.
  */
-export function getEmailAdapter(): EmailAdapter | null {
-  return chosen().adapter;
+export async function getEmail(): Promise<EmailChoice> {
+  const saved = envChoosesEmail(env) ? null : await getSavedSmtp();
+  const key = JSON.stringify(saved);
+  if (kept?.key !== key) kept = { key, choice: chooseEmailAdapter(env, saved) };
+  return kept.choice;
 }
 
-/** Why the provider set on the server cannot be used, or `null` when nothing is wrong. */
-export function getEmailProblem(): string | null {
-  return chosen().problem;
-}
+/** Whether the server's environment sets how mail is sent, so Settings → Email cannot. */
+export const emailSetOnServer = envChoosesEmail(env);
 
 export type SendEmailResult =
   | SendResult
@@ -45,12 +51,12 @@ export type SendEmailResult =
  * says what happened, so a caller can carry on when mail is down.
  */
 export async function sendEmail(message: EmailMessage): Promise<SendEmailResult> {
-  const provider = getEmailAdapter();
+  const { adapter: provider, problem } = await getEmail();
   if (!provider) {
     return {
       ok: false,
       reason: "not_configured",
-      detail: getEmailProblem() ?? "No email provider is set up.",
+      detail: problem ?? "No email provider is set up.",
     };
   }
 

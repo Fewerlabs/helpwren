@@ -18,8 +18,12 @@ malformed. Locally they live in `apps/web/.env.local`; on a host, in its environ
 | `NEXT_PUBLIC_SUPABASE_URL`             | Yes      | The Supabase project's URL                                                                                                                                      |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes      | Supabase's publishable key. Safe in the browser: the access rules decide what it can do                                                                         |
 | `SUPABASE_SECRET_KEY`                  | Yes      | Supabase's secret key, which bypasses the access rules. Server only; never give it a `NEXT_PUBLIC_` name                                                        |
-| `EMAIL_PROVIDER`                       | No       | `smtp` or `resend`. Unset sends no email. See [Sending email](../email/index.md)                                                                                |
-| `SMTP_URL`                             | No       | For `smtp`: the server and sign-in, such as `smtps://user:password@smtp.example.com:465`                                                                        |
+| `EMAIL_PROVIDER`                       | No       | `smtp` or `resend`. Unset with no SMTP values, an admin can set an SMTP server in Settings → Email. See [Sending email](../email/index.md)                      |
+| `SMTP_HOST`                            | No       | The SMTP server, such as `smtp.example.com`. Setting it means SMTP. Wins over Settings → Email                                                                  |
+| `SMTP_PORT`                            | No       | Its port. `587` (the default) upgrades with STARTTLS; `465` uses TLS from the start                                                                             |
+| `SMTP_USER`                            | No       | The username, as it is, often an email address. Unset for a server with no sign-in                                                                              |
+| `SMTP_PASSWORD`                        | No       | The password, as it is. No encoding needed                                                                                                                      |
+| `SMTP_URL`                             | No       | The four values above in one address, such as `smtps://user:password@smtp.example.com:465`. Special characters must be percent-encoded                          |
 | `RESEND_API_KEY`                       | No       | For `resend`: an API key that may send. Also reads [replies by email](../email/replies.md) from Resend                                                          |
 | `CRON_SECRET`                          | No       | At least 16 characters. Unset turns the [scheduled jobs](scheduled-jobs.md) off                                                                                 |
 | `RATE_LIMIT_STORE`                     | No       | `database` (default) shares rate limit counts between every copy of the app; `memory` keeps one per process                                                     |
@@ -43,14 +47,18 @@ malformed. Locally they live in `apps/web/.env.local`; on a host, in its environ
 With Docker, set Helpwren's values in `deploy/docker/.env`. The Compose file passes them to the
 app under the names above:
 
-| In `deploy/docker/.env` | Becomes                                         |
-| ----------------------- | ----------------------------------------------- |
-| `HELPWREN_APP_URL`      | `NEXT_PUBLIC_APP_URL`                           |
-| `HELPWREN_PORT`         | The port Helpwren is published on. Default 3000 |
-| `HELPWREN_SMTP_URL`     | `SMTP_URL`                                      |
-| `EMAIL_PROVIDER`        | `EMAIL_PROVIDER`                                |
-| `RESEND_API_KEY`        | `RESEND_API_KEY`                                |
-| `CRON_SECRET`           | `CRON_SECRET`, also given to the scheduler      |
+| In `deploy/docker/.env`  | Becomes                                         |
+| ------------------------ | ----------------------------------------------- |
+| `HELPWREN_APP_URL`       | `NEXT_PUBLIC_APP_URL`                           |
+| `HELPWREN_PORT`          | The port Helpwren is published on. Default 3000 |
+| `HELPWREN_SMTP_HOST`     | `SMTP_HOST`                                     |
+| `HELPWREN_SMTP_PORT`     | `SMTP_PORT`                                     |
+| `HELPWREN_SMTP_USER`     | `SMTP_USER`                                     |
+| `HELPWREN_SMTP_PASSWORD` | `SMTP_PASSWORD`                                 |
+| `HELPWREN_SMTP_URL`      | `SMTP_URL`                                      |
+| `EMAIL_PROVIDER`         | `EMAIL_PROVIDER`                                |
+| `RESEND_API_KEY`         | `RESEND_API_KEY`                                |
+| `CRON_SECRET`            | `CRON_SECRET`, also given to the scheduler      |
 
 The Supabase variables come from Supabase's own values in the same file. To set any other
 variable, such as `TURNSTILE_SECRET_KEY`, add it to the `helpwren` service's `environment` in

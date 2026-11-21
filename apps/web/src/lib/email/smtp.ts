@@ -2,14 +2,35 @@ import nodemailer, { type Transporter } from "nodemailer";
 
 import { type EmailAdapter } from "./types";
 
+/** An SMTP server and its sign-in, given as plain values, so nothing needs encoding. */
+export interface SmtpServer {
+  host: string;
+  port: number;
+  /** Empty for a server that takes mail without signing in. */
+  user: string;
+  password: string;
+}
+
+/** Port 465 speaks TLS from the start; the others, such as 587, upgrade with STARTTLS. */
+function transportFor(server: string | SmtpServer): Transporter {
+  if (typeof server === "string") return nodemailer.createTransport(server);
+  return nodemailer.createTransport({
+    host: server.host,
+    port: server.port,
+    secure: server.port === 465,
+    ...(server.user ? { auth: { user: server.user, pass: server.password } } : {}),
+  });
+}
+
 /**
  * Sends through any SMTP server, which every mail provider offers, so this is the option that
- * always works. `url` is the server's address with its sign-in details, such as
- * `smtps://user:password@smtp.example.com:465`. `transport` is for tests.
+ * always works. `server` is either an address with its sign-in details, such as
+ * `smtps://user:password@smtp.example.com:465`, or the same as plain values. `transport` is
+ * for tests.
  */
 export function createSmtpAdapter(
-  url: string,
-  transport: Transporter = nodemailer.createTransport(url),
+  server: string | SmtpServer,
+  transport: Transporter = transportFor(server),
 ): EmailAdapter {
   return {
     name: "SMTP",
