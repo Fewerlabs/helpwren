@@ -148,6 +148,34 @@ describe("HelpShell", () => {
     );
     expect(screen.queryByRole("searchbox")).toBeNull();
   });
+
+  it("leaves the top bar's search to the home page's own inside a frame", () => {
+    render(
+      <HelpShell settings={settings} collections={nav} embed={{ hide: [] }} home>
+        <HelpHero settings={settings} embed={{ hide: [] }} />
+      </HelpShell>,
+    );
+    expect(screen.getAllByRole("searchbox")).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Acme answers" })).toBeInTheDocument();
+  });
+});
+
+describe("the home page's heading inside a frame", () => {
+  it("shows only the parts the host kept", () => {
+    const { rerender, container } = render(
+      <HelpHero settings={settings} embed={{ hide: ["title", "subtitle"] }} />,
+    );
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(screen.queryByText(/Answers to common questions/)).toBeNull();
+    expect(screen.getByRole("searchbox")).toBeInTheDocument();
+    // The search goes to the embedded results page.
+    expect(container.querySelector('input[type="hidden"][name="hide"]')).toHaveValue(
+      "title,subtitle",
+    );
+
+    rerender(<HelpHero settings={settings} embed={{ hide: ["title", "subtitle", "search"] }} />);
+    expect(container).toBeEmptyDOMElement();
+  });
 });
 
 describe("searching", () => {
@@ -234,8 +262,19 @@ describe("ArticleView", () => {
     const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(crumbs).getByRole("link", { name: "Billing" })).toHaveAttribute(
       "href",
-      "/help/billing?embed=1&hide=feedback%2Cchat",
+      "/help/billing?embed=1&hide=feedback,chat",
     );
+
+    rerender(
+      <ArticleView
+        article={article}
+        next={other}
+        embed={{ hide: ["breadcrumbs", "related", "feedback", "chat"] }}
+      />,
+    );
+    expect(screen.queryByRole("navigation", { name: "Breadcrumb" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "More in this collection" })).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
   });
 });
 

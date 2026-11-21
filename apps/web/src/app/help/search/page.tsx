@@ -1,10 +1,14 @@
 import { EmptyState } from "@helpwren/design-system";
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { ArticleList, HELP_PATH, helpMetadata, HelpShell } from "@/features/help-center";
+import {
+  ArticleList,
+  HELP_PATH,
+  HelpBackLink,
+  helpMetadata,
+  HelpShell,
+} from "@/features/help-center";
 import { getHelpCollections, getHelpSettings, searchHelpArticles } from "@/lib/help-center-data";
-import { withEmbed } from "@/lib/help-embed";
 import { getHelpEmbed } from "@/lib/help-embed-request";
 
 type Props = PageProps<"/help/search">;
@@ -37,12 +41,7 @@ export default async function HelpSearchPage({ searchParams }: Props) {
 
   return (
     <HelpShell settings={settings} collections={collections} query={query} embed={embed}>
-      <Link
-        href={withEmbed(HELP_PATH, embed)}
-        className="text-primary focus-visible:outline-ring mb-2 inline-block rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
-      >
-        Help center
-      </Link>
+      <HelpBackLink embed={embed} here="Search" />
       <h1 className="text-3xl font-semibold tracking-tight text-balance">
         {query ? `Results for "${query}"` : "Search the help center"}
       </h1>

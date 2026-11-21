@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { embedQuery, parseHelpEmbed, withEmbed } from "./help-embed";
+import { embedQuery, hides, parseHelpEmbed, withEmbed } from "./help-embed";
 
 const parse = (query: string) => parseHelpEmbed(new URLSearchParams(query));
 
@@ -12,8 +12,40 @@ describe("parseHelpEmbed", () => {
     expect(parse("embed=1")).toEqual({ hide: [] });
   });
 
-  it("keeps the parts it knows and drops the rest", () => {
+  it("keeps the parts it knows, in page order, and drops the rest", () => {
     expect(parse("embed=1&hide=chat,search,nonsense,<script>")?.hide).toEqual(["search", "chat"]);
+    expect(parse("embed=1&hide=related, Title,breadcrumbs,footer")?.hide).toEqual([
+      "title",
+      "breadcrumbs",
+      "related",
+    ]);
+    expect(parse("embed=1&hide=title,subtitle,popular,collections")?.hide).toEqual([
+      "title",
+      "subtitle",
+      "collections",
+      "popular",
+    ]);
+  });
+
+  it("says whether a part is hidden, outside a frame too", () => {
+    const embed = parse("embed=1&hide=title");
+    expect(hides(embed, "title")).toBe(true);
+    expect(hides(embed, "search")).toBe(false);
+    expect(hides(null, "title")).toBe(false);
+  });
+
+  it("takes padding, background and theme only from their known values", () => {
+    expect(parse("embed=1&padding=none&bg=transparent&theme=dark")).toEqual({
+      hide: [],
+      padding: "none",
+      background: "transparent",
+      theme: "dark",
+    });
+    expect(parse("embed=1&padding=compact&bg=F8FAFC")).toMatchObject({
+      padding: "compact",
+      background: "#f8fafc",
+    });
+    expect(parse("embed=1&padding=lots&bg=red;color:x&theme=blue")).toEqual({ hide: [] });
   });
 
   it("takes a colour only as six hex digits", () => {
@@ -36,7 +68,22 @@ describe("links inside the frame", () => {
   const embed = { hide: ["search", "chat"] as const, accent: "#1d4ed8", collection: "billing" };
 
   it("carry the look and what is hidden, and not where to open", () => {
-    expect(embedQuery(embed)).toBe("embed=1&hide=search%2Cchat&accent=1d4ed8");
+    expect(embedQuery(embed)).toBe("embed=1&hide=search,chat&accent=1d4ed8");
+    expect(
+      embedQuery({
+        hide: ["title"],
+        padding: "compact",
+        background: "#ffffff",
+        theme: "light",
+      }),
+    ).toBe("embed=1&hide=title&padding=compact&bg=ffffff&theme=light");
+  });
+
+  it("come back out as the same options", () => {
+    const query = "embed=1&hide=title,subtitle,popular&padding=none&bg=transparent&theme=dark";
+    const parsed = parse(query);
+    expect(parsed && embedQuery(parsed)).toBe(query);
+    expect(withEmbed("/help/billing", parsed)).toBe(`/help/billing?${query}`);
   });
 
   it("are left alone outside a frame", () => {

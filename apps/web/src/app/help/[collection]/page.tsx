@@ -1,6 +1,5 @@
 import { CollectionIcon } from "@helpwren/design-system";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
@@ -9,13 +8,13 @@ import {
   collectionPath,
   countArticles,
   HELP_ICON_ROUTE,
-  HELP_PATH,
+  HelpBackLink,
   helpMetadata,
   HelpShell,
   JsonLd,
 } from "@/features/help-center";
 import { getHelpCollections, getHelpSettings } from "@/lib/help-center-data";
-import { withEmbed } from "@/lib/help-embed";
+import { hides } from "@/lib/help-embed";
 import { getHelpEmbed } from "@/lib/help-embed-request";
 
 type Props = PageProps<"/help/[collection]">;
@@ -42,6 +41,8 @@ export default async function HelpCollectionPage({ params }: Props) {
     getHelpEmbed(),
   ]);
   if (!collection) notFound();
+  const title = !hides(embed, "title");
+  const subtitle = !hides(embed, "subtitle");
 
   return (
     <HelpShell
@@ -50,31 +51,34 @@ export default async function HelpCollectionPage({ params }: Props) {
       current={{ collection: collection.slug }}
       embed={embed}
     >
-      <Link
-        href={withEmbed(HELP_PATH, embed)}
-        className="text-primary focus-visible:outline-ring mb-2 inline-block rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
-      >
-        Help center
-      </Link>
-      <header className="mb-8">
-        <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-balance">
-          <CollectionIcon
-            name={collection.icon}
-            weight="duotone"
-            route={HELP_ICON_ROUTE}
-            className="text-primary size-7"
-          />
-          {collection.name}
-        </h1>
-        {collection.description ? (
-          <p className="text-muted-foreground mt-2.5 text-lg text-pretty">
-            {collection.description}
-          </p>
-        ) : null}
-        <p className="text-muted-foreground mt-3 text-sm">
-          {countArticles(collection.articles.length)}
-        </p>
-      </header>
+      <HelpBackLink embed={embed} here={collection.name} />
+      {title || subtitle ? (
+        <header className="mb-8">
+          {title ? (
+            <h1 className="flex items-center gap-3 text-3xl font-semibold tracking-tight text-balance">
+              <CollectionIcon
+                name={collection.icon}
+                weight="duotone"
+                route={HELP_ICON_ROUTE}
+                className="text-primary size-7"
+              />
+              {collection.name}
+            </h1>
+          ) : null}
+          {subtitle ? (
+            <>
+              {collection.description ? (
+                <p className="text-muted-foreground mt-2.5 text-lg text-pretty first:mt-0">
+                  {collection.description}
+                </p>
+              ) : null}
+              <p className="text-muted-foreground mt-3 text-sm first:mt-0">
+                {countArticles(collection.articles.length)}
+              </p>
+            </>
+          ) : null}
+        </header>
+      ) : null}
       <ArticleList
         label={`Articles in ${collection.name}`}
         articles={collection.articles}

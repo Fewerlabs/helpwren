@@ -2,10 +2,11 @@
 // comes from `@/lib/help-center-data`, which only the server may load.
 export { ArticleFeedback } from "./components/article-feedback";
 export { ArticleView, type ArticleViewProps } from "./components/article-view";
-export { Breadcrumbs, type Crumb } from "./components/breadcrumbs";
+export { Breadcrumbs, HelpBackLink, type Crumb } from "./components/breadcrumbs";
 export { ArticleList, CollectionGrid } from "./components/collection-grid";
 export { Contents } from "./components/contents";
 export { EmbedFrame } from "./components/embed-frame";
+export { EmbedLook } from "./components/embed-look";
 export { HelpChatLauncher } from "./components/help-chat";
 export { HelpHero } from "./components/help-hero";
 export {
