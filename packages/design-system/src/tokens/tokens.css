@@ -23,6 +23,8 @@
   --biro: #2f5b85;
   --ochre: #7d5a12;
   --wash: #f1f1f1;
+  /* A field set into a white panel, such as the chat's message box: a step deeper than wash. */
+  --well: #ebebeb;
 
   /* Status chips: text colour on a tint. Always shown with a dot and a word. */
   --status-open: #2f5b85;
@@ -87,6 +89,7 @@
   --biro: #8db3db;
   --ochre: #d9a441;
   --wash: #1e1e1e;
+  --well: #232323;
 
   --status-open: #8db3db;
   --status-open-surface: #2e3236;

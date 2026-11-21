@@ -8,14 +8,7 @@ import {
   ticketSubjectSchema,
   type GuestDetails,
 } from "@helpwren/core";
-import {
-  Button,
-  FieldList,
-  Icon,
-  MessageBubble,
-  Textarea,
-  type FieldItem,
-} from "@helpwren/design-system";
+import { Button, FieldList, Icon, MessageBubble, type FieldItem } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,6 +23,7 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
+import { ChatBox, ChatBoxField, ChatBoxSend } from "@/features/conversation";
 import { useHelpwren } from "@/lib/helpwren-context";
 
 import { TeamAvatar } from "../brand";
@@ -274,6 +268,7 @@ export function StartForm({
     defaultValues: { ...empty, name: claimed?.name ?? "", email: claimed?.email ?? "" },
   });
   const replyBy = useWatch({ control: form.control, name: "replyBy" });
+  const written = useWatch({ control: form.control, name: "message" });
 
   // What tells a person from a script: the field only a bot fills in, how long the form was
   // open, and the captcha when the install asks for one.
@@ -422,20 +417,26 @@ export function StartForm({
             </p>
           </div>
         )}
-        <div className="border-rule grid gap-2 border-t p-3">
+        <div className="grid gap-2 p-3">
           {captcha}
           {(failure ?? errors.message?.message) ? (
             <p role="alert" className="text-destructive text-xs">
               {failure ?? errors.message?.message}
             </p>
           ) : null}
-          <div className="flex items-end gap-2">
-            <Textarea
+          <ChatBox
+            send={
+              <ChatBoxSend
+                label="Send message"
+                ready={written.trim().length > 0}
+                loading={isSubmitting}
+              />
+            }
+          >
+            <ChatBoxField
               aria-label="Your message"
-              placeholder="Write a message"
-              rows={1}
+              placeholder="Send us a message…"
               maxLength={MESSAGE_MAX_LENGTH}
-              className="max-h-32 min-h-10 flex-1 resize-none"
               disabled={isSubmitting}
               {...message}
               onKeyDown={(event) => {
@@ -445,10 +446,7 @@ export function StartForm({
                 }
               }}
             />
-            <Button type="submit" size="icon" aria-label="Send message" loading={isSubmitting}>
-              <Icon name="paper-plane-tilt" />
-            </Button>
-          </div>
+          </ChatBox>
         </div>
       </form>
     );
