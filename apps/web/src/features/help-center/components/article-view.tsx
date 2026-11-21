@@ -2,7 +2,7 @@ import { richTextToPlainText, type Article, type ArticleSummary } from "@helpwre
 import { Avatar, Icon, RichText, richTextHeadings } from "@helpwren/design-system";
 import Link from "next/link";
 
-import { withEmbed, type HelpEmbed } from "@/lib/help-embed";
+import { hides, withEmbed, type HelpEmbed } from "@/lib/help-embed";
 
 import { formatDate, readingMinutes } from "../format";
 import { articlePath, collectionPath, HELP_PATH } from "../urls";
@@ -63,7 +63,9 @@ export function ArticleView({
   preview = false,
   embed = null,
 }: ArticleViewProps) {
-  const hidden = (part: "feedback" | "chat") => embed?.hide.includes(part) ?? false;
+  const feedback = !hides(embed, "feedback");
+  const chat = !hides(embed, "chat");
+  const related = !hides(embed, "related") && (previous !== undefined || next !== undefined);
   const headings = richTextHeadings(article.body);
   const minutes = readingMinutes(richTextToPlainText(article.body));
 
@@ -71,22 +73,24 @@ export function ArticleView({
     <article>
       {embed ? (
         // Inside a frame there is no list of articles beside the page, so the way back is here.
-        <div className="mb-5">
-          <Breadcrumbs
-            crumbs={[
-              { label: "Help center", href: withEmbed(HELP_PATH, embed) },
-              ...(article.collection
-                ? [
-                    {
-                      label: article.collection.name,
-                      href: withEmbed(collectionPath(article.collection.slug), embed),
-                    },
-                  ]
-                : []),
-              { label: article.title },
-            ]}
-          />
-        </div>
+        hides(embed, "breadcrumbs") ? null : (
+          <div className="mb-5">
+            <Breadcrumbs
+              crumbs={[
+                { label: "Help center", href: withEmbed(HELP_PATH, embed) },
+                ...(article.collection
+                  ? [
+                      {
+                        label: article.collection.name,
+                        href: withEmbed(collectionPath(article.collection.slug), embed),
+                      },
+                    ]
+                  : []),
+                { label: article.title },
+              ]}
+            />
+          </div>
+        )
       ) : article.collection ? (
         <Link
           href={collectionPath(article.collection.slug)}
@@ -139,11 +143,11 @@ export function ArticleView({
 
       <RichText doc={article.body} className="mt-8" />
 
-      {preview ? null : (
+      {preview || !(feedback || related || chat) ? null : (
         <div className="border-rule mt-12 grid gap-8 border-t pt-6">
-          {hidden("feedback") ? null : <ArticleFeedback articleId={article.id} />}
+          {feedback ? <ArticleFeedback articleId={article.id} /> : null}
 
-          {previous || next ? (
+          {related ? (
             <nav aria-label="More in this collection" className="grid gap-3 sm:grid-cols-2">
               {previous ? (
                 <Neighbour article={previous} direction="Previous" embed={embed} />
@@ -152,12 +156,12 @@ export function ArticleView({
             </nav>
           ) : null}
 
-          {hidden("chat") ? null : (
+          {chat ? (
             <p className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
               Still need help?
               <ChatLink newTab={embed !== null} />
             </p>
-          )}
+          ) : null}
         </div>
       )}
     </article>

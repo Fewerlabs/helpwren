@@ -309,7 +309,9 @@ test("a host embeds the help center without its chrome, and is told its height",
   // Whatever the branding test before this one called it, the search is there.
   await expect(frame.getByRole("searchbox")).toBeVisible();
   await expect(frame.getByRole("link", { name: "Powered by Helpwren" })).toHaveCount(0);
-  await expect(frame.getByRole("heading", { level: 1 })).toHaveCount(0);
+  // The greeting stays, with the search under it, until the host hides them.
+  await expect(frame.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(frame.getByRole("searchbox")).toHaveCount(1);
 
   // The frame is as tall as what it shows.
   await expect
