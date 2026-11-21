@@ -61,7 +61,7 @@ export const brandSwatches: readonly ColorSwatch[] = [
   { label: "Violet", color: "#6d28d9" },
   { label: "Lagoon", color: "#0f766e", to: "#38bdf8" },
   { label: "Dusk", color: "#4c1d95", to: "#be185d" },
-  { label: "Ember", color: "#c2410c", to: "#f59e0b" },
+  { label: "Sunrise", color: "#f1635e", to: "#ffcb05" },
 ];
 
 /** Plain colours for buttons, which carry text and so are never a gradient. */
