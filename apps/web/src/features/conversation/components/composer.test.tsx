@@ -115,3 +115,42 @@ describe("saved replies in the reply box", () => {
     expect(typing.stop).toHaveBeenCalled();
   });
 });
+
+describe("the visitor's message box", () => {
+  function renderBar() {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <HelpwrenProvider getClient={() => ({}) as unknown as HelpwrenClient}>
+            <Composer conversationId="11111111-1111-4111-8111-111111111111" />
+          </HelpwrenProvider>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    return screen.getByRole("textbox", { name: "Your message" });
+  }
+
+  it("can send only once something is written", async () => {
+    const user = userEvent.setup();
+    const box = renderBar();
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+
+    await user.type(box, "Hello");
+    expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+  });
+
+  it("puts a picked emoji where the caret was, and goes back to writing", async () => {
+    const user = userEvent.setup();
+    const box = renderBar();
+    await user.type(box, "Thanks!");
+    await user.keyboard("{ArrowLeft}");
+
+    await user.click(screen.getByRole("button", { name: "Add an emoji" }));
+    await user.click(await screen.findByRole("button", { name: "Thumbs up" }));
+
+    expect(box).toHaveValue("Thanks👍!");
+    expect(box).toHaveFocus();
+    expect(screen.queryByRole("dialog", { name: "Emoji" })).not.toBeInTheDocument();
+  });
+});

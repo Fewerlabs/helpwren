@@ -9,7 +9,7 @@ import css from "./tokens.css?raw";
 const groups = [
   {
     title: "Paper and ink",
-    names: ["paper", "card-surface", "ink", "pencil", "edge", "rule", "wash"],
+    names: ["paper", "card-surface", "ink", "pencil", "edge", "rule", "wash", "well"],
   },
   { title: "Brand", names: ["moss", "pen", "highlighter", "biro", "ochre"] },
   {
