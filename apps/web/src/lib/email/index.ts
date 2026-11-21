@@ -5,28 +5,33 @@ import { parseSettings } from "@helpwren/core";
 import { serverEnv } from "@/lib/server-env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-import { createResendAdapter } from "./resend";
-import { createSmtpAdapter } from "./smtp";
+import { chooseEmailAdapter, type EmailChoice } from "./choose";
 import { type EmailAdapter, type EmailMessage, type SendResult } from "./types";
 
 export { type EmailMessage, type SendResult } from "./types";
 
-let adapter: EmailAdapter | null | undefined;
+let choice: EmailChoice | undefined;
+
+function chosen(): EmailChoice {
+  choice ??= chooseEmailAdapter({
+    provider: serverEnv.EMAIL_PROVIDER,
+    smtpUrl: serverEnv.SMTP_URL,
+    resendApiKey: serverEnv.RESEND_API_KEY,
+  });
+  return choice;
+}
 
 /**
- * The way this install sends mail, chosen by `EMAIL_PROVIDER`, or `null` when none is set up.
- * Made once: an SMTP connection is worth keeping.
+ * The way this install sends mail, chosen by `EMAIL_PROVIDER`, or `null` when none is set up or
+ * the one set up cannot be used. Made once: an SMTP connection is worth keeping.
  */
 export function getEmailAdapter(): EmailAdapter | null {
-  if (adapter === undefined) {
-    adapter =
-      serverEnv.EMAIL_PROVIDER === "smtp" && serverEnv.SMTP_URL
-        ? createSmtpAdapter(serverEnv.SMTP_URL)
-        : serverEnv.EMAIL_PROVIDER === "resend" && serverEnv.RESEND_API_KEY
-          ? createResendAdapter(serverEnv.RESEND_API_KEY)
-          : null;
-  }
-  return adapter;
+  return chosen().adapter;
+}
+
+/** Why the provider set on the server cannot be used, or `null` when nothing is wrong. */
+export function getEmailProblem(): string | null {
+  return chosen().problem;
 }
 
 export type SendEmailResult =
@@ -42,7 +47,11 @@ export type SendEmailResult =
 export async function sendEmail(message: EmailMessage): Promise<SendEmailResult> {
   const provider = getEmailAdapter();
   if (!provider) {
-    return { ok: false, reason: "not_configured", detail: "No email provider is set up." };
+    return {
+      ok: false,
+      reason: "not_configured",
+      detail: getEmailProblem() ?? "No email provider is set up.",
+    };
   }
 
   const { data, error } = await supabaseAdmin.from("settings").select("key, value");

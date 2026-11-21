@@ -3,7 +3,12 @@ import type { ComponentProps } from "react";
 import { Badge as UiBadge } from "#components/ui/badge";
 import { cn } from "#lib/cn";
 
-const uiVariant = { neutral: "secondary", outline: "outline", accent: "default" } as const;
+const uiVariant = {
+  neutral: "secondary",
+  outline: "outline",
+  accent: "default",
+  danger: "destructive",
+} as const;
 
 export interface BadgeProps extends Omit<ComponentProps<"span">, "color"> {
   variant?: keyof typeof uiVariant;

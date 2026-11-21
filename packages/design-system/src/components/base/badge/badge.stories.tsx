@@ -6,7 +6,9 @@ const meta = {
   title: "Base/Badge",
   component: Badge,
   args: { children: "billing", variant: "neutral" },
-  argTypes: { variant: { control: "inline-radio", options: ["neutral", "outline", "accent"] } },
+  argTypes: {
+    variant: { control: "inline-radio", options: ["neutral", "outline", "accent", "danger"] },
+  },
 } satisfies Meta<typeof Badge>;
 
 export default meta;

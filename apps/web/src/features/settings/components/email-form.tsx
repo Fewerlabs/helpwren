@@ -24,6 +24,8 @@ export interface EmailFormProps {
   settings: Settings;
   /** How this install sends mail, such as "SMTP", or `null` when no provider is set up. */
   provider: string | null;
+  /** Why the provider set on the server cannot be used, such as an `SMTP_URL` it cannot read. */
+  providerProblem?: string | null;
   /** Where a test email goes: the signed-in admin's own address. */
   testAddress: string;
   /** Which secrets for replies by email are saved. Their values never reach the browser. */
@@ -100,6 +102,7 @@ const genericSample = (url: string) =>
 export function EmailForm({
   settings,
   provider,
+  providerProblem = null,
   testAddress,
   inbound,
   origin,
@@ -288,13 +291,16 @@ export function EmailForm({
         <div className="flex items-center gap-2">
           {provider ? (
             <Badge variant="accent">{provider}</Badge>
+          ) : providerProblem ? (
+            <Badge variant="danger">Not working</Badge>
           ) : (
             <Badge variant="outline">Not set up</Badge>
           )}
           <p className="text-muted-foreground text-xs">
             {provider
               ? "Emails go out through this provider."
-              : "No emails are sent until a provider is set. See the setup guide."}
+              : (providerProblem ??
+                "No emails are sent until a provider is set. See the setup guide.")}
           </p>
         </div>
       </SettingsSection>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { requireAgent } from "@/features/agent-auth";
 import { EmailForm, SettingsPage } from "@/features/settings";
-import { getEmailAdapter } from "@/lib/email";
+import { getEmailAdapter, getEmailProblem } from "@/lib/email";
 import { summariseInbound } from "@/lib/email/inbound";
 import { env } from "@/lib/env";
 import { getHelpwren } from "@/lib/helpwren";
@@ -24,6 +24,7 @@ export default async function EmailSettingsPage() {
       <EmailForm
         settings={settings}
         provider={getEmailAdapter()?.name ?? null}
+        providerProblem={getEmailProblem()}
         testAddress={agent.email}
         inbound={inbound}
         origin={new URL(env.NEXT_PUBLIC_APP_URL).origin}
