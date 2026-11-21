@@ -77,8 +77,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   // Every page. Not the API, which answers with data and sets its own headers, and not files
-  // that are served as they are.
+  // that are served as they are: among them the dashboard's service worker, app icons and
+  // manifest, which a browser fetches without the session.
   matcher: [
-    "/((?!api/|_next/static|_next/image|help/_assets/|help/_icons/|widget\\.js|icon\\.svg|favicon\\.ico).*)",
+    "/((?!api/|_next/static|_next/image|help/_assets/|help/_icons/|widget\\.js|sw\\.js|icons/|dashboard/manifest\\.webmanifest|icon\\.svg|favicon\\.ico).*)",
   ],
 };

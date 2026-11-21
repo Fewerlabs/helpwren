@@ -37,7 +37,7 @@ select throws_ok(
 
 select tests.act_as_server();
 select is(
-  (select count(*) from public.secrets), 1::bigint,
+  (select count(*) from public.secrets where key = 'identity_keys'), 1::bigint,
   'the server reads secrets'
 );
 select lives_ok(

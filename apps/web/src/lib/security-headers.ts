@@ -58,7 +58,9 @@ export function contentSecurityPolicy({
     // rewrite carries this policy, and its chat launcher frames the app.
     "frame-src": ["'self'", app, TURNSTILE, YOUTUBE],
     "media-src": ["'self'", "blob:", "https:"],
+    // The dashboard's service worker, /sw.js, and its web app manifest are the app's own.
     "worker-src": ["'self'", "blob:"],
+    "manifest-src": ["'self'"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],

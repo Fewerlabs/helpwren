@@ -7,7 +7,11 @@ import { useHelpwren } from "@/lib/helpwren-context";
 
 import { playSound, showDesktopAlert } from "../alert";
 import { usePreferences } from "../preferences";
+import { turnOnPush } from "../push";
 import { shouldNotify } from "../should-notify";
+
+/** Once per page load is enough; the settings page saves any change itself. */
+let synced = false;
 
 export interface NotifierProps {
   /** The signed-in team member. */
@@ -29,6 +33,15 @@ export function Notifier({ agentId }: NotifierProps) {
   }, [preferences]);
 
   const listening = preferences.desktop || preferences.sound;
+
+  // With desktop notifications on, this browser also gets them with Helpwren closed. Saved again
+  // each time the dashboard opens, which also hands a shared browser to whoever signed in.
+  const { desktop, about } = preferences;
+  useEffect(() => {
+    if (!desktop || synced) return;
+    synced = true;
+    void turnOnPush(about).catch(() => undefined);
+  }, [about, desktop]);
 
   useEffect(() => {
     if (!listening) return undefined;
@@ -53,12 +66,14 @@ export function Notifier({ agentId }: NotifierProps) {
         if (sound) playSound();
         // With the dashboard in view, the inbox itself shows the message.
         if (desktop && document.hidden) {
-          showDesktopAlert({
+          const url = `/dashboard/inbox?view=all&c=${conversation.id}`;
+          void showDesktopAlert({
             title: "New message",
             body: conversation.lastMessagePreview ?? "Open the inbox to read it.",
             tag: conversation.id,
+            url,
             onOpen: () => {
-              router.push(`/dashboard/inbox?view=all&c=${conversation.id}`);
+              router.push(url);
             },
           });
         }

@@ -37,6 +37,9 @@ export const LIMITS = {
   // Accepting an invite. A link cannot be guessed, but each try sets a password, so it is kept
   // to what people joining from one office would need.
   acceptInvitePerNetwork: { name: "invite-accept:network", limit: 30, windowSeconds: 15 * MINUTE },
+  // A team member's browsers save their push subscription as the dashboard opens and when a
+  // notification setting changes: plenty for a day of reloads, few enough to stop a loop.
+  pushSubscriptionsPerAgent: { name: "push-subscription:agent", limit: 60, windowSeconds: HOUR },
   // One answer per article from one network a day. A second answer is not an error to the
   // reader: it is simply not counted.
   feedbackPerArticle: { name: "feedback:article", limit: 1, windowSeconds: 24 * HOUR },

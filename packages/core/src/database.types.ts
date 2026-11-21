@@ -49,6 +49,100 @@ export type Database = {
           },
         ];
       };
+      agent_push_queue: {
+        Row: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          done_at: string | null;
+          id: string;
+          message_id: string;
+          outcome: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          done_at?: string | null;
+          id?: string;
+          message_id: string;
+          outcome?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          done_at?: string | null;
+          id?: string;
+          message_id?: string;
+          outcome?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_push_queue_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "agent_push_queue_message_id_fkey";
+            columns: ["message_id"];
+            isOneToOne: false;
+            referencedRelation: "messages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      agent_push_subscriptions: {
+        Row: {
+          agent_id: string;
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          last_used_at: string | null;
+          notify_about: string;
+          p256dh: string;
+          user_agent: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_id?: string;
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          last_used_at?: string | null;
+          notify_about?: string;
+          p256dh: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          agent_id?: string;
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          last_used_at?: string | null;
+          notify_about?: string;
+          p256dh?: string;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "agent_push_subscriptions_agent_id_fkey";
+            columns: ["agent_id"];
+            isOneToOne: false;
+            referencedRelation: "agents";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       agents: {
         Row: {
           active: boolean;
@@ -1329,6 +1423,25 @@ export type Database = {
           user_id: string;
         }[];
       };
+      claim_agent_push_queue: {
+        Args: { batch?: number };
+        Returns: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          done_at: string | null;
+          id: string;
+          message_id: string;
+          outcome: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "agent_push_queue";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       claim_email_queue: {
         Args: { batch?: number };
         Returns: {
@@ -1500,6 +1613,16 @@ export type Database = {
       reorder_articles: { Args: { ids: string[] }; Returns: undefined };
       reorder_collections: { Args: { ids: string[] }; Returns: undefined };
       reorder_help_rules: { Args: { ids: string[] }; Returns: undefined };
+      save_push_subscription: {
+        Args: {
+          auth_key: string;
+          endpoint: string;
+          notify_about?: string;
+          p256dh: string;
+          user_agent?: string;
+        };
+        Returns: string;
+      };
       schema_version: { Args: Record<PropertyKey, never>; Returns: string };
       search_articles: {
         Args: { query: string };

@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 
+import { processAgentPushQueue } from "@/lib/agent-push";
 import { processPushQueue } from "@/lib/push";
 import { serverEnv } from "@/lib/server-env";
 
@@ -11,7 +12,8 @@ function matches(given: string, secret: string): boolean {
 }
 
 /**
- * Sends the pushes that are due. The scheduler that calls `/api/jobs/email` calls this every
+ * Sends the pushes that are due: replies to contacts' phones, and new messages to the team's
+ * browsers (`team`). The scheduler that calls `/api/jobs/email` calls this every
  * minute too, with the same `CRON_SECRET`; nobody else can. Without a secret set, the install
  * has no scheduled work and this address does not exist.
  */
@@ -22,5 +24,7 @@ export async function POST(request: Request): Promise<Response> {
   const given = request.headers.get("authorization") ?? "";
   if (!matches(given, `Bearer ${secret}`)) return new Response("Unauthorized", { status: 401 });
 
-  return Response.json(await processPushQueue());
+  const contacts = await processPushQueue();
+  const team = await processAgentPushQueue();
+  return Response.json({ ...contacts, team });
 }

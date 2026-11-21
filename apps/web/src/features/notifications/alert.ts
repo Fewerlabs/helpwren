@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
 
+import { WORKER_SCOPE } from "@/features/pwa";
+
 /** Whether this browser can show notifications at all. */
 function desktopSupported(): boolean {
   return typeof window !== "undefined" && "Notification" in window;
@@ -25,12 +27,34 @@ export interface DesktopAlert {
   body: string;
   /** Replaces an earlier notification with the same tag, so one conversation shows once. */
   tag: string;
+  /** A dashboard address to open when it is clicked. */
+  url?: string;
+  /** Run when it is clicked, as well, where the page shows it itself. */
   onOpen?: () => void;
 }
 
-/** Shows a notification from the browser. Does nothing without permission. */
-export function showDesktopAlert({ title, body, tag, onOpen }: DesktopAlert) {
+/**
+ * Shows a notification from the browser. Does nothing without permission.
+ *
+ * Through the dashboard's service worker when it has one: the only way a phone shows one, and
+ * the same kind of notification a push shows, so for one conversation the two replace each
+ * other. A click then opens `url` through the worker.
+ */
+export async function showDesktopAlert({ title, body, tag, url, onOpen }: DesktopAlert) {
   if (!desktopSupported() || Notification.permission !== "granted") return;
+  const registration =
+    "serviceWorker" in navigator
+      ? await navigator.serviceWorker.getRegistration(WORKER_SCOPE).catch(() => undefined)
+      : undefined;
+  if (registration?.active) {
+    await registration.showNotification(title, {
+      body,
+      tag,
+      icon: "/icons/icon-192.png",
+      data: { url: url ?? "/dashboard/inbox" },
+    });
+    return;
+  }
   const notification = new Notification(title, { body, tag });
   notification.onclick = () => {
     window.focus();
