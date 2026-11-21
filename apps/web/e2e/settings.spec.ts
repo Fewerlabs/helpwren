@@ -269,7 +269,7 @@ test("an admin sets who emails are from, and is told when no provider is set up"
   await expect(page.getByLabel("From name")).toHaveValue("Acme Support");
   // Still nothing to send through, so the test stays off and says why.
   await expect(test).toBeDisabled();
-  await expect(page.getByText("Save an SMTP server above first.")).toBeVisible();
+  await expect(page.getByText("Save a provider above first.")).toBeVisible();
 });
 
 test("an agent who is not an admin can read settings and change nothing", async ({ page }) => {

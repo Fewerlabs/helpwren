@@ -13,6 +13,10 @@ export interface EmailEnv {
   resendApiKey?: string | undefined;
 }
 
+/** A provider saved in Settings → Email: an SMTP server, or a Resend API key. */
+export type SavedEmail =
+  ({ provider: "smtp" } & SmtpServer) | { provider: "resend"; apiKey: string };
+
 /** Where the way of sending was set: the server's environment, or Settings → Email. */
 export type EmailSource = "server" | "settings";
 
@@ -52,12 +56,12 @@ function smtp(server: string | SmtpServer, source: EmailSource, problem: string)
 }
 
 /**
- * The adapter to send with. The server's environment comes first; without it, an SMTP server
+ * The adapter to send with. The server's environment comes first; without it, the provider
  * saved in Settings → Email. A provider that is chosen but cannot be built is reported rather
  * than thrown, so a settings page can say what is wrong instead of failing. The problem never
  * repeats a password.
  */
-export function chooseEmailAdapter(env: EmailEnv, saved: SmtpServer | null = null): EmailChoice {
+export function chooseEmailAdapter(env: EmailEnv, saved: SavedEmail | null = null): EmailChoice {
   if (envChoosesEmail(env)) {
     if (env.provider === "resend") {
       return env.resendApiKey
@@ -73,6 +77,16 @@ export function chooseEmailAdapter(env: EmailEnv, saved: SmtpServer | null = nul
       source: "server",
     };
   }
-  if (saved) return smtp(saved, "settings", "The saved SMTP server could not be used.");
+  if (saved?.provider === "resend") {
+    return { adapter: createResendAdapter(saved.apiKey), problem: null, source: "settings" };
+  }
+  if (saved) {
+    const { host, port, user, password } = saved;
+    return smtp(
+      { host, port, user, password },
+      "settings",
+      "The saved SMTP server could not be used.",
+    );
+  }
   return { adapter: null, problem: null, source: null };
 }

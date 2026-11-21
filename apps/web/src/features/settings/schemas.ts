@@ -281,6 +281,10 @@ export const emailSchema = z.object({
   resendSigningSecret: z.string().trim(),
   /** Empty to keep the saved one, or to use the server's own key. */
   resendApiKey: z.string().trim(),
+  /** How mail is sent, when it is set here rather than on the server. */
+  sendingProvider: z.enum(["smtp", "resend"]),
+  /** A Resend API key that may send. Empty to keep the saved one. */
+  sendingApiKey: z.string().trim(),
   /** The SMTP server's name, when it is set here rather than on the server. Empty for none. */
   smtpHost: z
     .string()

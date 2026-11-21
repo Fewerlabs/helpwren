@@ -18,11 +18,17 @@ sign-in codes are sent by Supabase Auth, set up separately (see
 
 1. Choose where the mail server is set.
 
-   **In the dashboard** (simplest). In **Settings → Email**, under **Sending**, enter the
-   **SMTP server**, **Port** (587 for most providers, or 465), **Username** and **Password**,
-   exactly as your provider gives them, then **Save changes**. It works at once, with no
-   redeploy. The password is kept on the server and never shown again; leave the field empty to
-   keep it, and clear **SMTP server** to remove it. Only admins can change it.
+   **In the dashboard** (simplest). In **Settings → Email**, under **Sending**, choose the
+   **Provider**:
+
+   - **SMTP**: enter the **SMTP server**, **Port** (587 for most providers, or 465),
+     **Username** and **Password**, exactly as your provider gives them.
+   - **Resend**: enter an **API key** that may send, from
+     [resend.com/api-keys](https://resend.com/api-keys).
+
+   Then **Save changes**. It works at once, with no redeploy. The password or key is kept on the
+   server and never shown again; leave the field empty to keep it. To remove it, choose SMTP and
+   clear **SMTP server**. Only admins can change it.
 
    **On the server.** Add the values to the app's environment and restart or redeploy it. These
    win over the dashboard, which then only shows the status:

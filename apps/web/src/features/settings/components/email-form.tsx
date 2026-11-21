@@ -20,13 +20,10 @@ import { emailSchema, type EmailValues } from "../schemas";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 
-/** An SMTP server saved in Settings → Email, as the browser may see it. */
-export interface SavedSmtp {
-  host: string;
-  port: number;
-  user: string;
-  hasPassword: boolean;
-}
+/** The provider saved in Settings → Email, as the browser may see it: never its secret. */
+export type SavedSending =
+  | { provider: "smtp"; host: string; port: number; user: string; hasPassword: boolean }
+  | { provider: "resend" };
 
 export interface EmailFormProps {
   settings: Settings;
@@ -35,10 +32,10 @@ export interface EmailFormProps {
   /** Why the provider set up cannot be used, such as an `SMTP_URL` the server cannot read. */
   providerProblem?: string | null;
   /**
-   * `"server"` when the server's environment sets how mail is sent; otherwise the SMTP server
-   * saved here, without its password, or `null` when none is saved.
+   * `"server"` when the server's environment sets how mail is sent; otherwise the provider saved
+   * here, without its secret, or `null` when none is saved.
    */
-  smtp?: "server" | SavedSmtp | null;
+  sending?: "server" | SavedSending | null;
   /** Where a test email goes: the signed-in admin's own address. */
   testAddress: string;
   /** Which secrets for replies by email are saved. Their values never reach the browser. */
@@ -46,7 +43,7 @@ export interface EmailFormProps {
     secret: boolean;
     resendSigningSecret: boolean;
     resendApiKey: boolean;
-    serverResendKey: boolean;
+    sendingResendKey: boolean;
     lastReceivedAt: string | null;
   };
   /** This install's address, for the webhook. */
@@ -116,13 +113,15 @@ export function EmailForm({
   settings,
   provider,
   providerProblem = null,
-  smtp = null,
+  sending = null,
   testAddress,
   inbound,
   origin,
   canEdit,
 }: EmailFormProps) {
   const router = useRouter();
+  const savedSmtp =
+    sending !== null && sending !== "server" && sending.provider === "smtp" ? sending : null;
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [making, setMaking] = useState(false);
@@ -139,15 +138,18 @@ export function EmailForm({
       inboundProvider: settings.email.inbound.provider,
       resendSigningSecret: "",
       resendApiKey: "",
-      smtpHost: smtp && smtp !== "server" ? smtp.host : "",
-      smtpPort: smtp && smtp !== "server" ? String(smtp.port) : "",
-      smtpUser: smtp && smtp !== "server" ? smtp.user : "",
+      sendingProvider:
+        savedSmtp?.provider ?? (sending === "server" ? "smtp" : (sending?.provider ?? "smtp")),
+      sendingApiKey: "",
+      smtpHost: savedSmtp?.host ?? "",
+      smtpPort: savedSmtp ? String(savedSmtp.port) : "",
+      smtpUser: savedSmtp?.user ?? "",
       smtpPassword: "",
     },
   });
-  const [inboundEnabled, inboundProvider, replyAddress] = useWatch({
+  const [inboundEnabled, inboundProvider, replyAddress, sendingProvider] = useWatch({
     control: form.control,
-    name: ["inboundEnabled", "inboundProvider", "replyAddress"],
+    name: ["inboundEnabled", "inboundProvider", "replyAddress", "sendingProvider"],
   });
   const disabled = !canEdit || form.formState.isSubmitting;
   const hasSecret = inbound.secret || newSecret !== null;
@@ -169,7 +171,32 @@ export function EmailForm({
     },
   ];
 
-  const savedPassword = smtp !== null && smtp !== "server" && smtp.hasPassword;
+  const savedPassword = savedSmtp?.hasPassword === true;
+  const savedResendKey = sending !== null && sending !== "server" && sending.provider === "resend";
+  const providerField: FieldItem<EmailValues>[] = [
+    {
+      name: "sendingProvider",
+      label: "Provider",
+      type: "select",
+      props: {
+        options: [
+          { value: "smtp", label: "SMTP" },
+          { value: "resend", label: "Resend" },
+        ],
+      },
+    },
+  ];
+  const resendKeyField: FieldItem<EmailValues>[] = [
+    {
+      name: "sendingApiKey",
+      label: "API key",
+      type: "password",
+      hint: savedResendKey
+        ? "Saved. Leave empty to keep it."
+        : "A Resend API key that may send, from resend.com/api-keys. It starts with re_.",
+      props: { autoComplete: "new-password" },
+    },
+  ];
   const smtpFields: FieldItem<EmailValues>[] = [
     {
       name: "smtpHost",
@@ -256,8 +283,8 @@ export function EmailForm({
       name: "resendApiKey",
       label: inbound.resendApiKey ? "Replace the API key" : "API key",
       type: "input",
-      hint: inbound.serverResendKey
-        ? "Leave empty to use the server's RESEND_API_KEY. A key that may send cannot always read; use a full-access key if replies do not arrive."
+      hint: inbound.sendingResendKey
+        ? "Leave empty to use the key mail is sent with. A key that may only send cannot read; use a full-access key if replies do not arrive."
         : "Resend's webhook says only that an email arrived; its words and files are read with this key.",
       props: {
         type: "password",
@@ -272,7 +299,13 @@ export function EmailForm({
     try {
       const result = await saveEmail(values);
       if (result.ok) {
-        form.reset({ ...values, resendSigningSecret: "", resendApiKey: "", smtpPassword: "" });
+        form.reset({
+          ...values,
+          resendSigningSecret: "",
+          resendApiKey: "",
+          sendingApiKey: "",
+          smtpPassword: "",
+        });
         setSaved(true);
         toast.success("Changes saved");
         router.refresh();
@@ -337,7 +370,7 @@ export function EmailForm({
     >
       <SettingsSection
         title="Sending"
-        description="The mail server this install sends through. Your mail provider lists these details."
+        description="How this install sends mail. Your provider lists these details."
       >
         <div className="flex items-center gap-2">
           {provider ? (
@@ -349,15 +382,22 @@ export function EmailForm({
           )}
           <p className="text-muted-foreground text-xs">
             {providerProblem ??
-              (smtp === "server"
+              (sending === "server"
                 ? "Set on the server with environment variables."
                 : provider
-                  ? "Emails go out through this server."
-                  : "No emails are sent until a server is set.")}
+                  ? "Emails go out through this provider."
+                  : "No emails are sent until a provider is set.")}
           </p>
         </div>
-        {smtp === "server" ? null : (
-          <FieldList control={form.control} fields={smtpFields} disabled={disabled} />
+        {sending === "server" ? null : (
+          <FieldList
+            control={form.control}
+            fields={[
+              ...providerField,
+              ...(sendingProvider === "resend" ? resendKeyField : smtpFields),
+            ]}
+            disabled={disabled}
+          />
         )}
       </SettingsSection>
       <SettingsSection
@@ -413,8 +453,8 @@ export function EmailForm({
                   )}
                   {inbound.resendApiKey ? (
                     <Badge variant="accent">API key saved</Badge>
-                  ) : inbound.serverResendKey ? (
-                    <Badge variant="outline">Using the server&apos;s API key</Badge>
+                  ) : inbound.sendingResendKey ? (
+                    <Badge variant="outline">Using the sending key</Badge>
                   ) : (
                     <Badge variant="outline">No API key</Badge>
                   )}
@@ -497,7 +537,7 @@ export function EmailForm({
           </div>
           {ready ? null : (
             <p role="note" className="text-muted-foreground text-xs">
-              {provider ? "Save a from address first." : "Save an SMTP server above first."}
+              {provider ? "Save a from address first." : "Save a provider above first."}
             </p>
           )}
         </SettingsSection>

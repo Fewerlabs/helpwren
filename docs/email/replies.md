@@ -21,11 +21,11 @@ belongs to, and nobody can write into someone else's.
 3. Under **Received by**, choose your provider and follow the checklist the page shows for it.
    The page also shows the webhook address to paste into the provider.
 
-| Provider         | What to do                                                                                                                                                                                                                                |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Resend           | Add the domain in Resend, turn on receiving and add its MX record. Add a webhook for `email.received`, and paste its signing secret. Replies are read through Resend's API, with the server's `RESEND_API_KEY` or a key saved on the page |
-| Postmark         | Point the domain's MX record at `inbound.postmarkapp.com` and set it as the inbound domain. Make a secret on the page and paste the webhook address, which carries it                                                                     |
-| Another provider | Make a secret, and have your provider or bridge post each email as JSON, signed like the sample on the page                                                                                                                               |
+| Provider         | What to do                                                                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resend           | Add the domain in Resend, turn on receiving and add its MX record. Add a webhook for `email.received`, and paste its signing secret. Replies are read through Resend's API, with the key mail is sent with or a key saved on the page |
+| Postmark         | Point the domain's MX record at `inbound.postmarkapp.com` and set it as the inbound domain. Make a secret on the page and paste the webhook address, which carries it                                                                 |
+| Another provider | Make a secret, and have your provider or bridge post each email as JSON, signed like the sample on the page                                                                                                                           |
 
 4. Send yourself an email from a conversation, reply to it from your mail app, and check that the
    reply shows in the inbox marked **via email**.

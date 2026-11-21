@@ -6,7 +6,7 @@ import { serverEnv } from "@/lib/server-env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 import { chooseEmailAdapter, envChoosesEmail, type EmailChoice, type EmailEnv } from "./choose";
-import { getSavedSmtp } from "./saved-smtp";
+import { getSavedEmail } from "./saved-email";
 import { type EmailMessage, type SendResult } from "./types";
 
 export { type EmailMessage, type SendResult } from "./types";
@@ -22,16 +22,16 @@ const env: EmailEnv = {
 };
 
 // An SMTP connection is worth keeping, so a choice is made again only when what it was made
-// from changes: never for the environment, and when an admin saves a new server.
+// from changes: never for the environment, and when an admin saves a new provider.
 let kept: { key: string; choice: EmailChoice } | undefined;
 
 /**
  * How this install sends mail: through the provider the server's environment sets, or else the
- * SMTP server saved in Settings → Email. `adapter` is `null` when neither is set up, or the
+ * one saved in Settings → Email. `adapter` is `null` when neither is set up, or the
  * one set up cannot be used; `problem` then says why.
  */
 export async function getEmail(): Promise<EmailChoice> {
-  const saved = envChoosesEmail(env) ? null : await getSavedSmtp();
+  const saved = envChoosesEmail(env) ? null : await getSavedEmail();
   const key = JSON.stringify(saved);
   if (kept?.key !== key) kept = { key, choice: chooseEmailAdapter(env, saved) };
   return kept.choice;

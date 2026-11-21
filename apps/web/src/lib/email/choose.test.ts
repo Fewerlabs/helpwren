@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { chooseEmailAdapter, envChoosesEmail } from "./choose";
 
-const saved = { host: "smtp.saved.example", port: 587, user: "a@b.example", password: "x" };
+const saved = {
+  provider: "smtp" as const,
+  host: "smtp.saved.example",
+  port: 587,
+  user: "a@b.example",
+  password: "x",
+};
 
 describe("choosing how the install sends mail", () => {
   it("takes the server's name and sign-in as plain values, with nothing to encode", () => {
@@ -43,6 +49,12 @@ describe("choosing how the install sends mail", () => {
     const choice = chooseEmailAdapter({}, saved);
     expect(choice).toMatchObject({ problem: null, source: "settings" });
     expect(choice.adapter?.name).toBe("SMTP");
+  });
+
+  it("uses a Resend key saved in Settings", () => {
+    const choice = chooseEmailAdapter({}, { provider: "resend", apiKey: "re_test" });
+    expect(choice).toMatchObject({ problem: null, source: "settings" });
+    expect(choice.adapter?.name).toBe("Resend");
   });
 
   it("lets the environment win over a server saved in Settings", () => {

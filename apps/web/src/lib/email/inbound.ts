@@ -30,6 +30,7 @@ import {
   signReplyToken,
   type ReplyKey,
 } from "./reply-address";
+import { getSavedEmail } from "./saved-email";
 import { replyText } from "./strip-reply";
 
 /** The keys that sign reply addresses, made the first time one is needed. */
@@ -132,9 +133,19 @@ export interface InboundSummary {
   resendSigningSecret: boolean;
   resendApiKey: boolean;
   /** Whether the server's own `RESEND_API_KEY` can read received mail when none is saved. */
-  serverResendKey: boolean;
+  sendingResendKey: boolean;
   /** When the last reply came in, as an ISO date, to show that the set-up works. */
   lastReceivedAt: string | null;
+}
+
+/**
+ * The Resend key mail is sent with, from the server or saved in Settings → Email. Received
+ * mail can be read with it too, so an install sending through Resend needs no second key.
+ */
+async function sendingResendKey(): Promise<string | undefined> {
+  if (serverEnv.RESEND_API_KEY) return serverEnv.RESEND_API_KEY;
+  const saved = await getSavedEmail();
+  return saved?.provider === "resend" ? saved.apiKey : undefined;
 }
 
 export async function summariseInbound(): Promise<InboundSummary> {
@@ -154,7 +165,7 @@ export async function summariseInbound(): Promise<InboundSummary> {
     secret: typeof secret === "string",
     resendSigningSecret: parsed.success && Boolean(parsed.data.signingSecret),
     resendApiKey: parsed.success && Boolean(parsed.data.apiKey),
-    serverResendKey: serverEnv.RESEND_API_KEY !== undefined,
+    sendingResendKey: (await sendingResendKey()) !== undefined,
     lastReceivedAt: last.data?.received_at ?? null,
   };
 }
@@ -165,7 +176,7 @@ export async function getInboundAdapter(
 ): Promise<InboundEmailAdapter | null> {
   if (provider === "resend") {
     const resend = resendInboundSchema.safeParse(await stored(RESEND_INBOUND_SECRET));
-    const apiKey = resend.success ? (resend.data.apiKey ?? serverEnv.RESEND_API_KEY) : undefined;
+    const apiKey = resend.success ? (resend.data.apiKey ?? (await sendingResendKey())) : undefined;
     if (!resend.success || !apiKey) return null;
     return createResendInbound({ signingSecret: resend.data.signingSecret, apiKey });
   }

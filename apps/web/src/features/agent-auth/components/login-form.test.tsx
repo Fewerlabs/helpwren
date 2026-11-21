@@ -27,6 +27,23 @@ beforeEach(() => {
 });
 
 describe("LoginForm", () => {
+  it("shows the code button working while a code is sent, not the sign-in button", async () => {
+    const user = userEvent.setup();
+    vi.mocked(requestLoginCode).mockReturnValue(new Promise(() => undefined));
+    render(<LoginForm />);
+
+    await user.type(screen.getByLabelText(/work email/i), EMAIL);
+    await user.click(screen.getByRole("button", { name: "Email me a code instead" }));
+
+    expect(screen.getByRole("button", { name: /email me a code instead/i })).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    const signIn = screen.getByRole("button", { name: /^sign in$/i });
+    expect(signIn).not.toHaveAttribute("aria-busy");
+    expect(signIn).toBeDisabled();
+  });
+
   it("offers no code by email where the install cannot send one", () => {
     render(<LoginForm allowCode={false} />);
 

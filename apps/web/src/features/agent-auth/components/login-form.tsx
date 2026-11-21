@@ -93,7 +93,10 @@ interface StepProps<Values extends FieldValues> {
   control: Control<Values>;
   fields: FieldItem<Values>[];
   rootError: string | undefined;
+  /** This form is being sent: its button says so. */
   submitting: boolean;
+  /** Something else on the page is being sent, so this form waits without saying it is busy. */
+  waiting?: boolean;
   submitLabel: string;
   onSubmit: NonNullable<ComponentProps<"form">["onSubmit"]>;
   children?: ReactNode;
@@ -106,6 +109,7 @@ function Step<Values extends FieldValues>({
   fields,
   rootError,
   submitting,
+  waiting = false,
   submitLabel,
   onSubmit,
   children,
@@ -116,13 +120,13 @@ function Step<Values extends FieldValues>({
         <h1 className="text-xl font-semibold">{title}</h1>
         {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
       </div>
-      <FieldList control={control} fields={fields} disabled={submitting} />
+      <FieldList control={control} fields={fields} disabled={submitting || waiting} />
       {rootError ? (
         <p role="alert" className="text-destructive text-sm">
           {rootError}
         </p>
       ) : null}
-      <Button type="submit" loading={submitting}>
+      <Button type="submit" loading={submitting} disabled={waiting}>
         {submitLabel}
       </Button>
       {children}
@@ -201,14 +205,16 @@ export function LoginForm({
   }
 
   if (sentTo === null) {
-    const busy = passwordForm.formState.isSubmitting || sendingCode;
+    const signingIn = passwordForm.formState.isSubmitting;
+    const busy = signingIn || sendingCode;
     return (
       <Step
         title={title}
         control={passwordForm.control}
         fields={passwordFields}
         rootError={passwordForm.formState.errors.root?.message}
-        submitting={busy}
+        submitting={signingIn}
+        waiting={sendingCode}
         submitLabel="Sign in"
         onSubmit={(event) => {
           void passwordForm.handleSubmit(signInWithPassword)(event);
@@ -218,6 +224,7 @@ export function LoginForm({
           <Button
             variant="ghost"
             size="sm"
+            loading={sendingCode}
             disabled={busy}
             onClick={() => {
               void sendCode();

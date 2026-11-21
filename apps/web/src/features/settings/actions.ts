@@ -6,9 +6,9 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 import { getCurrentAgent } from "@/features/agent-auth";
 import { emailSetOnServer, sendEmail } from "@/lib/email";
+import { type SavedEmail } from "@/lib/email/choose";
 import { createInboundSecret, saveResendInbound } from "@/lib/email/inbound";
-import { getSavedSmtp, saveSmtp } from "@/lib/email/saved-smtp";
-import { type SmtpServer } from "@/lib/email/smtp";
+import { getSavedEmail, saveEmailProvider } from "@/lib/email/saved-email";
 import { buildEmail, sampleEmail } from "@/lib/email/templates";
 import { HELP_CENTER_TAG } from "@/lib/help-center-cache";
 import { getHelpwren } from "@/lib/helpwren";
@@ -216,9 +216,9 @@ export async function saveEmail(values: EmailValues): Promise<SaveResult> {
   const secretsGiven = resendSigningSecret !== "" || resendApiKey !== "";
   if (secretsGiven && !(await isAdmin())) return { ok: false, reason: "forbidden" };
 
-  const smtp = await smtpToSave(parsed.data);
-  if (smtp === "forbidden") return { ok: false, reason: "forbidden" };
-  if (smtp === "invalid") return { ok: false, reason: "invalid" };
+  const sending = await providerToSave(parsed.data);
+  if (sending === "forbidden") return { ok: false, reason: "forbidden" };
+  if (sending === "invalid") return { ok: false, reason: "invalid" };
 
   const helpwren = await getHelpwren();
   // Saved on their own page; kept as they are.
@@ -238,33 +238,51 @@ export async function saveEmail(values: EmailValues): Promise<SaveResult> {
     },
   });
   if (result.ok && secretsGiven) await saveResendInbound(resendSigningSecret, resendApiKey);
-  if (result.ok && smtp !== "unchanged") await saveSmtp(smtp);
+  if (result.ok && sending !== "unchanged") await saveEmailProvider(sending);
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
 }
 
 /**
- * The SMTP server the form asks to save: a new or changed one, `null` to remove it, or
+ * The provider the form asks to save: a new or changed one, `null` to remove it, or
  * `"unchanged"`. The server's environment wins over this form, so nothing is saved while it
- * sets how mail is sent. An empty password keeps the saved one. Only admins may change it.
+ * sets how mail is sent. An empty password or API key keeps the saved one. Only admins may
+ * change it.
  */
-async function smtpToSave(
-  values: Pick<EmailValues, "smtpHost" | "smtpPort" | "smtpUser" | "smtpPassword">,
-): Promise<SmtpServer | null | "unchanged" | "forbidden" | "invalid"> {
+async function providerToSave(
+  values: Pick<
+    EmailValues,
+    "sendingProvider" | "sendingApiKey" | "smtpHost" | "smtpPort" | "smtpUser" | "smtpPassword"
+  >,
+): Promise<SavedEmail | null | "unchanged" | "forbidden" | "invalid"> {
   if (emailSetOnServer) return "unchanged";
-  const saved = await getSavedSmtp();
-  const { smtpHost: host, smtpPort, smtpUser: user, smtpPassword } = values;
-  if (host === "") {
-    if (saved === null) return "unchanged";
-    return (await isAdmin()) ? null : "forbidden";
+  const saved = await getSavedEmail();
+  const next = nextProvider(values, saved);
+  if (next === "invalid") return "invalid";
+  if (JSON.stringify(next) === JSON.stringify(saved)) return "unchanged";
+  return (await isAdmin()) ? next : "forbidden";
+}
+
+/** What the form's values make of the saved provider: the same, another, or none. */
+function nextProvider(
+  values: Pick<
+    EmailValues,
+    "sendingProvider" | "sendingApiKey" | "smtpHost" | "smtpPort" | "smtpUser" | "smtpPassword"
+  >,
+  saved: SavedEmail | null,
+): SavedEmail | null | "invalid" {
+  if (values.sendingProvider === "resend") {
+    const kept = saved?.provider === "resend" ? saved.apiKey : "";
+    const apiKey = values.sendingApiKey === "" ? kept : values.sendingApiKey;
+    return apiKey === "" ? null : { provider: "resend", apiKey };
   }
-  const port = smtpPort === "" ? 587 : Number(smtpPort);
-  const password = smtpPassword === "" ? (saved?.password ?? "") : smtpPassword;
+  const { smtpHost: host, smtpPort, smtpUser: user, smtpPassword } = values;
+  if (host === "") return null;
+  const kept = saved?.provider === "smtp" ? saved.password : "";
+  const password = smtpPassword === "" ? kept : smtpPassword;
   // A username with no password, saved or given, cannot sign in.
   if (user !== "" && password === "") return "invalid";
-  const next: SmtpServer = { host, port, user, password };
-  if (saved && JSON.stringify(saved) === JSON.stringify(next)) return "unchanged";
-  return (await isAdmin()) ? next : "forbidden";
+  return { provider: "smtp", host, port: smtpPort === "" ? 587 : Number(smtpPort), user, password };
 }
 
 /**
