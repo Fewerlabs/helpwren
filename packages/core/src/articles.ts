@@ -216,6 +216,11 @@ export type ChangeArticleResult =
       reason: "not_found" | "slug_taken" | "slug_locked" | "needs_collection";
     };
 
+/** How many of the articles asked for were changed. The rest were gone, or could not be. */
+export interface ChangeArticlesResult {
+  changed: number;
+}
+
 export type RemoveArticleResult = { ok: true } | { ok: false; reason: "not_found" };
 export type ArticleFeedbackResult =
   { ok: true } | { ok: false; reason: "not_found" | "rate_limited" };
@@ -305,6 +310,22 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
     return row
       ? { ok: true, article: articleSchema.parse(row) }
       : { ok: false, reason: "not_found" };
+  }
+
+  /** One change to many articles, in one request. Rows hidden by the access rules are skipped. */
+  async function changeMany(
+    ids: readonly string[],
+    values: Database["public"]["Tables"]["articles"]["Update"],
+    failure: string,
+    inCollectionOnly = false,
+  ): Promise<ChangeArticlesResult> {
+    const list = z.array(z.uuid()).parse(ids);
+    if (list.length === 0) return { changed: 0 };
+    let request = supabase.from("articles").update(values).in("id", list);
+    if (inCollectionOnly) request = request.not("collection_id", "is", null);
+    const { data, error } = await request.select("id");
+    if (error) throw new HelpwrenError(failure, { cause: error });
+    return { changed: data.length };
   }
 
   return {
@@ -504,6 +525,37 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
         ids: z.array(z.uuid()).parse(ids),
       });
       if (error) throw new HelpwrenError("Could not reorder the articles.", { cause: error });
+    },
+
+    /**
+     * Publishes many articles at once. An article in no collection cannot be published, so it
+     * is left a draft; `changed` says how many were published. For the team.
+     */
+    publishMany(ids: readonly string[]): Promise<ChangeArticlesResult> {
+      return changeMany(ids, { status: "published" }, "Could not publish the articles.", true);
+    },
+
+    /** Takes many articles back to drafts at once. For the team. */
+    unpublishMany(ids: readonly string[]): Promise<ChangeArticlesResult> {
+      return changeMany(ids, { status: "draft" }, "Could not unpublish the articles.");
+    },
+
+    /** Moves many articles into one collection, at the end of it. For the team. */
+    moveMany(ids: readonly string[], collectionId: string): Promise<ChangeArticlesResult> {
+      return changeMany(
+        ids,
+        { collection_id: z.uuid().parse(collectionId) },
+        "Could not move the articles.",
+      );
+    },
+
+    /** Removes many articles for good, with what readers said about them. For the team. */
+    async removeMany(ids: readonly string[]): Promise<ChangeArticlesResult> {
+      const list = z.array(z.uuid()).parse(ids);
+      if (list.length === 0) return { changed: 0 };
+      const { data, error } = await supabase.from("articles").delete().in("id", list).select("id");
+      if (error) throw new HelpwrenError("Could not remove the articles.", { cause: error });
+      return { changed: data.length };
     },
 
     /** Removes an article for good, with what readers said about it. For the team. */

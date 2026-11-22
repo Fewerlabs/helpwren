@@ -327,6 +327,41 @@ describe("the help center, for the team", () => {
     if (twin.ok) await agent.articles.remove(twin.article.id);
   });
 
+  it("publishes, moves, unpublishes and removes many articles at once", async () => {
+    const agent = await signedIn("sam@example.com");
+    const make = async (title: string) => {
+      const created = await agent.articles.create({ title: `${title} ${run}` });
+      if (!created.ok) throw new Error(`The article was refused: ${created.reason}`);
+      return created.article.id;
+    };
+    const one = await make("Bulk one");
+    const two = await make("Bulk two");
+    const loose = await make("Bulk loose");
+
+    // None is in a collection yet, so none can be published.
+    await expect(agent.articles.publishMany([one, two, loose])).resolves.toEqual({ changed: 0 });
+
+    await expect(agent.articles.moveMany([one, two], made.guides)).resolves.toEqual({
+      changed: 2,
+    });
+    // Each takes its own place at the end of the collection.
+    const moved = await Promise.all([agent.articles.get(one), agent.articles.get(two)]);
+    expect(moved.map((article) => article?.collectionId)).toEqual([made.guides, made.guides]);
+    expect(moved[0]?.position).not.toBe(moved[1]?.position);
+
+    // The one in no collection is left a draft, and the others still go out.
+    await expect(agent.articles.publishMany([one, two, loose])).resolves.toEqual({ changed: 2 });
+    await expect(agent.articles.get(loose)).resolves.toMatchObject({ status: "draft" });
+    await expect(agent.articles.get(one)).resolves.toMatchObject({ status: "published" });
+
+    await expect(agent.articles.unpublishMany([one, two])).resolves.toEqual({ changed: 2 });
+    await expect(agent.articles.get(two)).resolves.toMatchObject({ status: "draft" });
+
+    await expect(agent.articles.removeMany([one, two, loose])).resolves.toEqual({ changed: 3 });
+    await expect(agent.articles.removeMany([one, two, loose])).resolves.toEqual({ changed: 0 });
+    await expect(agent.articles.removeMany([])).resolves.toEqual({ changed: 0 });
+  });
+
   it("makes, changes, reorders and removes collections", async () => {
     const agent = await signedIn("sam@example.com");
     const before = await agent.collections.list();

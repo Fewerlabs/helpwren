@@ -79,6 +79,7 @@ export {
   type ArticleSummary,
   type ArticleVisibility,
   type ChangeArticleResult,
+  type ChangeArticlesResult,
   type CreateArticleResult,
   type FeedbackTotals,
   type FindArticlesOptions,
