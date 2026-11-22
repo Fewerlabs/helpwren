@@ -204,7 +204,7 @@ link, as a button. Use `Link` instead when the result is navigation and it shoul
 **ActionMenu** holds a row's actions behind a "⋯" button, as Featurebase and Intercom do, so a
 list stays one line a row however many actions each has. Give it `target` (the button reads
 "More actions for Ada") and `items`, each with a `label`, an optional `icon` and `onSelect`.
-`destructive` items go last, in red, after a line; confirm them with a `ConfirmDialog`. For one or
+`destructive` items go last, in red; confirm them with a `ConfirmDialog`. For one or
 two actions that are always wanted, plain buttons beside the row are clearer. An action that runs
 at once, with nothing to confirm, returns its promise from `onSelect` (or sets `loading`): the
 menu stays open with a spinner in place of the item's icon, and closes when it is done. `choices`

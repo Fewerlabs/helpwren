@@ -186,7 +186,6 @@ export function Articles() {
   const collectionMenu = (item: Collection) => (
     <ActionMenu
       target={`the ${item.name} collection`}
-      dots="vertical"
       className="size-6"
       items={[
         {

@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -46,7 +45,7 @@ export interface ActionMenuItem {
    * from `onSelect` does the same with none to keep.
    */
   loading?: boolean;
-  /** A destructive action, such as Deactivate or Delete: shown last, in red, after a line. */
+  /** A destructive action, such as Deactivate or Delete: shown last, in red. */
   destructive?: boolean;
   disabled?: boolean;
 }
@@ -57,7 +56,7 @@ export interface ActionMenuProps {
   target: string;
   /** The button that opens the menu, in place of "⋯". It has to name itself. */
   trigger?: ReactElement;
-  /** Which way the button's three dots run. Vertical suits the end of a narrow row. */
+  /** Which way the button's three dots run. Default vertical. */
   dots?: "horizontal" | "vertical";
   /** Where the menu opens from its button. Default below it, lined up with its end. */
   side?: ComponentProps<typeof DropdownMenuContent>["side"];
@@ -88,14 +87,14 @@ function loadingKey(items: readonly ActionMenuItem[]): string | null {
 
 /**
  * A row's actions in a "⋯" menu, as Featurebase and Intercom keep them, so a list stays one line
- * a row however many actions each has. Destructive actions go last, after a line. An action
+ * a row however many actions each has. Destructive actions go last, in red. An action
  * that is running keeps the menu open, with a spinner where its icon was.
  */
 export function ActionMenu({
   items,
   target,
   trigger,
-  dots = "horizontal",
+  dots = "vertical",
   side = "bottom",
   align = "end",
   className,
@@ -212,7 +211,6 @@ export function ActionMenu({
         className="border-rule max-h-72 overflow-y-auto border ring-0"
       >
         {safe.map(row)}
-        {safe.length > 0 && destructive.length > 0 ? <DropdownMenuSeparator /> : null}
         {destructive.map(row)}
       </DropdownMenuContent>
     </DropdownMenu>
