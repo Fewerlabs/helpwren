@@ -1,12 +1,12 @@
 import { type GuestDetails, type HelpwrenClient } from "@helpwren/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, renderHook, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
-import { resetChatStore, useScreen } from "../store/chat-store";
+import { resetChatStore, useScreen, useSetClaimed } from "../store/chat-store";
 import { StartForm } from "./start-form";
 
 // The client library is replaced by stand-ins, so these tests cover the form alone.
@@ -50,6 +50,11 @@ function renderForm(
 }
 
 const send = () => screen.getByRole("button", { name: "Send message" });
+
+/** What the host page says about the visitor, as `Helpwren.identify` passes it on. */
+function claim(details: { name?: string; email?: string }) {
+  renderHook(() => useSetClaimed()).result.current(details);
+}
 
 beforeEach(() => {
   resetChatStore();
@@ -127,6 +132,27 @@ describe("StartForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Tell us who you are");
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/your message/i)).toHaveValue("Hello");
+  });
+
+  it("does not ask a visitor the page has already named, and sends what the page said", async () => {
+    claim({ name: "Bella Adebayo", email: "bella@example.com" });
+    const user = renderForm("email");
+    expect(screen.queryByLabelText(/your name/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/your message/i), "Hello");
+    await user.click(send());
+
+    expect(await screen.findByText("conversation c1")).toBeInTheDocument();
+    expect(start).toHaveBeenCalledWith(
+      expect.objectContaining({ contact: { name: "Bella Adebayo", email: "bella@example.com" } }),
+    );
+  });
+
+  it("still asks when the page named the visitor without what the install needs", () => {
+    claim({ name: "Bella Adebayo" });
+    renderForm("email");
+    expect(screen.getByLabelText(/your name/i)).toHaveValue("Bella Adebayo");
+    expect(screen.getByLabelText(/email/i)).toHaveValue("");
   });
 
   it("says so when the visitor has started too many conversations", async () => {

@@ -5,6 +5,7 @@ import {
   MESSAGE_MAX_LENGTH,
   messageBodySchema,
   phoneSchema,
+  hasRequiredGuestDetails,
   ticketSubjectSchema,
   type GuestDetails,
 } from "@helpwren/core";
@@ -258,9 +259,12 @@ export function StartForm({
   const pageHelp = usePageHelp().data;
   // Who the page says this is, without proof: it saves them typing, and labels the conversation.
   const claimed = useClaimed();
+  // Someone the page has already named, with what the install asks for, is not asked again:
+  // a signed-in user of the host product who has never written before.
+  const named = claimed !== null && hasRequiredGuestDetails(guestDetails, claimed);
   // The server has the last word on whether details are needed; see `start` below.
   const [askAnyway, setAskAnyway] = useState(false);
-  const ask = returning && !askAnyway ? "nothing" : guestDetails;
+  const ask = (returning || named) && !askAnyway ? "nothing" : guestDetails;
 
   const schema = useMemo(() => startSchema(ask, ticket), [ask, ticket]);
   const form = useForm<StartValues>({
