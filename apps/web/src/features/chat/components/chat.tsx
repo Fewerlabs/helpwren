@@ -23,7 +23,14 @@ import {
 import { useEmbedBridge } from "../hooks/use-embed-bridge";
 import { usePreviewSettings } from "../hooks/use-preview-settings";
 import { useVisitorTracking } from "../hooks/use-visitor-tracking";
-import { usePreview, useScreen, useSetPreview, useShowScreen, useTab } from "../store/chat-store";
+import {
+  useHelpFocus,
+  usePreview,
+  useScreen,
+  useSetPreview,
+  useShowScreen,
+  useTab,
+} from "../store/chat-store";
 import { ArticleScreen, CollectionScreen, HelpScreen } from "./help-screen";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
@@ -89,13 +96,16 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
       ? details.data.verified || hasRequiredGuestDetails(settings.guestDetails, details.data)
       : earlier.length > 0);
   // The tabs the install shows. A screen whose tab is off falls back to the first one left.
-  const { home: homeTab, help: helpTab } = settings.widget.tabs;
+  // Home also steps aside while the page has opened the chat on its own help, until it closes.
+  const focused = useHelpFocus() !== null;
+  const homeTab = settings.widget.tabs.home && !focused;
+  const helpTab = settings.widget.tabs.help || focused;
   const shownTabs: TabName[] = [
     ...(homeTab ? (["home"] as const) : []),
     "messages",
     ...(helpTab ? (["help"] as const) : []),
   ];
-  const landing: TabName = homeTab ? "home" : "messages";
+  const landing: TabName = focused ? "help" : homeTab ? "home" : "messages";
   const shownTab = (name: TabName): TabName => (shownTabs.includes(name) ? name : landing);
   const back = () => {
     show({ name: shownTab(tab) });

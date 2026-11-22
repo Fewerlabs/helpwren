@@ -944,6 +944,20 @@ describe("contextual help", () => {
     ]);
   });
 
+  it("opens the help for one collection, or several, once the chat is ready", () => {
+    widget.init();
+    widget.openHelp("catalog");
+    expect(widget.isOpen()).toBe(true);
+    const post = ready();
+    widget.openHelp(["catalog", "bookings"]);
+    widget.openHelp();
+    expect(sent(post, "help")).toEqual([
+      { channel: "helpwren", type: "help", collections: ["catalog"] },
+      { channel: "helpwren", type: "help", collections: ["catalog", "bookings"] },
+      { channel: "helpwren", type: "help", collections: [] },
+    ]);
+  });
+
   it("finds articles for a list of the page's own, keeping only well-formed ones", async () => {
     answerArticles([...articles, { title: "No slug" }, { ...articles[0], url: "javascript:x" }]);
     await expect(widget.findArticles({ collection: "billing" })).resolves.toEqual(articles);

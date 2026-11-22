@@ -15,6 +15,16 @@ export type Screen =
   | { name: "ticket" }
   | { name: "conversation"; id: string };
 
+/**
+ * The help the page opened the chat on, with `Helpwren.openHelp`: the collections, by slug, that
+ * Help lists instead of all of them (none for all). `landing` is true until the chat has gone
+ * into the one collection there is, so it does that once and the back arrow stays in Help.
+ */
+export interface HelpFocus {
+  collections: readonly string[];
+  landing: boolean;
+}
+
 /** The collection a visitor is looking through: enough to name it and list its articles. */
 export interface OpenCollection {
   id: string;
@@ -82,6 +92,9 @@ interface ChatState {
   /** The filter the page set for its help articles, which wins over the team's rules. */
   helpFilter: ArticleFilter | null;
   setHelpFilter: (filter: ArticleFilter | null) => void;
+  /** Help the page opened the chat on, until the chat closes. See `HelpFocus`. */
+  helpFocus: HelpFocus | null;
+  setHelpFocus: (focus: HelpFocus | null) => void;
   /** Waiting for the start screen to use it, once. */
   pendingStart: PendingStart | null;
   setPendingStart: (start: PendingStart | null) => void;
@@ -103,6 +116,7 @@ const initial = {
   claimed: null,
   context: null,
   helpFilter: null,
+  helpFocus: null,
 } as const;
 
 const useChatStore = create<ChatState>()((set) => ({
@@ -134,6 +148,9 @@ const useChatStore = create<ChatState>()((set) => ({
   setPendingStart: (pendingStart) => {
     set({ pendingStart });
   },
+  setHelpFocus: (helpFocus) => {
+    set({ helpFocus });
+  },
   setPreview: (preview) => {
     set({ preview });
   },
@@ -158,6 +175,8 @@ export const useSetClaimed = () => useChatStore((state) => state.setClaimed);
 export const usePageContext = () => useChatStore((state) => state.context);
 export const useSetPageContext = () => useChatStore((state) => state.setContext);
 export const useHelpFilter = () => useChatStore((state) => state.helpFilter);
+export const useHelpFocus = () => useChatStore((state) => state.helpFocus);
+export const useSetHelpFocus = () => useChatStore((state) => state.setHelpFocus);
 export const useSetHelpFilter = () => useChatStore((state) => state.setHelpFilter);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);

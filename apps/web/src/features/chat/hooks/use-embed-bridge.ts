@@ -20,6 +20,7 @@ import {
   useScreen,
   useSetClaimed,
   useSetHelpFilter,
+  useSetHelpFocus,
   useSetHostVisible,
   useSetPage,
   useSetPageContext,
@@ -91,6 +92,11 @@ const laterSchema = z.discriminatedUnion("type", [
     filter: articleFilterSchema.optional().catch(undefined),
   }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("article"), slug: slugSchema }),
+  z.object({
+    channel: z.literal(CHANNEL),
+    type: z.literal("help"),
+    collections: z.array(slugSchema).max(20),
+  }),
   z.object({ channel: z.literal(CHANNEL), type: z.literal("open"), conversationId: z.uuid() }),
   z.object({
     channel: z.literal(CHANNEL),
@@ -178,6 +184,7 @@ export function useEmbedBridge(unread: UnreadState) {
   const setClaimed = useSetClaimed();
   const setPageContext = useSetPageContext();
   const setHelpFilter = useSetHelpFilter();
+  const setHelpFocus = useSetHelpFocus();
   const setPanelLayout = useSetPanelLayout();
   const panelLayout = usePanelLayout();
   const screen = useScreen();
@@ -234,6 +241,8 @@ export function useEmbedBridge(unread: UnreadState) {
           setHostVisible(message.visible);
         } else if (message.type === "panel") {
           setShowing(message.open);
+          // Help the page opened the chat on lasts until the chat closes.
+          if (!message.open) setHelpFocus(null);
         } else if (message.type === "context") {
           setPageContext(message.context);
           setHelpFilter(message.filter ?? null);
@@ -241,6 +250,9 @@ export function useEmbedBridge(unread: UnreadState) {
           setPanelLayout({ expandable: message.expandable, expanded: message.expanded });
         } else if (message.type === "article") {
           show({ name: "article", slug: message.slug });
+        } else if (message.type === "help") {
+          setHelpFocus({ collections: message.collections, landing: true });
+          show({ name: "help" });
         } else if (message.type === "reset") {
           setClaimed(null);
           tell(identity.reset());
@@ -280,6 +292,7 @@ export function useEmbedBridge(unread: UnreadState) {
     send,
     setClaimed,
     setHelpFilter,
+    setHelpFocus,
     setHostVisible,
     setPage,
     setPageContext,

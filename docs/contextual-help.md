@@ -206,6 +206,26 @@ The headless client library has it too, evaluated straight in the database:
 const articles = await helpwren.articles.find({ collection: "bookings", limit: 5 });
 ```
 
+## Open the help for part of your product
+
+A "Help" link beside a page's title can open the chat on that page's collection:
+
+```js
+Helpwren.openHelp("catalog"); // straight into the Catalog collection
+Helpwren.openHelp(["catalog", "bookings"]); // Help, listing only these two
+```
+
+Collections are named by their slug. The back arrow leads to Help, which lists only the
+collections you named, and Home is hidden until the visitor closes the chat, so they stay with
+the help they asked for. With no collection, `openHelp()` opens Help as it is.
+
+To show the link only where there is something to read, ask first:
+
+```js
+const articles = await Helpwren.findArticles({ collection: "catalog" });
+if (articles.length > 0) showHelpLink(articles.length);
+```
+
 > [!NOTE]
 > Article opens are not counted by filter or rule yet, so there is no report of where help
 > content is thin.

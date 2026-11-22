@@ -64,6 +64,11 @@ export type PageMessage =
   | { channel: typeof CHANNEL; type: "context"; context: PageContext; filter?: ArticleFilter }
   /** Shows a help article in the chat, as when the visitor clicks one listed on the page. */
   | { channel: typeof CHANNEL; type: "article"; slug: string }
+  /**
+   * Opens the chat's Help on these collections, by slug: straight into one, or a list of only
+   * those. Home stays hidden until the chat is closed.
+   */
+  | { channel: typeof CHANNEL; type: "help"; collections: string[] }
   /** Shows one of the visitor's conversations, as when they tap a notification about it. */
   | { channel: typeof CHANNEL; type: "open"; conversationId: string }
   /**

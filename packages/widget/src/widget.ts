@@ -148,6 +148,12 @@ export interface HelpwrenWidget {
   findArticles: (filter: ArticleFilter) => Promise<HelpArticle[]>;
   /** Opens the chat on one help article, by its slug. */
   openArticle: (slug: string) => void;
+  /**
+   * Opens the chat on the help for part of your product: one collection, by its slug, goes
+   * straight into it; several show a list of only those. Home is hidden until the chat closes,
+   * so the visitor stays with the help they asked for. Without a collection, opens Help.
+   */
+  openHelp: (collection?: string | readonly string[]) => void;
   /** Changes how the widget looks or is laid out after `init`. */
   update: (changes: { appearance?: Partial<Appearance>; layout?: WidgetLayout }) => void;
   /** Listens for an event. Returns a function that stops listening. */
@@ -975,6 +981,16 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
 
     openArticle(slug) {
       showScreen({ channel: CHANNEL, type: "article", slug });
+    },
+
+    openHelp(collection) {
+      const collections =
+        collection === undefined
+          ? []
+          : typeof collection === "string"
+            ? [collection]
+            : [...collection];
+      showScreen({ channel: CHANNEL, type: "help", collections });
     },
 
     startConversation(draft) {

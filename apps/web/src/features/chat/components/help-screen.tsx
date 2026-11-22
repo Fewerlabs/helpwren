@@ -12,7 +12,7 @@ import {
   RichText,
   SearchField,
 } from "@helpwren/design-system";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type PanelSize } from "helpwren/protocol";
 import { useEffect, useEffectEvent, useState } from "react";
 
@@ -21,7 +21,13 @@ import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
 import { usePageHelp, usePageHelpQuery } from "../hooks/use-page-help";
-import { usePanelLayout, useShowScreen, type OpenCollection } from "../store/chat-store";
+import {
+  useHelpFocus,
+  usePanelLayout,
+  useSetHelpFocus,
+  useShowScreen,
+  type OpenCollection,
+} from "../store/chat-store";
 import { ScreenHeader } from "./screen-header";
 
 /** The start of every help query's key in the chat. */
@@ -170,6 +176,29 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
   const show = useShowScreen();
   const [search, setSearch] = useState("");
   const query = useDebounced(search).trim();
+  // The collections the page opened Help on, when it did: only those are listed.
+  const focus = useHelpFocus();
+  const setFocus = useSetHelpFocus();
+  const only = focus?.collections ?? [];
+
+  // Opened on one collection, the chat goes straight into it, once: its back arrow then returns
+  // to this list of the page's collections, not into it again.
+  const landing = useQuery({
+    queryKey: [...HELP_QUERY_KEY, "collections", "landing"],
+    queryFn: () => getClient().collections.list(),
+    enabled: focus?.landing === true,
+  });
+  useEffect(() => {
+    if (!focus?.landing || !landing.data) return;
+    const matched = landing.data.filter((collection) =>
+      focus.collections.includes(collection.slug),
+    );
+    setFocus({ ...focus, landing: false });
+    const [one] = matched;
+    if (matched.length === 1 && one) {
+      show({ name: "collection", collection: { id: one.id, name: one.name } });
+    }
+  }, [focus, landing.data, setFocus, show]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -218,8 +247,13 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
         />
       ) : (
         <QueryList
-          queryKey={[...HELP_QUERY_KEY, "collections"]}
-          queryFn={async () => ({ items: await getClient().collections.list() })}
+          queryKey={[...HELP_QUERY_KEY, "collections", only]}
+          queryFn={async () => {
+            const all = await getClient().collections.list();
+            return {
+              items: only.length > 0 ? all.filter((item) => only.includes(item.slug)) : all,
+            };
+          }}
           pagination="none"
           className="min-h-0 flex-1 overflow-y-auto"
           contentClassName="px-1 pb-4"
