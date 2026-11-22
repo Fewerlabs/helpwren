@@ -57,6 +57,8 @@ export interface ActionMenuProps {
   target: string;
   /** The button that opens the menu, in place of "⋯". It has to name itself. */
   trigger?: ReactElement;
+  /** Which way the button's three dots run. Vertical suits the end of a narrow row. */
+  dots?: "horizontal" | "vertical";
   /** Where the menu opens from its button. Default below it, lined up with its end. */
   side?: ComponentProps<typeof DropdownMenuContent>["side"];
   align?: ComponentProps<typeof DropdownMenuContent>["align"];
@@ -93,6 +95,7 @@ export function ActionMenu({
   items,
   target,
   trigger,
+  dots = "horizontal",
   side = "bottom",
   align = "end",
   className,
@@ -199,7 +202,7 @@ export function ActionMenu({
             aria-label={`More actions for ${target}`}
             className={cn("shrink-0", className)}
           >
-            <Icon name="dots-three" />
+            <Icon name={dots === "vertical" ? "dots-three-vertical" : "dots-three"} />
           </Button>
         )}
       </DropdownMenuTrigger>
