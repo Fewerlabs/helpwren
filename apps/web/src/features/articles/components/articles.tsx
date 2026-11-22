@@ -8,6 +8,7 @@ import {
 } from "@helpwren/core";
 import {
   ActionButton,
+  ActionMenu,
   Badge,
   Button,
   CollectionIcon,
@@ -19,9 +20,12 @@ import {
   SearchField,
   toast,
   Tooltip,
+  useConfirm,
   type DataTableColumn,
+  type DataTableKey,
   type FilterDefinition,
   type FilterValue,
+  type SelectionBarAction,
 } from "@helpwren/design-system";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -89,6 +93,11 @@ const featuredFilter: FilterDefinition = {
   ],
 };
 
+/** "Article" for one, "3 articles" for more: how a message names what was changed. */
+function named(count: number): string {
+  return count === 1 ? "Article" : `${count} articles`;
+}
+
 /** The one value of a filter with two choices; both ticked is the same as neither. */
 function only(value: FilterValue, id: string): string | undefined {
   const chosen = value[id] ?? [];
@@ -114,6 +123,7 @@ export function Articles() {
     collection: null,
   });
   const router = useRouter();
+  const confirm = useConfirm();
   const filter = list.filters;
   const status = articleStatusSchema.safeParse(only(filter, "status")).data;
   const visibility = articleVisibilitySchema.safeParse(only(filter, "visibility")).data;
@@ -204,6 +214,126 @@ export function Articles() {
     [collection?.id, collections.data, counts, shown.kind],
   );
 
+  // The ticked rows belong to the list they were ticked in: another collection, search, filter
+  // or page starts with none.
+  const scope = JSON.stringify([shownKey, list.query, filter, list.page]);
+  const [ticked, setTicked] = useState<{ scope: string; keys: DataTableKey[] }>({
+    scope,
+    keys: [],
+  });
+  const selectedIds = ticked.scope === scope ? ticked.keys.map(String) : [];
+  // While a change to the ticked rows runs.
+  const [working, setWorking] = useState(false);
+
+  /** Runs one change to some articles, reloads the lists, and says what happened. */
+  async function run(change: () => Promise<string | null>, failure: string) {
+    try {
+      const done = await change();
+      await changed();
+      setTicked({ scope, keys: [] });
+      if (done) toast.success(done);
+    } catch {
+      toast.error(failure);
+    }
+  }
+
+  function publish(ids: string[]) {
+    return run(async () => {
+      const { changed: count } = await getClient().articles.publishMany(ids);
+      const left = ids.length - count;
+      if (left > 0) {
+        toast.error(
+          ids.length === 1
+            ? "Choose a collection first. A published article has to be in one."
+            : `${named(left)} in no collection ${left === 1 ? "was" : "were"} left as ${left === 1 ? "a draft" : "drafts"}.`,
+        );
+      }
+      return count > 0 ? `${named(count)} published` : null;
+    }, "That did not work. Try again.");
+  }
+
+  async function unpublish(ids: string[]) {
+    const one = ids.length === 1;
+    const confirmed = await confirm({
+      title: one ? "Unpublish this article?" : `Unpublish ${ids.length} articles?`,
+      description: one
+        ? "It goes back to a draft. Visitors can no longer read it, and links to it stop working until it is published again."
+        : "They go back to drafts. Visitors can no longer read them, and links to them stop working until they are published again.",
+      confirmLabel: "Unpublish",
+      icon: "eye-slash",
+    });
+    if (!confirmed) return;
+    await run(async () => {
+      const { changed: count } = await getClient().articles.unpublishMany(ids);
+      return count > 0 ? `${named(count)} unpublished` : null;
+    }, "That did not work. Try again.");
+  }
+
+  function move(ids: string[], target: Collection) {
+    return run(
+      async () => {
+        const { changed: count } = await getClient().articles.moveMany(ids, target.id);
+        return count > 0 ? `${named(count)} moved to ${target.name}` : null;
+      },
+      ids.length === 1
+        ? "The article could not be moved. Try again."
+        : "The articles could not be moved. Try again.",
+    );
+  }
+
+  async function remove(ids: string[], name?: string) {
+    const one = ids.length === 1;
+    const confirmed = await confirm({
+      title: one
+        ? `Delete ${name ? `"${name}"` : "this article"}?`
+        : `Delete ${ids.length} articles?`,
+      description: one
+        ? "The article is deleted for good, with what readers said about it. Links to it stop working."
+        : "The articles are deleted for good, with what readers said about them. Links to them stop working.",
+      confirmLabel: "Delete",
+      tone: "destructive",
+    });
+    if (!confirmed) return;
+    await run(
+      async () => {
+        const { changed: count } = await getClient().articles.removeMany(ids);
+        return count > 0 ? `${named(count)} deleted` : null;
+      },
+      one
+        ? "The article could not be deleted. Try again."
+        : "The articles could not be deleted. Try again.",
+    );
+  }
+
+  /** A change to the ticked rows: the bar waits while it runs. */
+  async function withTicked(change: (ids: string[]) => Promise<void>) {
+    setWorking(true);
+    await change(selectedIds);
+    setWorking(false);
+  }
+
+  const bulkActions: SelectionBarAction[] = [
+    { label: "Publish", icon: "check-circle", onSelect: () => void withTicked(publish) },
+    { label: "Unpublish", icon: "eye-slash", onSelect: () => void withTicked(unpublish) },
+    {
+      label: "Move to",
+      icon: "folder",
+      disabled: !collections.data?.some((item) => item.id !== collection?.id),
+      choices: (collections.data ?? [])
+        .filter((item) => item.id !== collection?.id)
+        .map((item) => ({
+          label: item.name,
+          onSelect: () => void withTicked((ids) => move(ids, item)),
+        })),
+    },
+    {
+      label: "Delete",
+      icon: "trash",
+      destructive: true,
+      onSelect: () => void withTicked((ids) => remove(ids)),
+    },
+  ];
+
   async function reorder(ids: string[]) {
     try {
       await getClient().articles.reorder(ids);
@@ -274,6 +404,57 @@ export function Articles() {
       align: "end",
       className: "text-muted-foreground tabular-nums",
       cell: (article) => formatTimeAgo(article.updatedAt),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "end",
+      width: "3rem",
+      cell: (article) => {
+        const places = (collections.data ?? []).filter(
+          (item) => item.id !== article.collection?.id,
+        );
+        return (
+          <ActionMenu
+            target={article.title}
+            items={[
+              {
+                label: "Edit",
+                icon: "pencil-simple",
+                onSelect: () => {
+                  router.push(`${HELP_PATH}/${article.id}`);
+                },
+              },
+              article.status === "published"
+                ? {
+                    label: "Unpublish",
+                    icon: "eye-slash",
+                    onSelect: () => void unpublish([article.id]),
+                  }
+                : // Nothing to confirm, so the menu stays up while it runs.
+                  { label: "Publish", icon: "check-circle", onSelect: () => publish([article.id]) },
+              ...(places.length > 0
+                ? [
+                    {
+                      label: "Move to",
+                      icon: "folder" as const,
+                      choices: places.map((item) => ({
+                        label: item.name,
+                        onSelect: () => move([article.id], item),
+                      })),
+                    },
+                  ]
+                : []),
+              {
+                label: "Delete",
+                icon: "trash",
+                destructive: true,
+                onSelect: () => void remove([article.id], article.title),
+              },
+            ]}
+          />
+        );
+      },
     },
   ];
 
@@ -362,6 +543,15 @@ export function Articles() {
                 }
               : undefined
           }
+          selection={{
+            label: (article) => article.title,
+            selectedKeys: selectedIds,
+            onSelectedKeysChange: (keys) => {
+              setTicked({ scope, keys });
+            },
+            actions: bulkActions,
+            busy: working,
+          }}
           filtered={list.narrowed}
           empty={
             <EmptyState
