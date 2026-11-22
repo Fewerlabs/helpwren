@@ -106,7 +106,7 @@ export function PageHelp() {
  * written: the ones the team put forward, less any already listed for the page. Nothing is
  * shown when there are none.
  */
-export function SuggestedArticles() {
+export function SuggestedArticles({ searchAll = true }: { searchAll?: boolean }) {
   const getClient = useHelpwren();
   const show = useShowScreen();
   const forPage = usePageHelp().data?.articles;
@@ -142,15 +142,18 @@ export function SuggestedArticles() {
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              className="text-primary focus-visible:outline-ring mx-4 mt-1 rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
-              onClick={() => {
-                show({ name: "help" });
-              }}
-            >
-              Search all articles
-            </button>
+            {/* Only where the Help tab is there to search in. */}
+            {searchAll ? (
+              <button
+                type="button"
+                className="text-primary focus-visible:outline-ring mx-4 mt-1 rounded-sm text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2"
+                onClick={() => {
+                  show({ name: "help" });
+                }}
+              >
+                Search all articles
+              </button>
+            ) : null}
           </section>
         );
       }}

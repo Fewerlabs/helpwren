@@ -30,7 +30,7 @@ import { MessagesScreen } from "./messages-screen";
 import { RatingPrompt } from "./rating-prompt";
 import { ScreenHeader } from "./screen-header";
 import { StartForm } from "./start-form";
-import { TabBar } from "./tab-bar";
+import { TabBar, type TabName } from "./tab-bar";
 import { TeamStatus } from "./team-status";
 import { TicketBar } from "./ticket-bar";
 
@@ -88,8 +88,17 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     (details.data
       ? details.data.verified || hasRequiredGuestDetails(settings.guestDetails, details.data)
       : earlier.length > 0);
+  // The tabs the install shows. A screen whose tab is off falls back to the first one left.
+  const { home: homeTab, help: helpTab } = settings.widget.tabs;
+  const shownTabs: TabName[] = [
+    ...(homeTab ? (["home"] as const) : []),
+    "messages",
+    ...(helpTab ? (["help"] as const) : []),
+  ];
+  const landing: TabName = homeTab ? "home" : "messages";
+  const shownTab = (name: TabName): TabName => (shownTabs.includes(name) ? name : landing);
   const back = () => {
-    show({ name: tab });
+    show({ name: shownTab(tab) });
   };
 
   if (
@@ -198,11 +207,14 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
     );
   }
 
+  const current = shownTab(
+    screen.name === "messages" || screen.name === "help" ? screen.name : "home",
+  );
   return (
     <>
-      {screen.name === "messages" ? (
+      {current === "messages" ? (
         <MessagesScreen conversations={earlier} teamName={teamName} onClose={onClose} />
-      ) : screen.name === "help" ? (
+      ) : current === "help" ? (
         <HelpScreen onClose={onClose} />
       ) : (
         <HomeScreen
@@ -210,11 +222,13 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
           intro={settings.widget.intro}
           tickets={settings.tickets.fromChat}
           recent={earlier[0]}
+          helpTab={helpTab}
           onClose={onClose}
         />
       )}
       <TabBar
-        current={screen.name === "messages" || screen.name === "help" ? screen.name : "home"}
+        current={current}
+        shown={shownTabs}
         unread={unread}
         poweredBy={settings.brand.poweredBy !== false}
       />

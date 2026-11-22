@@ -55,6 +55,13 @@ export const widgetLauncherSchema = z.enum(["chat", "logo", "wren"]);
 export const QUICK_REPLIES_MAX = 5;
 export const QUICK_REPLY_MAX_LENGTH = 60;
 
+/** The chat's Home and Help tabs, each of which an install can turn off. */
+export const widgetTabsSchema = z.object({
+  home: z.boolean().default(true),
+  help: z.boolean().default(true),
+});
+export type WidgetTabs = z.infer<typeof widgetTabsSchema>;
+
 /** How the chat looks and what it says, in the widget and on the chat page. */
 const widgetSchema = z.object({
   /** The corner of the page the launcher sits in. */
@@ -72,6 +79,11 @@ const widgetSchema = z.object({
   welcome: z.string().min(1).optional(),
   /** Replies the visitor can send with one tap, offered when a conversation starts. */
   quickReplies: z.array(z.string().min(1)).max(QUICK_REPLIES_MAX).default([]),
+  /**
+   * Which of the chat's tabs show. Messages always does; without Home the chat opens on it,
+   * and without Help articles open only from the page's own help and suggestions.
+   */
+  tabs: widgetTabsSchema.default({ home: true, help: true }),
 });
 
 export type WidgetSettings = z.infer<typeof widgetSchema>;
@@ -355,6 +367,7 @@ export const settingsPatchSchema = z
       quickReplies: z
         .array(z.string().trim().min(1).max(QUICK_REPLY_MAX_LENGTH))
         .max(QUICK_REPLIES_MAX),
+      tabs: z.object({ home: z.boolean(), help: z.boolean() }).optional(),
     }),
     chatPage: pageTextPatchSchema.extend({
       headerStyle: helpHeaderStyleSchema,

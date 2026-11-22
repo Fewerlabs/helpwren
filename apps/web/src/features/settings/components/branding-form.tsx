@@ -57,7 +57,12 @@ import { WidgetPreview } from "./widget-preview";
 /** A few colours to start from, on one row. Any other comes from the picker at the end. */
 
 /** Plain on and off settings, saved the moment they are flipped. */
-const INSTANT: readonly (keyof BrandingValues)[] = ["poweredBy", "helpShowChat"];
+const INSTANT: readonly (keyof BrandingValues)[] = [
+  "poweredBy",
+  "helpShowChat",
+  "homeTab",
+  "helpTab",
+];
 export const brandSwatches: readonly ColorSwatch[] = [
   { label: "Helpwren green", color: DEFAULT_ACCENT },
   { label: "Blue", color: "#1d4ed8" },
@@ -148,6 +153,8 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
       offsetX: widget.offsetX,
       offsetY: widget.offsetY,
       launcher: widget.launcher,
+      homeTab: widget.tabs.home,
+      helpTab: widget.tabs.help,
       greeting: widget.greeting ?? "",
       intro: widget.intro ?? "",
       welcome: widget.welcome ?? "",
@@ -392,6 +399,20 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
           disabled={disabled}
         />
       ),
+    },
+  ];
+  const tabFields: Fields = [
+    {
+      name: "homeTab",
+      label: "Home",
+      type: "switch",
+      hint: "The greeting, ways to get in touch and suggested articles. Off, the chat opens on Messages.",
+    },
+    {
+      name: "helpTab",
+      label: "Help",
+      type: "switch",
+      hint: "Search and browse every article from inside the chat.",
     },
   ];
   const home: Fields = [
@@ -673,6 +694,12 @@ export function BrandingForm({ settings, canEdit }: BrandingFormProps) {
               description="The round button that opens the chat on your site: where it sits and what it shows."
             >
               {list(launcher)}
+            </SettingsSection>
+            <SettingsSection
+              title="Tabs"
+              description="The tabs along the bottom of the chat. Messages is always there."
+            >
+              {list(tabFields)}
             </SettingsSection>
             <SettingsSection
               title="Home screen"

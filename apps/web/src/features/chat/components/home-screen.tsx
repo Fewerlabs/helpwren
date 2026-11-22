@@ -18,12 +18,21 @@ export interface HomeScreenProps {
   tickets: boolean;
   /** The visitor's most recently active conversation, if they have one. */
   recent: ConversationWithContact | undefined;
+  /** Whether the Help tab is shown, which is where "Search all articles" goes. */
+  helpTab?: boolean;
   /** Shows a close button that calls this. Given when the chat is in a frame it can close. */
   onClose?: (() => void) | undefined;
 }
 
 /** Where the chat opens: a greeting, the way to write, and the visitor's latest conversation. */
-export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeScreenProps) {
+export function HomeScreen({
+  greeting,
+  intro,
+  tickets,
+  recent,
+  helpTab = true,
+  onClose,
+}: HomeScreenProps) {
   const show = useShowScreen();
 
   return (
@@ -74,11 +83,7 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
         ) : null}
       </div>
 
-      {/* The page's own help leads: it is about what the visitor is doing now. The team's
-          featured articles follow, less any already listed. */}
-      <PageHelp />
-      <SuggestedArticles />
-
+      {/* Their latest conversation comes first: most often, that is what they came back for. */}
       {recent ? (
         <section aria-labelledby="recent-message" className="px-1 pt-5">
           <h2 id="recent-message" className="text-muted-foreground px-4 pb-1 text-xs">
@@ -92,6 +97,10 @@ export function HomeScreen({ greeting, intro, tickets, recent, onClose }: HomeSc
           />
         </section>
       ) : null}
+      {/* Then the page's own help, about what the visitor is doing now, and the team's
+          featured articles, less any already listed. */}
+      <PageHelp />
+      <SuggestedArticles searchAll={helpTab} />
     </div>
   );
 }

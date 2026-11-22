@@ -114,6 +114,8 @@ export const brandingSchema = z.object({
   offsetX: widgetPatchSchema.shape.offsetX,
   offsetY: widgetPatchSchema.shape.offsetY,
   launcher: widgetPatchSchema.shape.launcher,
+  homeTab: z.boolean(),
+  helpTab: z.boolean(),
   greeting: z.string().trim().max(60, "Keep the greeting under 60 characters."),
   intro: z.string().trim().max(80, "Keep this line under 80 characters."),
   welcome: z.string().trim().max(500, "Keep the message under 500 characters."),
@@ -202,6 +204,7 @@ export function brandingToSettings(values: BrandingValues) {
       intro: text(values.intro),
       welcome: text(values.welcome),
       quickReplies: values.quickReplies,
+      tabs: { home: values.homeTab, help: values.helpTab },
     },
     chatPage: {
       title: text(values.chatTitle),

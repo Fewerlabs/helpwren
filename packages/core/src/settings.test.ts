@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { HelpwrenError } from "./errors";
 import { parsePublicSettings, parseSettings, settingsPatchSchema } from "./settings";
 
-const widget = { position: "right", offsetX: 20, offsetY: 20, launcher: "chat", quickReplies: [] };
+const widget = {
+  position: "right",
+  offsetX: 20,
+  offsetY: 20,
+  launcher: "chat",
+  quickReplies: [],
+  tabs: { home: true, help: true },
+};
 
 const helpCenter = { headerStyle: "brand", headerLinks: [], footerLinks: [], showChat: true };
 
@@ -78,6 +85,13 @@ describe("parseSettings", () => {
       ...widget,
       ...stored,
     });
+  });
+
+  it("shows every tab until one is turned off, and keeps a tab left out of what was saved", () => {
+    expect(parseSettings([]).widget.tabs).toEqual({ home: true, help: true });
+    expect(
+      parseSettings([{ key: "widget", value: { tabs: { home: false } } }]).widget.tabs,
+    ).toEqual({ home: false, help: true });
   });
 
   it("takes each launcher icon, and refuses one it does not know", () => {

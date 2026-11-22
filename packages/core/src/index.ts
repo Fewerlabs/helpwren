@@ -270,6 +270,7 @@ export {
   type SpamSettings,
   type VisitorSettings,
   type WidgetSettings,
+  type WidgetTabs,
   type Settings,
   type SettingsPatch,
   type UpdateSettingsResult,
