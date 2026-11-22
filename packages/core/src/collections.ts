@@ -58,7 +58,7 @@ export type ChangeCollectionResult =
   /** `slug_locked`: it has published articles, whose addresses its slug is part of. */
   | { ok: false; reason: "not_found" | "slug_taken" | "slug_locked" };
 export type RemoveCollectionResult =
-  /** `not_empty`: it still holds articles. Move or remove them first. */
+  /** `not_empty`: it still holds articles. Move or remove them first, or release them. */
   { ok: true } | { ok: false; reason: "not_found" | "not_empty" };
 
 const COLUMNS = "id, name, slug, description, icon, position, updated_at, articles(count)";
@@ -159,8 +159,22 @@ export function createCollections(supabase: HelpwrenSupabaseClient) {
       if (error) throw new HelpwrenError("Could not reorder the collections.", { cause: error });
     },
 
-    /** Removes a collection that holds no articles. For the team. */
-    async remove(id: string): Promise<RemoveCollectionResult> {
+    /**
+     * Removes a collection. One that holds articles is refused (`not_empty`) unless
+     * `releaseArticles` is set: its articles are then kept, as drafts in no collection, since a
+     * published article has to be in one. For the team.
+     */
+    async remove(
+      id: string,
+      options: { releaseArticles?: boolean } = {},
+    ): Promise<RemoveCollectionResult> {
+      if (options.releaseArticles === true) {
+        const { error } = await supabase
+          .from("articles")
+          .update({ status: "draft", collection_id: null })
+          .eq("collection_id", z.uuid().parse(id));
+        if (error) throw new HelpwrenError("Could not remove the collection.", { cause: error });
+      }
       const { data, error } = await supabase.from("collections").delete().eq("id", id).select("id");
       if (error) {
         if (error.code === STILL_USED) return { ok: false, reason: "not_empty" };

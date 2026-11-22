@@ -40,7 +40,7 @@ const bookings: Collection = {
 // Renamed, with an address of its own, so the one on screen no longer finds it.
 const reservations: Collection = { ...bookings, name: "Reservations", slug: "reservations" };
 
-const collections = { list: vi.fn(), update: vi.fn(), create: vi.fn() };
+const collections = { list: vi.fn(), update: vi.fn(), create: vi.fn(), remove: vi.fn() };
 const client = {
   collections,
   articles: {
@@ -57,6 +57,19 @@ const client = {
   },
   agents: { list: vi.fn(() => Promise.resolve([])) },
 } as unknown as HelpwrenClient;
+
+/** The Bookings collection's menu in the navigation; the one beside its name is for phones. */
+function collectionMenu() {
+  const [first] = screen.getAllByRole("button", {
+    name: "More actions for the Bookings collection",
+  });
+  if (!first) throw new Error("The collection has no menu.");
+  return first;
+}
+async function findCollectionMenu() {
+  await screen.findAllByRole("button", { name: "More actions for the Bookings collection" });
+  return collectionMenu();
+}
 
 function renderArticles() {
   render(
@@ -89,7 +102,8 @@ describe("the help center's collections", () => {
     const user = userEvent.setup();
     renderArticles();
 
-    await user.click(await screen.findByRole("button", { name: "Edit the Bookings collection" }));
+    await user.click(await findCollectionMenu());
+    await user.click(screen.getByRole("menuitem", { name: "Edit collection" }));
     const name = screen.getByRole("textbox", { name: "Name" });
     await user.clear(name);
     await user.type(name, "Reservations");
@@ -161,7 +175,7 @@ describe("changing articles from the list", () => {
 
   /** The table once the collection in the address is on screen, not the list for phones. */
   async function table() {
-    await screen.findByRole("button", { name: "Edit the Bookings collection" });
+    await findCollectionMenu();
     await screen.findAllByText("Paying a deposit");
     return within(screen.getByRole("table"));
   }
@@ -231,5 +245,28 @@ describe("changing articles from the list", () => {
     });
     refreshed();
     expect(await screen.findByText("Article deleted")).toBeInTheDocument();
+  });
+
+  it("deletes the collection on screen, keeping its articles as drafts", async () => {
+    collections.list.mockResolvedValue([{ ...bookings, articleCount: 2 }, billing]);
+    collections.remove.mockResolvedValue({ ok: true });
+    const user = userEvent.setup();
+    renderArticles();
+    await table();
+
+    await user.click(collectionMenu());
+    await user.click(screen.getByRole("menuitem", { name: "Delete collection" }));
+    const dialog = within(await screen.findByRole("alertdialog"));
+    expect(
+      dialog.getByText(/Its 2 articles are kept as drafts in no collection/),
+    ).toBeInTheDocument();
+    expect(collections.remove).not.toHaveBeenCalled();
+    await user.click(dialog.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      expect(collections.remove).toHaveBeenCalledWith(bookings.id, { releaseArticles: true });
+    });
+    refreshed();
+    expect(await screen.findByText("Collection deleted")).toBeInTheDocument();
   });
 });

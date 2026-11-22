@@ -310,8 +310,9 @@ test("a team member adds collections one after another, and renames one", async 
 
   // Renamed, the collection is saved and the form goes, with no other opening in its place.
   await page
-    .getByRole("button", { name: `Edit the Account and payments (${RUN}) collection` })
+    .getByRole("button", { name: `More actions for the Account and payments (${RUN}) collection` })
     .click();
+  await page.getByRole("menuitem", { name: "Edit collection" }).click();
   const edit = page.getByRole("dialog", { name: "Edit collection" });
   await expect(edit.getByLabel("Name")).toHaveValue(`Account and payments (${RUN})`);
   await edit.getByLabel("Name").fill(`Payments (${RUN})`);

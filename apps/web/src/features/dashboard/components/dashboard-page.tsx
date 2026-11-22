@@ -18,6 +18,11 @@ export interface PageNavItem {
   /** A number shown at the end of the row, such as how many conversations a view holds. */
   count?: number | undefined;
   active: boolean;
+  /**
+   * What can be done to the item itself, such as a collection's "⋯" menu. It shows at the end
+   * of the row, beside the count, while the row is pointed at or focused, and not on a phone.
+   */
+  actions?: ReactNode;
   /** A heading shown above the first item of each group, such as "Workspace". */
   group?: string;
 }
@@ -113,24 +118,38 @@ export function DashboardPage({
                       {item.group}
                     </p>
                   ) : null}
-                  <Link
-                    href={item.href}
-                    aria-current={item.active ? "page" : undefined}
-                    className={cn(
-                      "focus-visible:outline-ring flex h-8 shrink-0 items-center gap-2 rounded-lg px-2 transition-colors focus-visible:outline-2",
-                      item.active
-                        ? "bg-muted text-foreground font-medium"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                    )}
-                  >
-                    {navIcon(item)}
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.count === undefined ? null : (
-                      <span className="text-muted-foreground text-xs font-normal tabular-nums">
-                        {item.count}
-                      </span>
-                    )}
-                  </Link>
+                  <div className="group/item relative flex shrink-0">
+                    <Link
+                      href={item.href}
+                      aria-current={item.active ? "page" : undefined}
+                      className={cn(
+                        "focus-visible:outline-ring flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg px-2 transition-colors focus-visible:outline-2",
+                        item.active
+                          ? "bg-muted text-foreground font-medium"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                      )}
+                    >
+                      {navIcon(item)}
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.count === undefined ? null : (
+                        <span
+                          className={cn(
+                            "text-muted-foreground text-xs font-normal tabular-nums",
+                            // The count makes room for the actions when they show.
+                            item.actions &&
+                              "md:group-focus-within/item:mr-6 md:group-hover/item:mr-6 md:group-has-aria-expanded/item:mr-6",
+                          )}
+                        >
+                          {item.count}
+                        </span>
+                      )}
+                    </Link>
+                    {item.actions ? (
+                      <div className="absolute top-1/2 right-1 -translate-y-1/2 opacity-0 group-focus-within/item:opacity-100 group-hover/item:opacity-100 has-aria-expanded:opacity-100 max-md:hidden">
+                        {item.actions}
+                      </div>
+                    ) : null}
+                  </div>
                 </Fragment>
               ))}
             </nav>

@@ -422,9 +422,21 @@ describe("the help center, for the team", () => {
       ok: false,
       reason: "not_empty",
     });
+    // Asked to, it goes with articles in it, which are kept as drafts in no collection.
+    await agent.articles.publish(first.article.id);
+    await expect(
+      agent.collections.remove(created.collection.id, { releaseArticles: true }),
+    ).resolves.toEqual({ ok: true });
+    await expect(agent.articles.get(first.article.id)).resolves.toMatchObject({
+      status: "draft",
+      collectionId: null,
+    });
+    await expect(agent.articles.get(last.article.id)).resolves.toMatchObject({
+      status: "draft",
+      collectionId: null,
+    });
     await agent.articles.remove(first.article.id);
     await agent.articles.remove(last.article.id);
-    await expect(agent.collections.remove(created.collection.id)).resolves.toEqual({ ok: true });
     await expect(agent.collections.remove(created.collection.id)).resolves.toEqual({
       ok: false,
       reason: "not_found",

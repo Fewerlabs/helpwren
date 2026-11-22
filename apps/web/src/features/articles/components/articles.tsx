@@ -19,7 +19,6 @@ import {
   RowLink,
   SearchField,
   toast,
-  Tooltip,
   useConfirm,
   type DataTableColumn,
   type DataTableKey,
@@ -54,6 +53,7 @@ import {
   useCollections,
   useShown,
 } from "../hooks/use-articles";
+import { useRemoveCollection } from "../hooks/use-remove-collection";
 import { ArticleStatusChip } from "./article-status";
 import { CollectionDialog } from "./collection-dialog";
 
@@ -124,6 +124,7 @@ export function Articles() {
   });
   const router = useRouter();
   const confirm = useConfirm();
+  const removeCollection = useRemoveCollection();
   const filter = list.filters;
   const status = articleStatusSchema.safeParse(only(filter, "status")).data;
   const visibility = articleVisibilitySchema.safeParse(only(filter, "visibility")).data;
@@ -181,38 +182,60 @@ export function Articles() {
   // Order is a collection's own, so it can only be changed while all of it is in view.
   const canReorder = Boolean(collection) && !list.narrowed;
 
-  const nav = useMemo<PageNavItem[]>(
-    () => [
-      {
-        href: HELP_PATH,
-        label: "All articles",
-        icon: "file-text",
-        count: counts?.total,
-        active: shown.kind === "all",
-      },
-      ...(collections.data ?? []).map((item) => ({
-        href: collectionHref(item.slug),
-        label: item.name,
-        icon: (props: PageNavIconProps) => <CollectionIcon name={item.icon} {...props} />,
-        count: item.articleCount,
-        active: collection?.id === item.id,
-        group: "Collections",
-      })),
-      ...(counts && counts.uncategorised > 0
-        ? [
-            {
-              href: collectionHref(NO_COLLECTION),
-              label: "Not in a collection",
-              icon: "folder" as const,
-              count: counts.uncategorised,
-              active: shown.kind === "none",
-              group: "Collections",
-            },
-          ]
-        : []),
-    ],
-    [collection?.id, collections.data, counts, shown.kind],
+  /** A collection's own actions, in the navigation and, on a phone, beside its name. */
+  const collectionMenu = (item: Collection) => (
+    <ActionMenu
+      target={`the ${item.name} collection`}
+      dots="vertical"
+      className="size-6"
+      items={[
+        {
+          label: "Edit collection",
+          icon: "pencil-simple",
+          onSelect: () => {
+            setEditing({ open: true, collection: item });
+          },
+        },
+        {
+          label: "Delete collection",
+          icon: "trash",
+          destructive: true,
+          onSelect: () => void removeCollection(item),
+        },
+      ]}
+    />
   );
+
+  const nav: PageNavItem[] = [
+    {
+      href: HELP_PATH,
+      label: "All articles",
+      icon: "file-text",
+      count: counts?.total,
+      active: shown.kind === "all",
+    },
+    ...(collections.data ?? []).map((item) => ({
+      href: collectionHref(item.slug),
+      label: item.name,
+      icon: (props: PageNavIconProps) => <CollectionIcon name={item.icon} {...props} />,
+      count: item.articleCount,
+      active: collection?.id === item.id,
+      group: "Collections",
+      actions: collectionMenu(item),
+    })),
+    ...(counts && counts.uncategorised > 0
+      ? [
+          {
+            href: collectionHref(NO_COLLECTION),
+            label: "Not in a collection",
+            icon: "folder" as const,
+            count: counts.uncategorised,
+            active: shown.kind === "none",
+            group: "Collections",
+          },
+        ]
+      : []),
+  ];
 
   // The ticked rows belong to the list they were ticked in: another collection, search, filter
   // or page starts with none.
@@ -589,19 +612,9 @@ export function Articles() {
                     onValueChange={list.setSearch}
                     loading={isFetching && list.query !== ""}
                   />
+                  {/* On a phone, where the navigation is a row of names with no menus. */}
                   {collection ? (
-                    <Tooltip content="Edit collection">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`Edit the ${collection.name} collection`}
-                        onClick={() => {
-                          setEditing({ open: true, collection });
-                        }}
-                      >
-                        <Icon name="pencil-simple" />
-                      </Button>
-                    </Tooltip>
+                    <span className="md:hidden">{collectionMenu(collection)}</span>
                   ) : null}
                   <ActionButton
                     icon="plus"

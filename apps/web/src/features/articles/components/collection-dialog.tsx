@@ -12,7 +12,6 @@ import {
   FieldList,
   IconPicker,
   toast,
-  useConfirm,
   type FieldItem,
 } from "@helpwren/design-system";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +21,8 @@ import { useForm } from "react-hook-form";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
-import { collectionHref, HELP_PATH, useArticlesChanged } from "../hooks/use-articles";
+import { collectionHref, useArticlesChanged } from "../hooks/use-articles";
+import { useRemoveCollection } from "../hooks/use-remove-collection";
 import { collectionFormSchema, type CollectionFormValues } from "../schemas";
 
 export interface CollectionDialogProps {
@@ -80,7 +80,7 @@ function startingValues(collection: Collection | null): CollectionFormValues {
   };
 }
 
-/** The form that makes a collection, or renames, reorders and removes one. */
+/** The form that makes a collection, or renames, reorders and deletes one. */
 export function CollectionDialog({
   collection,
   collections,
@@ -90,7 +90,7 @@ export function CollectionDialog({
 }: CollectionDialogProps) {
   const router = useRouter();
   const getClient = useHelpwren();
-  const confirm = useConfirm();
+  const removeCollection = useRemoveCollection();
   const changed = useArticlesChanged();
   const form = useForm<CollectionFormValues>({
     resolver: zodResolver(collectionFormSchema),
@@ -143,31 +143,7 @@ export function CollectionDialog({
   }
 
   async function remove() {
-    if (!collection) return;
-    if (collection.articleCount > 0) {
-      toast.error("Move or remove this collection's articles first.");
-      return;
-    }
-    const confirmed = await confirm({
-      title: `Remove ${collection.name}?`,
-      description: "The collection is removed for good. It holds no articles.",
-      confirmLabel: "Remove",
-      tone: "destructive",
-    });
-    if (!confirmed) return;
-    try {
-      const result = await getClient().collections.remove(collection.id);
-      if (!result.ok && result.reason === "not_empty") {
-        toast.error("Move or remove this collection's articles first.");
-        return;
-      }
-      await changed();
-      onOpenChange(false);
-      router.push(HELP_PATH);
-      toast.success("Collection removed");
-    } catch {
-      toast.error("The collection could not be removed. Try again.");
-    }
+    if (collection && (await removeCollection(collection))) onOpenChange(false);
   }
 
   return (
@@ -209,7 +185,7 @@ export function CollectionDialog({
                 </Button>
               </div>
               <Button variant="destructive" size="sm" disabled={busy} onClick={() => void remove()}>
-                Remove collection
+                Delete collection
               </Button>
             </div>
           ) : null}
