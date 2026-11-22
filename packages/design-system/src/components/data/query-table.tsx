@@ -30,6 +30,7 @@ import {
   InlineError,
   StickyProgress,
 } from "./query-states";
+import { SelectionBar, type SelectionBarAction } from "./selection-bar";
 
 export interface QueryTableMessages extends Omit<
   QueryListMessages,
@@ -53,6 +54,17 @@ export interface QueryTableReorder<Item> extends Omit<DataTableReorder<Item>, "o
    * back while the change is on its way. Show a failure yourself; the rows then go back.
    */
   onReorder: (keys: DataTableKey[]) => unknown;
+}
+
+/** The rows ticked in a table, and what can be done to them. See `QueryTable`'s `selection`. */
+export interface QueryTableSelection<Item> {
+  /** What a row is called, so its tick box reads "Select Paying a deposit". */
+  label: (item: Item) => string;
+  selectedKeys: readonly DataTableKey[];
+  onSelectedKeysChange: (keys: DataTableKey[]) => void;
+  actions: readonly SelectionBarAction[];
+  /** While an action runs. */
+  busy?: boolean;
 }
 
 export interface QueryTableProps<Item>
@@ -92,6 +104,11 @@ export interface QueryTableProps<Item>
   pagination?: "pages" | "none";
   /** Lets people drag the rows into their own order. Leave it out while sorting or filtering. */
   reorder?: QueryTableReorder<Item> | undefined;
+  /**
+   * Lets people tick rows and act on them together. The bar with `actions` floats over the
+   * bottom of the table while any are ticked.
+   */
+  selection?: QueryTableSelection<Item> | undefined;
   /**
    * What the first load shows. `loader` (default) is the app's loader, the same as every other
    * list and detail; `skeleton` is rows in the table's shape, for a table whose layout should
@@ -142,6 +159,7 @@ function TableView<Item>({
   renderMobileRow,
   loadingRows,
   reorder,
+  selection,
   placeholder = "loader",
   // The table always scrolls in its own box, so pulling its top refreshes it. Not while rows
   // can be dragged into order, where a drag down from the top is a move.
@@ -180,6 +198,8 @@ function TableView<Item>({
   const byKey = new Map(items.map((item, index) => [getRowKey(item, index), item]));
   const rows = order ? order.flatMap((key) => byKey.get(key) ?? []) : items;
 
+  const selecting = selection !== undefined && selection.selectedKeys.length > 0;
+
   const emptyContent = filtered
     ? (emptyFiltered ?? (
         <EmptyState
@@ -193,7 +213,7 @@ function TableView<Item>({
     : (empty ?? <DefaultEmpty title={messages.empty} />);
 
   return (
-    <div data-slot="query-table" className={cn("flex min-h-0 flex-1 flex-col", className)}>
+    <div data-slot="query-table" className={cn("relative flex min-h-0 flex-1 flex-col", className)}>
       {typeof toolbar === "function" ? toolbar(state) : toolbar}
       <div
         data-slot="query-table-scroll"
@@ -218,6 +238,19 @@ function TableView<Item>({
             />
           ) : (
             <DataTable
+              {...(selection
+                ? {
+                    selectable: true,
+                    selectedKeys: selection.selectedKeys,
+                    onSelectedKeysChange: selection.onSelectedKeysChange,
+                    messages: {
+                      selectRow: (key: DataTableKey) => {
+                        const item = byKey.get(key);
+                        return `Select ${item === undefined ? `row ${key}` : selection.label(item)}`;
+                      },
+                    },
+                  }
+                : {})}
               caption={caption}
               columns={columns}
               rows={rows}
@@ -257,8 +290,27 @@ function TableView<Item>({
               retrying={isFetching}
             />
           ) : null}
+          {/* Room under the last row, so the bar never covers it. */}
+          {selecting ? <div aria-hidden="true" className="h-16" /> : null}
         </div>
       </div>
+      {/* Over the bottom of the rows, however few there are, above the page footer. */}
+      {selection && selecting ? (
+        <div className="relative z-20 h-0">
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-3">
+            <SelectionBar
+              className="pointer-events-auto"
+              count={selection.selectedKeys.length}
+              {...(noun ? { noun } : {})}
+              actions={selection.actions}
+              busy={selection.busy ?? false}
+              onClear={() => {
+                selection.onSelectedKeysChange([]);
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
       {status === "ready" ? (
         <QueryListFooter
           state={state}

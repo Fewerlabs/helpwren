@@ -19,3 +19,30 @@ const meta = {
 export default meta;
 
 export const RowActions: StoryObj<typeof meta> = {};
+
+/** An action that runs at once keeps the menu open, with a spinner, until it is done. */
+export const RunsInPlace: StoryObj<typeof meta> = {
+  args: {
+    target: "Paying a deposit",
+    items: [
+      { label: "Edit", icon: "pencil-simple", onSelect: () => undefined },
+      {
+        label: "Publish",
+        icon: "check-circle",
+        onSelect: () => new Promise((resolve) => setTimeout(resolve, 1500)),
+      },
+      {
+        label: "Move to",
+        icon: "folder",
+        choices: [
+          {
+            label: "Bookings",
+            onSelect: () => new Promise((resolve) => setTimeout(resolve, 1500)),
+          },
+          { label: "Account and payments", onSelect: () => undefined },
+        ],
+      },
+      { label: "Delete", icon: "trash", destructive: true, onSelect: () => undefined },
+    ],
+  },
+};

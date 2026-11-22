@@ -21,5 +21,12 @@ export {
   type QueryTableMessages,
   type QueryTableProps,
   type QueryTableReorder,
+  type QueryTableSelection,
 } from "./query-table";
 export type { QueryBehaviour, QueryErrorContext } from "./query-states";
+export {
+  SelectionBar,
+  type SelectionBarAction,
+  type SelectionBarChoice,
+  type SelectionBarProps,
+} from "./selection-bar";

@@ -255,4 +255,49 @@ describe("QueryTable", () => {
     expect(order()).toEqual(["Ticket 1", "Ticket 2", "Ticket 3"]);
     rect.mockRestore();
   });
+
+  it.each([false, true])(
+    "ticks rows by name and acts on them from a bar (rows draggable: %s)",
+    async (draggable) => {
+      const archive = vi.fn();
+      function Ticked() {
+        const [keys, setKeys] = useState<(string | number)[]>([]);
+        return (
+          <Table
+            queryFn={paged(tickets.slice(0, 3))}
+            {...(draggable
+              ? { reorder: { label: (ticket: Ticket) => ticket.subject, onReorder: vi.fn() } }
+              : {})}
+            selection={{
+              label: (ticket) => ticket.subject,
+              selectedKeys: keys,
+              onSelectedKeysChange: setKeys,
+              actions: [
+                {
+                  label: "Archive",
+                  onSelect: () => {
+                    archive(keys);
+                  },
+                },
+              ],
+            }}
+          />
+        );
+      }
+      render(<Ticked />);
+      const rows = within(await screen.findByRole("table"));
+      expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
+
+      await userEvent.click(rows.getByRole("checkbox", { name: "Select Ticket 2" }));
+      await userEvent.click(rows.getByRole("checkbox", { name: "Select Ticket 3" }));
+      expect(screen.getByRole("toolbar", { name: "Selected rows" })).toHaveTextContent(
+        "2 tickets selected",
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Archive" }));
+      expect(archive).toHaveBeenCalledWith([2, 3]);
+
+      await userEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+      expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
+    },
+  );
 });

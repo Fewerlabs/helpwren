@@ -205,7 +205,15 @@ link, as a button. Use `Link` instead when the result is navigation and it shoul
 list stays one line a row however many actions each has. Give it `target` (the button reads
 "More actions for Ada") and `items`, each with a `label`, an optional `icon` and `onSelect`.
 `destructive` items go last, in red, after a line; confirm them with a `ConfirmDialog`. For one or
-two actions that are always wanted, plain buttons beside the row are clearer.
+two actions that are always wanted, plain buttons beside the row are clearer. An action that runs
+at once, with nothing to confirm, returns its promise from `onSelect` (or sets `loading`): the
+menu stays open with a spinner in place of the item's icon, and closes when it is done. `choices`
+gives an item a menu of its own, such as "Move to" and the places to move to.
+
+**SelectionBar** is what can be done to the rows ticked in a table: how many are ticked, the
+actions, and a way to clear them, in a bar over the bottom of the table. Use it through
+`QueryTable`'s `selection` (`label`, `selectedKeys`, `onSelectedKeysChange`, `actions`, `busy`),
+which draws the tick boxes and the bar.
 
 **Link** is for navigation inside text. It is biro blue and always underlined. `external` opens a
 new tab, adds an icon and tells screen readers. `asChild` styles a router link. Use `Button` for
