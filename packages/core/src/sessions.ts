@@ -1,4 +1,4 @@
-import { isAuthRetryableFetchError } from "@supabase/supabase-js";
+import { isAuthApiError, isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { type Api } from "./api";
@@ -43,11 +43,40 @@ export function createSessions(supabase: HelpwrenSupabaseClient, api: Api) {
    */
   async function current(): Promise<Session | null> {
     const { data, error } = await supabase.auth.getClaims();
-    if (data) return { id: data.claims.sub, isGuest: data.claims.is_anonymous === true };
+    if (data) {
+      const session = { id: data.claims.sub, isGuest: data.claims.is_anonymous === true };
+      if (session.isGuest && !(await guestStillExists(session.id))) {
+        await supabase.auth.signOut({ scope: "local" });
+        return null;
+      }
+      return session;
+    }
     if (isAuthRetryableFetchError(error)) {
       throw new HelpwrenError("Could not check the session. Try again.", { cause: error });
     }
     return null;
+  }
+
+  // Guests already asked about on this page, so the server is asked once per guest.
+  const confirmed = new Map<string, Promise<boolean>>();
+
+  /**
+   * Whether the guest a session names is still known. The session is read on this device, and
+   * stays readable until it expires, up to an hour after the install deleted the guest (when
+   * a team clears out its contacts). Such a guest can send nothing, so the session is dropped
+   * and a new guest starts. Asked of the server once per page; a network failure counts as
+   * still there, so being offline never loses a guest.
+   */
+  function guestStillExists(id: string): Promise<boolean> {
+    let answer = confirmed.get(id);
+    if (!answer) {
+      answer = supabase.auth.getUser().then(
+        ({ error }) => !(isAuthApiError(error) && (error.status === 403 || error.status === 404)),
+        () => true,
+      );
+      confirmed.set(id, answer);
+    }
+    return answer;
   }
 
   async function signInGuest(): Promise<Session> {

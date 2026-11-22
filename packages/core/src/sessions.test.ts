@@ -19,7 +19,8 @@ const GUEST: Claims = { sub: "guest-1", is_anonymous: true };
 const NEW_GUEST_ID = "guest-2";
 
 /** A stand-in for Supabase Auth: what `getClaims` answers in turn, and what was asked of it. */
-function auth(answers: ClaimsResult[]) {
+function auth(answers: ClaimsResult[], userError: Error | null = null) {
+  const getUser = vi.fn(() => Promise.resolve({ data: { user: null }, error: userError }));
   const getClaims = vi.fn(() => Promise.resolve(answers.shift() ?? { data: null, error: null }));
   const signInAnonymously = vi.fn(() =>
     Promise.resolve({ data: { user: { id: NEW_GUEST_ID } }, error: null }),
@@ -28,12 +29,13 @@ function auth(answers: ClaimsResult[]) {
   const supabase = {
     auth: {
       getClaims,
+      getUser,
       signInAnonymously,
       signOut,
       getSession: () => Promise.resolve({ data: { session: null } }),
     },
   } as unknown as HelpwrenSupabaseClient;
-  return { supabase, getClaims, signInAnonymously, signOut };
+  return { supabase, getClaims, getUser, signInAnonymously, signOut };
 }
 
 /** The Helpwren API, answering each path as told and keeping a list of what was called. */
@@ -158,5 +160,31 @@ describe("sessions.reset", () => {
     const fake = auth([]);
     await expect(sessionsWith(fake, server({})).reset()).rejects.toBeInstanceOf(HelpwrenError);
     expect(fake.signOut).toHaveBeenCalled();
+  });
+
+  it("starts a new guest when the install deleted the one the session names", async () => {
+    const gone = new AuthApiError(
+      "User from sub claim in JWT does not exist",
+      403,
+      "user_not_found",
+    );
+    const fake = auth([{ data: { claims: GUEST }, error: null }], gone);
+    const api = server({ "POST /api/guest": noContent });
+
+    const session = await sessionsWith(fake, api).startGuest();
+
+    expect(fake.signOut).toHaveBeenCalledWith({ scope: "local" });
+    expect(session).toEqual({ id: NEW_GUEST_ID, isGuest: true });
+  });
+
+  it("keeps the guest when the server cannot be reached to ask", async () => {
+    const fake = auth([{ data: { claims: GUEST }, error: null }]);
+    fake.getUser.mockRejectedValueOnce(new TypeError("Load failed"));
+    const api = server({ "POST /api/guest": noContent });
+
+    const session = await sessionsWith(fake, api).startGuest();
+
+    expect(fake.signOut).not.toHaveBeenCalled();
+    expect(session).toEqual({ id: GUEST.sub, isGuest: true });
   });
 });
