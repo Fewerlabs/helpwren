@@ -21,7 +21,20 @@ Branding has four tabs, each with a live preview:
 - **Help center**: the same for `/help`, with its links and search settings. See
   [Search engines](../help-center/seo.md).
 
-The chat follows the visitor's light or dark setting.
+## Light and dark
+
+The chat in the widget is light unless you say otherwise, because it sits inside your page,
+which may not follow the visitor's device. Pass your page's theme with `theme`: `light`, `dark`,
+or `system` to follow the device. When your page switches, tell the chat:
+
+```js title="app.js"
+Helpwren.init({ theme: "dark" });
+
+// Later, when your site's theme changes:
+Helpwren.update({ theme: "light" });
+```
+
+The chat page (`/chat`) and the help center follow the visitor's own choice, or their device.
 
 ## Tabs
 
@@ -83,7 +96,10 @@ and on the chat page, the panel keeps its size.
 theme:
 
 ```js title="app.js"
-Helpwren.update({ appearance: { accent: dark ? "#7fb59a" : "#3d6b57" } });
+Helpwren.update({
+  theme: dark ? "dark" : "light",
+  appearance: { accent: dark ? "#7fb59a" : "#3d6b57" },
+});
 ```
 
 The welcome message beside the launcher can be turned off for a page with `welcome: false`.

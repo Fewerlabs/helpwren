@@ -1,11 +1,12 @@
 import {
   CHANNEL,
   type ArticleFilter,
+  type ChatTheme,
   type IdentityState,
   type PageContext,
   type PageMessage,
 } from "helpwren/protocol";
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Linking, type StyleProp, type ViewStyle } from "react-native";
 import { WebView } from "react-native-webview";
 import type {
@@ -47,6 +48,11 @@ export interface SupportScreenProps {
    * home leads with them under "Help for this page", in place of the team's rules.
    */
   filter?: ArticleFilter;
+  /**
+   * `light` (default), `dark`, or `system` to follow the phone. Pass your app's own theme so the
+   * chat matches it; a change is sent to the open chat without reloading it.
+   */
+  theme?: ChatTheme;
   /** Opens this conversation, as when the person taps a notification about it. */
   conversationId?: string;
   /** The number of replies the person has not read, whenever it changes. */
@@ -70,6 +76,7 @@ export function SupportScreen({
   context,
   filter,
   conversationId,
+  theme = "light",
   onUnread,
   onIdentity,
   onClose,
@@ -79,10 +86,30 @@ export function SupportScreen({
   const ready = useRef(false);
   const retried = useRef(false);
   // The latest props, for the message handler, which is not remade on every render.
-  const latest = useRef({ token, context, filter, conversationId, onUnread, onIdentity, onClose });
-  useLayoutEffect(() => {
-    latest.current = { token, context, filter, conversationId, onUnread, onIdentity, onClose };
+  const latest = useRef({
+    token,
+    context,
+    filter,
+    conversationId,
+    theme,
+    onUnread,
+    onIdentity,
+    onClose,
   });
+  useLayoutEffect(() => {
+    latest.current = {
+      token,
+      context,
+      filter,
+      conversationId,
+      theme,
+      onUnread,
+      onIdentity,
+      onClose,
+    };
+  });
+  // The address the chat loads, made once: a new theme is sent as a message, not by reloading.
+  const [startTheme] = useState(theme);
 
   const deliver = useCallback((message: PageMessage) => {
     view.current?.injectJavaScript(deliveryScript(message));
@@ -121,6 +148,10 @@ export function SupportScreen({
         })) {
           deliver(each);
         }
+        // Changed since the address was made, so a reloaded chat keeps it.
+        if (props.theme !== startTheme) {
+          deliver({ channel: CHANNEL, type: "theme", theme: props.theme });
+        }
         void sendIdentity();
       } else if (message.type === "unread") {
         props.onUnread?.(message.count);
@@ -141,7 +172,7 @@ export function SupportScreen({
         props.onIdentity?.(state);
       }
     },
-    [baseUrl, deliver, sendIdentity],
+    [baseUrl, deliver, sendIdentity, startTheme],
   );
 
   // Logging in or out while the screen is open. A function is the same login however often it
@@ -167,6 +198,10 @@ export function SupportScreen({
   }, [contextJson, deliver]);
 
   useEffect(() => {
+    if (ready.current) deliver({ channel: CHANNEL, type: "theme", theme });
+  }, [deliver, theme]);
+
+  useEffect(() => {
     if (ready.current && conversationId) {
       deliver({ channel: CHANNEL, type: "open", conversationId });
     }
@@ -186,7 +221,7 @@ export function SupportScreen({
     <ChatView
       ref={view}
       style={style}
-      source={{ uri: embedUrl(baseUrl, source) }}
+      source={{ uri: embedUrl(baseUrl, source, startTheme) }}
       originWhitelist={[new URL(baseUrl).origin]}
       onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
       onMessage={onMessage}

@@ -16,6 +16,21 @@ export const styles = `
   --hw-ink: #18181b;
 }
 
+/* The page asked for dark, or for the device's setting on a dark device (the chat's own dark
+   tokens: --card-surface, --rule and --ink). */
+:host([data-theme="dark"]) {
+  --hw-surface: #161616;
+  --hw-edge: #262626;
+  --hw-ink: #e5e5e5;
+}
+@media (prefers-color-scheme: dark) {
+  :host([data-theme="system"]) {
+    --hw-surface: #161616;
+    --hw-edge: #262626;
+    --hw-ink: #e5e5e5;
+  }
+}
+
 * { box-sizing: border-box; }
 
 .launcher {

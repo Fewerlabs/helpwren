@@ -26,6 +26,7 @@ The chat as a screen.
 | `token`          | `string \| () => string \| Promise<string>` | The logged-in user's token, checked as **Settings → Identity** says. Leave out for guests |
 | `context`        | `PageContext`                               | Plain values your team sees beside the conversation. See [Context](../users/context.md)   |
 | `conversationId` | `string`                                    | Opens that conversation, for a tapped notification                                        |
+| `theme`          | `"light" \| "dark" \| "system"`             | Your app's theme; `system` follows the phone. Default `light`. A change needs no reload   |
 | `onUnread`       | `(count: number) => void`                   | Called with the number of unread replies whenever it changes                              |
 | `onIdentity`     | `(state: IdentityState) => void`            | Called when the chat signs in as your user, goes back to a guest, or fails to sign in     |
 | `onClose`        | `() => void`                                | Shows a close button in the chat that calls this                                          |

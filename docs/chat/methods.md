@@ -15,7 +15,7 @@ returns an object with the same methods from `createWidget`.
 | `Helpwren.identify({ ... })`       | Says who the visitor is. See [Know your users](../users/index.md).                                                             |
 | `Helpwren.reset()`                 | Forgets who the visitor is. Call it when they log out.                                                                         |
 | `Helpwren.setContext({ ... })`     | Tells the team where the visitor is, such as `{ plan: "pro", orderId: 1234 }`. See [Context](../users/context.md).             |
-| `Helpwren.update({ ... })`         | Changes `appearance` or `layout` after `init`, for example when your site switches theme.                                      |
+| `Helpwren.update({ ... })`         | Changes `appearance`, `layout` or `theme` after `init`, for example when your site switches theme.                             |
 | `Helpwren.on(event, listener)`     | Listens for an [event](events.md). Returns a function that stops listening.                                                    |
 | `Helpwren.destroy()`               | Takes the widget off the page. `init` can add it again.                                                                        |
 | `Helpwren.embedHelp(element, {})`  | Puts the help center in a frame inside `element`, sized to fit. Needs no `init`. See [Embedding](../help-center/embedding.md). |

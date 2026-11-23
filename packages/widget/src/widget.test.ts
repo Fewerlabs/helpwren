@@ -507,6 +507,39 @@ describe("preview", () => {
   });
 });
 
+describe("theme", () => {
+  it("is light unless the page asks, and leaves the address alone", () => {
+    widget.init();
+    expect(new URL(parts().frame.src).searchParams.has("theme")).toBe(false);
+    expect(host().dataset.theme).toBe("light");
+  });
+
+  it("starts the chat in the page's theme, and tells it when the page changes", () => {
+    widget.init({ theme: "dark" });
+    const { frame } = parts();
+    expect(new URL(frame.src).searchParams.get("theme")).toBe("dark");
+    expect(host().dataset.theme).toBe("dark");
+    if (!frame.contentWindow) throw new Error("The frame has no window.");
+    const post = vi.spyOn(frame.contentWindow, "postMessage");
+
+    receive({ channel: "helpwren", type: "ready" });
+    // Already in the address, so not said again.
+    expect(post).not.toHaveBeenCalledWith(expect.objectContaining({ type: "theme" }), APP);
+
+    widget.update({ theme: "system" });
+    expect(host().dataset.theme).toBe("system");
+    expect(post).toHaveBeenLastCalledWith(
+      { channel: "helpwren", type: "theme", theme: "system" },
+      APP,
+    );
+
+    // A reloaded frame still has the old address, so it hears the theme again.
+    post.mockClear();
+    receive({ channel: "helpwren", type: "ready" });
+    expect(post).toHaveBeenCalledWith({ channel: "helpwren", type: "theme", theme: "system" }, APP);
+  });
+});
+
 describe("welcome message", () => {
   const teaser = () => {
     const root = host().shadowRoot;

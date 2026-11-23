@@ -4,6 +4,7 @@ import {
   CHANNEL,
   isFrameMessage,
   type ArticleFilter,
+  type ChatTheme,
   type HelpArticle,
   type IdentityState,
   type LatestUnread,
@@ -18,6 +19,7 @@ export { createHelpEmbed, helpEmbedUrl } from "./help-embed";
 export type { HelpEmbedOptions, HelpEmbedPart } from "./help-embed";
 export type {
   ArticleFilter,
+  ChatTheme,
   HelpArticle,
   IdentityState,
   PageContext,
@@ -80,6 +82,11 @@ export interface InitOptions {
   preview?: WidgetPreview;
   /** Whether the chat starts open. Default false. */
   open?: boolean;
+  /**
+   * `light` (default), `dark`, or `system` to follow the visitor's device. Pass your page's own
+   * theme so the chat matches it, and change it later with `update({ theme })`.
+   */
+  theme?: ChatTheme;
 }
 
 /** What a preview shows in place of the install's saved settings. Nothing in one is sent. */
@@ -155,7 +162,11 @@ export interface HelpwrenWidget {
    */
   openHelp: (collection?: string | readonly string[]) => void;
   /** Changes how the widget looks or is laid out after `init`. */
-  update: (changes: { appearance?: Partial<Appearance>; layout?: WidgetLayout }) => void;
+  update: (changes: {
+    appearance?: Partial<Appearance>;
+    layout?: WidgetLayout;
+    theme?: ChatTheme;
+  }) => void;
   /** Listens for an event. Returns a function that stops listening. */
   on: <Event extends keyof HelpwrenEvents>(
     event: Event,
@@ -235,6 +246,9 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
   let retriedToken = false;
   // What the host page asked for, kept so it still applies after the install's settings load.
   let overrides: Partial<Appearance> = {};
+  // Light or dark, and the one the frame's address started it with.
+  let theme: ChatTheme = "light";
+  let frameStartTheme: ChatTheme = "light";
   let triggers: Element[] = [];
   let inline = false;
   let showWelcome = true;
@@ -739,6 +753,8 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     // Addressed to the app's origin only, so no other site loaded in the frame could read it.
     frame.contentWindow?.postMessage(hello, appOrigin);
     sendLayout();
+    // Changed with `update` since the frame's address was made, so a reloaded frame keeps it.
+    if (theme !== frameStartTheme) post({ channel: CHANNEL, type: "theme", theme });
     if (context || filter) sendContext();
     void sendIdentity();
   }
@@ -771,8 +787,11 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
     init(options = {}) {
       if (mounted) return;
 
+      theme = options.theme ?? "light";
+      frameStartTheme = theme;
       const host = document.createElement("div");
       host.dataset.helpwren = "";
+      host.dataset.theme = theme;
       const root = host.attachShadow({ mode: "open" });
       const style = document.createElement("style");
       style.textContent = styles;
@@ -788,6 +807,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       const url = new URL("/embed", appOrigin);
       url.searchParams.set("source", options.source ?? "web");
       if (options.preview) url.searchParams.set("preview", "1");
+      if (theme !== "light") url.searchParams.set("theme", theme);
       frame.src = url.href;
       panel.append(frame);
       root.append(style, panel);
@@ -905,6 +925,11 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
         paint();
       }
       applyLayout(changes.layout);
+      if (changes.theme && changes.theme !== theme) {
+        theme = changes.theme;
+        if (mounted) mounted.host.dataset.theme = theme;
+        post({ channel: CHANNEL, type: "theme", theme });
+      }
     },
 
     preview(preview) {

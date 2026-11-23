@@ -2,15 +2,17 @@ import {
   CHANNEL,
   isFrameMessage,
   type ArticleFilter,
+  type ChatTheme,
   type FrameMessage,
   type PageContext,
   type PageMessage,
 } from "helpwren/protocol";
 
 /** The chat's own page, which the web view loads. `source` is the app's name. */
-export function embedUrl(baseUrl: string, source: string): string {
+export function embedUrl(baseUrl: string, source: string, theme: ChatTheme = "light"): string {
   const url = new URL("/embed", baseUrl);
   url.searchParams.set("source", source);
+  if (theme !== "light") url.searchParams.set("theme", theme);
   return url.href;
 }
 

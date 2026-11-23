@@ -5,7 +5,19 @@ import { deliveryScript, embedUrl, greeting, isOnInstall, readFrameMessage } fro
 const BASE = "https://support.example.com";
 
 describe("the bridge between the app and the chat", () => {
-  it("loads the install's chat page, saying which of its sources the app is", () => {
+  it("asks for a dark chat, or the phone's setting, only when the app wants one", () => {
+    expect(embedUrl(BASE, "customer_app", "light")).toBe(
+      "https://support.example.com/embed?source=customer_app",
+    );
+    expect(embedUrl(BASE, "customer_app", "dark")).toBe(
+      "https://support.example.com/embed?source=customer_app&theme=dark",
+    );
+    expect(embedUrl(BASE, "customer_app", "system")).toBe(
+      "https://support.example.com/embed?source=customer_app&theme=system",
+    );
+  });
+
+  it("loads the install's chat page, saying which app it is", () => {
     expect(embedUrl(BASE, "customer_app")).toBe(
       "https://support.example.com/embed?source=customer_app",
     );

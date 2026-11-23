@@ -16,7 +16,7 @@ Helpwren.init({
 
 | Option       | What it does                                                                                                                                              |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `source`     | Which of the install's [sources](../concepts.md#source) this page is. Default `web`.                                                                      |
+| `source`     | This page's name, shown to your team as the [channel](../concepts.md#channel). Default `web`.                                                             |
 | `launcher`   | `false` hides the round button, for a site that opens the chat from its own.                                                                              |
 | `trigger`    | Your own buttons or links that open and close the chat: a CSS selector, an element or a list of elements. Each gets `aria-expanded`.                      |
 | `mode`       | `floating` (default) is a launcher and a panel. `inline` puts the chat straight into `container`, always open, with no launcher.                          |
@@ -25,6 +25,7 @@ Helpwren.init({
 | `layout`     | `width` (320 to 640, default 400) and `height` (420 to 900, default 680) of the floating panel in pixels, and `zIndex`.                                   |
 | `welcome`    | `false` keeps the welcome message and quick replies from showing beside the launcher.                                                                     |
 | `open`       | `true` starts with the chat open.                                                                                                                         |
+| `theme`      | `light` (default), `dark`, or `system` to follow the visitor's device. See [Light and dark](appearance.md#light-and-dark).                                |
 
 > [!NOTE]
 > Values outside a range are brought into it, and anything that is not a valid colour, number or

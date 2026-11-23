@@ -86,7 +86,18 @@ export type PageMessage =
    * Whether the panel can grow to a reading size (a floating panel on a wide screen), and
    * whether it has. Sent after `hello`, and again whenever either changes.
    */
-  | { channel: typeof CHANNEL; type: "layout"; expandable: boolean; expanded: boolean };
+  | { channel: typeof CHANNEL; type: "layout"; expandable: boolean; expanded: boolean }
+  /** Light or dark, to match the page, or the visitor's device setting. Replaces what was set. */
+  | { channel: typeof CHANNEL; type: "theme"; theme: ChatTheme };
+
+/**
+ * How the chat looks: `light` (the default), `dark`, or `system` to follow the visitor's
+ * device. Pass your page's or app's own theme so the chat matches it.
+ */
+export type ChatTheme = "light" | "dark" | "system";
+
+/** The themes the chat takes, for checking a value from elsewhere. */
+export const CHAT_THEMES: readonly ChatTheme[] = ["light", "dark", "system"];
 
 /** What a page says about a visitor without proof. Shown to the team; unlocks nothing. */
 export interface VisitorDetails {
