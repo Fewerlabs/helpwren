@@ -10,6 +10,10 @@ a guest key, in a cookie no script can read. If the browser loses the session, b
 the site's storage, or a phone froze the tab at the wrong moment, the key brings the guest's
 conversations back the next time the chat opens. The visitor sees nothing of this.
 
+If your team deletes the guest's contact, for example when clearing out old contacts, the chat
+notices the next time it opens on a page. It drops the old session and starts a new guest, so
+the visitor can keep writing.
+
 A visitor who logs out of your product, when you [identify your users](../users/index.md) and
 call `Helpwren.reset()`, gives the key up, so the next person at a shared computer starts fresh.
 

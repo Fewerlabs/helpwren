@@ -11,6 +11,10 @@ A collection groups articles, such as Getting started or Billing. Each has a nam
 characters), a slug for its address (`/help/billing`), an optional description (up to 300
 characters) and an icon. The order you give collections is the order readers see.
 
+Each collection in the help center's list has a menu beside its count to edit or delete it. On a
+phone the menu is beside the collection's name. Deleting a collection that holds articles keeps
+the articles: they become drafts in no collection.
+
 ## Write an article
 
 1. In the dashboard, open **Help center** and create an article.
@@ -35,12 +39,27 @@ team only.
 > A published article needs a collection, and its slug cannot change once published, so links
 > to it keep working.
 
+## Change many articles at once
+
+Tick articles in the list, then choose from the bar at the bottom of the table: **Publish**,
+**Unpublish**, **Move** to another collection, or **Delete**. Each row's menu has the same
+actions for that one article.
+
+- Unpublish and Delete ask first. Publish and Move run straight away.
+- Publish skips articles in no collection: they stay drafts, and the dashboard says how many were
+  published.
+- Moved articles go to the end of the collection.
+
+In code, `articles.publishMany`, `unpublishMany`, `moveMany` and `removeMany` take a list of
+article ids and return `{ changed }`, the number of articles changed.
+
 ## Where readers find articles
 
 - **`/help`**: the public help center, with a page for each collection and article, and search.
   Your brand, header and footer links come from **Settings → Branding → Help center**.
 - **The chat**: the home screen shows up to three featured articles and **Search all
-  articles**; the Help tab lists the collections and searches them.
+  articles**; the Help tab lists the collections and searches them. The Help tab can be turned
+  off: see [Tabs](../chat/appearance.md#tabs).
 - **Your own site**: [embed the help center](embedding.md) in a page, or
   [serve it at your own `/help`](own-site.md).
 

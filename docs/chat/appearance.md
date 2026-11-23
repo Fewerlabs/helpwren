@@ -13,14 +13,30 @@ Branding has four tabs, each with a live preview:
   and gradients), button colour, and whether to show "Powered by Helpwren".
 - **Widget**: the launcher's position (bottom right or bottom left), its icon (a chat bubble,
   the wren in a bubble, or your logo), its space from the side and the bottom (0 to 120
-  pixels), the greeting and the line under it, a welcome message shown beside the launcher, and
-  up to five quick replies of up to 60 characters each.
+  pixels), the greeting and the line under it, a welcome message shown beside the launcher,
+  up to five quick replies of up to 60 characters each, and which tabs the chat shows. See
+  [Tabs](#tabs).
 - **Chat page**: the title, the line under it, and the background (brand colour, plain or a
   picture) of `/chat`.
 - **Help center**: the same for `/help`, with its links and search settings. See
   [Search engines](../help-center/seo.md).
 
 The chat follows the visitor's light or dark setting.
+
+## Tabs
+
+The chat has three tabs along the bottom: **Home**, **Messages** and **Help**. Under
+**Settings → Branding → Widget → Tabs** you can turn Home and Help off. Messages always shows.
+
+| Tabs shown     | What the visitor sees                      |
+| -------------- | ------------------------------------------ |
+| All three      | The chat opens on Home                     |
+| No Home        | The chat opens on Messages                 |
+| No Help        | Home leaves out **Search all articles**    |
+| Messages alone | No row of tabs; the chat opens on Messages |
+
+The home screen lists the ways to write first, then the visitor's most recent conversation, then
+[help for the page](../contextual-help.md) and suggested articles.
 
 ## Change it for one page
 

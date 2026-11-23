@@ -6,7 +6,7 @@ A page describes the articles it wants with a **filter**. You can set the filter
 code, or let your team map pages to filters with **rules** in the dashboard, so the page needs
 no code at all. The same filter drives three ways of showing the results:
 
-1. **In the chat.** The chat's home screen leads with "Help for this page".
+1. **In the chat.** The chat's home screen shows "Help for this page".
 2. **Inline.** A `data-helpwren-help` element that the widget script fills with article links.
 3. **Your own design.** `GET /api/articles` or `POST /api/articles/search`, or
    `Helpwren.findArticles(filter)`, returns the list for you to draw.
@@ -106,7 +106,8 @@ instead.
 ## Show the help in the chat
 
 Nothing to do: once a page has a filter or a rule, or the fallback finds something, the chat's
-home screen leads with **Help for this page**. The team's featured articles follow under
+home screen shows **Help for this page**, under the ways to write and the visitor's recent
+conversation. The team's featured articles follow under
 "Suggested articles", less any already listed. A click opens the article inside the chat.
 
 When the visitor starts a conversation, the filter or the rule that applied, and any fallback
