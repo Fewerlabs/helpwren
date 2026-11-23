@@ -241,6 +241,20 @@ export const ARTICLE_IMAGE_TYPES = {
   "image/gif": "gif",
 } as const;
 
+/** A picture already uploaded for an article, to use again. */
+export interface ArticleImage {
+  /** Its public address, to put in a body. */
+  url: string;
+  name: string;
+  createdAt: string | null;
+}
+
+export interface ArticleImagePage {
+  images: ArticleImage[];
+  /** Where the next page starts, or `null` at the end. */
+  nextOffset: number | null;
+}
+
 export type UploadArticleImageResult =
   { ok: true; url: string } | { ok: false; reason: "forbidden" | "too_large" | "unsupported" };
 
@@ -617,6 +631,31 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
         throw new HelpwrenError("Could not store the picture.", { cause: error });
       }
       return { ok: true, url: bucket.getPublicUrl(path).data.publicUrl };
+    },
+
+    /**
+     * The pictures already uploaded for articles, newest first, a page at a time, so one can be
+     * used again. For the team.
+     */
+    async listImages({ offset = 0, limit = 48 }: { offset?: number; limit?: number } = {}) {
+      const bucket = supabase.storage.from(IMAGE_BUCKET);
+      // One more than asked for says whether there is another page.
+      const { data, error } = await bucket.list("", {
+        offset,
+        limit: limit + 1,
+        sortBy: { column: "created_at", order: "desc" },
+      });
+      if (error) throw new HelpwrenError("Could not load the pictures.", { cause: error });
+      const files = data.filter((file) => file.id !== null && !file.name.startsWith("."));
+      const page: ArticleImagePage = {
+        images: files.slice(0, limit).map((file) => ({
+          url: bucket.getPublicUrl(file.name).data.publicUrl,
+          name: file.name,
+          createdAt: file.created_at ?? null,
+        })),
+        nextOffset: data.length > limit ? offset + limit : null,
+      };
+      return page;
     },
   };
 }

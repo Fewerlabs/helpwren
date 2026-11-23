@@ -536,4 +536,21 @@ describe("the help center, for the team", () => {
       agent.articles.uploadImage(new Blob(["<svg/>"], { type: "image/svg+xml" })),
     ).resolves.toEqual({ ok: false, reason: "unsupported" });
   });
+
+  it("lists the pictures already uploaded, newest first, to use one again", async () => {
+    const agent = await signedIn("sam@example.com");
+    const picture = () => new Blob([new Uint8Array(8)], { type: "image/png" });
+    const first = await agent.articles.uploadImage(picture());
+    const second = await agent.articles.uploadImage(picture());
+    if (!first.ok || !second.ok) throw new Error("A picture was refused.");
+    for (const { url } of [first, second]) uploaded.push(url.slice(url.lastIndexOf("/") + 1));
+
+    const page = await agent.articles.listImages({ limit: 1 });
+    expect(page.images.map((image) => image.url)).toEqual([second.url]);
+    expect(page.nextOffset).toBe(1);
+    const next = await agent.articles.listImages({ offset: 1, limit: 1 });
+    expect(next.images.map((image) => image.url)).toEqual([first.url]);
+
+    await expect(visitor().articles.listImages()).resolves.toMatchObject({ images: [] });
+  });
 });

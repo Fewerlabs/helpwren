@@ -38,11 +38,33 @@ export interface RichTextEditorProps {
    * yourself, with a `toast`). Without it the editor offers no pictures.
    */
   uploadImage?: (file: File) => Promise<string | null>;
+  /**
+   * A window to add a picture from, such as `ImageLibraryDialog`, in place of going straight to
+   * the computer's file picker. It is given whether it is open, and what to do with new files
+   * or with the address of a picture already uploaded.
+   */
+  imagePicker?: (picker: RichTextImagePicker) => ReactNode;
   /** Shown on the empty line the caret is on. */
   placeholder?: string;
   disabled?: boolean;
   className?: string;
 }
+
+/** What `RichTextEditor`'s `imagePicker` is given. */
+export interface RichTextImagePicker {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Uploads new pictures and puts them in. */
+  upload: (files: File[]) => void;
+  /** Puts in a picture already uploaded. */
+  insert: (url: string) => void;
+}
+
+/** The pictures the editor takes, as a file picker's `accept`. */
+export const richTextImageTypes = "image/png,image/jpeg,image/webp,image/gif";
+
+const imagesIn = (files: FileList | undefined | null) =>
+  [...(files ?? [])].filter((file) => file.type.startsWith("image/"));
 
 /** A web address as typed, made whole: `example.com` becomes `https://example.com`. */
 function completeAddress(value: string): string {
@@ -52,9 +74,6 @@ function completeAddress(value: string): string {
     ? `mailto:${address}`
     : `https://${address}`;
 }
-
-const imagesIn = (files: FileList | undefined | null) =>
-  [...(files ?? [])].filter((file) => file.type.startsWith("image/"));
 
 interface ToolProps {
   label: string;
@@ -218,6 +237,7 @@ export function RichTextEditor({
   defaultValue,
   onChange,
   uploadImage,
+  imagePicker,
   placeholder = "Write, or type / for blocks",
   disabled = false,
   className,
@@ -227,12 +247,14 @@ export function RichTextEditor({
   const [slash, setSlash] = useState<SlashMenuState | null>(null);
   const [slashIndex, setSlashIndex] = useState(0);
   const [adding, setAdding] = useState(false);
+  const [picking, setPicking] = useState(false);
   /** Which one-line form the floating bar is showing in place of its buttons. */
   const [field, setField] = useState<"link" | "description" | null>(null);
 
   const pickFile = useCallback(() => {
-    fileInput.current?.click();
-  }, []);
+    if (imagePicker) setPicking(true);
+    else fileInput.current?.click();
+  }, [imagePicker]);
   const choices = useMemo<readonly BlockChoice[]>(
     () =>
       uploadImage
@@ -241,14 +263,16 @@ export function RichTextEditor({
             {
               id: "picture",
               label: "Picture",
-              hint: "Upload an image from your computer",
+              hint: imagePicker
+                ? "Upload an image, or use one already uploaded"
+                : "Upload an image from your computer",
               icon: "image",
               keywords: "image photo screenshot upload",
               run: pickFile,
             },
           ]
         : blockChoices,
-    [uploadImage, pickFile],
+    [uploadImage, imagePicker, pickFile],
   );
 
   // The editor is made once, so it reads whatever is current from here.
@@ -557,12 +581,27 @@ export function RichTextEditor({
         </div>
       ) : null}
 
+      {uploadImage && imagePicker && editor
+        ? // eslint-disable-next-line react-hooks/refs -- upload and insert run later, on a click, never while drawing
+          imagePicker({
+            open: picking,
+            onOpenChange: setPicking,
+            upload: (files) => {
+              insertImages.current(files);
+            },
+            insert: (url) => {
+              touched.current = true;
+              editor.chain().focus().setImage({ src: url, alt: "" }).run();
+            },
+          })
+        : null}
+
       {uploadImage ? (
         <input
           ref={fileInput}
           type="file"
           aria-label="Picture file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
+          accept={richTextImageTypes}
           className="sr-only"
           tabIndex={-1}
           onChange={(event) => {

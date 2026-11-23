@@ -87,6 +87,8 @@ export {
   type ListArticlesOptions,
   type RemoveArticleResult,
   type SearchArticlesOptions,
+  type ArticleImage,
+  type ArticleImagePage,
   type UploadArticleImageResult,
 } from "./articles";
 export {

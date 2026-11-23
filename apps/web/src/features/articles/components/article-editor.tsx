@@ -24,6 +24,7 @@ import {
   cn,
   Field,
   Icon,
+  ImageLibraryDialog,
   Input,
   KeyValueInput,
   Popover,
@@ -31,6 +32,7 @@ import {
   PopoverTrigger,
   QueryDetail,
   RichTextEditor,
+  richTextImageTypes,
   Select,
   SelectContent,
   SelectItem,
@@ -81,6 +83,11 @@ const failures: Record<Failure, string> = {
   slug_locked: "A published article keeps its slug. Unpublish it to change it.",
   needs_collection: "Choose a collection first. A published article has to be in one.",
 };
+
+const uploadedAt = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
 
 const uploadFailures = {
   forbidden: "You are not allowed to add pictures.",
@@ -740,6 +747,31 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
               defaultValue={article.body}
               onChange={setBody}
               uploadImage={uploadImage}
+              imagePicker={(picker) => (
+                <ImageLibraryDialog
+                  open={picker.open}
+                  onOpenChange={picker.onOpenChange}
+                  queryKey={[...ARTICLES_QUERY_KEY, "images"]}
+                  queryFn={async ({ cursor }) => {
+                    const page = await getClient().articles.listImages({ offset: cursor ?? 0 });
+                    return {
+                      // Stored under made-up names, so each is told apart by when it came.
+                      items: page.images.map(({ url, createdAt }) => ({
+                        url,
+                        ...(createdAt
+                          ? { name: `picture from ${uploadedAt.format(new Date(createdAt))}` }
+                          : {}),
+                      })),
+                      nextCursor: page.nextOffset,
+                    };
+                  }}
+                  accept={richTextImageTypes}
+                  onUpload={picker.upload}
+                  onChoose={(image) => {
+                    picker.insert(image.url);
+                  }}
+                />
+              )}
             />
           </div>
         </div>

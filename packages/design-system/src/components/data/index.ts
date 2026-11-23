@@ -1,6 +1,11 @@
 // Components that fetch through TanStack Query. They know nothing about endpoints:
 // the caller supplies the key and the function. They need a QueryClientProvider.
 export {
+  ImageLibraryDialog,
+  type ImageLibraryDialogProps,
+  type LibraryImage,
+} from "./image-library-dialog";
+export {
   QueryDetail,
   type QueryDetailMessages,
   type QueryDetailProps,

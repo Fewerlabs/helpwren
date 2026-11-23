@@ -25,7 +25,12 @@ export {
   type RichTextNode,
   type RichTextProps,
 } from "./rich-text/rich-text";
-export { RichTextEditor, type RichTextEditorProps } from "./rich-text-editor/rich-text-editor";
+export {
+  RichTextEditor,
+  richTextImageTypes,
+  type RichTextEditorProps,
+  type RichTextImagePicker,
+} from "./rich-text-editor/rich-text-editor";
 export { SearchField, type SearchFieldProps } from "./search-field/search-field";
 export {
   TypingIndicator,

@@ -126,6 +126,50 @@ describe("RichTextEditor", () => {
     expect(uploadImage).toHaveBeenCalledOnce();
   });
 
+  it("opens the picture window it was given, and puts in what it picks or uploads", async () => {
+    const uploadImage = vi.fn(() => Promise.resolve("https://example.com/new.png"));
+    const { latest, add } = await setup({
+      uploadImage,
+      imagePicker: ({ open, onOpenChange, upload, insert }) =>
+        open ? (
+          <div role="dialog" aria-label="Pictures">
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                insert("https://example.com/old.png");
+              }}
+            >
+              Old
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                upload([new File(["x"], "new.png", { type: "image/png" })]);
+              }}
+            >
+              New
+            </button>
+          </div>
+        ) : null,
+    });
+
+    await add("Picture");
+    await userEvent.click(await screen.findByRole("button", { name: "Old" }));
+    await waitFor(() => {
+      expect(JSON.stringify(latest())).toContain('"src":"https://example.com/old.png"');
+    });
+    expect(uploadImage).not.toHaveBeenCalled();
+
+    await add("Picture");
+    await userEvent.click(await screen.findByRole("button", { name: "New" }));
+    await waitFor(() => {
+      expect(JSON.stringify(latest())).toContain('"src":"https://example.com/new.png"');
+    });
+    expect(screen.queryByRole("dialog", { name: "Pictures" })).toBeNull();
+  });
+
   it("offers no pictures without a way to store them", async () => {
     await setup();
     await userEvent.click(screen.getByRole("button", { name: "Add block" }));
