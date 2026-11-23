@@ -22,5 +22,3 @@ supabase/.branches
 AGENTS.md
 CLAUDE.md
 GEMINI.md
-examples/nextjs
-apps/web/e2e/glown

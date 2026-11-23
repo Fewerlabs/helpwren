@@ -8,13 +8,13 @@ import {
   sampleEmail,
 } from "./templates";
 
-const brand = { name: "Glown", accent: "#f1635e" };
+const brand = { name: "Acme", accent: "#f1635e" };
 
 describe("fillPlaceholders", () => {
   it("puts values in, with or without spaces, and drops ones it does not know", () => {
     expect(
-      fillPlaceholders("Hi {{name}}, from {{ brand }}{{nope}}.", { name: "Amara", brand: "Glown" }),
-    ).toBe("Hi Amara, from Glown.");
+      fillPlaceholders("Hi {{name}}, from {{ brand }}{{nope}}.", { name: "Amara", brand: "Acme" }),
+    ).toBe("Hi Amara, from Acme.");
   });
 
   it("leaves no double space where a placeholder was empty", () => {
@@ -26,7 +26,7 @@ describe("fillPlaceholders", () => {
 
 describe("buildEmail", () => {
   const variables = {
-    brand: "Glown",
+    brand: "Acme",
     name: "Amara",
     ticket: "#1042 Can't move my booking",
     replies: "2 new replies",
@@ -42,7 +42,7 @@ describe("buildEmail", () => {
       answerable: false,
     });
     expect(email.subject).toBe("Re: #1042 Can't move my booking");
-    expect(email.text).toContain("You have 2 new replies from Glown");
+    expect(email.text).toContain("You have 2 new replies from Acme");
     expect(email.text).not.toContain(REPLY_HINT);
   });
 
@@ -77,7 +77,7 @@ describe("buildEmail", () => {
 
   it("makes a sample of each email for the preview", () => {
     const email = buildEmail(sampleEmail({ brand, kind: "chatReply", template: undefined }));
-    expect(email.subject).toBe("New reply from Glown");
+    expect(email.subject).toBe("New reply from Acme");
     expect(email.text).toContain("Sam Rivera");
   });
 });
@@ -87,7 +87,7 @@ describe("buildInviteEmail", () => {
 
   it("says who invited them, to which team, with a button to set a password", () => {
     const email = buildInviteEmail({ brand, inviter: "Ada Okafor", url, days: 7 });
-    expect(email.subject).toBe("Ada Okafor invited you to Glown's support team");
+    expect(email.subject).toBe("Ada Okafor invited you to Acme's support team");
     expect(email.html).toContain(`href="${url}"`);
     expect(email.html).toContain("Set your password");
     expect(email.text).toContain(`Set your password: ${url}`);
@@ -96,13 +96,13 @@ describe("buildInviteEmail", () => {
 
   it("wears the brand, and escapes what the admin typed", () => {
     const email = buildInviteEmail({
-      brand: { ...brand, name: "<Glown>" },
+      brand: { ...brand, name: "<Acme>" },
       inviter: "Ada <b>",
       url,
       days: 7,
     });
     expect(email.html).toContain("#f1635e");
-    expect(email.html).toContain("&lt;Glown&gt;");
+    expect(email.html).toContain("&lt;Acme&gt;");
     expect(email.html).not.toContain("Ada <b>");
   });
 });

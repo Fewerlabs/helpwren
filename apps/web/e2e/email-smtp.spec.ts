@@ -26,7 +26,7 @@ test("an admin enters an SMTP server in Settings, with a password as it is, and 
 
   await page.getByLabel("SMTP server").fill("127.0.0.1");
   await page.getByLabel("Port").fill(String(catcher.port));
-  await page.getByLabel("Username").fill("support@glown.example");
+  await page.getByLabel("Username").fill("support@acme.example");
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   await page.getByLabel("From address").fill("support@acme.example");
   await page.getByRole("button", { name: "Save changes" }).click();
@@ -38,7 +38,7 @@ test("an admin enters an SMTP server in Settings, with a password as it is, and 
   await expect(page.getByText("Test email sent to ada@example.com")).toBeVisible();
   await expect.poll(() => catcher.emails.length).toBe(1);
   expect(catcher.emails[0]).toMatchObject({
-    user: "support@glown.example",
+    user: "support@acme.example",
     password: PASSWORD,
     to: ["<ada@example.com>"],
   });

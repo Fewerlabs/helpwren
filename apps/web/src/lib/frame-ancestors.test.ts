@@ -24,10 +24,10 @@ describe("frameAncestorSources", () => {
 
   it("treats names under localhost as local, as a product's own dev hostnames are", () => {
     expect(
-      frameAncestorSources(["www.glown.localhost:4300", "*.glown.localhost", "localhost.example"]),
+      frameAncestorSources(["www.acme.localhost:4300", "*.acme.localhost", "localhost.example"]),
     ).toEqual([
-      "http://www.glown.localhost:4300",
-      "http://*.glown.localhost",
+      "http://www.acme.localhost:4300",
+      "http://*.acme.localhost",
       "https://localhost.example",
     ]);
   });

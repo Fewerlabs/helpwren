@@ -18,8 +18,11 @@ no launcher. Every option a site has is listed in [Add the chat](../docs/chat/in
 
 ## nextjs
 
-A Next.js app standing in for Glown, Helpwren's first install: a public site with the script
-tag and the help center at its own `/help`, and a web app that signs its users in to the chat
-with their own JWT through a profile endpoint, and contextual help from page filters, rules and
-an inline block ([docs/contextual-help.md](../docs/contextual-help.md)). See
-[nextjs/README.md](nextjs/README.md).
+A Next.js App Router app that loads the chat with `next/script` in its root layout, and opens it
+from its own buttons. Start the Helpwren app (`pnpm dev`), then:
+
+```bash
+pnpm --filter @helpwren/example-nextjs dev
+```
+
+Open http://localhost:4300. See [nextjs/README.md](nextjs/README.md).

@@ -25,9 +25,9 @@ describe("originAllowed", () => {
   });
 
   it("compares ports, and allows a local address over HTTP", () => {
-    const domains = ["www.glown.localhost:4300", "localhost:4100"];
-    expect(originAllowed("http://www.glown.localhost:4300", domains, APP)).toBe(true);
-    expect(originAllowed("http://www.glown.localhost:4301", domains, APP)).toBe(false);
+    const domains = ["www.acme.localhost:4300", "localhost:4100"];
+    expect(originAllowed("http://www.acme.localhost:4300", domains, APP)).toBe(true);
+    expect(originAllowed("http://www.acme.localhost:4301", domains, APP)).toBe(false);
     expect(originAllowed("http://localhost:4100", domains, APP)).toBe(true);
     expect(originAllowed("http://127.0.0.1:4300", domains, APP)).toBe(false);
   });

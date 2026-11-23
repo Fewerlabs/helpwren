@@ -15,7 +15,7 @@ describe("choosing how the install sends mail", () => {
     const choice = chooseEmailAdapter({
       smtpHost: "smtp.example.com",
       smtpPort: 465,
-      smtpUser: "support@glown.example",
+      smtpUser: "support@acme.example",
       smtpPassword: "abc#ix/(1)?",
     });
     expect(choice).toMatchObject({ problem: null, source: "server" });
@@ -25,14 +25,14 @@ describe("choosing how the install sends mail", () => {
   it("reads an SMTP address whose username is an email address", () => {
     const choice = chooseEmailAdapter({
       provider: "smtp",
-      smtpUrl: "smtps://support@glown.example:secret@smtp.example.com:465",
+      smtpUrl: "smtps://support@acme.example:secret@smtp.example.com:465",
     });
     expect(choice.adapter?.name).toBe("SMTP");
     expect(choice.problem).toBeNull();
   });
 
   it("says what is wrong with an address it cannot read, without repeating it", () => {
-    const smtpUrl = "smtps://support@glown.example:pa#ss/word?@smtp.example.com:465";
+    const smtpUrl = "smtps://support@acme.example:pa#ss/word?@smtp.example.com:465";
     const { adapter, problem } = chooseEmailAdapter({ smtpUrl });
     expect(adapter).toBeNull();
     expect(problem).toMatch(/SMTP_URL could not be read/);
