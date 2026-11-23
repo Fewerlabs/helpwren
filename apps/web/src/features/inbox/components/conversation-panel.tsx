@@ -1,6 +1,11 @@
 "use client";
 
-import { type ConversationWithContact, type Message, type TeamMember } from "@helpwren/core";
+import {
+  type ConversationWithContact,
+  type Message,
+  type TeamMember,
+  type Typist,
+} from "@helpwren/core";
 import {
   ActionButton,
   Avatar,
@@ -9,6 +14,7 @@ import {
   Icon,
   StatusChip,
   Tooltip,
+  useConfirm,
 } from "@helpwren/design-system";
 import { useCallback, useMemo, useState } from "react";
 
@@ -55,6 +61,7 @@ export function ConversationPanel({
   const name = contactName(conversation.contact);
   const change = useChangeConversation(conversation.id);
   const confirmStatus = useConfirmStatus();
+  const confirm = useConfirm();
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const isTicket = conversation.type === "ticket";
   const done = conversation.status === "resolved" || conversation.status === "closed";
@@ -89,6 +96,31 @@ export function ConversationPanel({
   const showTypist = useCallback(
     (typist: { userId: string }) => (typist.userId === contactId ? { name } : null),
     [contactId, name],
+  );
+
+  // Two teammates answering at once send the contact two different replies, so check first.
+  const confirmReply = useCallback(
+    (typists: readonly Typist[]) => {
+      const writers = typists
+        .filter((typist) => typist.userId !== contactId && typist.userId !== agentId)
+        .flatMap((typist) => team.find((member) => member.id === typist.userId)?.name ?? []);
+      const [first, second] = writers;
+      if (first === undefined) return Promise.resolve(true);
+      const who =
+        writers.length === 1
+          ? `${first} is`
+          : writers.length === 2
+            ? `${first} and ${second ?? ""} are`
+            : `${writers.length} teammates are`;
+      return confirm({
+        title: `${who} writing a reply`,
+        description: `${name} could get two answers. Send yours anyway?`,
+        confirmLabel: "Send anyway",
+        cancelLabel: "Wait",
+        icon: "paper-plane-tilt",
+      });
+    },
+    [agentId, confirm, contactId, name, team],
   );
 
   return (
@@ -197,6 +229,7 @@ export function ConversationPanel({
         typingAs={typingAs}
         showTypist={showTypist}
         placeholders={placeholders}
+        confirmReply={confirmReply}
       />
       <TicketDialog
         open={ticketDialogOpen}

@@ -67,6 +67,11 @@ export interface ComposerProps {
    * box and a toolbar button. Team side only, in the `card` variant.
    */
   placeholders?: PlaceholderValues | undefined;
+  /**
+   * Asked before a reply, never a note, is sent; resolving to `false` keeps it in the box. The
+   * inbox uses it to check with the writer while a teammate is answering too.
+   */
+  confirmReply?: (() => Promise<boolean>) | undefined;
 }
 
 /** The box for writing a reply. Enter sends; Shift and Enter starts a new line. */
@@ -76,11 +81,13 @@ export function Composer({
   allowNotes = false,
   typing,
   placeholders,
+  confirmReply,
 }: ComposerProps) {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<Mode>("reply");
   const box = useRef<HTMLTextAreaElement | null>(null);
   const [failure, setFailure] = useState<keyof typeof failures | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const send = useSendMessage(conversationId);
   const addNote = useAddNote(conversationId);
   const getClient = useHelpwren();
@@ -146,8 +153,15 @@ export function Composer({
     }
   }
 
-  function submit() {
-    if (!ready || pending) return;
+  async function submit() {
+    if (!ready || pending || confirming) return;
+    if (!note && confirmReply) {
+      setConfirming(true);
+      const go = await confirmReply().finally(() => {
+        setConfirming(false);
+      });
+      if (!go) return;
+    }
     setFailure(null);
     typing?.stop();
     const failed = () => {
@@ -267,7 +281,7 @@ export function Composer({
       if (picker.onKeyDown(event)) return;
       if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
         event.preventDefault();
-        submit();
+        void submit();
       }
     },
     // A screenshot or a copied file pasted into the box is attached, not typed.
@@ -293,7 +307,7 @@ export function Composer({
         className="grid gap-2 p-3 pt-0 max-md:px-2 max-md:pb-2"
         onSubmit={(event) => {
           event.preventDefault();
-          submit();
+          void submit();
         }}
       >
         {alert}
@@ -375,7 +389,7 @@ export function Composer({
       className="grid gap-2 p-3"
       onSubmit={(event) => {
         event.preventDefault();
-        submit();
+        void submit();
       }}
     >
       {alert}

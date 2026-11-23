@@ -77,6 +77,11 @@ export interface ThreadProps {
     ((typist: Typist) => { name: string; avatar?: string | undefined } | null) | undefined;
   /** Turns on saved replies in the reply box, filled with these. Team side only. */
   placeholders?: PlaceholderValues | undefined;
+  /**
+   * Asked before a reply is sent, with everyone typing in the conversation right then. Resolve
+   * to `false` to keep the reply in the box. Team side only.
+   */
+  confirmReply?: ((typists: readonly Typist[]) => Promise<boolean>) | undefined;
 }
 
 /**
@@ -95,6 +100,7 @@ export function Thread({
   typingAs,
   showTypist,
   placeholders,
+  confirmReply,
 }: ThreadProps) {
   const compact = density === "compact";
   const typing = useTyping(conversationId, typingAs);
@@ -265,6 +271,7 @@ export function Thread({
         allowNotes={forTeam}
         typing={typing}
         placeholders={placeholders}
+        confirmReply={confirmReply ? () => confirmReply(typing.typists) : undefined}
       />
     </div>
   );

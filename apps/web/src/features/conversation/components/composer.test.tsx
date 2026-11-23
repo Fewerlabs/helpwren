@@ -140,3 +140,51 @@ describe("the visitor's message box", () => {
     expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
   });
 });
+
+describe("checking before a reply is sent", () => {
+  function renderWithCheck(answer: boolean) {
+    const send = vi.fn(() => Promise.resolve({ ok: true, message: {} }));
+    const confirmReply = vi.fn(() => Promise.resolve(answer));
+    const client = { messages: { send } };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <HelpwrenProvider getClient={() => client as unknown as HelpwrenClient}>
+            <Composer
+              conversationId="11111111-1111-4111-8111-111111111111"
+              variant="card"
+              allowNotes
+              confirmReply={confirmReply}
+            />
+          </HelpwrenProvider>
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    return { send, confirmReply, box: screen.getByRole("textbox", { name: "Your message" }) };
+  }
+
+  it("keeps the reply in the box when the writer waits", async () => {
+    const user = userEvent.setup();
+    const { send, confirmReply, box } = renderWithCheck(false);
+    await user.type(box, "Your refund is on its way");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(confirmReply).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
+    expect(box).toHaveValue("Your refund is on its way");
+  });
+
+  it("sends once the writer says to", async () => {
+    const user = userEvent.setup();
+    const { send, box } = renderWithCheck(true);
+    await user.type(box, "Your refund is on its way");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(send).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      "Your refund is on its way",
+      [],
+    );
+  });
+});
