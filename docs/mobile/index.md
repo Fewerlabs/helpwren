@@ -8,7 +8,6 @@ the web, so the app gets every change to the chat without a release of its own.
 ## Before you start
 
 - React 19, React Native 0.79 or later, and `react-native-webview` 13.12 or later.
-- A source for the app, such as `customer_app`. See [Add a source](#add-a-source).
 - For logged-in users, identity set up in **Settings → Identity**. See
   [Know your users](../users/index.md).
 
@@ -71,13 +70,3 @@ It needs no Helpwren session: the install checks the token the same way the chat
 
 Only the install's own pages load in the web view. Any other link, such as one in a message,
 opens in the system browser.
-
-## Add a source
-
-An install accepts conversations only from the sources it knows, and starts with `web` alone.
-In **Settings → Installation → Sources**, add the app's name, such as `customer_app`, and save.
-A name uses lower-case letters, digits, `_` and `-`.
-
-> [!WARNING]
-> `SupportScreen`'s `source` must be one of these, or the app cannot start a conversation or
-> register for push.

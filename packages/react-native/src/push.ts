@@ -9,7 +9,7 @@ export interface SupportDevice {
   /** Which service the token is for. Default `expo`. */
   provider?: "expo" | "fcm";
   platform: "ios" | "android";
-  /** Which of the install's sources this app is, such as `customer_app`. */
+  /** The app's name, such as `customer_app`, shown to the team as the channel. */
   source: string;
   /** The logged-in user's token for your product, as the support screen is given it. */
   token: string;

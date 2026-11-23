@@ -15,19 +15,6 @@ export const allowedDomainSchema = z
   .regex(/^(\*\.)?[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:\d{1,5})?$/);
 
 /**
- * Where a conversation may come from, such as `web` or `customer_app`: lower-case letters,
- * digits, `_` and `-`, up to 40 characters, as a conversation's `source` is stored.
- */
-export const sourceSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(/^[a-z0-9][a-z0-9_-]{0,39}$/);
-
-/** How many sources an install may list. */
-export const SOURCES_MAX = 20;
-
-/**
  * Every setting, as stored: one row of the `settings` table per key. A missing row falls back
  * to its default, and keys this version does not know are ignored.
  */
@@ -285,8 +272,6 @@ const storedSettingsSchema = z.object({
    * `*.example.com`. Empty means any site, so a new install works before it is configured.
    */
   allowed_domains: z.array(allowedDomainSchema).default([]),
-  /** Where a conversation may come from, such as the website or a mobile app. */
-  sources: z.array(z.string().min(1)).min(1).default(["web"]),
   visitors: visitorsSchema.default(visitorsDefault),
   spam: spamSchema.default(spamDefault),
   contextual_help: contextualHelpSchema.default({ fallback: true }),
@@ -301,7 +286,6 @@ export const settingsSchema = storedSettingsSchema.transform((stored) => ({
   helpCenter: stored.help_center,
   guestDetails: stored.guest_details,
   allowedDomains: stored.allowed_domains,
-  sources: stored.sources,
   visitors: stored.visitors,
   spam: stored.spam,
   contextualHelp: stored.contextual_help,
@@ -433,11 +417,6 @@ export const settingsPatchSchema = z
     }),
     guestDetails: guestDetailsSchema,
     allowedDomains: z.array(allowedDomainSchema).max(50),
-    sources: z
-      .array(sourceSchema)
-      .min(1, "Keep at least one source.")
-      .max(SOURCES_MAX, `Up to ${String(SOURCES_MAX)} sources.`)
-      .refine((list) => new Set(list).size === list.length, "List each source once."),
     visitors: z.object({ tracking: z.boolean(), liveList: z.boolean() }),
     spam: z
       .object({
@@ -480,8 +459,6 @@ const storage = {
   helpCenter: { key: "help_center", isPublic: true },
   guestDetails: { key: "guest_details", isPublic: true },
   allowedDomains: { key: "allowed_domains", isPublic: false },
-  // Read by the app's server when a conversation starts or a phone registers, never by a visitor.
-  sources: { key: "sources", isPublic: false },
   // Public, because the chat decides from it whether to check in.
   visitors: { key: "visitors", isPublic: true },
   // Public, because the chat shows the captcha with the site key. The secret key is never here.

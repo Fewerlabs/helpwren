@@ -45,9 +45,6 @@ an admin to invite you.
 about `frame-ancestors` means the site is not in your
 [allowed domains](../security/allowed-domains.md).
 
-**A conversation from my app fails with "is not one of this install's sources".** Add the source.
-See [Add a source](../mobile/index.md#add-a-source).
-
 **The live check stays on "Waiting".** Open a page of your site that has the snippet, in a fresh
 tab; the browser keeps the widget's settings for a minute. Allowed domains, if set, must include
 your site. The check needs the site to be on another address than the install itself.

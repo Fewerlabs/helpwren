@@ -30,7 +30,6 @@ const defaults = {
   tickets: { fromChat: true },
   guestDetails: "email",
   allowedDomains: [],
-  sources: ["web"],
   visitors: { tracking: true, liveList: true },
   spam: { captcha: "off" },
   contextualHelp: { fallback: true },
@@ -42,7 +41,7 @@ describe("parseSettings", () => {
       parseSettings([
         { key: "brand", value: { name: "Acme" } },
         { key: "guest_details", value: "phone" },
-        { key: "sources", value: ["web", "ios"] },
+        { key: "allowed_domains", value: ["example.com"] },
         { key: "visitors", value: { liveList: false } },
       ]),
     ).toEqual({
@@ -58,8 +57,7 @@ describe("parseSettings", () => {
       helpCenter,
       tickets: { fromChat: true },
       guestDetails: "phone",
-      allowedDomains: [],
-      sources: ["web", "ios"],
+      allowedDomains: ["example.com"],
       visitors: { tracking: true, liveList: false },
       spam: { captcha: "off" },
       contextualHelp: { fallback: true },
@@ -121,7 +119,7 @@ describe("parseSettings", () => {
 
 describe("parsePublicSettings", () => {
   it("leaves out settings that are not for everyone", () => {
-    expect(parsePublicSettings([{ key: "sources", value: ["web", "ios"] }])).toEqual({
+    expect(parsePublicSettings([{ key: "allowed_domains", value: ["example.com"] }])).toEqual({
       brand: { name: "Helpwren" },
       widget,
       chatPage,
@@ -143,24 +141,6 @@ describe("the spam settings", () => {
       settingsPatchSchema.safeParse({ spam: { captcha: "turnstile", siteKey: "0x4AAAA" } }).success,
     ).toBe(true);
     expect(settingsPatchSchema.safeParse({ spam: { captcha: "off" } }).success).toBe(true);
-  });
-});
-
-describe("the sources", () => {
-  it("takes names such as web or customer_app, each once, and at least one", () => {
-    const ok = (sources: unknown) => settingsPatchSchema.safeParse({ sources }).success;
-    expect(ok(["web", "customer_app", "business-app"])).toBe(true);
-    expect(ok([])).toBe(false);
-    expect(ok(["web", "web"])).toBe(false);
-    expect(ok(["my app"])).toBe(false);
-    expect(ok(["_app"])).toBe(false);
-    expect(ok(["a".repeat(41)])).toBe(false);
-  });
-
-  it("are saved in lower case", () => {
-    expect(settingsPatchSchema.parse({ sources: ["Customer_App"] }).sources).toEqual([
-      "customer_app",
-    ]);
   });
 });
 

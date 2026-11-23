@@ -147,10 +147,7 @@ export async function saveInstallation(values: InstallationValues): Promise<Save
   if (!parsed.success) return { ok: false, reason: "invalid" };
 
   const helpwren = await getHelpwren();
-  const result = await helpwren.settings.update({
-    allowedDomains: parsed.data.allowedDomains,
-    sources: parsed.data.sources,
-  });
+  const result = await helpwren.settings.update({ allowedDomains: parsed.data.allowedDomains });
   if (result.ok) revalidatePath(SETTINGS_PATH, "layout");
   return result;
 }

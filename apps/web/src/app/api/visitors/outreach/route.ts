@@ -35,9 +35,6 @@ export async function POST(request: Request): Promise<Response> {
   if (!settings.visitors.tracking || !settings.visitors.liveList) {
     return apiError("disabled", "This install does not start conversations with visitors.");
   }
-  if (!settings.sources.includes(source)) {
-    return apiError("invalid_request", `"${source}" is not one of this install's sources.`);
-  }
 
   const { data: conversationId, error } = await supabaseAdmin.rpc("claim_visitor_outreach", {
     visitor_id: visitorId,

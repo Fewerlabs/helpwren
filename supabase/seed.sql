@@ -134,7 +134,6 @@ insert into public.saved_replies (title, body, shortcut, visibility, created_by)
 insert into public.settings (key, value, is_public) values
   ('brand', '{"name": "Helpwren Demo"}', true),
   ('audiences', '["customer", "business"]', false),
-  ('sources', '["web", "web_app"]', false),
   ('guest_details', '"email_or_phone"', true);
 
 -- The knowledge base: three collections and a handful of articles, one of them a draft, so the

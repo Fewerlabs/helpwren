@@ -43,7 +43,7 @@ import { TicketBar } from "./ticket-bar";
 
 export interface ChatProps {
   settings: PublicSettings;
-  /** Where the chat is embedded, such as `web`. One of the install's sources. */
+  /** Where the chat is embedded, such as `web`. Shown to the team as the channel. */
   source: string;
   /** Shows the chat as a new visitor sees it, follows settings sent to it, and sends nothing. */
   preview?: boolean;

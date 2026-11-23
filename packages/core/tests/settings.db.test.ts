@@ -9,15 +9,7 @@ import { keepSettings, newAgent, removeAccounts, runMarker, signIn } from "./sup
 // back afterwards whatever was there before; files they upload are removed.
 const run = runMarker();
 const BRAND = `Demo ${run}`;
-const TOUCHED = [
-  "brand",
-  "guest_details",
-  "sources",
-  "allowed_domains",
-  "widget",
-  "chat_page",
-  "help_center",
-];
+const TOUCHED = ["brand", "guest_details", "allowed_domains", "widget", "chat_page", "help_center"];
 let restoreSettings: () => Promise<void> = () => Promise.resolve();
 const uploaded: { bucket: string; path: string }[] = [];
 const madeAgents: string[] = [];
@@ -48,7 +40,7 @@ beforeAll(async () => {
     .upsert([
       { key: "brand", value: { name: BRAND }, is_public: true },
       { key: "guest_details", value: "email_or_phone", is_public: true },
-      { key: "sources", value: ["web", "web_app"], is_public: false },
+      { key: "allowed_domains", value: ["example.com"], is_public: false },
     ]);
   if (error) throw error;
 });
@@ -68,7 +60,7 @@ describe("settings.getAll", () => {
     await expect(client.settings.getAll()).resolves.toMatchObject({
       brand: { name: BRAND },
       guestDetails: "email_or_phone",
-      sources: ["web", "web_app"],
+      allowedDomains: ["example.com"],
     });
   });
 
@@ -76,7 +68,7 @@ describe("settings.getAll", () => {
     const visitor = createHelpwrenClient({ supabase: browserClient() });
     await expect(visitor.settings.getAll()).resolves.toMatchObject({
       brand: { name: BRAND },
-      sources: ["web"],
+      allowedDomains: [],
     });
   });
 });

@@ -247,7 +247,7 @@ export function DetailsPanel({
             </Row>
           ) : null}
           <Row label="Started">{startedFormat.format(new Date(conversation.createdAt))}</Row>
-          <Row label="Source">
+          <Row label="Channel">
             <span className="font-mono">{conversation.source}</span>
             {conversation.viaEmail ? (
               <span className="text-muted-foreground block pt-0.5">Also replied by email</span>

@@ -7,7 +7,7 @@ import {
   type PageMessage,
 } from "helpwren/protocol";
 
-/** The chat's own page, which the web view loads. `source` is one of the install's sources. */
+/** The chat's own page, which the web view loads. `source` is the app's name. */
 export function embedUrl(baseUrl: string, source: string): string {
   const url = new URL("/embed", baseUrl);
   url.searchParams.set("source", source);

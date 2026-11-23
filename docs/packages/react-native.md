@@ -22,7 +22,7 @@ The chat as a screen.
 | Prop             | Type                                        | What it does                                                                              |
 | ---------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `baseUrl`        | `string`                                    | Your install's address                                                                    |
-| `source`         | `string`                                    | Which of the install's [sources](../mobile/index.md#add-a-source) this app is             |
+| `source`         | `string`                                    | The app's name, such as `customer_app`, shown to your team as the channel                 |
 | `token`          | `string \| () => string \| Promise<string>` | The logged-in user's token, checked as **Settings → Identity** says. Leave out for guests |
 | `context`        | `PageContext`                               | Plain values your team sees beside the conversation. See [Context](../users/context.md)   |
 | `conversationId` | `string`                                    | Opens that conversation, for a tapped notification                                        |

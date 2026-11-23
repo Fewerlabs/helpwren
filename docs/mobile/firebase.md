@@ -45,6 +45,6 @@ curl -X POST https://support.example.com/api/devices \
   -d '{"pushToken":"<FCM registration token>","provider":"fcm","platform":"android","app":"business_app","token":"<user token>"}'
 ```
 
-`app` is the [source](index.md#add-a-source), and `token` the user's token as **Settings →
+`app` is the app's name, such as `business_app`, and `token` the user's token as **Settings →
 Identity** checks it. `DELETE /api/devices` with `{ "pushToken": "..." }` stops pushes to a
 phone.

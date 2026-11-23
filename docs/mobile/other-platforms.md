@@ -7,7 +7,7 @@ Any web view can do what the React Native screen does.
 ## Steps
 
 1. Load `https://support.example.com/embed?source=<source>` in a web view, with JavaScript and
-   DOM storage on. The source must be [one the install knows](index.md#add-a-source).
+   DOM storage on. `source` is your app's name, such as `customer_app`.
 2. Expose `window.ReactNativeWebView.postMessage(text)` to the page. The chat sends its messages
    to it as JSON strings. The first is `{ "channel": "helpwren", "type": "ready" }`.
 3. Answer by running

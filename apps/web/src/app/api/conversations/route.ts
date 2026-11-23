@@ -84,9 +84,6 @@ export async function POST(request: Request): Promise<Response> {
     return apiError("refused", "Answer the check that you are a person, then send again.");
   }
 
-  if (!settings.sources.includes(source)) {
-    return apiError("invalid_request", `"${source}" is not one of this install's sources.`);
-  }
   if (ticket && !settings.tickets.fromChat) {
     return apiError("invalid_request", "This install does not take tickets from the chat.");
   }

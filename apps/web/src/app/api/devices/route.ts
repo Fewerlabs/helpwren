@@ -1,5 +1,4 @@
 import { IdentityError, isExpoPushToken, isFcmToken } from "@helpwren/adapters";
-import { parseSettings } from "@helpwren/core";
 import { z } from "zod";
 
 import { getCaller } from "@/lib/api/caller";
@@ -23,7 +22,7 @@ const registerSchema = z
     /** Which service the token is for: Expo's (the default) or Firebase's. */
     provider: providerSchema,
     platform: z.enum(["ios", "android"]),
-    /** Which of the install's sources the app is. */
+    /** Which app this is, such as `customer_app`, shown to the team as its channel. */
     app: z.string().trim().min(1).max(40),
     /** The user's token for the host product. Without it, the caller's Helpwren session. */
     token: z.string().min(1).max(8000).optional(),
@@ -54,14 +53,6 @@ export async function POST(request: Request): Promise<Response> {
   const input = registerSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) return apiError("invalid_request", z.prettifyError(input.error));
   const { pushToken, provider, platform, app, token } = input.data;
-
-  const { data: settingRows, error: settingsError } = await supabaseAdmin
-    .from("settings")
-    .select("key, value");
-  if (settingsError) throw settingsError;
-  if (!parseSettings(settingRows).sources.includes(app)) {
-    return apiError("invalid_request", `"${app}" is not one of this install's sources.`);
-  }
 
   let owner: { contact_id: string | null; external_id: string | null };
   if (token) {

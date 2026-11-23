@@ -45,7 +45,6 @@ export type GeneralValues = z.infer<typeof generalSchema>;
 
 export const installationSchema = z.object({
   allowedDomains: settingsPatchSchema.shape.allowedDomains.unwrap(),
-  sources: settingsPatchSchema.shape.sources.unwrap(),
 });
 export type InstallationValues = z.infer<typeof installationSchema>;
 

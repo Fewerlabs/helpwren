@@ -43,7 +43,7 @@ export type Identity =
   { token: string | (() => string | Promise<string>) } | (VisitorDetails & { token?: undefined });
 
 export interface InitOptions {
-  /** Where this page is, as one of the install's sources. Default `web`. */
+  /** Where this page is, shown to the team as the conversation's channel. Default `web`. */
   source?: string;
   /**
    * Whether to show the round launcher button. Turn it off to open the chat from your own

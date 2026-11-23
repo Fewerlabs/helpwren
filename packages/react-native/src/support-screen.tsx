@@ -32,7 +32,7 @@ export type TokenSource = string | (() => string | Promise<string>);
 export interface SupportScreenProps {
   /** Where the Helpwren install is, such as `https://support.example.com`. */
   baseUrl: string;
-  /** Which of the install's sources this app is, such as `customer_app`. */
+  /** The app's name, such as `customer_app`, shown to the team as the channel. */
   source: string;
   /**
    * The logged-in user's token, checked by the install as its Identity settings say. Leave it

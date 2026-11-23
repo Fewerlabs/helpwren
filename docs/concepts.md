@@ -8,12 +8,11 @@ One running copy of Helpwren: the app, its Supabase project and its settings. A 
 install, on an address such as `https://support.example.com`. Nothing is shared between
 installs.
 
-## Source
+## Channel
 
 Where a conversation comes from, such as `web` for your website or `customer_app` for a mobile
-app. A page passes it to `Helpwren.init({ source })`, and a mobile app to `SupportScreen`. An
-install accepts only the sources it knows; a new one starts with `web`.
-[Adding a source](mobile/index.md#add-a-source) shows how to add another.
+app. A page passes its name to `Helpwren.init({ source })`, and a mobile app to `SupportScreen`.
+Any name works, with nothing to set up first. Your team sees it as the conversation's channel.
 
 ## Contact
 
