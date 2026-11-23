@@ -14,8 +14,6 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
-import { applyFrameTheme, frameTheme } from "../frame-theme";
-
 import {
   usePanelLayout,
   usePreview,
@@ -105,11 +103,6 @@ const laterSchema = z.discriminatedUnion("type", [
     type: z.literal("layout"),
     expandable: z.boolean(),
     expanded: z.boolean(),
-  }),
-  z.object({
-    channel: z.literal(CHANNEL),
-    type: z.literal("theme"),
-    theme: z.enum(["light", "dark", "system"]),
   }),
 ]);
 
@@ -223,12 +216,6 @@ export function useEmbedBridge(unread: UnreadState) {
       });
     };
 
-    // The theme the page asked for in the frame's address, kept up to date if it follows the
-    // device, until the page asks for another.
-    let stopTheme = applyFrameTheme(
-      frameTheme(new URLSearchParams(window.location.search).get("theme")),
-    );
-
     const onMessage = (event: MessageEvent) => {
       if (!found.sentBy(event)) return;
 
@@ -243,13 +230,8 @@ export function useEmbedBridge(unread: UnreadState) {
       // Who the visitor is, and what the page says about them. A preview is nobody.
       const later = laterSchema.safeParse(event.data);
       if (later.success && event.origin === pageOrigin.current) {
-        const message = later.data;
-        if (message.type === "theme") {
-          stopTheme();
-          stopTheme = applyFrameTheme(message.theme);
-          return;
-        }
         if (preview) return;
+        const message = later.data;
         if (message.type === "open") {
           // From a notification about this conversation. The chat shows it once it is signed
           // in; the access rules decide whether it is theirs to see.
@@ -303,7 +285,6 @@ export function useEmbedBridge(unread: UnreadState) {
     found.announce({ channel: CHANNEL, type: "ready" });
     return () => {
       window.removeEventListener("message", onMessage);
-      stopTheme();
     };
   }, [
     identity,
