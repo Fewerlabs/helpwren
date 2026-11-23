@@ -1,0 +1,10 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@helpwren/react-native": ["../../packages/react-native/src/index.ts"],
+      "helpwren/protocol": ["../../packages/widget/src/protocol.ts"]
+    }
+  }
+}
