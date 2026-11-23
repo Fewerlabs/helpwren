@@ -1,6 +1,6 @@
 "use client";
 
-import { allowedDomainSchema, type Settings } from "@helpwren/core";
+import { allowedDomainSchema, sourceSchema, type Settings } from "@helpwren/core";
 import {
   CodeSnippet,
   FieldList,
@@ -18,7 +18,22 @@ import { HelpEmbedBuilder } from "./help-embed-builder";
 import { SaveBar, saveErrors } from "./save-bar";
 import { SettingsSection } from "./settings-frame";
 
-const fields: FieldItem<InstallationValues>[] = [
+const sourceFields: FieldItem<InstallationValues>[] = [
+  {
+    name: "sources",
+    label: "Sources",
+    type: "tags",
+    hint: "Such as web or customer_app. Press Enter after each.",
+    props: {
+      placeholder: "customer_app",
+      transform: (text) => text.trim().toLowerCase().replace(/\s+/g, "_"),
+      validate: (value) => sourceSchema.safeParse(value).success,
+      removeLabel: (source) => `Remove ${source}`,
+    },
+  },
+];
+
+const domainFields: FieldItem<InstallationValues>[] = [
   {
     name: "allowedDomains",
     label: "Domains",
@@ -114,7 +129,7 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
   const [saved, setSaved] = useState(false);
   const form = useForm<InstallationValues>({
     resolver: zodResolver(installationSchema),
-    defaultValues: { allowedDomains: settings.allowedDomains },
+    defaultValues: { allowedDomains: settings.allowedDomains, sources: settings.sources },
   });
   const domains = useWatch({ control: form.control, name: "allowedDomains" });
 
@@ -201,7 +216,7 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
       >
         <FieldList
           control={form.control}
-          fields={fields}
+          fields={domainFields}
           disabled={!canEdit || form.formState.isSubmitting}
         />
         {domains.length === 0 ? (
@@ -209,6 +224,21 @@ export function InstallationForm({ settings, appUrl, canEdit }: InstallationForm
             No domains are set, so any site can show your chat. Add yours to limit it to them.
           </p>
         ) : null}
+      </SettingsSection>
+      <SettingsSection
+        title="Sources"
+        description={
+          <>
+            The websites and apps that may start conversations and register phones for push. Each
+            sends its name as <code className="font-mono">source</code>.
+          </>
+        }
+      >
+        <FieldList
+          control={form.control}
+          fields={sourceFields}
+          disabled={!canEdit || form.formState.isSubmitting}
+        />
       </SettingsSection>
       {canEdit ? (
         <SaveBar

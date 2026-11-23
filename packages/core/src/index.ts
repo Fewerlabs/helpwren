@@ -248,6 +248,8 @@ export {
   inboundProviderSchema,
   LOGO_MAX_BYTES,
   LOGO_TYPES,
+  sourceSchema,
+  SOURCES_MAX,
   parseSettings,
   publicSettingsSchema,
   QUICK_REPLIES_MAX,

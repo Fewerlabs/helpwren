@@ -146,6 +146,24 @@ describe("the spam settings", () => {
   });
 });
 
+describe("the sources", () => {
+  it("takes names such as web or customer_app, each once, and at least one", () => {
+    const ok = (sources: unknown) => settingsPatchSchema.safeParse({ sources }).success;
+    expect(ok(["web", "customer_app", "business-app"])).toBe(true);
+    expect(ok([])).toBe(false);
+    expect(ok(["web", "web"])).toBe(false);
+    expect(ok(["my app"])).toBe(false);
+    expect(ok(["_app"])).toBe(false);
+    expect(ok(["a".repeat(41)])).toBe(false);
+  });
+
+  it("are saved in lower case", () => {
+    expect(settingsPatchSchema.parse({ sources: ["Customer_App"] }).sources).toEqual([
+      "customer_app",
+    ]);
+  });
+});
+
 describe("the help center's settings", () => {
   it("keeps what an admin set and fills in the rest", () => {
     const { helpCenter: parsed } = parseSettings([

@@ -75,14 +75,8 @@ opens in the system browser.
 ## Add a source
 
 An install accepts conversations only from the sources it knows, and starts with `web` alone.
-There is no settings page for sources yet: add one in the Supabase SQL editor, listing every
-source the install should accept:
-
-```sql title="Supabase SQL editor"
-insert into public.settings (key, value)
-values ('sources', '["web", "customer_app"]')
-on conflict (key) do update set value = excluded.value;
-```
+In **Settings → Installation → Sources**, add the app's name, such as `customer_app`, and save.
+A name uses lower-case letters, digits, `_` and `-`.
 
 > [!WARNING]
 > `SupportScreen`'s `source` must be one of these, or the app cannot start a conversation or
