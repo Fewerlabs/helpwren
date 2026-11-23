@@ -134,6 +134,11 @@ docs/                  Guides, architecture and decision records
 - [Code of conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
 
+## Support the project
+
+Helpwren is free. If it saves your team money, you can
+[buy the developer a malt](https://buymeamalt.com/@whytepeter).
+
 ## Licence
 
 [MIT](LICENSE).
