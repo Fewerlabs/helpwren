@@ -27,13 +27,7 @@ The chat follows the visitor's light or dark setting.
 
 The chat has three tabs along the bottom: **Home**, **Messages** and **Help**. Under
 **Settings → Branding → Widget → Tabs** you can turn Home and Help off. Messages always shows.
-
-| Tabs shown     | What the visitor sees                      |
-| -------------- | ------------------------------------------ |
-| All three      | The chat opens on Home                     |
-| No Home        | The chat opens on Messages                 |
-| No Help        | Home leaves out **Search all articles**    |
-| Messages alone | No row of tabs; the chat opens on Messages |
+Without Home, the chat opens on Messages. Without Help, the home screen has no search.
 
 The home screen lists the ways to write first, then the visitor's most recent conversation, then
 [help for the page](../contextual-help.md) and suggested articles.

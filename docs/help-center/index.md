@@ -50,9 +50,6 @@ actions for that one article.
   published.
 - Moved articles go to the end of the collection.
 
-In code, `articles.publishMany`, `unpublishMany`, `moveMany` and `removeMany` take a list of
-article ids and return `{ changed }`, the number of articles changed.
-
 ## Where readers find articles
 
 - **`/help`**: the public help center, with a page for each collection and article, and search.
