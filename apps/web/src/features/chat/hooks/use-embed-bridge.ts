@@ -22,6 +22,7 @@ import {
   useScreen,
   useSetClaimed,
   useSetHelpFilter,
+  useEndHelpFocus,
   useSetHelpFocus,
   useSetHostVisible,
   useSetPage,
@@ -63,6 +64,9 @@ const helloSchema = z.object({
   open: z.boolean().optional(),
   identified: z.boolean().optional(),
 });
+
+/** A little longer than the panel takes to fade, in milliseconds. */
+const PANEL_FADE = 200;
 
 /** Everything else the page may say, once it has introduced itself. */
 const laterSchema = z.discriminatedUnion("type", [
@@ -192,6 +196,7 @@ export function useEmbedBridge(unread: UnreadState) {
   const setPageContext = useSetPageContext();
   const setHelpFilter = useSetHelpFilter();
   const setHelpFocus = useSetHelpFocus();
+  const endHelpFocus = useEndHelpFocus();
   const setPanelLayout = useSetPanelLayout();
   const panelLayout = usePanelLayout();
   const screen = useScreen();
@@ -231,12 +236,14 @@ export function useEmbedBridge(unread: UnreadState) {
     theme.current ??= frameTheme(new URLSearchParams(window.location.search).get("theme"));
     let stopTheme = applyFrameTheme(theme.current);
 
+    let closing: number | undefined;
     const onMessage = (event: MessageEvent) => {
       if (!found.sentBy(event)) return;
 
       // Only the page that has already introduced itself may move the chat to another screen.
       const start = startSchema.safeParse(event.data);
       if (start.success && event.origin === pageOrigin.current) {
+        endHelpFocus();
         setPendingStart({ reply: start.data.reply, draft: start.data.draft });
         show({ name: "start" });
         return;
@@ -262,16 +269,32 @@ export function useEmbedBridge(unread: UnreadState) {
           setHostVisible(message.visible);
         } else if (message.type === "panel") {
           setShowing(message.open);
-          // Help the page opened the chat on lasts until the chat closes.
-          if (!message.open) setHelpFocus(null);
+          // Help the page opened the chat on lasts until the chat closes: out of sight, so the
+          // screen does not change while the panel fades, or before it is seen again.
+          window.clearTimeout(closing);
+          if (message.open) {
+            if (closing !== undefined) endHelpFocus();
+            closing = undefined;
+          } else {
+            closing = window.setTimeout(() => {
+              closing = undefined;
+              endHelpFocus();
+            }, PANEL_FADE);
+          }
         } else if (message.type === "context") {
           setPageContext(message.context);
           setHelpFilter(message.filter ?? null);
         } else if (message.type === "layout") {
           setPanelLayout({ expandable: message.expandable, expanded: message.expanded });
         } else if (message.type === "article") {
+          // Asked for just after closing: the article is shown, and the help before it is over.
+          if (closing !== undefined) endHelpFocus();
+          window.clearTimeout(closing);
+          closing = undefined;
           show({ name: "article", slug: message.slug });
         } else if (message.type === "help") {
+          window.clearTimeout(closing);
+          closing = undefined;
           setHelpFocus({ collections: message.collections, landing: true });
           show({ name: "help" });
         } else if (message.type === "reset") {
@@ -315,6 +338,7 @@ export function useEmbedBridge(unread: UnreadState) {
     setClaimed,
     setHelpFilter,
     setHelpFocus,
+    endHelpFocus,
     setHostVisible,
     setPage,
     setPageContext,

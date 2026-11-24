@@ -32,7 +32,13 @@ import {
   useShowScreen,
   useTab,
 } from "../store/chat-store";
-import { ArticleScreen, CollectionScreen, HelpScreen } from "./help-screen";
+import {
+  ArticleScreen,
+  CollectionScreen,
+  HelpLanding,
+  HelpScreen,
+  useHelpLanding,
+} from "./help-screen";
 import { HomeScreen } from "./home-screen";
 import { MessagesScreen } from "./messages-screen";
 import { RatingPrompt } from "./rating-prompt";
@@ -100,6 +106,7 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
       : earlier.length > 0);
   // The tabs the install shows. A screen whose tab is off falls back to the first one left.
   // Home also steps aside while the page has opened the chat on its own help, until it closes.
+  const landingHelp = useHelpLanding();
   const focused = useHelpFocus() !== null;
   const homeTab = settings.widget.tabs.home && !focused;
   const helpTab = settings.widget.tabs.help || focused;
@@ -161,6 +168,8 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
       </>
     );
   }
+
+  if (screen.name === "help" && landingHelp) return <HelpLanding onClose={onClose} />;
 
   if (screen.name === "collection") {
     return <CollectionScreen collection={screen.collection} onBack={back} onClose={onClose} />;

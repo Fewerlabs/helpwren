@@ -11,6 +11,7 @@ import { AudienceProvider } from "../audience";
 import {
   resetChatStore,
   useScreen,
+  useSetHelpFocus,
   useSetPage,
   useSetPanelLayout,
   type PanelLayout,
@@ -18,7 +19,9 @@ import {
 import {
   ArticleScreen,
   CollectionScreen,
+  HelpLanding,
   HelpScreen,
+  useHelpLanding,
   PageHelp,
   SuggestedArticles,
 } from "./help-screen";
@@ -83,6 +86,19 @@ function Panel(layout: PanelLayout) {
     setPanelLayout({ expandable, expanded });
   }, [setPanelLayout, expandable, expanded]);
   return null;
+}
+
+/** The Help tab as the chat shows it once the page has opened Help on these collections. */
+function OpenedOn({ collections: slugs }: { collections: string[] }) {
+  const setFocus = useSetHelpFocus();
+  const landing = useHelpLanding();
+  const current = useScreen();
+  useEffect(() => {
+    setFocus({ collections: slugs, landing: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, as the page's message does
+  }, []);
+  if (current.name === "collection") return null;
+  return landing ? <HelpLanding /> : <HelpScreen />;
 }
 
 /** Shows which screen the chat is on, so a test can see where a tap led. */
@@ -156,6 +172,31 @@ describe("the chat's Help", () => {
     expect(await screen.findByText("Nothing matched those words")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Send us a message" }));
     expect(screen.getByRole("status")).toHaveTextContent('{"name":"start"}');
+  });
+
+  it("goes straight into the one collection the page opened, without listing it", async () => {
+    let answer: (found: unknown[]) => void = () => undefined;
+    const catalog = { ...billing, slug: "billing", description: null, icon: "x", articleCount: 2 };
+    collections.list.mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
+    renderChat(<OpenedOn collections={["billing"]} />);
+    expect(await screen.findByText(/Loading articles/)).toBeInTheDocument();
+    expect(screen.queryByText("Browse by topic")).not.toBeInTheDocument();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+
+    answer([catalog]);
+    await waitFor(() => {
+      expect(screen.getByText(/"name":"collection"/)).toHaveTextContent(billing.id);
+    });
+  });
+
+  it("lists the page's collections when there are several, or they cannot be found", async () => {
+    collections.list.mockRejectedValue(new Error("offline"));
+    renderChat(<OpenedOn collections={["billing", "catalog"]} />);
+    expect(await screen.findByRole("searchbox")).toBeInTheDocument();
   });
 
   it("asks for the page's audience everywhere, when it named one", async () => {

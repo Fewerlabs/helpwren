@@ -95,6 +95,8 @@ interface ChatState {
   /** Help the page opened the chat on, until the chat closes. See `HelpFocus`. */
   helpFocus: HelpFocus | null;
   setHelpFocus: (focus: HelpFocus | null) => void;
+  /** Ends the page's help, and leaves Help for Home if the visitor is still there. */
+  endHelpFocus: () => void;
   /** Waiting for the start screen to use it, once. */
   pendingStart: PendingStart | null;
   setPendingStart: (start: PendingStart | null) => void;
@@ -151,6 +153,13 @@ const useChatStore = create<ChatState>()((set) => ({
   setHelpFocus: (helpFocus) => {
     set({ helpFocus });
   },
+  endHelpFocus: () => {
+    set(({ helpFocus, screen }) => {
+      if (!helpFocus) return {};
+      const inHelp = ["help", "collection", "article"].includes(screen.name);
+      return { helpFocus: null, tab: "home", ...(inHelp ? { screen: { name: "home" } } : {}) };
+    });
+  },
   setPreview: (preview) => {
     set({ preview });
   },
@@ -177,6 +186,7 @@ export const useSetPageContext = () => useChatStore((state) => state.setContext)
 export const useHelpFilter = () => useChatStore((state) => state.helpFilter);
 export const useHelpFocus = () => useChatStore((state) => state.helpFocus);
 export const useSetHelpFocus = () => useChatStore((state) => state.setHelpFocus);
+export const useEndHelpFocus = () => useChatStore((state) => state.endHelpFocus);
 export const useSetHelpFilter = () => useChatStore((state) => state.setHelpFilter);
 export const usePage = () => useChatStore((state) => state.page);
 export const useSetPage = () => useChatStore((state) => state.setPage);

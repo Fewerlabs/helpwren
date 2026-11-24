@@ -14,7 +14,7 @@ import {
 } from "@helpwren/design-system";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type PanelSize } from "helpwren/protocol";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useEffectEvent, useLayoutEffect, useState } from "react";
 
 import { ArticleFeedback } from "@/features/help-center";
 import { useHelpwren } from "@/lib/helpwren-context";
@@ -170,6 +170,50 @@ export function SuggestedArticles({ searchAll = true }: { searchAll?: boolean })
   );
 }
 
+/** True while the chat finds the collections the page opened it on, and shows `HelpLanding`. */
+export function useHelpLanding(): boolean {
+  const focus = useHelpFocus();
+  return focus !== null && focus.landing && focus.collections.length > 0;
+}
+
+/**
+ * In place of the Help tab while the collections the page named are found. With one, the chat
+ * goes straight into it, once: its back arrow then returns to the list of the page's collections,
+ * not into it again. So the list is never seen on the way in.
+ */
+export function HelpLanding({ onClose }: { onClose?: (() => void) | undefined }) {
+  const getClient = useHelpwren();
+  const show = useShowScreen();
+  const audience = useAudience();
+  const focus = useHelpFocus();
+  const setFocus = useSetHelpFocus();
+  const { data, isError } = useQuery({
+    queryKey: [...HELP_QUERY_KEY, "collections", "landing", audience],
+    queryFn: () => getClient().collections.list({ audience }),
+  });
+
+  // Before the browser paints, so an answer already known shows no loader at all.
+  useLayoutEffect(() => {
+    // When they cannot be found, the list takes over and says so.
+    if (!focus?.landing || (!data && !isError)) return;
+    const matched = (data ?? []).filter((collection) =>
+      focus.collections.includes(collection.slug),
+    );
+    setFocus({ ...focus, landing: false });
+    const [one] = matched;
+    if (matched.length === 1 && one) {
+      show({ name: "collection", collection: { id: one.id, name: one.name } });
+    }
+  }, [focus, data, isError, setFocus, show]);
+
+  return (
+    <>
+      <ScreenHeader title={<span className="sr-only">Help</span>} onClose={onClose} />
+      <div className="min-h-0 flex-1">{loading()}</div>
+    </>
+  );
+}
+
 /**
  * The Help tab: the collections to look through, as a help center lists them, and a search
  * across every article. Nothing here leaves the chat.
@@ -182,27 +226,7 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
   const query = useDebounced(search).trim();
   // The collections the page opened Help on, when it did: only those are listed.
   const focus = useHelpFocus();
-  const setFocus = useSetHelpFocus();
   const only = focus?.collections ?? [];
-
-  // Opened on one collection, the chat goes straight into it, once: its back arrow then returns
-  // to this list of the page's collections, not into it again.
-  const landing = useQuery({
-    queryKey: [...HELP_QUERY_KEY, "collections", "landing", audience],
-    queryFn: () => getClient().collections.list({ audience }),
-    enabled: focus?.landing === true,
-  });
-  useEffect(() => {
-    if (!focus?.landing || !landing.data) return;
-    const matched = landing.data.filter((collection) =>
-      focus.collections.includes(collection.slug),
-    );
-    setFocus({ ...focus, landing: false });
-    const [one] = matched;
-    if (matched.length === 1 && one) {
-      show({ name: "collection", collection: { id: one.id, name: one.name } });
-    }
-  }, [focus, landing.data, setFocus, show]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
