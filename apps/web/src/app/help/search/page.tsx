@@ -32,11 +32,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 /** What a search of the help center found, best match first. */
 export default async function HelpSearchPage({ searchParams }: Props) {
   const query = await readQuery(searchParams);
-  const [settings, collections, results, embed] = await Promise.all([
+  const embed = await getHelpEmbed();
+  const [settings, collections, results] = await Promise.all([
     getHelpSettings(),
-    getHelpCollections(),
-    query ? searchHelpArticles(query) : Promise.resolve([]),
-    getHelpEmbed(),
+    getHelpCollections(embed?.audience),
+    query ? searchHelpArticles(query, embed?.audience) : Promise.resolve([]),
   ]);
 
   return (

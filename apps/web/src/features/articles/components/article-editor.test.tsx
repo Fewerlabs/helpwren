@@ -155,6 +155,17 @@ describe("ArticleEditor", () => {
     });
   });
 
+  it("can credit nobody", async () => {
+    const user = userEvent.setup();
+    articles.update.mockResolvedValue({ ok: true, article: { ...draft, authorId: null } });
+    await renderEditor();
+
+    await user.click(screen.getByRole("combobox", { name: "Author" }));
+    await user.click(await screen.findByRole("option", { name: "No author" }));
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    expect(articles.update).toHaveBeenCalledWith(draft.id, { authorId: null });
+  });
+
   it("saves who an article is for, its language and its custom fields", async () => {
     const user = userEvent.setup();
     articles.update.mockResolvedValue({ ok: true, article: draft });

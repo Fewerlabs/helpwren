@@ -21,7 +21,7 @@ the articles: they become drafts in no collection.
 2. Write it in the editor. Blocks: text, four sizes of heading, bulleted and numbered lists, quote,
    code block, note, tip, warning, video, divider and images. Press Cmd+S or Ctrl+S to save.
 3. Fill in the details: title (up to 160 characters), summary (up to 300), collection, slug,
-   tags (up to 20), author, and the search engine title and description. See
+   tags (up to 20), author or **No author**, and the search engine title and description. See
    [Search engines](seo.md).
 4. Choose where it shows, then publish.
 
@@ -59,6 +59,22 @@ actions for that one article.
   off: see [Tabs](../chat/appearance.md#tabs).
 - **Your own site**: [embed the help center](embedding.md) in a page, or
   [serve it at your own `/help`](own-site.md).
+
+## Audiences
+
+One install can serve two products, such as an app for customers and one for businesses. Set an
+article's **Audience** in its side panel, then name the audience where each product shows help:
+
+```js title="In the businesses' app"
+Helpwren.init({ source: "business_web", audience: "business" });
+Helpwren.embedHelp("#help", { audience: "business" });
+```
+
+That chat and that frame list only articles for `business`, and articles with no audience. Without
+an audience they list every article, and so does `/help`.
+
+> [!NOTE]
+> An audience decides what is listed, not who may read. Every published article is public.
 
 ## Ratings
 

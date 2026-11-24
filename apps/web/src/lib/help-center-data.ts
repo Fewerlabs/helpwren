@@ -61,7 +61,7 @@ export interface HelpCollection extends Collection {
  * One answer serves the list beside every page, the home page, a collection's page and the
  * sitemap.
  */
-export const getHelpCollections = kept("collections", async (): Promise<HelpCollection[]> => {
+const readCollections = kept("collections", async (): Promise<HelpCollection[]> => {
   const helpwren = visitor();
   const [collections, articles] = await Promise.all([
     helpwren.collections.list(),
@@ -77,6 +77,23 @@ export const getHelpCollections = kept("collections", async (): Promise<HelpColl
     .filter((collection) => collection.articles.length > 0);
 });
 
+/**
+ * What a frame lists for its audience: those articles and the ones for everyone, and only the
+ * collections holding any. With no audience, all of them.
+ */
+export async function getHelpCollections(audience?: string): Promise<HelpCollection[]> {
+  const collections = await readCollections();
+  if (!audience) return collections;
+  return collections
+    .map((collection) => ({
+      ...collection,
+      articles: collection.articles.filter(
+        ({ audiences }) => audiences.length === 0 || audiences.includes(audience),
+      ),
+    }))
+    .filter((collection) => collection.articles.length > 0);
+}
+
 /** One published article by its slug, or `null`. Articles shown only in the chat count as missing. */
 export const getHelpArticle = kept("article", async (slug: string): Promise<Article | null> => {
   const article = await visitor().articles.getBySlug(slug, { publishedOnly: true });
@@ -84,6 +101,6 @@ export const getHelpArticle = kept("article", async (slug: string): Promise<Arti
 });
 
 /** What a search of the published articles finds, best match first. Never kept: there are too many questions. */
-export function searchHelpArticles(query: string): Promise<ArticleSummary[]> {
-  return visitor().articles.search(query, { visibility: "public", limit: 20 });
+export function searchHelpArticles(query: string, audience?: string): Promise<ArticleSummary[]> {
+  return visitor().articles.search(query, { visibility: "public", audience, limit: 20 });
 }

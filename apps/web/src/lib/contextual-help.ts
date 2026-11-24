@@ -106,7 +106,10 @@ export async function audienceOf(contactId: string | null): Promise<string | nul
 export interface PageHelpRequest {
   page?: { url: string; title: string } | undefined;
   filter?: ArticleFilter | undefined;
+  /** The visitor's, as the install's identity adapter said. */
   audience?: string | null | undefined;
+  /** The one the page says its help is for. */
+  pageAudience?: string | undefined;
 }
 
 /**
@@ -121,6 +124,7 @@ export async function resolvePageHelp(request: PageHelpRequest): Promise<PageHel
     rules: setup.rules,
     url: request.page?.url,
     audience: request.audience,
+    pageAudience: request.pageAudience,
   });
   const summary =
     match === null
@@ -140,10 +144,11 @@ export async function resolvePageHelp(request: PageHelpRequest): Promise<PageHel
 
   const query = (match?.filter.q ?? request.page?.title ?? "").trim().slice(0, 200);
   if (!query) return { match: summary, fallback: null, articles: [] };
+  const audience = match?.filter.audience ?? request.pageAudience;
   const fallbackFilter: ArticleFilter = {
     q: query,
     limit: match?.filter.limit ?? ARTICLE_FILTER_LIMIT_DEFAULT,
-    ...(match?.filter.audience ? { audience: match.filter.audience } : {}),
+    ...(audience ? { audience } : {}),
     ...(match?.filter.locale ? { locale: match.filter.locale } : {}),
   };
   const searched = await visitor.articles.find(fallbackFilter, { anyWord: true });

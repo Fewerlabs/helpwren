@@ -48,6 +48,13 @@ describe("parseHelpEmbed", () => {
     expect(parse("embed=1&padding=lots&bg=red;color:x&theme=blue")).toEqual({ hide: [] });
   });
 
+  it("takes an audience, and keeps it on every link", () => {
+    const embed = parse("embed=1&audience=Business");
+    expect(embed?.audience).toBe("business");
+    expect(withEmbed("/help/billing", embed)).toBe("/help/billing?embed=1&audience=business");
+    expect(parse(`embed=1&audience=${"a".repeat(61)}`)).toEqual({ hide: [] });
+  });
+
   it("takes a colour only as six hex digits", () => {
     expect(parse("embed=1&accent=1D4ED8")?.accent).toBe("#1d4ed8");
     expect(parse("embed=1&accent=%231d4ed8")?.accent).toBe("#1d4ed8");

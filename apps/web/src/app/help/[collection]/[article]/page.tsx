@@ -39,11 +39,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** One article, as anyone on the web reads it. */
 export default async function HelpArticlePage({ params }: Props) {
   const { collection: collectionSlug, article: slug } = await params;
-  const [settings, article, collections, embed] = await Promise.all([
+  const embed = await getHelpEmbed();
+  const [settings, article, collections] = await Promise.all([
     getHelpSettings(),
     getHelpArticle(slug),
-    getHelpCollections(),
-    getHelpEmbed(),
+    getHelpCollections(embed?.audience),
   ]);
   if (!article?.collection) notFound();
   // An article has one address. Reached under another collection's name, say after it was

@@ -91,6 +91,62 @@ describe("articles.find", () => {
   });
 });
 
+describe("one audience", () => {
+  const visitor = createHelpwrenClient({ supabase: browserClient() });
+  const slugs = (items: { slug: string }[]) => items.map((item) => item.slug).sort();
+  const business = `for-business-${run}`;
+  const everyone = `for-everyone-${run}`;
+
+  it("lists and searches its articles and the ones for everyone", async () => {
+    const list = async (audience?: string) =>
+      slugs((await visitor.articles.list({ collectionId, audience })).items);
+    expect(await list()).toEqual([business, everyone]);
+    expect(await list("Business")).toEqual([business, everyone]);
+    expect(await list("customer")).toEqual([everyone]);
+    // A name with everything the query language reads as its own finds nothing more.
+    expect(await list('a"b\\c,{d}),status.eq.draft')).toEqual([everyone]);
+
+    const found = (audience: string) => visitor.articles.search(`For ${run}`, { audience });
+    expect(slugs(await found("business"))).toEqual([business, everyone]);
+    expect(slugs(await found("customer"))).toEqual([everyone]);
+  });
+
+  it("counts only those in a collection, and leaves out one with none", async () => {
+    const count = async (audience?: string) =>
+      (await visitor.collections.list({ audience })).find((item) => item.id === collectionId)
+        ?.articleCount;
+    expect(await count()).toBe(2);
+    expect(await count("business")).toBe(2);
+    expect(await count("customer")).toBe(1);
+
+    const other = await serverClient()
+      .from("collections")
+      .insert({ name: `Business ${run}`, slug: `business-only-${run}` })
+      .select("id")
+      .single();
+    if (other.error) throw other.error;
+    const { error } = await serverClient()
+      .from("articles")
+      .insert({
+        collection_id: other.data.id,
+        title: `Only business ${run}`,
+        slug: `only-business-${run}`,
+        status: "published",
+        audiences: ["business"],
+      });
+    if (error) throw error;
+    try {
+      const listed = async (audience: string) =>
+        (await visitor.collections.list({ audience })).some((item) => item.id === other.data.id);
+      expect(await listed("business")).toBe(true);
+      expect(await listed("customer")).toBe(false);
+    } finally {
+      await serverClient().from("articles").delete().eq("collection_id", other.data.id);
+      await serverClient().from("collections").delete().eq("id", other.data.id);
+    }
+  });
+});
+
 describe("helpRules", () => {
   it("lets an admin add, change, reorder and remove rules", async () => {
     const { client } = await signIn("ada@example.com");

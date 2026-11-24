@@ -116,6 +116,13 @@ describe("pickHelpFilter", () => {
     expect(picked?.filter).toEqual({ collection: "bookings" });
   });
 
+  it("puts the page's audience before the visitor's, but matches rules on the visitor's", () => {
+    const picked = pickHelpFilter({ rules, url, audience: "business", pageAudience: "customer" });
+    expect(picked?.filter.audience).toBe("customer");
+    const only = rule({ name: "Business", audience: "business", position: 1 });
+    expect(pickHelpFilter({ rules: [only], url, pageAudience: "business" })).toBeNull();
+  });
+
   it("fills in the visitor's audience, unless the filter names one", () => {
     expect(pickHelpFilter({ rules, url, audience: "business" })?.filter).toEqual({
       collection: "bookings",

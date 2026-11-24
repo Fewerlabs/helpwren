@@ -8,10 +8,10 @@ import { getHelpEmbed } from "@/lib/help-embed-request";
 
 /** Shown for a collection or an article that does not exist, or is not published. */
 export default async function HelpNotFound() {
-  const [settings, collections, embed] = await Promise.all([
+  const embed = await getHelpEmbed();
+  const [settings, collections] = await Promise.all([
     getHelpSettings(),
-    getHelpCollections(),
-    getHelpEmbed(),
+    getHelpCollections(embed?.audience),
   ]);
   return (
     <HelpShell settings={settings} collections={collections} embed={embed}>

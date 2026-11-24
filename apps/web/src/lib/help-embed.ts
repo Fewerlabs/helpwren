@@ -1,3 +1,5 @@
+import { audienceSchema } from "@helpwren/core";
+
 /**
  * The help center inside a frame on someone else's site. A host asks for it with `?embed=1`
  * and may add a few options. Everything a host sends is checked here, strictly: an option that
@@ -42,6 +44,8 @@ export interface HelpEmbed {
   background?: string;
   /** The host's theme, in place of the reader's choice or their device's. */
   theme?: EmbedTheme;
+  /** List only the articles for this audience and for everyone. */
+  audience?: string;
   /** Open on this collection. Only read on the home page. */
   collection?: string;
   /** Open on a search for these words. Only read on the home page. */
@@ -69,6 +73,7 @@ export function parseHelpEmbed(params: URLSearchParams): HelpEmbed | null {
   const bg = (params.get("bg") ?? "").toLowerCase();
   const padding = oneOf(EMBED_PADDINGS, params.get("padding"));
   const theme = oneOf(EMBED_THEMES, params.get("theme"));
+  const audience = audienceSchema.safeParse(params.get("audience")).data;
   const collection = params.get("collection") ?? "";
   const query = (params.get("q") ?? "").trim().slice(0, 200);
 
@@ -78,6 +83,7 @@ export function parseHelpEmbed(params: URLSearchParams): HelpEmbed | null {
     ...(padding ? { padding } : {}),
     ...(bg === "transparent" ? { background: bg } : HEX.test(bg) ? { background: hex(bg) } : {}),
     ...(theme ? { theme } : {}),
+    ...(audience ? { audience } : {}),
     ...(SLUG.test(collection) && collection.length <= 80 ? { collection } : {}),
     ...(query ? { query } : {}),
   };
@@ -99,6 +105,7 @@ export function embedQuery(embed: Omit<HelpEmbed, "collection" | "query">): stri
   if (embed.padding) params.set("padding", embed.padding);
   if (embed.background) params.set("bg", embed.background.replace("#", ""));
   if (embed.theme) params.set("theme", embed.theme);
+  if (embed.audience) params.set("audience", embed.audience);
   // The commas between parts are safe in an address, and easier to read unescaped.
   return params.toString().replaceAll("%2C", ",");
 }

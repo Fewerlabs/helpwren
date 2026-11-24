@@ -23,6 +23,7 @@ The chat as a screen.
 | ---------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `baseUrl`        | `string`                                    | Your install's address                                                                    |
 | `source`         | `string`                                    | The app's name, such as `customer_app`, shown to your team as the channel                 |
+| `audience`       | `string`                                    | Whose help articles the chat lists, such as `business`, besides those for everyone        |
 | `token`          | `string \| () => string \| Promise<string>` | The logged-in user's token, checked as **Settings → Identity** says. Leave out for guests |
 | `context`        | `PageContext`                               | Plain values your team sees beside the conversation. See [Context](../users/context.md)   |
 | `conversationId` | `string`                                    | Opens that conversation, for a tapped notification                                        |

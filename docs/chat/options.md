@@ -17,6 +17,7 @@ Helpwren.init({
 | Option       | What it does                                                                                                                                              |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `source`     | This page's name, shown to your team as the [channel](../concepts.md#channel). Default `web`.                                                             |
+| `audience`   | Whose help articles the chat lists, such as `business`, besides those for everyone. See [Audiences](../help-center/index.md#audiences).                   |
 | `launcher`   | `false` hides the round button, for a site that opens the chat from its own.                                                                              |
 | `trigger`    | Your own buttons or links that open and close the chat: a CSS selector, an element or a list of elements. Each gets `aria-expanded`.                      |
 | `mode`       | `floating` (default) is a launcher and a panel. `inline` puts the chat straight into `container`, always open, with no launcher.                          |

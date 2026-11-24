@@ -76,6 +76,9 @@ type Failure =
   | Exclude<ChangeArticleResult, { ok: true }>["reason"]
   | Exclude<CreateArticleResult, { ok: true }>["reason"];
 
+/** The author menu's choice for crediting nobody. A choice cannot be empty. */
+const NO_AUTHOR = "none";
+
 const failures: Record<Failure, string> = {
   forbidden: "You are not allowed to write articles.",
   not_found: "This article no longer exists.",
@@ -370,7 +373,7 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
     if (metaDescription !== (saved.metaDescription ?? "")) {
       changes.metaDescription = metaDescription;
     }
-    if (authorId && authorId !== saved.authorId) changes.authorId = authorId;
+    if (authorId !== saved.authorId) changes.authorId = authorId;
     if (audiences.join() !== saved.audiences.join()) changes.audiences = [...audiences];
     if (locale.trim() !== (saved.locale ?? "")) {
       const parsed = localeSchema.safeParse(locale);
@@ -832,17 +835,19 @@ function EditorForm({ article, onCreated }: EditorFormProps) {
           </Field>
 
           <Select
-            value={authorId ?? ""}
+            value={authorId ?? (exists ? NO_AUTHOR : "")}
             onValueChange={(value) => {
-              setAuthorId(value);
+              setAuthorId(value === NO_AUTHOR ? null : value);
             }}
           >
             <Field label="Author">
               <SelectTrigger>
-                <SelectValue placeholder="Unknown" />
+                {/* A new article is credited to whoever makes it. */}
+                <SelectValue placeholder="You" />
               </SelectTrigger>
             </Field>
             <SelectContent>
+              {exists ? <SelectItem value={NO_AUTHOR}>No author</SelectItem> : null}
               {team
                 .filter((member) => member.active || member.id === authorId)
                 .map((member) => (

@@ -18,11 +18,11 @@ Only published articles are ever returned.
 Open an article in **Help center** in the dashboard. Besides its collection and tags, the
 **Contextual help** part of the side panel holds:
 
-| Field         | What it is                                                                        |
-| ------------- | --------------------------------------------------------------------------------- |
-| Audience      | Who the article is for, such as `business`. Empty means everyone                  |
-| Language      | A code such as `en` or `pt-br`. Empty means the article is not tied to a language |
-| Custom fields | Any name and value of your own, such as `plan` = `pro` or `feature` = `calendar`  |
+| Field         | What it is                                                                                                        |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Audience      | Who the article is for, such as `business`. Empty means everyone. See [Audiences](help-center/index.md#audiences) |
+| Language      | A code such as `en` or `pt-br`. Empty means the article is not tied to a language                                 |
+| Custom fields | Any name and value of your own, such as `plan` = `pro` or `feature` = `calendar`                                  |
 
 Audiences use the values your identity adapter gives a signed-in user (Settings > Identity,
 "Audience values"). Tags and audiences already in use are suggested as you type.

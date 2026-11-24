@@ -18,8 +18,11 @@ describe("helpEmbedUrl", () => {
         padding: "none",
         background: "transparent",
         theme: "dark",
+        audience: "business",
       }),
-    ).toBe(`${APP}/help?embed=1&hide=breadcrumbs&padding=none&bg=transparent&theme=dark`);
+    ).toBe(
+      `${APP}/help?embed=1&hide=breadcrumbs&audience=business&padding=none&bg=transparent&theme=dark`,
+    );
     expect(helpEmbedUrl(APP, { hide: ["title", "subtitle"], accent: "#1d4ed8" })).toBe(
       `${APP}/help?embed=1&hide=title,subtitle&accent=1d4ed8`,
     );

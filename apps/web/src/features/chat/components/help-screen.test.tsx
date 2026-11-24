@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
+import { AudienceProvider } from "../audience";
 import {
   resetChatStore,
   useScreen,
@@ -155,6 +156,31 @@ describe("the chat's Help", () => {
     expect(await screen.findByText("Nothing matched those words")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Send us a message" }));
     expect(screen.getByRole("status")).toHaveTextContent('{"name":"start"}');
+  });
+
+  it("asks for the page's audience everywhere, when it named one", async () => {
+    const user = userEvent.setup();
+    collections.list.mockResolvedValue([]);
+    renderChat(
+      <AudienceProvider audience="business">
+        <HelpScreen />
+        <SuggestedArticles />
+        <CollectionScreen collection={billing} onBack={vi.fn()} />
+      </AudienceProvider>,
+    );
+
+    await user.type(screen.getByRole("searchbox", { name: "Search for help" }), "invoice");
+    await waitFor(() => {
+      expect(articles.search).toHaveBeenLastCalledWith("invoice", {
+        limit: 20,
+        audience: "business",
+      });
+    });
+    expect(collections.list).toHaveBeenCalledWith({ audience: "business" });
+    expect(articles.list).toHaveBeenCalledTimes(2);
+    for (const [options] of articles.list.mock.calls) {
+      expect(options).toMatchObject({ audience: "business" });
+    }
   });
 
   it("suggests the featured articles on the home screen, and nothing when there are none", async () => {

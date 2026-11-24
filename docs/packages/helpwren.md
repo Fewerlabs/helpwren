@@ -61,7 +61,7 @@ and `helpEmbedUrl(appOrigin, options?)` returns the frame's address. See
 | `IdentityState`    | `{ state: "guest" }`, `{ state: "user" }` or `{ state: "failed", reason: "expired" \| "rejected" \| "off" \| "error" }`                        |
 | `PageContext`      | `Record<string, string \| number \| boolean \| null>`. See [Context](../users/context.md)                                                      |
 | `HelpwrenEvents`   | The [events](../chat/events.md) and their listeners                                                                                            |
-| `HelpEmbedOptions` | `hide`, `collection`, `query`, `padding`, `background`, `theme`, `accent`, `title`. See [Embedding](../help-center/embedding.md)               |
+| `HelpEmbedOptions` | `hide`, `collection`, `query`, `audience`, `padding`, `background`, `theme`, `accent`, `title`. See [Embedding](../help-center/embedding.md)   |
 | `HelpEmbedPart`    | A part `hide` can leave out, such as `"search"`                                                                                                |
 
 ## helpwren/protocol

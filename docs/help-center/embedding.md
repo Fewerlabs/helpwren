@@ -58,7 +58,7 @@ it works on pages without the chat too:
 ```
 
 `embedHelp(container, options)` takes the options below by their long names (`hide` as a list,
-`collection`, `query`, `padding`, `background`, `theme`, `accent`) and `title` for the frame. It
+`collection`, `query`, `audience`, `padding`, `background`, `theme`, `accent`) and `title` for the frame. It
 returns a function that takes the frame away. In a bundled app, `createHelpEmbed(appOrigin,
 container, options)` from the [`helpwren`](../packages/helpwren.md) package does the same.
 
@@ -95,8 +95,11 @@ stays in the same embedded view.
 | `accent`     | Your colour as six hex digits, without the `#`: `&accent=1d4ed8`                         |
 | `collection` | Opens on one collection, by its slug: `&collection=getting-started`. Home page only      |
 | `q`          | Opens on a search: `&q=refund`. Home page only, up to 200 characters                     |
+| `audience`   | Lists only articles for this audience and for everyone: `&audience=business`             |
 
 Options that do not match are ignored.
+
+An article opened by its own link still shows, whoever it is for.
 
 ## Examples
 

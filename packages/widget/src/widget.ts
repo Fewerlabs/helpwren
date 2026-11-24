@@ -48,6 +48,11 @@ export interface InitOptions {
   /** Where this page is, shown to the team as the conversation's channel. Default `web`. */
   source?: string;
   /**
+   * Whose help articles the chat lists, such as `business`, besides those for everyone. Left
+   * out, it lists every article.
+   */
+  audience?: string;
+  /**
    * Whether to show the round launcher button. Turn it off to open the chat from your own
    * button with `Helpwren.show()`. Default true.
    */
@@ -806,6 +811,7 @@ export function createWidget(appOrigin: string): HelpwrenWidget {
       frame.allow = "fullscreen; picture-in-picture; encrypted-media";
       const url = new URL("/embed", appOrigin);
       url.searchParams.set("source", options.source ?? "web");
+      if (options.audience) url.searchParams.set("audience", options.audience);
       if (options.preview) url.searchParams.set("preview", "1");
       if (theme !== "light") url.searchParams.set("theme", theme);
       frame.src = url.href;

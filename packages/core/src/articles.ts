@@ -4,6 +4,7 @@ import { type Api } from "./api";
 import {
   articleFilterSchema,
   audienceSchema,
+  forAudience,
   fieldKeySchema,
   localeSchema,
   type ArticleFilterInput,
@@ -139,8 +140,11 @@ export const articleInputSchema = z.object({
   metaTitle: z.string().trim().max(70).optional(),
   /** Empty for none. */
   metaDescription: z.string().trim().max(200).optional(),
-  /** The team member credited with it. Whoever makes an article is its author to begin with. */
-  authorId: z.uuid().optional(),
+  /**
+   * The team member credited with it, or `null` for nobody. Whoever makes an article is its
+   * author to begin with.
+   */
+  authorId: z.uuid().nullable().optional(),
   audiences: z
     .array(audienceSchema)
     .max(ARTICLE_AUDIENCES_MAX)
@@ -164,6 +168,8 @@ export interface ListArticlesOptions {
   /** Only articles credited to one of these team members. */
   authorIds?: readonly string[] | undefined;
   visibility?: ArticleVisibility | undefined;
+  /** Only articles for everyone, or for this audience. */
+  audience?: string | undefined;
   /** Only the articles put forward, or only the rest. */
   featured?: boolean | undefined;
   /** Words to find in the title, summary or body. Results come best match first. */
@@ -187,6 +193,8 @@ export interface SearchArticlesOptions {
   includeDrafts?: boolean | undefined;
   /** Only articles listed here: `public` for the help center. Default: both. */
   visibility?: ArticleVisibility | undefined;
+  /** Only articles for everyone, or for this audience. */
+  audience?: string | undefined;
 }
 
 export interface FindArticlesOptions {
@@ -364,6 +372,7 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
       if (options.tags?.length) query = query.overlaps("tags", [...options.tags]);
       if (options.authorIds?.length) query = query.in("author_id", [...options.authorIds]);
       if (options.visibility) query = query.eq("visibility", options.visibility);
+      if (options.audience) query = query.or(forAudience(options.audience));
       if (options.featured !== undefined) query = query.eq("featured", options.featured);
       if (!search) {
         query = options.collectionId
@@ -383,6 +392,7 @@ export function createArticles(supabase: HelpwrenSupabaseClient, api: Api) {
       let request = supabase.rpc("search_articles", { query: text }).select(SUMMARY_COLUMNS);
       if (!options.includeDrafts) request = request.eq("status", "published");
       if (options.visibility) request = request.eq("visibility", options.visibility);
+      if (options.audience) request = request.or(forAudience(options.audience));
       const { data, error } = await request.limit(options.limit ?? 10);
       if (error) throw new HelpwrenError("Could not search the articles.", { cause: error });
       return z.array(articleSummarySchema).parse(data);

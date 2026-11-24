@@ -10,6 +10,7 @@ import { brandProps } from "@/lib/accent";
 import { BrandOnBody } from "@/lib/brand-on-body";
 import { HelpwrenProvider } from "@/lib/helpwren-context";
 
+import { AudienceProvider } from "../audience";
 import { BrandProvider, TeamAvatar } from "../brand";
 import { getChatClient } from "../client";
 import {
@@ -45,6 +46,8 @@ export interface ChatProps {
   settings: PublicSettings;
   /** Where the chat is embedded, such as `web`. Shown to the team as the channel. */
   source: string;
+  /** Whose help articles to list, besides those for everyone. Left out: every article. */
+  audience?: string | undefined;
   /** Shows the chat as a new visitor sees it, follows settings sent to it, and sends nothing. */
   preview?: boolean;
   /** Classes for the chat's box. It fills the screen unless told otherwise. */
@@ -247,7 +250,12 @@ function Screens({ settings, source }: Pick<ChatProps, "settings" | "source">) {
 }
 
 /** The chat's box, in the brand's colours, with the settings the preview sends if it is one. */
-function Surface({ settings: saved, source, preview = false, className }: ChatProps) {
+function Surface({
+  settings: saved,
+  source,
+  preview = false,
+  className,
+}: Omit<ChatProps, "audience">) {
   const settings = usePreviewSettings(saved, preview);
   const setPreview = useSetPreview();
   useEffect(() => {
@@ -270,10 +278,12 @@ function Surface({ settings: saved, source, preview = false, className }: ChatPr
  * themselves. It fills whatever box it is given, so it works in the widget's frame, on the chat
  * page and in a mobile app's web view.
  */
-export function Chat(props: ChatProps) {
+export function Chat({ audience, ...props }: ChatProps) {
   return (
     <HelpwrenProvider getClient={getChatClient}>
-      <Surface {...props} />
+      <AudienceProvider audience={audience}>
+        <Surface {...props} />
+      </AudienceProvider>
     </HelpwrenProvider>
   );
 }

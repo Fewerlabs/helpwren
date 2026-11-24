@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { forAudience } from "./article-filter";
 import { type Database } from "./database.types";
 import { HelpwrenError } from "./errors";
 import { insertWithFreeSlug, slugify, slugSchema } from "./slug";
@@ -69,20 +70,30 @@ const TAKEN = "23505";
 const STILL_USED = "23503";
 const LOCKED = "HW409";
 
+export interface ListCollectionsOptions {
+  /**
+   * Only collections with an article for everyone, or for this audience, counting only those.
+   */
+  audience?: string | undefined;
+}
+
 export function createCollections(supabase: HelpwrenSupabaseClient) {
   return {
     /**
      * The collections, in their order. A visitor gets the ones with a published article; the
      * team gets them all.
      */
-    async list(): Promise<Collection[]> {
-      const { data, error } = await supabase
-        .from("collections")
-        .select(COLUMNS)
-        .order("position")
-        .order("name");
+    async list(options: ListCollectionsOptions = {}): Promise<Collection[]> {
+      let query = supabase.from("collections").select(COLUMNS);
+      if (options.audience) {
+        query = query.or(forAudience(options.audience), { referencedTable: "articles" });
+      }
+      const { data, error } = await query.order("position").order("name");
       if (error) throw new HelpwrenError("Could not load the collections.", { cause: error });
-      return z.array(collectionSchema).parse(data);
+      const collections = z.array(collectionSchema).parse(data);
+      return options.audience
+        ? collections.filter((collection) => collection.articleCount > 0)
+        : collections;
     },
 
     /** One collection by its slug, or `null` if there is none the caller can read. */

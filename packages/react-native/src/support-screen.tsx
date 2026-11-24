@@ -36,6 +36,11 @@ export interface SupportScreenProps {
   /** The app's name, such as `customer_app`, shown to the team as the channel. */
   source: string;
   /**
+   * Whose help articles the chat lists, such as `business`, besides those for everyone. Left
+   * out, it lists every article.
+   */
+  audience?: string;
+  /**
    * The logged-in user's token, checked by the install as its Identity settings say. Leave it
    * out for someone who is not logged in: they chat as a guest. A function is called again
    * once when a token has expired.
@@ -72,6 +77,7 @@ export interface SupportScreenProps {
 export function SupportScreen({
   baseUrl,
   source,
+  audience,
   token,
   context,
   filter,
@@ -221,7 +227,7 @@ export function SupportScreen({
     <ChatView
       ref={view}
       style={style}
-      source={{ uri: embedUrl(baseUrl, source, startTheme) }}
+      source={{ uri: embedUrl(baseUrl, source, startTheme, audience) }}
       originWhitelist={[new URL(baseUrl).origin]}
       onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
       onMessage={onMessage}

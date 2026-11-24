@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useHelpwren } from "@/lib/helpwren-context";
 
+import { useAudience } from "../audience";
 import { useHelpFilter, usePage, usePreview } from "../store/chat-store";
 import { useSession } from "./use-chat";
 
@@ -16,15 +17,26 @@ export function usePageHelpQuery() {
   const preview = usePreview();
   const page = usePage();
   const filter = useHelpFilter();
+  const audience = useAudience();
   const session = useSession();
   const sessionId = session.data?.id ?? null;
 
   return {
-    queryKey: ["chat", "help", "page", page?.url, page?.title, filter, sessionId] as const,
+    queryKey: [
+      "chat",
+      "help",
+      "page",
+      page?.url,
+      page?.title,
+      filter,
+      audience,
+      sessionId,
+    ] as const,
     queryFn: () =>
       getClient().articles.forPage({
         ...(page ? { page } : {}),
         ...(filter ? { filter } : {}),
+        ...(audience ? { audience } : {}),
       }),
     enabled: !preview && !session.isPending && (page !== null || filter !== null),
     // The server keeps a page's help for a minute too.

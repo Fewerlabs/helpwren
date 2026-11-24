@@ -163,17 +163,19 @@ export type HelpMatch =
 
 /**
  * The filter for a page. A filter the page sends wins over every rule; otherwise the first rule
- * that matches. The visitor's audience fills in a filter that does not name one. `null` when
- * neither applies.
+ * that matches. The page's audience, or else the visitor's, fills in a filter that does not
+ * name one; a rule is matched on the visitor's alone. `null` when neither applies.
  */
 export function pickHelpFilter(options: {
   filter?: ArticleFilter | undefined;
   rules: readonly HelpRule[];
   url?: string | undefined;
   audience?: string | null | undefined;
+  pageAudience?: string | undefined;
 }): HelpMatch | null {
+  const audience = options.pageAudience ?? options.audience;
   const withAudience = (filter: ArticleFilter): ArticleFilter =>
-    filter.audience || !options.audience ? filter : { ...filter, audience: options.audience };
+    filter.audience || !audience ? filter : { ...filter, audience };
   if (options.filter) return { kind: "filter", filter: withAudience(options.filter) };
   if (!options.url) return null;
   const rule = matchHelpRule(options.rules, { url: options.url, audience: options.audience });
@@ -186,6 +188,8 @@ export const pageHelpInputSchema = z.object({
     .object({ url: z.url({ protocol: /^https?$/ }).max(2000), title: z.string().max(300) })
     .optional(),
   filter: articleFilterSchema.optional(),
+  /** The audience the page says its help is for. */
+  audience: audienceSchema.optional(),
 });
 export type PageHelpInput = z.input<typeof pageHelpInputSchema>;
 

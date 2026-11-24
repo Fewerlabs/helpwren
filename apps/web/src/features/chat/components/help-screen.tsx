@@ -20,6 +20,7 @@ import { ArticleFeedback } from "@/features/help-center";
 import { useHelpwren } from "@/lib/helpwren-context";
 import { useDebounced } from "@/lib/use-debounced";
 
+import { useAudience } from "../audience";
 import { usePageHelp, usePageHelpQuery } from "../hooks/use-page-help";
 import {
   useHelpFocus,
@@ -115,15 +116,17 @@ export function PageHelp() {
 export function SuggestedArticles({ searchAll = true }: { searchAll?: boolean }) {
   const getClient = useHelpwren();
   const show = useShowScreen();
+  const audience = useAudience();
   const forPage = usePageHelp().data?.articles;
   const shown = new Set(forPage?.map((article) => article.slug));
   return (
     <QueryList
-      queryKey={[...HELP_QUERY_KEY, "suggested"]}
+      queryKey={[...HELP_QUERY_KEY, "suggested", audience]}
       queryFn={async () => {
         const page = await getClient().articles.list({
           status: "published",
           featured: true,
+          audience,
           pageSize: SUGGESTED,
         });
         return { items: page.items };
@@ -174,6 +177,7 @@ export function SuggestedArticles({ searchAll = true }: { searchAll?: boolean })
 export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) {
   const getClient = useHelpwren();
   const show = useShowScreen();
+  const audience = useAudience();
   const [search, setSearch] = useState("");
   const query = useDebounced(search).trim();
   // The collections the page opened Help on, when it did: only those are listed.
@@ -184,8 +188,8 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
   // Opened on one collection, the chat goes straight into it, once: its back arrow then returns
   // to this list of the page's collections, not into it again.
   const landing = useQuery({
-    queryKey: [...HELP_QUERY_KEY, "collections", "landing"],
-    queryFn: () => getClient().collections.list(),
+    queryKey: [...HELP_QUERY_KEY, "collections", "landing", audience],
+    queryFn: () => getClient().collections.list({ audience }),
     enabled: focus?.landing === true,
   });
   useEffect(() => {
@@ -214,9 +218,9 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
       </div>
       {query ? (
         <QueryList
-          queryKey={[...HELP_QUERY_KEY, "search", query]}
+          queryKey={[...HELP_QUERY_KEY, "search", query, audience]}
           queryFn={async () => ({
-            items: await getClient().articles.search(query, { limit: 20 }),
+            items: await getClient().articles.search(query, { limit: 20, audience }),
           })}
           pagination="none"
           className="min-h-0 flex-1 overflow-y-auto"
@@ -247,9 +251,9 @@ export function HelpScreen({ onClose }: { onClose?: (() => void) | undefined }) 
         />
       ) : (
         <QueryList
-          queryKey={[...HELP_QUERY_KEY, "collections", only]}
+          queryKey={[...HELP_QUERY_KEY, "collections", only, audience]}
           queryFn={async () => {
-            const all = await getClient().collections.list();
+            const all = await getClient().collections.list({ audience });
             return {
               items: only.length > 0 ? all.filter((item) => only.includes(item.slug)) : all,
             };
@@ -307,16 +311,18 @@ export interface CollectionScreenProps {
 
 /** One collection's articles, in the order the team set, opened from the Help tab. */
 export function CollectionScreen({ collection, onBack, onClose }: CollectionScreenProps) {
+  const audience = useAudience();
   const getClient = useHelpwren();
   return (
     <>
       <ScreenHeader title={collection.name} onBack={onBack} onClose={onClose} />
       <QueryList
-        queryKey={[...HELP_QUERY_KEY, "collection", collection.id]}
+        queryKey={[...HELP_QUERY_KEY, "collection", collection.id, audience]}
         queryFn={async () => {
           const page = await getClient().articles.list({
             collectionId: collection.id,
             status: "published",
+            audience,
             pageSize: 100,
           });
           return { items: page.items };

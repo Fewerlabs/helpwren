@@ -256,6 +256,12 @@ describe("the help center, for the team", () => {
     expect(counts.total).toBeGreaterThan(visitorCounts.total);
     expect(visitorCounts.uncategorised).toBe(0);
 
+    // It may credit nobody.
+    const unsigned = await agent.articles.update(twin.ok ? twin.article.id : "", {
+      authorId: null,
+    });
+    expect(unsigned).toMatchObject({ ok: true, article: { authorId: null, author: null } });
+
     // Changing the title leaves the address alone.
     const body = doc(`Zebra crossing ${run}`);
     const renamed = await agent.articles.update(id, {

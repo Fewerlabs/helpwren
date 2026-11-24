@@ -23,10 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** The help center's home: the greeting and search, every collection as a card, and the articles put forward. */
 export default async function HelpHomePage() {
-  const [settings, collections, embed] = await Promise.all([
+  const embed = await getHelpEmbed();
+  const [settings, collections] = await Promise.all([
     getHelpSettings(),
-    getHelpCollections(),
-    getHelpEmbed(),
+    getHelpCollections(embed?.audience),
   ]);
   // A host may ask the embedded help center to open somewhere other than its home.
   if (embed?.collection) redirect(withEmbed(collectionPath(embed.collection), embed));

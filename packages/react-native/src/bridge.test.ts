@@ -12,6 +12,9 @@ describe("the bridge between the app and the chat", () => {
     expect(embedUrl(BASE, "customer_app", "dark")).toBe(
       "https://support.example.com/embed?source=customer_app&theme=dark",
     );
+    expect(embedUrl(BASE, "app", "light", "business")).toBe(
+      `${BASE}/embed?source=app&audience=business`,
+    );
     expect(embedUrl(BASE, "customer_app", "system")).toBe(
       "https://support.example.com/embed?source=customer_app&theme=system",
     );

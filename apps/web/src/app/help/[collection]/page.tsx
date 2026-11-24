@@ -20,8 +20,17 @@ import { getHelpEmbed } from "@/lib/help-embed-request";
 type Props = PageProps<"/help/[collection]">;
 
 async function load(slug: string) {
-  const [settings, collections] = await Promise.all([getHelpSettings(), getHelpCollections()]);
-  return { settings, collections, collection: collections.find((item) => item.slug === slug) };
+  const embed = await getHelpEmbed();
+  const [settings, collections] = await Promise.all([
+    getHelpSettings(),
+    getHelpCollections(embed?.audience),
+  ]);
+  return {
+    settings,
+    embed,
+    collections,
+    collection: collections.find((item) => item.slug === slug),
+  };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -36,10 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 /** One collection: what it is about, and its articles in the order the team set. */
 export default async function HelpCollectionPage({ params }: Props) {
-  const [{ settings, collections, collection }, embed] = await Promise.all([
-    load((await params).collection),
-    getHelpEmbed(),
-  ]);
+  const { settings, embed, collections, collection } = await load((await params).collection);
   if (!collection) notFound();
   const title = !hides(embed, "title");
   const subtitle = !hides(embed, "subtitle");

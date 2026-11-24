@@ -106,6 +106,11 @@ describe("init", () => {
     expect(parts().frame.src).toBe(`${APP}/embed?source=web`);
   });
 
+  it("tells the chat the page's audience", () => {
+    widget.init({ audience: "business" });
+    expect(parts().frame.src).toBe(`${APP}/embed?source=web&audience=business`);
+  });
+
   it("can leave the launcher out, for sites with their own button", () => {
     widget.init({ launcher: false });
     expect(parts().launcher).toBeNull();

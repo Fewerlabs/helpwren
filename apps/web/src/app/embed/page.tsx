@@ -1,3 +1,4 @@
+import { audienceSchema } from "@helpwren/core";
 import type { Metadata } from "next";
 
 import { Chat, frameTheme, frameThemeScript } from "@/features/chat";
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Chat" };
 const DEFAULT_SOURCE = "web";
 
 export default async function EmbedPage({ searchParams }: PageProps<"/embed">) {
-  const { source, preview, theme } = await searchParams;
+  const { source, preview, theme, audience } = await searchParams;
   const helpwren = await getHelpwren();
   const settings = await helpwren.settings.getPublic();
   // Light unless the page or app asked for dark or the device's setting.
@@ -20,6 +21,8 @@ export default async function EmbedPage({ searchParams }: PageProps<"/embed">) {
       <Chat
         settings={settings}
         source={typeof source === "string" ? source : DEFAULT_SOURCE}
+        // Not a usable name: no audience, as if none was given.
+        audience={audienceSchema.safeParse(audience).data}
         preview={preview === "1"}
       />
     </main>

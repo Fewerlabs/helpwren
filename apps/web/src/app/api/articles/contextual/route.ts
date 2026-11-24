@@ -11,7 +11,7 @@ import { audienceOf, resolvePageHelp } from "@/lib/contextual-help";
  * The help for the page the chat is on: the page's own filter, the first of the team's rules
  * that matches, or a search on the page's title. The chat asks from the install's own origin,
  * so no other site is answered. A verified user's audience comes from their session, never
- * from what the page says.
+ * from what the page says; the page may only say whose articles to list.
  */
 export async function POST(request: Request): Promise<Response> {
   const limited = await checkLimits([[LIMITS.pageHelpPerNetwork, requestNetwork(request).key]]);
@@ -24,6 +24,11 @@ export async function POST(request: Request): Promise<Response> {
   const caller = request.headers.has("authorization") ? await getCaller(request) : null;
   const audience = caller && !caller.isAgent ? await audienceOf(caller.id) : null;
   return Response.json(
-    await resolvePageHelp({ page: input.data.page, filter: input.data.filter, audience }),
+    await resolvePageHelp({
+      page: input.data.page,
+      filter: input.data.filter,
+      audience,
+      pageAudience: input.data.audience,
+    }),
   );
 }

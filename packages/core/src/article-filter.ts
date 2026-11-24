@@ -39,6 +39,17 @@ export const fieldValueSchema = z
 /** Who an audience is, as the install's identity adapter names it: `business`. */
 export const audienceSchema = z.string().trim().toLowerCase().min(1).max(60);
 
+const quoted = (text: string) => `"${text.replace(/["\\]/g, "\\$&")}"`;
+
+/**
+ * The condition that keeps articles for everyone and for one audience, for a query's `or`. The
+ * name is quoted twice, as an item of an array and as a value in the list of conditions, so
+ * nothing in it can be read as more of the query.
+ */
+export function forAudience(audience: string): string {
+  return `audiences.eq.{},audiences.cs.${quoted(`{${quoted(audienceSchema.parse(audience))}}`)}`;
+}
+
 const tagListSchema = z
   .array(z.string().trim().toLowerCase().min(1).max(40))
   .min(1)

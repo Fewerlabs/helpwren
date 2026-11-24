@@ -19,6 +19,8 @@ export interface HelpEmbedOptions {
   collection?: string;
   /** Opens on a search for these words. */
   query?: string;
+  /** Lists only the articles for this audience, such as `business`, and for everyone. */
+  audience?: string;
   /** Less room around the content: `compact`, or `none` to sit in your own padding. */
   padding?: "compact" | "none";
   /** What is behind the content: `transparent`, or a colour as `#rrggbb`. */
@@ -41,6 +43,7 @@ export function helpEmbedUrl(appOrigin: string, options: HelpEmbedOptions = {}):
   set("hide", options.hide?.join(","));
   set("collection", options.collection);
   set("q", options.query);
+  set("audience", options.audience);
   set("padding", options.padding);
   set("bg", options.background?.replace("#", ""));
   set("theme", options.theme);
