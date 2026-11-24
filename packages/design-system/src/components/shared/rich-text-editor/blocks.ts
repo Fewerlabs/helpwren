@@ -41,6 +41,22 @@ export const blockChoices: readonly BlockChoice[] = [
     run: (editor) => editor.chain().focus().setHeading({ level: 3 }).run(),
   },
   {
+    id: "small-heading",
+    label: "Small heading",
+    hint: "A point within a part",
+    icon: "text-h-four",
+    keywords: "h4 title",
+    run: (editor) => editor.chain().focus().setHeading({ level: 4 }).run(),
+  },
+  {
+    id: "smallest-heading",
+    label: "Smallest heading",
+    hint: "As small as the text, in bold",
+    icon: "text-h-five",
+    keywords: "h5 title",
+    run: (editor) => editor.chain().focus().setHeading({ level: 5 }).run(),
+  },
+  {
     id: "bulleted-list",
     label: "Bulleted list",
     hint: "Points in no particular order",

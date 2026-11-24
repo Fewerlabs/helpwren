@@ -157,12 +157,14 @@ describe("richTextHeadings", () => {
     const article = doc(
       block("heading", [words("Set up")], { level: 2 }),
       block("heading", [words("On iOS")], { level: 3 }),
+      block("heading", [words("On iPad")], { level: 5 }),
       block("heading", [words("Set up")], { level: 2 }),
       block("heading", [], { level: 2 }),
     );
     expect(richTextHeadings(article)).toEqual([
       { id: "set-up", text: "Set up", level: 2 },
       { id: "on-ios", text: "On iOS", level: 3 },
+      { id: "on-ipad", text: "On iPad", level: 5 },
       { id: "set-up-2", text: "Set up", level: 2 },
     ]);
 

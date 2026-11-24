@@ -23,20 +23,23 @@ export interface RichTextNode {
   content?: readonly RichTextNode[] | undefined;
 }
 
+/** The levels a heading can have. The page's title is its only top heading. */
+export type RichTextHeadingLevel = 2 | 3 | 4 | 5;
+
 /** A heading inside a document, for a table of contents. */
 export interface RichTextHeading {
   /** The `id` of the heading on the page, to link to as `#id`. */
   id: string;
   text: string;
-  level: 2 | 3 | 4;
+  level: RichTextHeadingLevel;
 }
 
 const text = (node: RichTextNode): string =>
   node.text ?? node.content?.map((child) => text(child)).join("") ?? "";
 
-const headingLevel = (node: RichTextNode): 2 | 3 | 4 => {
+const headingLevel = (node: RichTextNode): RichTextHeadingLevel => {
   const level = node.attrs?.level;
-  return level === 3 || level === 4 ? level : 2;
+  return level === 3 || level === 4 || level === 5 ? level : 2;
 };
 
 /** Gives each heading an id made from its words, numbering any that repeat. */

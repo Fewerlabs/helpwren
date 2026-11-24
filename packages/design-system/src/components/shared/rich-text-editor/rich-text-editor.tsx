@@ -293,7 +293,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({
         // The page's title is its only top heading, so writing starts a level down.
-        heading: { levels: [2, 3] },
+        heading: { levels: [2, 3, 4, 5] },
         link: { openOnClick: false, defaultProtocol: "https" },
       }),
       Image,
@@ -395,6 +395,8 @@ export function RichTextEditor({
             link: current.isActive("link"),
             h2: current.isActive("heading", { level: 2 }),
             h3: current.isActive("heading", { level: 3 }),
+            h4: current.isActive("heading", { level: 4 }),
+            h5: current.isActive("heading", { level: 5 }),
             image: current.isActive("image"),
           }
         : null,
@@ -473,6 +475,18 @@ export function RichTextEditor({
           icon="text-h-three"
           active={active.h3}
           onClick={() => run().toggleHeading({ level: 3 }).run()}
+        />
+        <Tool
+          label="Small heading"
+          icon="text-h-four"
+          active={active.h4}
+          onClick={() => run().toggleHeading({ level: 4 }).run()}
+        />
+        <Tool
+          label="Smallest heading"
+          icon="text-h-five"
+          active={active.h5}
+          onClick={() => run().toggleHeading({ level: 5 }).run()}
         />
         <span aria-hidden="true" className="bg-rule mx-0.5 h-5 w-px shrink-0" />
         <Tool

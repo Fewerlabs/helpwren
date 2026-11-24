@@ -18,7 +18,7 @@ the articles: they become drafts in no collection.
 ## Write an article
 
 1. In the dashboard, open **Help center** and create an article.
-2. Write it in the editor. Blocks: text, heading, subheading, bulleted and numbered lists, quote,
+2. Write it in the editor. Blocks: text, four sizes of heading, bulleted and numbered lists, quote,
    code block, note, tip, warning, video, divider and images. Press Cmd+S or Ctrl+S to save.
 3. Fill in the details: title (up to 160 characters), summary (up to 300), collection, slug,
    tags (up to 20), author, and the search engine title and description. See

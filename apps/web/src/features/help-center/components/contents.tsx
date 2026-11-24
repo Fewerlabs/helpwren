@@ -39,7 +39,7 @@ export function Contents({ headings }: { headings: readonly RichTextHeading[] })
             aria-current={heading.id === active ? "location" : undefined}
             className={cn(
               "focus-visible:outline-ring -ml-px block border-l py-1.5 text-pretty transition-colors focus-visible:outline-2",
-              heading.level > 2 ? "pl-7" : "pl-4",
+              ["pl-4", "pl-7", "pl-10", "pl-13"][heading.level - 2],
               heading.id === active
                 ? "border-foreground text-foreground font-medium"
                 : "text-muted-foreground hover:text-foreground border-transparent",

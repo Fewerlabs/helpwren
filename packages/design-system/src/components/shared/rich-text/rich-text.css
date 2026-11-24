@@ -1,7 +1,8 @@
 /*
  * The typography of long-form writing: a help article as readers see it, and the same article
  * in the editor. Both wear `.hw-rich-text`, so what is written looks like what is published.
- * The sizes follow Notion's: 16px text at 1.5, close blocks, and headings of 30, 24 and 20px.
+ * 16px text at 1.5, and headings of 22, 18, 16 and 15px: always smaller than the article's title,
+ * which is 24px in the chat. Sections stand well apart, and what belongs together stays close.
  */
 .hw-rich-text {
   color: var(--foreground);
@@ -11,10 +12,10 @@
 }
 
 .hw-rich-text > * + * {
-  margin-top: 0.5em;
+  margin-top: 0.75em;
 }
 
-.hw-rich-text :is(h2, h3, h4) {
+.hw-rich-text :is(h2, h3, h4, h5) {
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.25;
@@ -25,18 +26,34 @@
 
 /* More room above a heading than below it, so it belongs to the part it starts. */
 .hw-rich-text h2 {
-  margin-top: 1.1em;
-  font-size: 1.875em;
+  margin-top: 2em;
+  font-size: 1.375em;
 }
 
 .hw-rich-text h3 {
-  margin-top: 1em;
-  font-size: 1.5em;
+  margin-top: 2em;
+  font-size: 1.125em;
 }
 
 .hw-rich-text h4 {
-  margin-top: 1em;
-  font-size: 1.25em;
+  margin-top: 1.75em;
+  font-size: 1em;
+}
+
+.hw-rich-text h5 {
+  margin-top: 1.5em;
+  font-size: 0.9375em;
+}
+
+/* Straight under the heading above it, a smaller heading starts the same section. */
+.hw-rich-text :is(h2, h3, h4) + :is(h3, h4, h5) {
+  margin-top: 0.75em;
+}
+
+/* A picture stands clear of the steps before and after it. */
+.hw-rich-text > * + :is(figure, img),
+.hw-rich-text > :is(figure, img) + :not(h2, h3, h4, h5) {
+  margin-top: 1.25em;
 }
 
 /* A phone's screen is a third as wide, so the same sizes there read as shouting. */
@@ -46,15 +63,15 @@
   }
 
   .hw-rich-text h2 {
-    font-size: 1.6em;
+    font-size: 1.3em;
   }
 
   .hw-rich-text h3 {
-    font-size: 1.33em;
+    font-size: 1.125em;
   }
 
   .hw-rich-text h4 {
-    font-size: 1.2em;
+    font-size: 1em;
   }
 }
 

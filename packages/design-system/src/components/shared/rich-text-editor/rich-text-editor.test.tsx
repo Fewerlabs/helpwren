@@ -64,6 +64,14 @@ describe("RichTextEditor", () => {
     expect(latest()?.content?.[0]).toMatchObject({ type: "paragraph" });
   });
 
+  it("offers two smaller headings", async () => {
+    const { latest, add } = await setup();
+    await add("Small heading");
+    expect(latest()?.content?.[0]).toMatchObject({ type: "heading", attrs: { level: 4 } });
+    await add("Smallest heading");
+    expect(latest()?.content?.[0]).toMatchObject({ type: "heading", attrs: { level: 5 } });
+  });
+
   it("makes lists, quotes and code blocks", async () => {
     const { latest, add } = await setup();
     await add("Bulleted list");
@@ -190,7 +198,11 @@ describe("matchBlocks", () => {
   });
 
   it("narrows by the start of a word in the name or its other names", () => {
-    expect(matchBlocks(blockChoices, "head").map((choice) => choice.id)).toEqual(["heading"]);
+    expect(matchBlocks(blockChoices, "head").map((choice) => choice.id)).toEqual([
+      "heading",
+      "small-heading",
+      "smallest-heading",
+    ]);
     expect(matchBlocks(blockChoices, "call").map((choice) => choice.id)).toEqual([
       "note",
       "tip",

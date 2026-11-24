@@ -422,7 +422,7 @@ export function ArticleScreen({ slug, onBack, onClose, onResize }: ArticleScreen
       >
         {(article) => (
           <article>
-            <h2 className="text-xl leading-snug font-semibold tracking-tight text-balance">
+            <h2 className="text-2xl leading-snug font-semibold tracking-tight text-balance">
               {article.title}
             </h2>
             {article.summary ? (
